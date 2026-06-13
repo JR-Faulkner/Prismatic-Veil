@@ -128,6 +128,12 @@ const ANIM_FRAMES = {
   attack: { start: 10, end: 13 },
 };
 
+const CHARACTER_ANIM_OVERRIDES = {
+  kineza: {
+    attack: [24, 25, 26, 27]
+  }
+};
+
 
 const CHARACTER_SPRITE_TUNING = {
   prismel: { previewScale: 0.50, battleScale: 0.55, originX: 0.5, originY: 0.90 },
@@ -489,7 +495,7 @@ class TitleScene extends Phaser.Scene {
       strokeThickness: 2
     }).setOrigin(0.5).setDepth(4);
 
-    this.add.text(8, GAME_H - 12, 'POLISH PASS 02', {
+    this.add.text(8, GAME_H - 12, 'KINEZA ATTACK PASS 03', {
       fontFamily: 'Courier New',
       fontSize: '8px',
       color: '#7d68aa'
@@ -1252,7 +1258,7 @@ class BattleScene extends Phaser.Scene {
     const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
     const dirX = Math.cos(angle);
     const dirY = Math.sin(angle);
-    const lungeDist = Math.min(28, Math.max(12, nearestDist - 18));
+    const lungeDist = Math.min(22, Math.max(10, nearestDist - 20));
 
     this.tweens.add({
       targets: this.player,
@@ -1281,7 +1287,7 @@ class BattleScene extends Phaser.Scene {
       onComplete: () => { arc.destroy(); trail.destroy(); }
     });
 
-    this.time.delayedCall(64, () => {
+    this.time.delayedCall(132, () => {
       if(this.gameOver || this.upgradeMenuOpen) return;
       let hitCount = 0;
       const enemies = this.enemies.getChildren().slice();
@@ -1293,7 +1299,7 @@ class BattleScene extends Phaser.Scene {
         if(d > range + 22) return;
         const enemyAngle = Math.atan2(dy, dx);
         const diff = Phaser.Math.Angle.Wrap(enemyAngle - angle);
-        if(Math.abs(diff) <= 0.82) {
+        if(Math.abs(diff) <= 0.72) {
           hitCount++;
           this.damageEnemy(e, this.charData.baseDamage * this.attackDamageMult);
           if(e.body && e.body.setVelocity) {
@@ -1310,8 +1316,8 @@ class BattleScene extends Phaser.Scene {
         }
       });
       if(hitCount > 0) {
-        this.hitFreeze(42);
-        this.cameras.main.shake(90, 0.0028);
+        this.hitFreeze(34);
+        this.cameras.main.shake(75, 0.0023);
       }
     });
   }
