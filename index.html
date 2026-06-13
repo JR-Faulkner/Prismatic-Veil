@@ -146,6 +146,21 @@ function getBodyTuning(charKey) {
   return CHARACTER_BODY_TUNING[charKey] || { w: 80, h: 116, offX: 72, offY: 86 };
 }
 
+function fadeOutMenuMusic(scene, duration = 550) {
+  if (!gameState.titleMusic || !gameState.titleMusic.isPlaying) return;
+  scene.tweens.add({
+    targets: gameState.titleMusic,
+    volume: 0,
+    duration,
+    onComplete: () => {
+      if (gameState.titleMusic) {
+        gameState.titleMusic.stop();
+        gameState.titleMusic.setVolume(0.45);
+      }
+    }
+  });
+}
+
 
 function getSpriteUrl(charKey) {
   return SPRITE_PATHS[charKey];
@@ -419,24 +434,15 @@ class TitleScene extends Phaser.Scene {
       .setOrigin(0, 0)
       .setDepth(2);
 
-    const title = this.add.text(GAME_W / 2, 74, 'THE PRISMATIC VEIL', {
-      fontFamily: 'Georgia, serif',
-      fontSize: '31px',
-      fontStyle: 'bold',
-      color: '#ffffff',
-      stroke: '#2d164e',
-      strokeThickness: 5,
-      align: 'center'
-    }).setOrigin(0.5).setDepth(3);
-
-    const subtitle = this.add.text(GAME_W / 2, 118, 'Beyond the spectrum lies the unknown', {
+    const crest = this.add.text(GAME_W / 2, 54, '✦ PRISMATIC VEIL ✦', {
       fontFamily: 'Georgia, serif',
       fontSize: '14px',
+      fontStyle: 'bold',
       color: '#f7e8b6',
-      stroke: '#1b102c',
+      stroke: '#180f29',
       strokeThickness: 3,
       align: 'center'
-    }).setOrigin(0.5).setDepth(3);
+    }).setOrigin(0.5).setDepth(3).setAlpha(0.88);
 
     const prompt = this.add.text(GAME_W / 2, GAME_H - 98, 'TAP TO BEGIN', {
       fontFamily: 'Courier New',
@@ -454,6 +460,12 @@ class TitleScene extends Phaser.Scene {
       stroke: '#000000',
       strokeThickness: 2
     }).setOrigin(0.5).setDepth(4);
+
+    this.add.text(8, GAME_H - 12, 'AUDIO/PAUSE FIX 01', {
+      fontFamily: 'Courier New',
+      fontSize: '8px',
+      color: '#7d68aa'
+    }).setOrigin(0, 1).setDepth(4);
 
     this.tweens.add({
       targets: prompt,
@@ -498,16 +510,10 @@ class TitleScene extends Phaser.Scene {
         console.warn('Music could not start:', err);
       }
 
+      // Keep the title/menu music playing into character select.
+      // It fades out only when the player selects a hero and Battle starts.
       if (gameState.titleMusic && gameState.titleMusic.isPlaying) {
-        this.tweens.add({
-          targets: gameState.titleMusic,
-          volume: 0,
-          duration: 450,
-          onComplete: () => {
-            gameState.titleMusic.stop();
-            gameState.titleMusic.setVolume(0.45);
-          }
-        });
+        gameState.titleMusic.setVolume(0.45);
       }
 
       this.cameras.main.fadeOut(450, 7, 6, 15);
@@ -557,105 +563,80 @@ class CharacterSelectScene extends Phaser.Scene {
     if (this.textures.exists('title_bg')) {
       const bg = this.add.image(GAME_W/2, GAME_H/2, 'title_bg');
       const bgScale = Math.max(GAME_W / bg.width, GAME_H / bg.height);
-      bg.setScale(bgScale).setAlpha(0.44);
+      bg.setScale(bgScale).setAlpha(0.22);
     } else {
       this.add.rectangle(0, 0, GAME_W, GAME_H, COLORS.void).setOrigin(0,0);
     }
-    this.add.rectangle(0, 0, GAME_W, GAME_H, 0x05030c, 0.74).setOrigin(0,0);
+    this.add.rectangle(0, 0, GAME_W, GAME_H, 0x05030c, 0.84).setOrigin(0,0);
     Object.keys(SPRITE_PATHS).forEach((charKey) => createHeroAnimations(this, charKey));
 
-    // Spectrum streaks
+    // Subtle spectrum streaks
     const streakColors = [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green, COLORS.blue, COLORS.indigo, COLORS.violet];
     streakColors.forEach((c, i) => {
-      const y = 138 + i * 7;
-      this.add.rectangle(GAME_W/2, y, GAME_W * 0.88, 2, c, 0.10).setAngle(-10);
+      const y = 114 + i * 6;
+      this.add.rectangle(GAME_W/2, y, GAME_W * 0.74, 2, c, 0.10).setAngle(-10);
     });
 
-    // Starfield motes
-    for(let i=0; i<42; i++) {
-      const x = Math.random()*GAME_W;
-      const y = 90 + Math.random()*(GAME_H-140);
-      const size = Math.random()<0.12 ? 2 : 1;
-      const star = this.add.rectangle(x,y,size,size,COLORS.white).setAlpha(0.18+Math.random()*0.52);
-      this.tweens.add({
-        targets: star,
-        alpha: { from: star.alpha, to: 0.08 },
-        duration: 1200+Math.random()*2200,
-        yoyo:true,
-        repeat:-1
-      });
-    }
+    // Heading plaque
+    this.add.rectangle(GAME_W/2, 60, GAME_W - 42, 74, 0x0d0820, 0.88)
+      .setStrokeStyle(2, COLORS.gold, 0.45);
+    this.add.rectangle(GAME_W/2, 34, GAME_W - 42, 5, COLORS.lavender, 0.85);
 
-    // Title
-    this.add.text(GAME_W/2, 54, 'THE PRISMATIC VEIL', {
+    this.add.text(GAME_W/2, 50, 'ATTUNE A HERO', {
       fontFamily: 'Georgia, serif',
-      fontSize: '28px',
+      fontSize: '22px',
       fontStyle: 'bold',
       color: '#f7e8b6',
-      stroke: '#2d164e',
-      strokeThickness: 5
+      stroke: '#211234',
+      strokeThickness: 4
     }).setOrigin(0.5);
 
-    this.add.text(GAME_W/2, 84, 'ATTUNE A HERO', {
-      fontFamily: 'Georgia, serif',
-      fontSize: '13px',
-      fontStyle: 'bold',
-      color: '#d8b7ff',
-      stroke: '#140b24',
-      strokeThickness: 3
-    }).setOrigin(0.5);
-
-    this.add.text(GAME_W/2, 104, 'Choose a bearer of the spectrum', {
+    this.add.text(GAME_W/2, 75, 'Choose a bearer of the spectrum', {
       fontFamily: 'Courier New',
-      fontSize: '10px',
-      color: '#a88dd8'
+      fontSize: '12px',
+      color: '#d6c0ff',
+      stroke: '#000000',
+      strokeThickness: 2
     }).setOrigin(0.5);
 
     const chars = ['prismel', 'kineza', 'auryi'];
-    const cardW = 144, cardH = 290, gap = 12;
+    const cardW = 144, cardH = 288, gap = 12;
     const totalW = chars.length*cardW + (chars.length-1)*gap;
     const startX = (GAME_W-totalW)/2;
 
     chars.forEach((charKey, i) => {
       const data = CHARACTER_DATA[charKey];
       const x = startX + i*(cardW+gap);
-      const y = 150;
+      const y = 118;
       const portraitKey = charKey + '_portrait';
 
-      // Card shell
-      const cardShadow = this.add.rectangle(x+4, y+5, cardW, cardH, 0x000000, 0.26).setOrigin(0,0);
-      const card = this.add.rectangle(x, y, cardW, cardH, 0x0d0820, 0.92)
+      const cardShadow = this.add.rectangle(x+4, y+6, cardW, cardH, 0x000000, 0.30).setOrigin(0,0);
+      const card = this.add.rectangle(x, y, cardW, cardH, 0x0d0820, 0.96)
         .setOrigin(0,0)
-        .setStrokeStyle(2, COLORS.gold, 0.65)
+        .setStrokeStyle(2, COLORS.gold, 0.80)
         .setInteractive({useHandCursor:true});
-      const topBand = this.add.rectangle(x, y, cardW, 5, data.color, 0.92).setOrigin(0,0);
-      const inner = this.add.rectangle(x+6, y+6, cardW-12, cardH-12, 0x130d25, 0.78).setOrigin(0,0)
-        .setStrokeStyle(1, data.accentColor, 0.35);
+      const topBand = this.add.rectangle(x, y, cardW, 5, data.color, 0.96).setOrigin(0,0);
+      const inner = this.add.rectangle(x+6, y+6, cardW-12, cardH-12, 0x130d25, 0.84).setOrigin(0,0)
+        .setStrokeStyle(1, data.accentColor, 0.42);
 
-      // Accent crystal marks
       this.add.text(x+16, y+16, '✦', { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#f7e8b6' });
       this.add.text(x+cardW-20, y+16, '✦', { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#f7e8b6' });
 
-      // Portrait art
+      this.add.rectangle(x+cardW/2, y+74, cardW-24, 104, 0xffffff, 0.04)
+        .setStrokeStyle(1, data.color, 0.25);
       if (this.textures.exists(portraitKey)) {
         this.add.image(x+cardW/2, y+74, portraitKey).setScale(0.155);
       }
 
-      // Portrait frame panel
-      this.add.rectangle(x+cardW/2, y+74, cardW-24, 104, 0xffffff, 0.02)
-        .setStrokeStyle(1, data.color, 0.15);
-
-      // Animated sprite preview
       if (this.textures.exists(charKey)) {
-        const preview = this.add.sprite(x+cardW/2, y+188, charKey, 0);
+        const preview = this.add.sprite(x+cardW/2, y+182, charKey, 0);
         const tuning = getSpriteTuning(charKey);
         preview.setOrigin(tuning.originX, tuning.originY);
         preview.setScale(Math.min(0.40, tuning.previewScale*0.82));
         preview.play(charKey + '_idle');
       }
 
-      // Name & title
-      this.add.text(x+cardW/2, y+211, data.name, {
+      this.add.text(x+cardW/2, y+214, data.name, {
         fontFamily: 'Georgia, serif',
         fontSize: '18px',
         fontStyle: 'bold',
@@ -664,63 +645,75 @@ class CharacterSelectScene extends Phaser.Scene {
         strokeThickness: 3
       }).setOrigin(0.5);
 
-      this.add.text(x+cardW/2, y+233, data.title.toUpperCase(), {
+      this.add.text(x+cardW/2, y+238, data.title.toUpperCase(), {
         fontFamily: 'Courier New',
-        fontSize: '9px',
-        color: '#d8b7ff'
+        fontSize: '10px',
+        color: '#ecdfff',
+        stroke: '#000000',
+        strokeThickness: 2
       }).setOrigin(0.5);
 
-      this.add.text(x+cardW/2, y+252, data.description, {
+      this.add.text(x+cardW/2, y+258, data.description, {
         fontFamily: 'Courier New',
-        fontSize: '8px',
-        color: '#b9a2da',
+        fontSize: '9px',
+        color: '#d0bee8',
+        stroke: '#000000',
+        strokeThickness: 1,
         align: 'center',
-        wordWrap: {width: cardW-18}
+        wordWrap: {width: cardW-16}
       }).setOrigin(0.5, 0.5);
 
       const attune = this.add.text(x+cardW/2, y+cardH-18, 'ATTUNE', {
         fontFamily: 'Georgia, serif',
-        fontSize: '12px',
+        fontSize: '13px',
         fontStyle: 'bold',
-        color: '#f7e8b6'
+        color: '#f7e8b6',
+        stroke: '#000000',
+        strokeThickness: 2
       }).setOrigin(0.5);
 
-      // Hover effect
       card.on('pointerover', () => {
         card.setStrokeStyle(2, data.color, 1);
         inner.setStrokeStyle(1, data.accentColor, 0.9);
-        card.setFillStyle(0x18102f, 0.97);
+        card.setFillStyle(0x18102f, 0.98);
         attune.setColor('#ffffff');
       });
       card.on('pointerout', () => {
-        card.setStrokeStyle(2, COLORS.gold, 0.65);
-        inner.setStrokeStyle(1, data.accentColor, 0.35);
-        card.setFillStyle(0x0d0820, 0.92);
+        card.setStrokeStyle(2, COLORS.gold, 0.80);
+        inner.setStrokeStyle(1, data.accentColor, 0.42);
+        card.setFillStyle(0x0d0820, 0.96);
         attune.setColor('#f7e8b6');
       });
       card.on('pointerdown', () => {
         sfx.init();
         sfx.select();
         gameState.selectedCharacter = charKey;
+        fadeOutMenuMusic(this, 500);
         this.cameras.main.flash(180, 255, 255, 255, false);
-        this.time.delayedCall(150, () => this.scene.start('Battle'));
+        this.time.delayedCall(520, () => this.scene.start('Battle'));
       });
     });
 
-    this.add.text(GAME_W/2, GAME_H-54, 'Tap a bearer to enter the Veil', {
+    this.add.rectangle(GAME_W/2, GAME_H-34, GAME_W - 54, 44, 0x0d0820, 0.84)
+      .setStrokeStyle(1, COLORS.gold, 0.25);
+    this.add.text(GAME_W/2, GAME_H-42, 'Tap a bearer to enter the Veil', {
       fontFamily: 'Courier New',
       fontSize: '11px',
-      color: '#d0b7ff'
+      color: '#f4e9ff',
+      stroke: '#000000',
+      strokeThickness: 2
     }).setOrigin(0.5);
 
-    this.add.text(GAME_W/2, GAME_H-32, 'Each hero channels a different aspect of the spectrum', {
+    this.add.text(GAME_W/2, GAME_H-24, 'Each hero channels a different aspect of the spectrum', {
       fontFamily: 'Courier New',
-      fontSize: '8px',
-      color: '#7d68aa'
+      fontSize: '9px',
+      color: '#b69ddd',
+      stroke: '#000000',
+      strokeThickness: 1
     }).setOrigin(0.5);
   }
 
-  drawCharacterIcon(x, y, charKey, data, scale=1) {
+  drawCharacterIcondrawCharacterIcon(x, y, charKey, data, scale=1) {
     const g = this.add.graphics();
     const s = scale;
 
@@ -909,12 +902,12 @@ class BattleScene extends Phaser.Scene {
     // ── UI ──
     this.createUI();
 
-    this.levelHint = this.add.text(GAME_W/2, 88, 'Collect resonance orbs to reveal Relic Cards', {
+    this.levelHint = this.add.text(GAME_W/2, 98, 'Collect resonance orbs to reveal Relic Cards', {
       fontFamily:'Courier New',
-      fontSize:'9px',
+      fontSize:'10px',
       color:'#d8b7ff',
       stroke:'#000000',
-      strokeThickness:2
+      strokeThickness:3
     }).setOrigin(0.5).setAlpha(0.85);
     this.time.delayedCall(6500, () => {
       if(this.levelHint) {
@@ -991,55 +984,55 @@ class BattleScene extends Phaser.Scene {
     const accent2 = this.charData.accentColor;
 
     // Left hero panel
-    this.uiPanel = this.add.rectangle(10, 10, 226, 58, 0x0d0820, 0.90)
+    this.uiPanel = this.add.rectangle(10, 10, 258, 70, 0x0d0820, 0.96)
       .setOrigin(0,0)
-      .setStrokeStyle(2, COLORS.gold, 0.55);
-    this.add.rectangle(10, 10, 226, 4, accent, 0.95).setOrigin(0,0);
-    this.add.rectangle(18, 18, 40, 40, 0x161028, 0.95).setOrigin(0,0)
-      .setStrokeStyle(1, accent2, 0.75);
+      .setStrokeStyle(2, COLORS.gold, 0.72);
+    this.add.rectangle(10, 10, 258, 5, accent, 0.98).setOrigin(0,0);
+    this.add.rectangle(18, 20, 48, 48, 0x161028, 0.98).setOrigin(0,0)
+      .setStrokeStyle(1, accent2, 0.85);
     if (this.textures.exists(charKey + '_portrait')) {
-      this.add.image(38, 38, charKey + '_portrait').setScale(0.070);
+      this.add.image(42, 44, charKey + '_portrait').setScale(0.082);
     }
 
-    this.hpLabel = this.add.text(66, 15, 'VITAL', {
-      fontFamily:'Georgia, serif', fontSize:'10px', fontStyle:'bold', color:'#f7e8b6'
+    this.hpLabel = this.add.text(76, 15, 'VITAL', {
+      fontFamily:'Georgia, serif', fontSize:'12px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:2
     });
-    this.hpBarBg = this.add.rectangle(65, 29, 128, 11, 0x1a0a2e).setOrigin(0,0).setStrokeStyle(1,COLORS.border);
-    this.hpBarFill = this.add.rectangle(66, 30, 126, 9, COLORS.green).setOrigin(0,0);
-    this.hpText = this.add.text(129, 29, '', {
-      fontFamily:'Courier New', fontSize:'8px', color:'#ffffff'
+    this.hpBarBg = this.add.rectangle(76, 31, 142, 12, 0x1a0a2e).setOrigin(0,0).setStrokeStyle(1,COLORS.border);
+    this.hpBarFill = this.add.rectangle(77, 32, 140, 10, COLORS.green).setOrigin(0,0);
+    this.hpText = this.add.text(147, 30, '', {
+      fontFamily:'Courier New', fontSize:'9px', color:'#ffffff', stroke:'#000000', strokeThickness:2
     }).setOrigin(0.5, 0);
 
-    this.expLabel = this.add.text(66, 43, 'RESONANCE', {
-      fontFamily:'Georgia, serif', fontSize:'9px', fontStyle:'bold', color:'#d8b7ff'
+    this.expLabel = this.add.text(76, 49, 'RESONANCE', {
+      fontFamily:'Georgia, serif', fontSize:'10px', fontStyle:'bold', color:'#d8b7ff', stroke:'#000000', strokeThickness:2
     });
-    this.expBarBg = this.add.rectangle(65, 56, 128, 6, 0x1a0a2e).setOrigin(0,0).setStrokeStyle(1,COLORS.border);
-    this.expBarFill = this.add.rectangle(66, 57, 126, 4, COLORS.lavender).setOrigin(0,0);
+    this.expBarBg = this.add.rectangle(76, 63, 142, 7, 0x1a0a2e).setOrigin(0,0).setStrokeStyle(1,COLORS.border);
+    this.expBarFill = this.add.rectangle(77, 64, 140, 5, COLORS.lavender).setOrigin(0,0);
 
-    this.levelBadge = this.add.circle(213, 39, 18, 0x171129, 0.98).setStrokeStyle(2, COLORS.gold, 0.7);
-    this.levelText = this.add.text(213, 39, 'LV 1', {
-      fontFamily:'Georgia, serif', fontSize:'11px', fontStyle:'bold', color:'#f7e8b6'
+    this.levelBadge = this.add.circle(236, 45, 22, 0x171129, 0.99).setStrokeStyle(2, COLORS.gold, 0.88);
+    this.levelText = this.add.text(236, 45, 'LV 1', {
+      fontFamily:'Georgia, serif', fontSize:'13px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:2
     }).setOrigin(0.5);
     this.levelBadge.setInteractive({useHandCursor:true});
     this.levelBadge.on('pointerdown', () => {
-      // quick preview helper during prototype testing
       if(!this.upgradeMenuOpen && this.playerLevel === 1 && this.gameTime < 12000) {
         this.levelUp();
       }
     });
 
     // Right meta panel
-    this.metaPanel = this.add.rectangle(GAME_W-10, 10, 126, 52, 0x0d0820, 0.90).setOrigin(1,0).setStrokeStyle(2, COLORS.gold, 0.38);
-    this.add.rectangle(GAME_W-136, 10, 126, 4, accent2, 0.85).setOrigin(0,0);
-    this.timerText = this.add.text(GAME_W-18, 14, '00:00', {
-      fontFamily:'Georgia, serif', fontSize:'16px', fontStyle:'bold', color:'#ffffff'
+    this.metaPanel = this.add.rectangle(GAME_W-10, 10, 144, 60, 0x0d0820, 0.96).setOrigin(1,0).setStrokeStyle(2, COLORS.gold, 0.72);
+    this.add.rectangle(GAME_W-154, 10, 144, 5, accent2, 0.94).setOrigin(0,0);
+    this.timerText = this.add.text(GAME_W-18, 16, '00:00', {
+      fontFamily:'Georgia, serif', fontSize:'18px', fontStyle:'bold', color:'#ffffff', stroke:'#000000', strokeThickness:3
     }).setOrigin(1,0);
-    this.scoreText = this.add.text(GAME_W-18, 36, 'Score 0', {
-      fontFamily:'Courier New', fontSize:'10px', color:'#d0b7ff'
+    this.scoreText = this.add.text(GAME_W-18, 40, 'Score 0', {
+      fontFamily:'Courier New', fontSize:'12px', color:'#f1e6ff', stroke:'#000000', strokeThickness:2
     }).setOrigin(1,0);
 
-    this.add.text(GAME_W/2, GAME_H-15, this.charData.name.toUpperCase()+' — '+this.charData.title.toUpperCase(), {
-      fontFamily:'Courier New', fontSize:'8px', color:'#4d3f72'
+    this.add.rectangle(GAME_W/2, GAME_H-22, 310, 22, 0x0d0820, 0.62).setStrokeStyle(1, COLORS.gold, 0.15);
+    this.add.text(GAME_W/2, GAME_H-22, this.charData.name.toUpperCase()+' — '+this.charData.title.toUpperCase(), {
+      fontFamily:'Courier New', fontSize:'10px', color:'#c4acdf', stroke:'#000000', strokeThickness:2
     }).setOrigin(0.5);
   }
 
@@ -1510,6 +1503,15 @@ class BattleScene extends Phaser.Scene {
   showUpgradeMenu() {
     this.upgradeMenuOpen = true;
     this.player.body.setVelocity(0,0);
+    if (this.physics && this.physics.world) {
+      this.physics.pause();
+    }
+    [this.enemies, this.projectiles, this.expGems].forEach(group => {
+      if (!group) return;
+      group.getChildren().forEach(obj => {
+        if (obj.body && obj.body.setVelocity) obj.body.setVelocity(0, 0);
+      });
+    });
 
     const overlay = this.add.rectangle(0,0,GAME_W,GAME_H,0x03020a,0.82).setOrigin(0,0);
     const heroArtKey = gameState.selectedCharacter + '_full';
@@ -1592,6 +1594,9 @@ class BattleScene extends Phaser.Scene {
       this.upgradeMenuElements.forEach(el => { if(el && el.destroy) el.destroy(); });
     }
     this.upgradeMenuOpen = false;
+    if (this.physics && this.physics.world && !this.gameOver) {
+      this.physics.resume();
+    }
   }
 
   getRandomUpgrades(count) {
