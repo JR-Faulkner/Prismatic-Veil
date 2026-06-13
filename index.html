@@ -102,6 +102,16 @@ const ANIM_FRAMES = {
   attack: { start: 10, end: 13 },
 };
 
+
+const CHARACTER_SPRITE_TUNING = {
+  prismel: { previewScale: 1.25, battleScale: 1.38, originX: 0.5, originY: 0.88 },
+  kineza:  { previewScale: 1.34, battleScale: 1.48, originX: 0.5, originY: 0.88 },
+  auryi:   { previewScale: 1.30, battleScale: 1.44, originX: 0.5, originY: 0.88 }
+};
+function getSpriteTuning(charKey) {
+  return CHARACTER_SPRITE_TUNING[charKey] || { previewScale: 1.3, battleScale: 1.45, originX: 0.5, originY: 0.88 };
+}
+
 function getSpriteUrl(charKey) {
   return SPRITE_PATHS[charKey];
 }
@@ -356,8 +366,10 @@ class CharacterSelectScene extends Phaser.Scene {
 
       // Character preview sprite
       if (this.textures.exists(charKey)) {
-        const preview = this.add.sprite(x+cardW/2, y+72, charKey, 0);
-        preview.setScale(1.45);
+        const preview = this.add.sprite(x+cardW/2, y+76, charKey, 0);
+        const tuning = getSpriteTuning(charKey);
+        preview.setOrigin(tuning.originX, tuning.originY);
+        preview.setScale(tuning.previewScale);
         preview.play(charKey + '_idle');
       } else {
         this.drawCharacterIcon(x+cardW/2, y+70, charKey, data, 1.2);
@@ -558,7 +570,9 @@ class BattleScene extends Phaser.Scene {
     createHeroAnimations(this, charKey);
 
     this.player = this.add.sprite(GAME_W/2, GAME_H/2, charKey, 0);
-    this.player.setScale(1.45);
+    const tuning = getSpriteTuning(charKey);
+    this.player.setOrigin(tuning.originX, tuning.originY);
+    this.player.setScale(tuning.battleScale);
     this.player.play(charKey + '_idle');
     this.player.setDepth(10);
 
@@ -1345,7 +1359,7 @@ const config = {
   height: GAME_H,
   parent: 'game-container',
   backgroundColor: '#07060f',
-  render: { pixelArt: true, antialias: false, roundPixels: true },
+  render: { pixelArt: true, antialias: false, roundPixels: true, antialiasGL: false },
   physics: {
     default: 'arcade',
     arcade: { debug: false }
