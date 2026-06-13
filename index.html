@@ -104,13 +104,22 @@ const ANIM_FRAMES = {
 
 
 const CHARACTER_SPRITE_TUNING = {
-  prismel: { previewScale: 1.25, battleScale: 1.38, originX: 0.5, originY: 0.88 },
-  kineza:  { previewScale: 1.34, battleScale: 1.48, originX: 0.5, originY: 0.88 },
-  auryi:   { previewScale: 1.30, battleScale: 1.44, originX: 0.5, originY: 0.88 }
+  prismel: { previewScale: 0.50, battleScale: 0.55, originX: 0.5, originY: 0.90 },
+  kineza:  { previewScale: 0.55, battleScale: 0.60, originX: 0.5, originY: 0.90 },
+  auryi:   { previewScale: 0.46, battleScale: 0.50, originX: 0.5, originY: 0.90 }
+};
+const CHARACTER_BODY_TUNING = {
+  prismel: { w: 82, h: 118, offX: 71, offY: 86 },
+  kineza:  { w: 78, h: 112, offX: 73, offY: 90 },
+  auryi:   { w: 86, h: 124, offX: 69, offY: 82 }
 };
 function getSpriteTuning(charKey) {
-  return CHARACTER_SPRITE_TUNING[charKey] || { previewScale: 1.3, battleScale: 1.45, originX: 0.5, originY: 0.88 };
+  return CHARACTER_SPRITE_TUNING[charKey] || { previewScale: 0.52, battleScale: 0.56, originX: 0.5, originY: 0.90 };
 }
+function getBodyTuning(charKey) {
+  return CHARACTER_BODY_TUNING[charKey] || { w: 80, h: 116, offX: 72, offY: 86 };
+}
+
 
 function getSpriteUrl(charKey) {
   return SPRITE_PATHS[charKey];
@@ -119,8 +128,8 @@ function loadHeroSprites(scene) {
   Object.keys(SPRITE_PATHS).forEach((charKey) => {
     if (!scene.textures.exists(charKey)) {
       scene.load.spritesheet(charKey, getSpriteUrl(charKey), {
-        frameWidth: 64,
-        frameHeight: 64
+        frameWidth: 224,
+        frameHeight: 224
       });
     }
   });
@@ -366,7 +375,7 @@ class CharacterSelectScene extends Phaser.Scene {
 
       // Character preview sprite
       if (this.textures.exists(charKey)) {
-        const preview = this.add.sprite(x+cardW/2, y+76, charKey, 0);
+        const preview = this.add.sprite(x+cardW/2, y+90, charKey, 0);
         const tuning = getSpriteTuning(charKey);
         preview.setOrigin(tuning.originX, tuning.originY);
         preview.setScale(tuning.previewScale);
@@ -543,8 +552,8 @@ class BattleScene extends Phaser.Scene {
     const charKey = gameState.selectedCharacter;
     if (!this.textures.exists(charKey)) {
       this.load.spritesheet(charKey, getSpriteUrl(charKey), {
-        frameWidth: 64,
-        frameHeight: 64
+        frameWidth: 224,
+        frameHeight: 224
       });
     }
   }
@@ -577,8 +586,9 @@ class BattleScene extends Phaser.Scene {
     this.player.setDepth(10);
 
     this.physics.world.enable(this.player);
-    this.player.body.setSize(28, 28);
-    this.player.body.setOffset(18, 18);
+    const bodyTuning = getBodyTuning(charKey);
+    this.player.body.setSize(bodyTuning.w, bodyTuning.h);
+    this.player.body.setOffset(bodyTuning.offX, bodyTuning.offY);
     this.player.body.setCollideWorldBounds(true);
 
     this.currentAnim = 'idle';
