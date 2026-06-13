@@ -190,6 +190,7 @@ class SoundFX {
   constructor() {
     this.ctx = null;
     this.enabled = true;
+    this.masterVolume = 0.72;
   }
 
   init() {
@@ -201,80 +202,129 @@ class SoundFX {
     }
   }
 
-  // Core tone generator
-  tone(freq, duration, type='square', volume=0.15, slideTo=null) {
-    if(!this.enabled) return;
+  now() {
     this.init();
-    const osc = this.ctx.createOscillator();
+    return this.ctx.currentTime;
+  }
+
+  makeGain(volume, startTime, duration, attack = 0.004) {
     const gain = this.ctx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-    if(slideTo !== null) {
-      osc.frequency.exponentialRampToValueAtTime(slideTo, this.ctx.currentTime + duration);
-    }
-    gain.gain.setValueAtTime(volume, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-    osc.connect(gain);
+    const v = Math.max(0.0001, volume * this.masterVolume);
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(v, startTime + attack);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
     gain.connect(this.ctx.destination);
-    osc.start(this.ctx.currentTime);
-    osc.stop(this.ctx.currentTime + duration);
+    return gain;
   }
 
-  // Prismel - crystal projectile cast: bright ascending blip
+  tone(freq, duration, type='square', volume=0.12, slideTo=null, delay=0) {
+    if(!this.enabled || (gameState && gameState.sfxEnabled === false)) return;
+    this.init();
+    const t = this.ctx.currentTime + delay;
+    const osc = this.ctx.createOscillator();
+    const gain = this.makeGain(volume, t, duration);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    if(slideTo !== null) {
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), t + duration);
+    }
+    osc.connect(gain);
+    osc.start(t);
+    osc.stop(t + duration + 0.02);
+  }
+
+  noise(duration=0.08, volume=0.08, delay=0, filterFreq=900, filterType='bandpass') {
+    if(!this.enabled || (gameState && gameState.sfxEnabled === false)) return;
+    this.init();
+    const t = this.ctx.currentTime + delay;
+    const bufferSize = Math.max(1, Math.floor(this.ctx.sampleRate * duration));
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0; i<bufferSize; i++) {
+      // crunchy, gated noise
+      data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    }
+    const src = this.ctx.createBufferSource();
+    src.buffer = buffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = filterType;
+    filter.frequency.setValueAtTime(filterFreq, t);
+    filter.Q.setValueAtTime(7, t);
+    const gain = this.makeGain(volume, t, duration, 0.002);
+    src.connect(filter);
+    filter.connect(gain);
+    src.start(t);
+    src.stop(t + duration + 0.02);
+  }
+
+  // Prismel: glass shard + prism flicker
   attackPrismel() {
-    this.tone(660, 0.08, 'square', 0.10, 880);
-    setTimeout(()=>this.tone(880, 0.06, 'sine', 0.08), 30);
+    this.tone(620, 0.055, 'triangle', 0.075, 920);
+    this.tone(1240, 0.045, 'sine', 0.045, 1660, 0.025);
+    this.noise(0.045, 0.035, 0.018, 2600, 'highpass');
   }
 
-  // Kineza - punch: short percussive thump
+  // Kineza: kinetic punch, armor thump, green crackle
   attackKineza() {
-    this.tone(180, 0.08, 'square', 0.18, 90);
-    this.tone(440, 0.04, 'triangle', 0.10);
+    this.tone(96, 0.075, 'square', 0.17, 52);
+    this.tone(240, 0.045, 'sawtooth', 0.08, 130, 0.012);
+    this.noise(0.06, 0.075, 0.008, 850, 'bandpass');
+    this.tone(720, 0.035, 'square', 0.035, 420, 0.02);
   }
 
-  // Auryi - aura pulse: soft sweeping chime
+  // Auryi: veil bloom + golden orb chime
   attackAuryi() {
-    this.tone(440, 0.25, 'sine', 0.10, 660);
-    setTimeout(()=>this.tone(550, 0.2, 'sine', 0.07, 880), 50);
+    this.tone(196, 0.22, 'sine', 0.055, 260);
+    this.tone(520, 0.16, 'triangle', 0.06, 780, 0.035);
+    this.tone(1040, 0.12, 'sine', 0.045, 1320, 0.075);
+    this.noise(0.09, 0.025, 0.035, 1800, 'bandpass');
   }
 
-  // Enemy hit - quick blip
+  // Enemy hit: crunchy impact tick
   hit() {
-    this.tone(220, 0.05, 'square', 0.08, 110);
+    this.tone(170, 0.045, 'square', 0.07, 82);
+    this.noise(0.035, 0.045, 0.005, 700, 'bandpass');
   }
 
-  // Enemy death - descending blip
+  // Enemy death: bit-crumble
   enemyDeath() {
-    this.tone(330, 0.12, 'square', 0.10, 110);
+    this.tone(260, 0.07, 'sawtooth', 0.09, 120);
+    this.noise(0.10, 0.07, 0.02, 520, 'lowpass');
+    this.tone(90, 0.08, 'square', 0.05, 48, 0.055);
   }
 
-  // Gem pickup - bright tick
+  // Resonance gem pickup
   gem() {
-    this.tone(880, 0.05, 'sine', 0.06, 1320);
+    this.tone(920, 0.04, 'triangle', 0.045, 1380);
+    this.tone(1840, 0.035, 'sine', 0.022, 2100, 0.025);
   }
 
-  // Player takes damage - low buzz
+  // Player takes damage: low grit + flash
   playerHit() {
-    this.tone(110, 0.15, 'sawtooth', 0.15, 55);
+    this.tone(120, 0.12, 'sawtooth', 0.13, 54);
+    this.noise(0.08, 0.08, 0.01, 460, 'bandpass');
   }
 
-  // Level up - ascending fanfare
+  // Level up: crystal fanfare, not toy-beep
   levelUp() {
-    this.tone(440, 0.1, 'square', 0.12, 660);
-    setTimeout(()=>this.tone(660, 0.1, 'square', 0.12, 880), 100);
-    setTimeout(()=>this.tone(880, 0.18, 'square', 0.14, 1320), 200);
+    this.tone(392, 0.11, 'triangle', 0.08, 523);
+    this.tone(523, 0.12, 'triangle', 0.085, 784, 0.105);
+    this.tone(784, 0.16, 'sine', 0.09, 1175, 0.215);
+    this.noise(0.18, 0.045, 0.12, 3000, 'highpass');
   }
 
-  // Upgrade select - confirm click
+  // Menu confirm: arcade crystal snap
   select() {
-    this.tone(523, 0.06, 'square', 0.10, 784);
+    this.tone(420, 0.045, 'square', 0.07, 630);
+    this.tone(1260, 0.035, 'triangle', 0.035, null, 0.025);
   }
 
-  // Game over - descending sad tone
+  // Game over: dark spectral fall
   gameOver() {
-    this.tone(440, 0.2, 'sawtooth', 0.12, 220);
-    setTimeout(()=>this.tone(330, 0.2, 'sawtooth', 0.12, 165), 200);
-    setTimeout(()=>this.tone(220, 0.4, 'sawtooth', 0.14, 110), 400);
+    this.tone(330, 0.18, 'sawtooth', 0.10, 210);
+    this.tone(220, 0.22, 'sawtooth', 0.095, 120, 0.18);
+    this.tone(110, 0.34, 'sine', 0.10, 55, 0.38);
+    this.noise(0.24, 0.06, 0.12, 300, 'lowpass');
   }
 }
 
@@ -282,10 +332,13 @@ const sfx = new SoundFX();
 
 // ── Game State (persists across scenes) ──
 const gameState = {
+  titleMusic: null,
+  musicEnabled: true,
+  sfxEnabled: true,
   selectedCharacter: 'prismel',
   level: 1,
   exp: 0,
-  expToNext: 10,
+  expToNext: 5,
   hp: 100,
   maxHp: 100,
   score: 0,
@@ -443,6 +496,18 @@ class TitleScene extends Phaser.Scene {
         }
       } catch (err) {
         console.warn('Music could not start:', err);
+      }
+
+      if (gameState.titleMusic && gameState.titleMusic.isPlaying) {
+        this.tweens.add({
+          targets: gameState.titleMusic,
+          volume: 0,
+          duration: 450,
+          onComplete: () => {
+            gameState.titleMusic.stop();
+            gameState.titleMusic.setVolume(0.45);
+          }
+        });
       }
 
       this.cameras.main.fadeOut(450, 7, 6, 15);
@@ -746,7 +811,7 @@ class BattleScene extends Phaser.Scene {
     this.playerMaxHp = 100;
     this.playerLevel = 1;
     this.playerExp = 0;
-    this.expToNext = 10;
+    this.expToNext = 5;
     this.score = 0;
     this.killCount = 0;
     this.gameTime = 0;
@@ -843,6 +908,19 @@ class BattleScene extends Phaser.Scene {
 
     // ── UI ──
     this.createUI();
+
+    this.levelHint = this.add.text(GAME_W/2, 88, 'Collect resonance orbs to reveal Relic Cards', {
+      fontFamily:'Courier New',
+      fontSize:'9px',
+      color:'#d8b7ff',
+      stroke:'#000000',
+      strokeThickness:2
+    }).setOrigin(0.5).setAlpha(0.85);
+    this.time.delayedCall(6500, () => {
+      if(this.levelHint) {
+        this.tweens.add({targets:this.levelHint, alpha:0, duration:700, onComplete:()=>this.levelHint.destroy()});
+      }
+    });
 
     // ── Aura visual for Auryi ──
     if(gameState.selectedCharacter === 'auryi') {
@@ -942,6 +1020,13 @@ class BattleScene extends Phaser.Scene {
     this.levelText = this.add.text(213, 39, 'LV 1', {
       fontFamily:'Georgia, serif', fontSize:'11px', fontStyle:'bold', color:'#f7e8b6'
     }).setOrigin(0.5);
+    this.levelBadge.setInteractive({useHandCursor:true});
+    this.levelBadge.on('pointerdown', () => {
+      // quick preview helper during prototype testing
+      if(!this.upgradeMenuOpen && this.playerLevel === 1 && this.gameTime < 12000) {
+        this.levelUp();
+      }
+    });
 
     // Right meta panel
     this.metaPanel = this.add.rectangle(GAME_W-10, 10, 126, 52, 0x0d0820, 0.90).setOrigin(1,0).setStrokeStyle(2, COLORS.gold, 0.38);
@@ -1371,7 +1456,7 @@ class BattleScene extends Phaser.Scene {
     this.physics.world.enable(container);
     container.body.setSize(10,10);
     container.body.setOffset(-5,-5);
-    container.expValue = 1;
+    container.expValue = 2;
 
     this.expGems.add(container);
   }
@@ -1379,10 +1464,10 @@ class BattleScene extends Phaser.Scene {
   updateExpGems(delta) {
     this.expGems.getChildren().forEach(gem => {
       const d = Phaser.Math.Distance.Between(gem.x,gem.y,this.player.x,this.player.y);
-      if(d < 60) {
+      if(d < 130) {
         // Magnetize toward player
         const angle = Phaser.Math.Angle.Between(gem.x,gem.y,this.player.x,this.player.y);
-        gem.body.setVelocity(Math.cos(angle)*200, Math.sin(angle)*200);
+        gem.body.setVelocity(Math.cos(angle)*280, Math.sin(angle)*280);
       } else {
         gem.body.setVelocity(0,0);
       }
@@ -1407,6 +1492,16 @@ class BattleScene extends Phaser.Scene {
     this.playerMaxHp += 10;
     this.playerHp = Math.min(this.playerMaxHp, this.playerHp+10);
     sfx.levelUp();
+
+    const flash = this.add.text(GAME_W/2, GAME_H/2 - 185, 'RELIC CARDS REVEALED', {
+      fontFamily:'Georgia, serif',
+      fontSize:'18px',
+      fontStyle:'bold',
+      color:'#f7e8b6',
+      stroke:'#2d164e',
+      strokeThickness:4
+    }).setOrigin(0.5).setDepth(2000);
+    this.tweens.add({targets: flash, alpha: 0, y: flash.y - 20, duration: 650, onComplete:()=>flash.destroy()});
 
     this.showUpgradeMenu();
   }
