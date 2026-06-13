@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Prismatic Veil — Phaser Sprite Battler</title>
+<meta name="theme-color" content="#07060f">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%; min-height:100%;
+    background:#07060f;
+    overflow:hidden;
+    font-family:'Courier New', monospace;
+    touch-action:none;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
+  }
+  body {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #game-container {
+    position:relative;
+    width:100vw; height:100vh;
+    display:flex; align-items:center; justify-content:center;
+  }
+  canvas {
+    display:block;
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+    max-width:100vw; max-height:100vh;
+  }
+  #loading {
+    position:fixed; inset:0; z-index:9999;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px; text-align:center; white-space:pre-wrap; line-height:1.45;
+    color:#c8a8ff; background:radial-gradient(circle at 50% 35%, #1a0a3e 0%, #07060f 62%);
+  }
+  #loading strong { color:#ffd700; }
+</style>
+<script src="./phaser.min.js"></script>
+</head>
+<body>
+<div id="loading"><strong>Loading The Prismatic Veil...</strong>
+GitHub Pages root-file build</div>
+<div id="game-container"></div>
+<script>
+(function(){
+  const boot = document.getElementById('loading');
+  function showBootError(err){
+    console.error(err);
+    if (!boot) return;
+    boot.style.display = 'flex';
+    boot.innerHTML = '<strong>Boot Error</strong>\n' +
+      (err && (err.stack || err.message) ? (err.stack || err.message) : String(err)) +
+      '\n\nMake sure index.html, phaser.min.js, and the sprite PNG files are all uploaded to the GitHub repo root.';
+  }
+  window.addEventListener('error', e => showBootError(e.error || e.message));
+  window.addEventListener('unhandledrejection', e => showBootError(e.reason || e));
+  window.PrismaticVeilBoot = { showBootError };
+})();
+if (!window.Phaser) { throw new Error('Phaser did not load. Check phaser.min.js path.'); }
+
+// ═══════════════════════════════════════════════════════
+// THE PRISMATIC VEIL — STAGE BATTLER PROTOTYPE
+// ═══════════════════════════════════════════════════════
+
+const GAME_W = 480;
+const GAME_H = 720;
+
+// ── Colors (matching established palette) ──
+const COLORS = {
+  void: 0x07060f,
+  deepPurp: 0x0d0820,
+  midPurp: 0x1a0a3e,
+  border: 0x2a1a5e,
+  lavender: 0xc8a8ff,
+  white: 0xffffff,
+  gold: 0xffd700,
+  // Spectrum
+  red: 0xff4444,
+  orange: 0xff9933,
+  yellow: 0xffee44,
+  green: 0x44ff88,
+  blue: 0x4488ff,
+  indigo: 0x8844ff,
+  violet: 0xcc44ff,
+};
+
+// ── External Sprite Sheet Files (14 frames each: 4 idle, 6 walk/float, 4 attack) ──
+const SPRITE_PATHS = {
+  prismel: './prismel_spritesheet.png',
+  kineza: './kineza_spritesheet.png',
+  auryi: './auryi_spritesheet.png'
+};
+
+const ANIM_FRAMES = {
+  idle: { start: 0, end: 3 },
+  walk: { start: 4, end: 9 },
+  attack: { start: 10, end: 13 },
+};
+
+function getSpriteUrl(charKey) {
+  return SPRITE_PATHS[charKey];
+}
+function loadHeroSprites(scene) {
+  Object.keys(SPRITE_PATHS).forEach((charKey) => {
+    if (!scene.textures.exists(charKey)) {
+      scene.load.spritesheet(charKey, getSpriteUrl(charKey), {
+        frameWidth: 64,
+        frameHeight: 64
+      });
+    }
+  });
+}
+function createHeroAnimations(scene, charKey) {
+  if (scene.anims.exists(charKey + '_idle')) return;
+  scene.anims.create({
+    key: charKey + '_idle',
+    frames: scene.anims.generateFrameNumbers(charKey, ANIM_FRAMES.idle),
+    frameRate: 5,
+    repeat: -1
+  });
+  scene.anims.create({
+    key: charKey + '_walk',
+    frames: scene.anims.generateFrameNumbers(charKey, ANIM_FRAMES.walk),
+    frameRate: 10,
+    repeat: -1
+  });
+  scene.anims.create({
+    key: charKey + '_attack',
+    frames: scene.anims.generateFrameNumbers(charKey, ANIM_FRAMES.attack),
+    frameRate: 12,
+    repeat: 0
+  });
+}
+
+
+// ═══════════════════════════════════════════════════════
+// SOUND FX — Synthesized chiptune beeps via Web Audio API
+// ═══════════════════════════════════════════════════════
+class SoundFX {
+  constructor() {
+    this.ctx = null;
+    this.enabled = true;
+  }
+
+  init() {
+    if(!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if(this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  // Core tone generator
+  tone(freq, duration, type='square', volume=0.15, slideTo=null) {
+    if(!this.enabled) return;
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+    if(slideTo !== null) {
+      osc.frequency.exponentialRampToValueAtTime(slideTo, this.ctx.currentTime + duration);
+    }
+    gain.gain.setValueAtTime(volume, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(this.ctx.currentTime);
+    osc.stop(this.ctx.currentTime + duration);
+  }
+
+  // Prismel - crystal projectile cast: bright ascending blip
+  attackPrismel() {
+    this.tone(660, 0.08, 'square', 0.10, 880);
+    setTimeout(()=>this.tone(880, 0.06, 'sine', 0.08), 30);
+  }
+
+  // Kineza - punch: short percussive thump
+  attackKineza() {
+    this.tone(180, 0.08, 'square', 0.18, 90);
+    this.tone(440, 0.04, 'triangle', 0.10);
+  }
+
+  // Auryi - aura pulse: soft sweeping chime
+  attackAuryi() {
+    this.tone(440, 0.25, 'sine', 0.10, 660);
+    setTimeout(()=>this.tone(550, 0.2, 'sine', 0.07, 880), 50);
+  }
+
+  // Enemy hit - quick blip
+  hit() {
+    this.tone(220, 0.05, 'square', 0.08, 110);
+  }
+
+  // Enemy death - descending blip
+  enemyDeath() {
+    this.tone(330, 0.12, 'square', 0.10, 110);
+  }
+
+  // Gem pickup - bright tick
+  gem() {
+    this.tone(880, 0.05, 'sine', 0.06, 1320);
+  }
+
+  // Player takes damage - low buzz
+  playerHit() {
+    this.tone(110, 0.15, 'sawtooth', 0.15, 55);
+  }
+
+  // Level up - ascending fanfare
+  levelUp() {
+    this.tone(440, 0.1, 'square', 0.12, 660);
+    setTimeout(()=>this.tone(660, 0.1, 'square', 0.12, 880), 100);
+    setTimeout(()=>this.tone(880, 0.18, 'square', 0.14, 1320), 200);
+  }
+
+  // Upgrade select - confirm click
+  select() {
+    this.tone(523, 0.06, 'square', 0.10, 784);
+  }
+
+  // Game over - descending sad tone
+  gameOver() {
+    this.tone(440, 0.2, 'sawtooth', 0.12, 220);
+    setTimeout(()=>this.tone(330, 0.2, 'sawtooth', 0.12, 165), 200);
+    setTimeout(()=>this.tone(220, 0.4, 'sawtooth', 0.14, 110), 400);
+  }
+}
+
+const sfx = new SoundFX();
+
+// ── Game State (persists across scenes) ──
+const gameState = {
+  selectedCharacter: 'prismel',
+  level: 1,
+  exp: 0,
+  expToNext: 10,
+  hp: 100,
+  maxHp: 100,
+  score: 0,
+  killCount: 0,
+  waveNumber: 1,
+  gameTime: 0,
+  upgrades: [],
+};
+
+const CHARACTER_DATA = {
+  prismel: {
+    name: 'Prismel',
+    title: 'Prism Weaver',
+    color: COLORS.blue,
+    accentColor: COLORS.violet,
+    moveSpeed: 160,
+    baseDamage: 16,
+    attackSpeed: 450, // ms between attacks
+    attackRange: 220,
+    projectileSpeed: 340,
+    description: 'Ranged crystal projectiles, spectrum spread'
+  },
+  kineza: {
+    name: 'Kineza',
+    title: 'Momentum Born',
+    color: COLORS.red,
+    accentColor: COLORS.green,
+    moveSpeed: 210,
+    baseDamage: 12,
+    attackSpeed: 350,
+    attackRange: 55,
+    projectileSpeed: 0, // melee
+    description: 'Fast melee, kinetic dash strikes'
+  },
+  auryi: {
+    name: 'Auryi',
+    title: 'Aura Spoken',
+    color: COLORS.lavender,
+    accentColor: COLORS.yellow,
+    moveSpeed: 130,
+    baseDamage: 14,
+    attackSpeed: 500,
+    attackRange: 150,
+    projectileSpeed: 0, // aura pulse, hits all in range
+    description: 'Aura pulse, hits all nearby enemies'
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+// CHARACTER SELECT SCENE
+// ═══════════════════════════════════════════════════════
+class CharacterSelectScene extends Phaser.Scene {
+  constructor() {
+    super('CharacterSelect');
+  }
+
+  preload() {
+    loadHeroSprites(this);
+  }
+
+  create() {
+    // Background
+    this.add.rectangle(0, 0, GAME_W, GAME_H, COLORS.void).setOrigin(0,0);
+    Object.keys(SPRITE_PATHS).forEach((charKey) => createHeroAnimations(this, charKey));
+
+    // Starfield
+    for(let i=0; i<60; i++) {
+      const x = Math.random()*GAME_W;
+      const y = Math.random()*GAME_H;
+      const size = Math.random()<0.1 ? 2 : 1;
+      const star = this.add.rectangle(x,y,size,size,COLORS.white);
+      star.setAlpha(0.2+Math.random()*0.6);
+      this.tweens.add({
+        targets: star,
+        alpha: { from: star.alpha, to: 0.1 },
+        duration: 1000+Math.random()*2000,
+        yoyo:true,
+        repeat:-1
+      });
+    }
+
+    // Title
+    const title = this.add.text(GAME_W/2, 50, 'THE PRISMATIC VEIL', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '28px',
+      fontStyle: 'bold',
+      color: '#c8a8ff'
+    }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, 80, 'SELECT YOUR HERO', {
+      fontFamily: 'Courier New',
+      fontSize: '12px',
+      color: '#6644aa',
+      letterSpacing: 4
+    }).setOrigin(0.5);
+
+    // Character cards
+    const chars = ['prismel', 'kineza', 'auryi'];
+    const cardW = 130, cardH = 200, gap = 15;
+    const totalW = chars.length*cardW + (chars.length-1)*gap;
+    const startX = (GAME_W-totalW)/2;
+
+    chars.forEach((charKey, i) => {
+      const data = CHARACTER_DATA[charKey];
+      const x = startX + i*(cardW+gap);
+      const y = 140;
+
+      // Card background
+      const card = this.add.rectangle(x, y, cardW, cardH, 0x0d0820)
+        .setOrigin(0,0)
+        .setStrokeStyle(2, COLORS.border)
+        .setInteractive({useHandCursor:true});
+
+      // Character preview sprite
+      if (this.textures.exists(charKey)) {
+        const preview = this.add.sprite(x+cardW/2, y+72, charKey, 0);
+        preview.setScale(1.45);
+        preview.play(charKey + '_idle');
+      } else {
+        this.drawCharacterIcon(x+cardW/2, y+70, charKey, data, 1.2);
+      }
+
+      // Name
+      this.add.text(x+cardW/2, y+140, data.name, {
+        fontFamily: 'Georgia, serif',
+        fontSize: '18px',
+        fontStyle: 'bold',
+        color: '#'+data.color.toString(16).padStart(6,'0')
+      }).setOrigin(0.5);
+
+      // Title
+      this.add.text(x+cardW/2, y+162, data.title, {
+        fontFamily: 'Courier New',
+        fontSize: '9px',
+        color: '#6644aa'
+      }).setOrigin(0.5);
+
+      // Description
+      this.add.text(x+cardW/2, y+182, data.description, {
+        fontFamily: 'Courier New',
+        fontSize: '8px',
+        color: '#8866cc',
+        align: 'center',
+        wordWrap: {width: cardW-10}
+      }).setOrigin(0.5, 0);
+
+      // Hover effect
+      card.on('pointerover', () => {
+        card.setStrokeStyle(2, data.color);
+        card.setFillStyle(0x150f2e);
+      });
+      card.on('pointerout', () => {
+        card.setStrokeStyle(2, COLORS.border);
+        card.setFillStyle(0x0d0820);
+      });
+      card.on('pointerdown', () => {
+        sfx.init();
+        sfx.select();
+        gameState.selectedCharacter = charKey;
+        this.scene.start('Battle');
+      });
+    });
+
+    // Instructions
+    this.add.text(GAME_W/2, GAME_H-60, 'Tap a hero to begin', {
+      fontFamily: 'Courier New',
+      fontSize: '11px',
+      color: '#6644aa'
+    }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, GAME_H-35, 'Survive the Veil creatures', {
+      fontFamily: 'Courier New',
+      fontSize: '9px',
+      color: '#4a3a6a'
+    }).setOrigin(0.5);
+  }
+
+  drawCharacterIcon(x, y, charKey, data, scale=1) {
+    const g = this.add.graphics();
+    const s = scale;
+
+    if(charKey === 'prismel') {
+      // Hooded cloak shape
+      g.fillStyle(0x1a1560);
+      g.fillRoundedRect(x-18*s, y-15*s, 36*s, 50*s, 8*s);
+      // Hood
+      g.fillStyle(0x0a0830);
+      g.fillCircle(x, y-18*s, 16*s);
+      // Gold trim
+      g.lineStyle(2, COLORS.gold);
+      g.strokeRoundedRect(x-18*s, y-15*s, 36*s, 50*s, 8*s);
+      // Crystal
+      g.fillStyle(COLORS.violet);
+      g.fillRect(x+22*s, y-10*s, 8*s, 8*s);
+      g.fillStyle(COLORS.white);
+      g.fillRect(x+24*s, y-8*s, 4*s, 4*s);
+      // Eyes
+      g.fillStyle(0x88aaff);
+      g.fillRect(x-6*s, y-20*s, 3*s, 3*s);
+      g.fillRect(x+3*s, y-20*s, 3*s, 3*s);
+    }
+    else if(charKey === 'kineza') {
+      // Body armor
+      g.fillStyle(0xcc2200);
+      g.fillRoundedRect(x-16*s, y-10*s, 32*s, 45*s, 6*s);
+      // Cape
+      g.fillStyle(0xaa0000);
+      g.fillRoundedRect(x-22*s, y-8*s, 8*s, 40*s, 3*s);
+      // Gold trim
+      g.lineStyle(2, COLORS.gold);
+      g.strokeRoundedRect(x-16*s, y-10*s, 32*s, 45*s, 6*s);
+      // Head
+      g.fillStyle(0xaa7744);
+      g.fillCircle(x, y-22*s, 14*s);
+      // Hair
+      g.fillStyle(0x220800);
+      g.fillCircle(x-6*s, y-30*s, 6*s);
+      g.fillCircle(x+2*s, y-32*s, 6*s);
+      g.fillCircle(x+9*s, y-28*s, 5*s);
+      // Energy fists
+      g.lineStyle(2, COLORS.green);
+      g.strokeCircle(x+20*s, y+5*s, 10*s);
+      g.strokeCircle(x-20*s, y+8*s, 8*s);
+    }
+    else if(charKey === 'auryi') {
+      // Flowing robes
+      g.fillStyle(0x5533aa);
+      g.fillTriangle(x-22*s, y+35*s, x+22*s, y+35*s, x, y-10*s);
+      g.fillStyle(0x7755cc);
+      g.fillRoundedRect(x-12*s, y-12*s, 24*s, 30*s, 6*s);
+      // White accent
+      g.fillStyle(0xddccff);
+      g.fillRect(x-3*s, y-8*s, 6*s, 25*s);
+      // Gold trim
+      g.lineStyle(2, COLORS.gold);
+      g.strokeRoundedRect(x-12*s, y-12*s, 24*s, 30*s, 6*s);
+      // Head
+      g.fillStyle(0xcc9966);
+      g.fillCircle(x, y-24*s, 13*s);
+      // Hair
+      g.fillStyle(0x331100);
+      g.fillCircle(x-10*s, y-26*s, 8*s);
+      g.fillCircle(x+10*s, y-24*s, 7*s);
+      g.fillCircle(x, y-34*s, 9*s);
+      // Orb
+      g.fillStyle(COLORS.yellow);
+      g.fillCircle(x-20*s, y+8*s, 6*s);
+      g.fillStyle(COLORS.white);
+      g.fillCircle(x-20*s, y+8*s, 2*s);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// MAIN BATTLE SCENE
+// ═══════════════════════════════════════════════════════
+class BattleScene extends Phaser.Scene {
+  constructor() {
+    super('Battle');
+  }
+
+  init() {
+    // Reset run-specific state
+    this.charData = CHARACTER_DATA[gameState.selectedCharacter];
+    this.playerHp = 100;
+    this.playerMaxHp = 100;
+    this.playerLevel = 1;
+    this.playerExp = 0;
+    this.expToNext = 10;
+    this.score = 0;
+    this.killCount = 0;
+    this.gameTime = 0;
+    this.lastAttack = 0;
+    this.invulnerable = false;
+    this.attackDamageMult = 1;
+    this.attackSpeedMult = 1;
+    this.attackRangeMult = 1;
+    this.moveSpeedMult = 1;
+    this.spawnInterval = 1800;
+    this.lastSpawn = 0;
+    this.isPaused = false;
+    this.gameOver = false;
+    this.facingDir = {x:1, y:0};
+    this.isAttacking = false;
+  }
+
+  preload() {
+    const charKey = gameState.selectedCharacter;
+    if (!this.textures.exists(charKey)) {
+      this.load.spritesheet(charKey, getSpriteUrl(charKey), {
+        frameWidth: 64,
+        frameHeight: 64
+      });
+    }
+  }
+
+  create() {
+    // ── Background ──
+    this.bg = this.add.rectangle(0,0,GAME_W,GAME_H, COLORS.void).setOrigin(0,0);
+
+    // Veil line down center (subtle, decorative)
+    this.veilGraphics = this.add.graphics();
+
+    // Stars
+    this.stars = [];
+    for(let i=0;i<40;i++) {
+      const x = Math.random()*GAME_W;
+      const y = Math.random()*GAME_H;
+      const star = this.add.rectangle(x,y,1,1,COLORS.white).setAlpha(0.3);
+      this.stars.push(star);
+    }
+
+    // ── Player ──
+    const charKey = gameState.selectedCharacter;
+    createHeroAnimations(this, charKey);
+
+    this.player = this.add.sprite(GAME_W/2, GAME_H/2, charKey, 0);
+    this.player.setScale(1.45);
+    this.player.play(charKey + '_idle');
+    this.player.setDepth(10);
+
+    this.physics.world.enable(this.player);
+    this.player.body.setSize(28, 28);
+    this.player.body.setOffset(18, 18);
+    this.player.body.setCollideWorldBounds(true);
+
+    this.currentAnim = 'idle';
+    this.isMoving = false;
+
+    // ── Groups ──
+    this.enemies = this.physics.add.group();
+    this.projectiles = this.physics.add.group();
+    this.expGems = this.physics.add.group();
+    this.damageTexts = [];
+
+    // ── Collisions ──
+    this.physics.add.overlap(this.player, this.enemies, this.onPlayerHit, null, this);
+    this.physics.add.overlap(this.projectiles, this.enemies, this.onProjectileHit, null, this);
+    this.physics.add.overlap(this.player, this.expGems, this.onGemCollect, null, this);
+
+    // ── Input ──
+    this.cursors = this.input.keyboard ? this.input.keyboard.createCursorKeys() : null;
+    this.wasd = this.input.keyboard ? this.input.keyboard.addKeys('W,A,S,D') : null;
+
+    // Touch/joystick for mobile
+    this.touchTarget = null;
+    this.input.on('pointerdown', (pointer) => {
+      if(this.upgradeMenuOpen) return;
+      this.touchTarget = {x: pointer.x, y: pointer.y};
+    });
+    this.input.on('pointermove', (pointer) => {
+      if(this.touchTarget && pointer.isDown) {
+        this.touchTarget = {x: pointer.x, y: pointer.y};
+      }
+    });
+    this.input.on('pointerup', () => {
+      this.touchTarget = null;
+    });
+
+    // ── UI ──
+    this.createUI();
+
+    // ── Aura visual for Auryi ──
+    if(gameState.selectedCharacter === 'auryi') {
+      this.auraGraphics = this.add.graphics();
+    }
+  }
+
+  drawPlayerSprite() {
+    const g = this.playerGraphics;
+    g.clear();
+    const charKey = gameState.selectedCharacter;
+    const bob = Math.sin(this.time.now*0.005)*2;
+
+    if(charKey === 'prismel') {
+      g.fillStyle(0x1a1560);
+      g.fillRoundedRect(-14, -5+bob, 28, 30, 6);
+      g.fillStyle(0x0a0830);
+      g.fillCircle(0, -14+bob, 13);
+      g.lineStyle(2, COLORS.gold);
+      g.strokeRoundedRect(-14, -5+bob, 28, 30, 6);
+      g.fillStyle(0x88aaff);
+      g.fillRect(-5,-17+bob,3,3);
+      g.fillRect(2,-17+bob,3,3);
+      const flick = Math.floor(this.time.now/150)%4;
+      const crystColors = [COLORS.red, COLORS.green, COLORS.blue, COLORS.violet];
+      g.fillStyle(crystColors[flick]);
+      g.fillRect(16,-8+bob,6,6);
+    }
+    else if(charKey === 'kineza') {
+      g.fillStyle(0xcc2200);
+      g.fillRoundedRect(-13,-8+bob,26,32,5);
+      g.fillStyle(0xaa0000);
+      g.fillRoundedRect(-18,-6+bob,6,28,2);
+      g.lineStyle(2,COLORS.gold);
+      g.strokeRoundedRect(-13,-8+bob,26,32,5);
+      g.fillStyle(0xaa7744);
+      g.fillCircle(0,-18+bob,11);
+      g.fillStyle(0x220800);
+      g.fillCircle(-5,-24+bob,5);
+      g.fillCircle(2,-26+bob,5);
+      g.fillCircle(7,-22+bob,4);
+      g.lineStyle(2,COLORS.green);
+      g.strokeCircle(16,4+bob,8);
+    }
+    else if(charKey === 'auryi') {
+      g.fillStyle(0x5533aa);
+      g.fillTriangle(-18,28+bob,18,28+bob,0,-8+bob);
+      g.fillStyle(0x7755cc);
+      g.fillRoundedRect(-10,-10+bob,20,24,5);
+      g.fillStyle(0xddccff);
+      g.fillRect(-2,-6+bob,4,20);
+      g.lineStyle(2,COLORS.gold);
+      g.strokeRoundedRect(-10,-10+bob,20,24,5);
+      g.fillStyle(0xcc9966);
+      g.fillCircle(0,-20+bob,11);
+      g.fillStyle(0x331100);
+      g.fillCircle(-8,-22+bob,7);
+      g.fillCircle(8,-20+bob,6);
+      g.fillCircle(0,-28+bob,7);
+      g.fillStyle(COLORS.yellow);
+      g.fillCircle(-16,6+bob,5);
+    }
+  }
+
+  createUI() {
+    // HP bar
+    this.hpBarBg = this.add.rectangle(10,10,150,12,0x1a0a2e).setOrigin(0,0).setStrokeStyle(1,COLORS.border);
+    this.hpBarFill = this.add.rectangle(11,11,148,10,0x44ff88).setOrigin(0,0);
+
+    this.hpText = this.add.text(15,9, '', {
+      fontFamily:'Courier New', fontSize:'9px', color:'#ffffff'
+    });
+
+    // EXP bar
+    this.expBarBg = this.add.rectangle(10,26,150,6,0x1a0a2e).setOrigin(0,0).setStrokeStyle(1,COLORS.border);
+    this.expBarFill = this.add.rectangle(11,27,148,4,COLORS.lavender).setOrigin(0,0);
+
+    // Level
+    this.levelText = this.add.text(165,8, 'LV 1', {
+      fontFamily:'Georgia, serif', fontSize:'14px', fontStyle:'bold', color:'#c8a8ff'
+    });
+
+    // Timer
+    this.timerText = this.add.text(GAME_W-10, 10, '00:00', {
+      fontFamily:'Courier New', fontSize:'14px', color:'#ffffff'
+    }).setOrigin(1,0);
+
+    // Score
+    this.scoreText = this.add.text(GAME_W-10, 30, 'Score: 0', {
+      fontFamily:'Courier New', fontSize:'10px', color:'#6644aa'
+    }).setOrigin(1,0);
+
+    // Character name watermark
+    this.add.text(GAME_W/2, GAME_H-15, this.charData.name.toUpperCase()+' — '+this.charData.title, {
+      fontFamily:'Courier New', fontSize:'8px', color:'#3a2a5e'
+    }).setOrigin(0.5);
+  }
+
+  update(time, delta) {
+    if(this.gameOver || this.upgradeMenuOpen) return;
+
+    this.gameTime += delta;
+    this.updateTimer();
+    this.updateMovement(delta);
+    this.updatePlayerSprite();
+    this.updateAttack(time);
+    this.updateEnemies(time, delta);
+    this.spawnEnemies(time);
+    this.updateProjectiles(delta);
+    this.updateExpGems(delta);
+    this.updateDamageTexts(delta);
+    this.updateVeil();
+    this.updateUI();
+
+    if(gameState.selectedCharacter === 'auryi') {
+      this.updateAura();
+    }
+  }
+
+  updateVeil() {
+    this.veilGraphics.clear();
+    const t = this.time.now*0.001;
+    const veilX = GAME_W/2 + Math.sin(t*0.5)*10;
+    this.veilGraphics.lineStyle(1, COLORS.white, 0.1+Math.sin(t)*0.05);
+    this.veilGraphics.beginPath();
+    this.veilGraphics.moveTo(veilX, 0);
+    this.veilGraphics.lineTo(veilX, GAME_H);
+    this.veilGraphics.strokePath();
+  }
+
+  updateMovement(delta) {
+    let dx=0, dy=0;
+    const speed = this.charData.moveSpeed * this.moveSpeedMult;
+
+    if(this.cursors) {
+      if(this.cursors.left.isDown || (this.wasd && this.wasd.A.isDown)) dx=-1;
+      if(this.cursors.right.isDown || (this.wasd && this.wasd.D.isDown)) dx=1;
+      if(this.cursors.up.isDown || (this.wasd && this.wasd.W.isDown)) dy=-1;
+      if(this.cursors.down.isDown || (this.wasd && this.wasd.S.isDown)) dy=1;
+    }
+
+    // Touch movement - move toward touch point
+    if(this.touchTarget) {
+      const tdx = this.touchTarget.x - this.player.x;
+      const tdy = this.touchTarget.y - this.player.y;
+      const dist = Math.sqrt(tdx*tdx+tdy*tdy);
+      if(dist > 5) {
+        dx = tdx/dist;
+        dy = tdy/dist;
+      }
+    }
+
+    const len = Math.sqrt(dx*dx+dy*dy);
+    if(len>0) {
+      dx/=len; dy/=len;
+      this.player.body.setVelocity(dx*speed, dy*speed);
+      this.facingDir = {x:dx,y:dy};
+      this.isMoving = true;
+      // Flip sprite based on horizontal direction (sprites face right by default)
+      if(dx < -0.1) this.player.setFlipX(true);
+      else if(dx > 0.1) this.player.setFlipX(false);
+    } else {
+      this.player.body.setVelocity(0,0);
+      this.isMoving = false;
+    }
+  }
+
+  updatePlayerSprite() {
+    if (this.isAttacking) return;
+    const charKey = gameState.selectedCharacter;
+    const targetAnim = this.isMoving ? 'walk' : 'idle';
+    if (this.currentAnim !== targetAnim) {
+      this.currentAnim = targetAnim;
+      this.player.play(charKey + '_' + targetAnim, true);
+    }
+  }
+
+  updateAttack(time) {
+    const interval = this.charData.attackSpeed / this.attackSpeedMult;
+    if(time - this.lastAttack < interval) return;
+
+    // Find nearest enemy
+    const enemies = this.enemies.getChildren();
+    if(enemies.length === 0) return;
+
+    let nearest = null, nearestDist = Infinity;
+    enemies.forEach(e => {
+      const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y);
+      if(d < nearestDist) { nearestDist = d; nearest = e; }
+    });
+
+    const range = this.charData.attackRange * this.attackRangeMult;
+    if(nearestDist > range) return;
+
+    this.lastAttack = time;
+    this.playHeroAttackAnim();
+
+    if(gameState.selectedCharacter === 'prismel') {
+      this.firePrismProjectile(nearest);
+      sfx.attackPrismel();
+    }
+    else if(gameState.selectedCharacter === 'kineza') {
+      this.kinezaMeleeStrike(nearest, range);
+      sfx.attackKineza();
+    }
+    else if(gameState.selectedCharacter === 'auryi') {
+      this.auryiAuraPulse(range);
+      sfx.attackAuryi();
+    }
+  }
+
+  playHeroAttackAnim() {
+    const charKey = gameState.selectedCharacter;
+    this.isAttacking = true;
+    this.currentAnim = 'attack';
+    this.player.play(charKey + '_attack', true);
+    this.player.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+      this.isAttacking = false;
+      this.currentAnim = '';
+      this.updatePlayerSprite();
+    });
+  }
+
+  firePrismProjectile(target) {
+    const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
+    const colors = [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green, COLORS.blue, COLORS.violet];
+    const color = colors[Math.floor(Math.random()*colors.length)];
+
+    const proj = this.add.graphics();
+    // Outer glow
+    proj.fillStyle(color, 0.3);
+    proj.fillCircle(0,0,12);
+    // Crystal shape (diamond)
+    proj.fillStyle(color);
+    proj.fillRect(-7,-7,14,14);
+    proj.fillStyle(COLORS.white);
+    proj.fillRect(-3,-3,6,6);
+
+    const container = this.add.container(this.player.x, this.player.y, [proj]);
+    this.physics.world.enable(container);
+    container.body.setSize(16,16);
+    container.body.setOffset(-8,-8);
+
+    const speed = this.charData.projectileSpeed;
+    container.body.setVelocity(Math.cos(angle)*speed, Math.sin(angle)*speed);
+    container.damage = this.charData.baseDamage * this.attackDamageMult;
+    container.rotation = angle;
+    container.lifetime = 1800;
+
+    // Spin animation for the crystal
+    this.tweens.add({
+      targets: proj,
+      rotation: Math.PI*2,
+      duration: 500,
+      repeat: -1
+    });
+
+    this.projectiles.add(container);
+  }
+
+  kinezaMeleeStrike(target, range) {
+    // Visual slash effect
+    const slash = this.add.graphics();
+    const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
+    slash.lineStyle(4, COLORS.green, 0.8);
+    slash.beginPath();
+    slash.arc(this.player.x, this.player.y, range*0.7, angle-0.6, angle+0.6);
+    slash.strokePath();
+
+    this.tweens.add({
+      targets: slash,
+      alpha: 0,
+      duration: 200,
+      onComplete: () => slash.destroy()
+    });
+
+    // Damage all enemies in range
+    const enemies = this.enemies.getChildren().slice();
+    enemies.forEach(e => {
+      const d = Phaser.Math.Distance.Between(this.player.x,this.player.y,e.x,e.y);
+      if(d <= range) {
+        this.damageEnemy(e, this.charData.baseDamage * this.attackDamageMult);
+      }
+    });
+
+    // Screen shake feel
+    this.cameras.main.shake(80, 0.002);
+  }
+
+  auryiAuraPulse(range) {
+    // Visual pulse - double ring for impact
+    const ring1 = this.add.circle(this.player.x, this.player.y, 10, COLORS.lavender, 0);
+    ring1.setStrokeStyle(5, COLORS.lavender, 0.9);
+
+    const ring2 = this.add.circle(this.player.x, this.player.y, 10, COLORS.yellow, 0);
+    ring2.setStrokeStyle(3, COLORS.yellow, 0.7);
+
+    // Fill flash
+    const flash = this.add.circle(this.player.x, this.player.y, 10, COLORS.lavender, 0.15);
+
+    this.tweens.add({
+      targets: ring1,
+      radius: range,
+      alpha: 0,
+      duration: 350,
+      ease: 'Cubic.easeOut',
+      onUpdate: () => ring1.setStrokeStyle(5, COLORS.lavender, ring1.alpha),
+      onComplete: () => ring1.destroy()
+    });
+
+    this.tweens.add({
+      targets: ring2,
+      radius: range*0.85,
+      alpha: 0,
+      duration: 300,
+      delay: 60,
+      ease: 'Cubic.easeOut',
+      onUpdate: () => ring2.setStrokeStyle(3, COLORS.yellow, ring2.alpha),
+      onComplete: () => ring2.destroy()
+    });
+
+    this.tweens.add({
+      targets: flash,
+      radius: range,
+      alpha: 0,
+      duration: 250,
+      onComplete: () => flash.destroy()
+    });
+
+    const enemies = this.enemies.getChildren().slice();
+    enemies.forEach(e => {
+      const d = Phaser.Math.Distance.Between(this.player.x,this.player.y,e.x,e.y);
+      if(d <= range) {
+        this.damageEnemy(e, this.charData.baseDamage * this.attackDamageMult);
+      }
+    });
+  }
+
+  updateAura() {
+    this.auraGraphics.clear();
+    const range = this.charData.attackRange * this.attackRangeMult;
+    this.auraGraphics.lineStyle(1, COLORS.yellow, 0.1);
+    this.auraGraphics.strokeCircle(this.player.x, this.player.y, range);
+  }
+
+  // ═══ ENEMIES ═══
+  spawnEnemies(time) {
+    if(time - this.lastSpawn < this.spawnInterval) return;
+    this.lastSpawn = time;
+
+    // Reduce spawn interval over time (harder)
+    this.spawnInterval = Math.max(400, 1800 - this.gameTime*0.03);
+
+    const enemyTypes = ['veilshade','wraith','crawler'];
+    const type = enemyTypes[Math.floor(Math.random()*enemyTypes.length)];
+
+    // Spawn at edge of screen
+    const side = Math.floor(Math.random()*4);
+    let x,y;
+    switch(side) {
+      case 0: x=Math.random()*GAME_W; y=-20; break;
+      case 1: x=GAME_W+20; y=Math.random()*GAME_H; break;
+      case 2: x=Math.random()*GAME_W; y=GAME_H+20; break;
+      default: x=-20; y=Math.random()*GAME_H;
+    }
+
+    this.createEnemy(x,y,type);
+  }
+
+  createEnemy(x,y,type) {
+    const g = this.add.graphics();
+    let hp, speed, color, dmg;
+
+    switch(type) {
+      case 'veilshade':
+        hp = 12 + this.gameTime*0.002; speed=60; color=COLORS.indigo; dmg=8;
+        g.fillStyle(color, 0.8);
+        g.fillRoundedRect(-8,-12,16,24,4);
+        g.fillStyle(COLORS.violet);
+        g.fillRect(-5,-8,3,3);
+        g.fillRect(2,-8,3,3);
+        break;
+      case 'wraith':
+        hp = 8 + this.gameTime*0.0015; speed=90; color=COLORS.violet; dmg=6;
+        g.fillStyle(0xaaccff, 0.7);
+        g.fillRoundedRect(-7,-10,14,20,8);
+        g.fillStyle(color);
+        g.fillRect(-3,-14,3,5);
+        g.fillRect(0,-14,3,5);
+        break;
+      default: // crawler
+        hp = 18 + this.gameTime*0.003; speed=45; color=COLORS.green; dmg=10;
+        g.fillStyle(0x114400);
+        g.fillRoundedRect(-10,-8,20,16,3);
+        g.fillStyle(COLORS.orange);
+        g.fillRect(-6,-4,4,4);
+        g.fillRect(2,-4,4,4);
+    }
+
+    const container = this.add.container(x,y,[g]);
+    this.physics.world.enable(container);
+    container.body.setSize(20,20);
+    container.body.setOffset(-10,-10);
+    container.hp = hp;
+    container.maxHp = hp;
+    container.speed = speed;
+    container.enemyType = type;
+    container.contactDamage = dmg;
+
+    this.enemies.add(container);
+  }
+
+  updateEnemies(time, delta) {
+    this.enemies.getChildren().forEach(e => {
+      // Move toward player
+      const angle = Phaser.Math.Angle.Between(e.x,e.y,this.player.x,this.player.y);
+      e.body.setVelocity(Math.cos(angle)*e.speed, Math.sin(angle)*e.speed);
+
+      // Flicker effect for veilshade
+      if(e.enemyType === 'veilshade') {
+        e.list[0].setAlpha(0.7+Math.sin(time*0.01)*0.2);
+      }
+    });
+  }
+
+  damageEnemy(enemy, amount) {
+    if(!enemy.active) return;
+    enemy.hp -= amount;
+
+    // Damage number
+    this.spawnDamageText(enemy.x, enemy.y-15, Math.round(amount), this.charData.color);
+
+    sfx.hit();
+
+    // Flash
+    enemy.list[0].setAlpha(0.3);
+    this.time.delayedCall(60, () => { if(enemy.active) enemy.list[0].setAlpha(1); });
+
+    if(enemy.hp <= 0) {
+      this.killEnemy(enemy);
+    }
+  }
+
+  killEnemy(enemy) {
+    // Spawn exp gem
+    this.createExpGem(enemy.x, enemy.y);
+    this.score += 10;
+    this.killCount++;
+    sfx.enemyDeath();
+
+    // Death particle burst
+    for(let i=0;i<5;i++) {
+      const p = this.add.rectangle(enemy.x, enemy.y, 3, 3, COLORS.gold);
+      const a = Math.random()*Math.PI*2;
+      this.tweens.add({
+        targets:p,
+        x: enemy.x+Math.cos(a)*20,
+        y: enemy.y+Math.sin(a)*20,
+        alpha:0,
+        duration:300,
+        onComplete:()=>p.destroy()
+      });
+    }
+
+    enemy.destroy();
+  }
+
+  onPlayerHit(player, enemy) {
+    if(this.invulnerable) return;
+    this.playerHp -= enemy.contactDamage;
+    this.invulnerable = true;
+    this.player.setAlpha(0.4);
+    sfx.playerHit();
+
+    this.time.delayedCall(500, () => {
+      this.invulnerable = false;
+      this.player.setAlpha(1);
+    });
+
+    this.cameras.main.shake(100, 0.005);
+
+    if(this.playerHp <= 0) {
+      this.endGame();
+    }
+  }
+
+  // ═══ PROJECTILES ═══
+  onProjectileHit(proj, enemy) {
+    this.damageEnemy(enemy, proj.damage);
+    proj.destroy();
+  }
+
+  updateProjectiles(delta) {
+    this.projectiles.getChildren().forEach(p => {
+      p.lifetime -= delta;
+      if(p.lifetime <= 0) p.destroy();
+    });
+  }
+
+  // ═══ EXP GEMS ═══
+  createExpGem(x,y) {
+    const g = this.add.graphics();
+    g.fillStyle(COLORS.lavender);
+    g.fillCircle(0,0,4);
+    g.fillStyle(COLORS.white);
+    g.fillCircle(0,0,2);
+
+    const container = this.add.container(x,y,[g]);
+    this.physics.world.enable(container);
+    container.body.setSize(10,10);
+    container.body.setOffset(-5,-5);
+    container.expValue = 1;
+
+    this.expGems.add(container);
+  }
+
+  updateExpGems(delta) {
+    this.expGems.getChildren().forEach(gem => {
+      const d = Phaser.Math.Distance.Between(gem.x,gem.y,this.player.x,this.player.y);
+      if(d < 60) {
+        // Magnetize toward player
+        const angle = Phaser.Math.Angle.Between(gem.x,gem.y,this.player.x,this.player.y);
+        gem.body.setVelocity(Math.cos(angle)*200, Math.sin(angle)*200);
+      } else {
+        gem.body.setVelocity(0,0);
+      }
+    });
+  }
+
+  onGemCollect(player, gem) {
+    this.playerExp += gem.expValue;
+    this.score += 5;
+    gem.destroy();
+    sfx.gem();
+
+    if(this.playerExp >= this.expToNext) {
+      this.levelUp();
+    }
+  }
+
+  levelUp() {
+    this.playerLevel++;
+    this.playerExp -= this.expToNext;
+    this.expToNext = Math.floor(this.expToNext * 1.4);
+    this.playerMaxHp += 10;
+    this.playerHp = Math.min(this.playerMaxHp, this.playerHp+10);
+    sfx.levelUp();
+
+    this.showUpgradeMenu();
+  }
+
+  // ═══ UPGRADE MENU ═══
+  showUpgradeMenu() {
+    this.upgradeMenuOpen = true;
+    this.player.body.setVelocity(0,0);
+
+    const overlay = this.add.rectangle(0,0,GAME_W,GAME_H,0x000000,0.7).setOrigin(0,0);
+    const panel = this.add.rectangle(GAME_W/2,GAME_H/2,320,260,0x0d0820)
+      .setStrokeStyle(2,COLORS.lavender);
+
+    const title = this.add.text(GAME_W/2, GAME_H/2-100, '✦ RESONANCE GAINED ✦', {
+      fontFamily:'Georgia, serif', fontSize:'16px', fontStyle:'bold', color:'#c8a8ff'
+    }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, GAME_H/2-78, 'Choose a Core Upgrade', {
+      fontFamily:'Courier New', fontSize:'10px', color:'#8866cc'
+    }).setOrigin(0.5);
+
+    const upgrades = this.getRandomUpgrades(3);
+    const elements = [overlay, panel, title];
+
+    upgrades.forEach((up, i) => {
+      const y = GAME_H/2 - 30 + i*60;
+      const btn = this.add.rectangle(GAME_W/2, y, 280, 48, 0x1a0a3e)
+        .setStrokeStyle(1, up.color)
+        .setInteractive({useHandCursor:true});
+
+      const name = this.add.text(GAME_W/2-130, y-12, up.name, {
+        fontFamily:'Georgia, serif', fontSize:'13px', fontStyle:'bold',
+        color:'#'+up.color.toString(16).padStart(6,'0')
+      });
+
+      const desc = this.add.text(GAME_W/2-130, y+6, up.desc, {
+        fontFamily:'Courier New', fontSize:'8px', color:'#aa99cc'
+      });
+
+      btn.on('pointerover', () => btn.setFillStyle(0x2a1a5e));
+      btn.on('pointerout', () => btn.setFillStyle(0x1a0a3e));
+      btn.on('pointerdown', () => {
+        sfx.select();
+        up.apply();
+        elements.forEach(el=>el.destroy());
+        btn.destroy(); name.destroy(); desc.destroy();
+        upgrades.forEach((u,j)=>{
+          if(j!==i) {
+            // clean up other buttons - handled below
+          }
+        });
+        this.cleanupUpgradeMenu();
+      });
+
+      elements.push(btn,name,desc);
+    });
+
+    this.upgradeMenuElements = elements;
+  }
+
+  cleanupUpgradeMenu() {
+    if(this.upgradeMenuElements) {
+      this.upgradeMenuElements.forEach(el => { if(el && el.destroy) el.destroy(); });
+    }
+    this.upgradeMenuOpen = false;
+  }
+
+  getRandomUpgrades(count) {
+    const pool = [
+      {name:'Red Core', color:COLORS.red, desc:'+20% Attack Damage',
+       apply:()=>{this.attackDamageMult*=1.2;}},
+      {name:'Green Core', color:COLORS.green, desc:'+15% Move Speed',
+       apply:()=>{this.moveSpeedMult*=1.15;}},
+      {name:'Yellow Core', color:COLORS.yellow, desc:'+15% Attack Speed',
+       apply:()=>{this.attackSpeedMult*=1.15;}},
+      {name:'Blue Core', color:COLORS.blue, desc:'+20% Attack Range',
+       apply:()=>{this.attackRangeMult*=1.2;}},
+      {name:'Orange Core', color:COLORS.orange, desc:'+20 Max HP',
+       apply:()=>{this.playerMaxHp+=20; this.playerHp+=20;}},
+      {name:'Violet Core', color:COLORS.violet, desc:'Heal to Full HP',
+       apply:()=>{this.playerHp=this.playerMaxHp;}},
+    ];
+    // Shuffle and pick
+    const shuffled = [...pool].sort(()=>Math.random()-0.5);
+    return shuffled.slice(0,count);
+  }
+
+  // ═══ DAMAGE TEXT ═══
+  spawnDamageText(x,y,amount,color) {
+    const colorHex = '#'+color.toString(16).padStart(6,'0');
+    const text = this.add.text(x,y,'-'+amount, {
+      fontFamily:'Georgia, serif', fontSize:'12px', fontStyle:'bold', color:colorHex
+    }).setOrigin(0.5);
+    this.damageTexts.push({text, life:500, vy:-0.5});
+  }
+
+  updateDamageTexts(delta) {
+    this.damageTexts = this.damageTexts.filter(dt => {
+      dt.life -= delta;
+      dt.text.y += dt.vy;
+      dt.text.setAlpha(dt.life/500);
+      if(dt.life<=0) { dt.text.destroy(); return false; }
+      return true;
+    });
+  }
+
+  // ═══ UI UPDATES ═══
+  updateTimer() {
+    const totalSec = Math.floor(this.gameTime/1000);
+    const min = Math.floor(totalSec/60);
+    const sec = totalSec%60;
+    this.timerText.setText(`${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`);
+  }
+
+  updateUI() {
+    // HP bar
+    const hpPct = Math.max(0,this.playerHp/this.playerMaxHp);
+    this.hpBarFill.width = 148*hpPct;
+    this.hpBarFill.fillColor = hpPct>0.5 ? 0x44ff88 : hpPct>0.25 ? 0xffee44 : 0xff4444;
+    this.hpText.setText(`${Math.max(0,Math.round(this.playerHp))}/${this.playerMaxHp}`);
+
+    // EXP bar
+    const expPct = this.playerExp/this.expToNext;
+    this.expBarFill.width = 148*expPct;
+
+    // Level
+    this.levelText.setText('LV '+this.playerLevel);
+
+    // Score
+    this.scoreText.setText('Score: '+this.score);
+  }
+
+  endGame() {
+    this.gameOver = true;
+    sfx.gameOver();
+    gameState.score = this.score;
+    gameState.killCount = this.killCount;
+    gameState.gameTime = this.gameTime;
+    this.scene.start('GameOver');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME OVER SCENE
+// ═══════════════════════════════════════════════════════
+class GameOverScene extends Phaser.Scene {
+  constructor() {
+    super('GameOver');
+  }
+
+  create() {
+    this.add.rectangle(0,0,GAME_W,GAME_H,COLORS.void).setOrigin(0,0);
+
+    this.add.text(GAME_W/2, 200, 'THE VEIL CLAIMS YOU', {
+      fontFamily:'Georgia, serif', fontSize:'24px', fontStyle:'bold', color:'#ff4444'
+    }).setOrigin(0.5);
+
+    const totalSec = Math.floor(gameState.gameTime/1000);
+    const min = Math.floor(totalSec/60);
+    const sec = totalSec%60;
+
+    this.add.text(GAME_W/2, 280, `Survived: ${min}:${sec.toString().padStart(2,'0')}`, {
+      fontFamily:'Courier New', fontSize:'14px', color:'#c8a8ff'
+    }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, 310, `Enemies Defeated: ${gameState.killCount}`, {
+      fontFamily:'Courier New', fontSize:'14px', color:'#c8a8ff'
+    }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, 340, `Score: ${gameState.score}`, {
+      fontFamily:'Courier New', fontSize:'16px', fontStyle:'bold', color:'#ffd700'
+    }).setOrigin(0.5);
+
+    const btn = this.add.rectangle(GAME_W/2, 440, 200, 50, 0x1a0a3e)
+      .setStrokeStyle(2, COLORS.lavender)
+      .setInteractive({useHandCursor:true});
+
+    this.add.text(GAME_W/2, 440, 'TRY AGAIN', {
+      fontFamily:'Georgia, serif', fontSize:'16px', fontStyle:'bold', color:'#c8a8ff'
+    }).setOrigin(0.5);
+
+    btn.on('pointerover', ()=>btn.setStrokeStyle(2,COLORS.gold));
+    btn.on('pointerout', ()=>btn.setStrokeStyle(2,COLORS.lavender));
+    btn.on('pointerdown', ()=>{ sfx.select(); this.scene.start('CharacterSelect'); });
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME CONFIG
+// ═══════════════════════════════════════════════════════
+const config = {
+  type: Phaser.CANVAS,
+  width: GAME_W,
+  height: GAME_H,
+  parent: 'game-container',
+  backgroundColor: '#07060f',
+  render: { pixelArt: true, antialias: false, roundPixels: true },
+  physics: {
+    default: 'arcade',
+    arcade: { debug: false }
+  },
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: GAME_W,
+    height: GAME_H
+  },
+  scene: [CharacterSelectScene, BattleScene, GameOverScene]
+};
+
+new Phaser.Game(config);
+const __pvLoading = document.getElementById('loading');
+if (__pvLoading) __pvLoading.style.display = 'none';
+</script>
+</body>
+</html>
