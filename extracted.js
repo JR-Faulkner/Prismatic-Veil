@@ -1,52 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>The Prismatic Veil — Phaser Sprite Battler</title>
-<meta name="theme-color" content="#07060f">
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html, body {
-    width:100%; height:100%; min-height:100%;
-    background:#07060f;
-    overflow:hidden;
-    font-family:'Courier New', monospace;
-    touch-action:none;
-    -webkit-user-select:none; user-select:none;
-    -webkit-touch-callout:none;
-  }
-  body {
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  #game-container {
-    position:relative;
-    width:100vw; height:100vh;
-    display:flex; align-items:center; justify-content:center;
-  }
-  canvas {
-    display:block;
-    image-rendering:pixelated;
-    image-rendering:crisp-edges;
-    max-width:100vw; max-height:100vh;
-  }
-  #loading {
-    position:fixed; inset:0; z-index:9999;
-    display:flex; align-items:center; justify-content:center;
-    padding:24px; text-align:center; white-space:pre-wrap; line-height:1.45;
-    color:#c8a8ff; background:radial-gradient(circle at 50% 35%, #1a0a3e 0%, #07060f 62%);
-  }
-  #loading strong { color:#ffd700; }
-</style>
-<script src="./phaser.min.js"></script>
-</head>
-<body>
-<div id="loading"><strong>Loading The Prismatic Veil...</strong>
-GitHub Pages UI style pass build</div>
-<div id="game-container"></div>
-<script>
+
+
 (function(){
   const boot = document.getElementById('loading');
   function showBootError(err){
@@ -189,11 +142,10 @@ function createHeroAnimations(scene, charKey) {
     frameRate: 10,
     repeat: -1
   });
-  const attackRate = charKey === 'kineza' ? 18 : charKey === 'prismel' ? 13 : 12;
   scene.anims.create({
     key: charKey + '_attack',
     frames: scene.anims.generateFrameNumbers(charKey, ANIM_FRAMES.attack),
-    frameRate: attackRate,
+    frameRate: 12,
     repeat: 0
   });
 }
@@ -375,7 +327,7 @@ const CHARACTER_DATA = {
     attackSpeed: 450, // ms between attacks
     attackRange: 220,
     projectileSpeed: 340,
-    description: 'Prism shots + spread'
+    description: 'Ranged crystal projectiles, spectrum spread'
   },
   kineza: {
     name: 'Kineza',
@@ -383,11 +335,11 @@ const CHARACTER_DATA = {
     color: COLORS.red,
     accentColor: COLORS.green,
     moveSpeed: 210,
-    baseDamage: 13,
-    attackSpeed: 320,
-    attackRange: 70,
+    baseDamage: 12,
+    attackSpeed: 350,
+    attackRange: 55,
     projectileSpeed: 0, // melee
-    description: 'Fast melee striker'
+    description: 'Fast melee, kinetic dash strikes'
   },
   auryi: {
     name: 'Auryi',
@@ -399,34 +351,7 @@ const CHARACTER_DATA = {
     attackSpeed: 500,
     attackRange: 150,
     projectileSpeed: 0, // aura pulse, hits all in range
-    description: 'Area aura caster'
-  }
-};
-
-const HERO_UI_THEMES = {
-  prismel: {
-    hpLabel: 'VITAL',
-    energyLabel: 'PRISM CHARGE',
-    panelTop: COLORS.blue,
-    panelTrim: COLORS.violet,
-    energyColor: 0x9de1ff,
-    footerGlyph: '◇'
-  },
-  kineza: {
-    hpLabel: 'VITAL',
-    energyLabel: 'KINETIC DRIVE',
-    panelTop: COLORS.red,
-    panelTrim: COLORS.green,
-    energyColor: 0x86ff66,
-    footerGlyph: '✦'
-  },
-  auryi: {
-    hpLabel: 'VITAL',
-    energyLabel: 'AURA RESONANCE',
-    panelTop: COLORS.lavender,
-    panelTrim: COLORS.yellow,
-    energyColor: 0xffe07b,
-    footerGlyph: '✧'
+    description: 'Aura pulse, hits all nearby enemies'
   }
 };
 
@@ -489,7 +414,7 @@ class TitleScene extends Phaser.Scene {
       strokeThickness: 2
     }).setOrigin(0.5).setDepth(4);
 
-    this.add.text(8, GAME_H - 12, 'POLISH PASS 02', {
+    this.add.text(8, GAME_H - 12, 'AUDIO/PAUSE FIX 01', {
       fontFamily: 'Courier New',
       fontSize: '8px',
       color: '#7d68aa'
@@ -619,9 +544,9 @@ class CharacterSelectScene extends Phaser.Scene {
       strokeThickness: 4
     }).setOrigin(0.5);
 
-    this.add.text(GAME_W/2, 75, 'Choose your spectrum bearer', {
-      fontFamily: 'Trebuchet MS, Arial, sans-serif',
-      fontSize: '13px',
+    this.add.text(GAME_W/2, 75, 'Choose a bearer of the spectrum', {
+      fontFamily: 'Courier New',
+      fontSize: '12px',
       color: '#d6c0ff',
       stroke: '#000000',
       strokeThickness: 2
@@ -674,16 +599,16 @@ class CharacterSelectScene extends Phaser.Scene {
       }).setOrigin(0.5);
 
       this.add.text(x+cardW/2, y+238, data.title.toUpperCase(), {
-        fontFamily: 'Trebuchet MS, Arial, sans-serif',
-        fontSize: '11px',
+        fontFamily: 'Courier New',
+        fontSize: '10px',
         color: '#ecdfff',
         stroke: '#000000',
         strokeThickness: 2
       }).setOrigin(0.5);
 
       this.add.text(x+cardW/2, y+258, data.description, {
-        fontFamily: 'Trebuchet MS, Arial, sans-serif',
-        fontSize: '10px',
+        fontFamily: 'Courier New',
+        fontSize: '9px',
         color: '#d0bee8',
         stroke: '#000000',
         strokeThickness: 1,
@@ -732,7 +657,7 @@ class CharacterSelectScene extends Phaser.Scene {
       strokeThickness: 2
     }).setOrigin(0.5);
 
-    this.add.text(GAME_W/2, GAME_H-24, 'Each hero channels a different spectrum force', {
+    this.add.text(GAME_W/2, GAME_H-24, 'Each hero channels a different aspect of the spectrum', {
       fontFamily: 'Courier New',
       fontSize: '9px',
       color: '#b69ddd',
@@ -930,11 +855,10 @@ class BattleScene extends Phaser.Scene {
     // ── UI ──
     this.createUI();
 
-    this.levelHint = this.add.text(GAME_W/2, 98, 'Collect resonance orbs to reveal relic cards', {
-      fontFamily:'Trebuchet MS, Arial, sans-serif',
-      fontSize:'12px',
-      fontStyle:'bold',
-      color:'#eddcff',
+    this.levelHint = this.add.text(GAME_W/2, 98, 'Collect resonance orbs to reveal Relic Cards', {
+      fontFamily:'Courier New',
+      fontSize:'10px',
+      color:'#d8b7ff',
       stroke:'#000000',
       strokeThickness:3
     }).setOrigin(0.5).setAlpha(0.85);
@@ -1009,58 +933,38 @@ class BattleScene extends Phaser.Scene {
 
   createUI() {
     const charKey = gameState.selectedCharacter;
-    const theme = HERO_UI_THEMES[charKey] || HERO_UI_THEMES.prismel;
-    const accent = theme.panelTop;
-    const accent2 = theme.panelTrim;
-
-    this.hpBarMaxWidth = 170;
-    this.expBarMaxWidth = 170;
+    const accent = this.charData.color;
+    const accent2 = this.charData.accentColor;
 
     // Left hero panel
-    this.uiPanel = this.add.rectangle(10, 10, 296, 90, 0x0d0820, 0.985)
+    this.uiPanel = this.add.rectangle(10, 10, 258, 70, 0x0d0820, 0.96)
       .setOrigin(0,0)
-      .setStrokeStyle(2, COLORS.gold, 0.84);
-    this.add.rectangle(10, 10, 296, 6, accent, 0.98).setOrigin(0,0);
-    this.add.rectangle(18, 18, 62, 62, 0x171028, 0.98).setOrigin(0,0)
-      .setStrokeStyle(2, accent2, 0.78);
-    this.add.rectangle(21, 21, 56, 56, 0xffffff, 0.06).setOrigin(0,0);
+      .setStrokeStyle(2, COLORS.gold, 0.72);
+    this.add.rectangle(10, 10, 258, 5, accent, 0.98).setOrigin(0,0);
+    this.add.rectangle(18, 20, 48, 48, 0x161028, 0.98).setOrigin(0,0)
+      .setStrokeStyle(1, accent2, 0.85);
     if (this.textures.exists(charKey + '_portrait')) {
-      this.add.image(49, 49, charKey + '_portrait').setScale(0.098);
+      this.add.image(42, 44, charKey + '_portrait').setScale(0.082);
     }
-    this.add.text(90, 12, this.charData.name.toUpperCase(), {
-      fontFamily:'Georgia, serif', fontSize:'13px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:3
-    });
-    this.add.text(90, 24, this.charData.title.toUpperCase(), {
-      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'9px', fontStyle:'bold', color:'#d8c7ef', stroke:'#000000', strokeThickness:2
-    });
 
-    this.hpLabel = this.add.text(90, 38, theme.hpLabel, {
-      fontFamily:'Georgia, serif', fontSize:'12px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:3
+    this.hpLabel = this.add.text(76, 15, 'VITAL', {
+      fontFamily:'Georgia, serif', fontSize:'12px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:2
     });
-    this.hpBarBg = this.add.rectangle(90, 54, this.hpBarMaxWidth, 15, 0x150a24).setOrigin(0,0).setStrokeStyle(2, COLORS.border, 0.9);
-    this.hpBarFill = this.add.rectangle(91, 55, this.hpBarMaxWidth-2, 13, COLORS.green).setOrigin(0,0);
-    this.hpBarGloss = this.add.rectangle(91, 55, this.hpBarMaxWidth-2, 4, 0xffffff, 0.18).setOrigin(0,0);
-    this.hpText = this.add.text(176, 53, '', {
-      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'12px', fontStyle:'bold', color:'#ffffff', stroke:'#000000', strokeThickness:3
+    this.hpBarBg = this.add.rectangle(76, 31, 142, 12, 0x1a0a2e).setOrigin(0,0).setStrokeStyle(1,COLORS.border);
+    this.hpBarFill = this.add.rectangle(77, 32, 140, 10, COLORS.green).setOrigin(0,0);
+    this.hpText = this.add.text(147, 30, '', {
+      fontFamily:'Courier New', fontSize:'9px', color:'#ffffff', stroke:'#000000', strokeThickness:2
     }).setOrigin(0.5, 0);
-    for(let i=1;i<8;i++) {
-      const x = 90 + (this.hpBarMaxWidth/8)*i;
-      this.add.rectangle(x, 55, 2, 13, 0xffffff, 0.12).setOrigin(0,0);
-    }
 
-    this.expLabel = this.add.text(90, 73, theme.energyLabel, {
-      fontFamily:'Georgia, serif', fontSize:'10px', fontStyle:'bold', color:'#d8b7ff', stroke:'#000000', strokeThickness:3
+    this.expLabel = this.add.text(76, 49, 'RESONANCE', {
+      fontFamily:'Georgia, serif', fontSize:'10px', fontStyle:'bold', color:'#d8b7ff', stroke:'#000000', strokeThickness:2
     });
-    this.expBarBg = this.add.rectangle(90, 85, this.expBarMaxWidth, 8, 0x150a24).setOrigin(0,0).setStrokeStyle(1, COLORS.border, 0.9);
-    this.expBarFill = this.add.rectangle(91, 86, this.expBarMaxWidth-2, 6, theme.energyColor).setOrigin(0,0);
-    for(let i=1;i<8;i++) {
-      const x = 90 + (this.expBarMaxWidth/8)*i;
-      this.add.rectangle(x, 86, 1, 6, 0xffffff, 0.10).setOrigin(0,0);
-    }
+    this.expBarBg = this.add.rectangle(76, 63, 142, 7, 0x1a0a2e).setOrigin(0,0).setStrokeStyle(1,COLORS.border);
+    this.expBarFill = this.add.rectangle(77, 64, 140, 5, COLORS.lavender).setOrigin(0,0);
 
-    this.levelBadge = this.add.circle(272, 54, 24, 0x171129, 0.99).setStrokeStyle(3, accent2, 0.95);
-    this.levelText = this.add.text(272, 54, 'LV 1', {
-      fontFamily:'Georgia, serif', fontSize:'14px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:3
+    this.levelBadge = this.add.circle(236, 45, 22, 0x171129, 0.99).setStrokeStyle(2, COLORS.gold, 0.88);
+    this.levelText = this.add.text(236, 45, 'LV 1', {
+      fontFamily:'Georgia, serif', fontSize:'13px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:2
     }).setOrigin(0.5);
     this.levelBadge.setInteractive({useHandCursor:true});
     this.levelBadge.on('pointerdown', () => {
@@ -1070,23 +974,23 @@ class BattleScene extends Phaser.Scene {
     });
 
     // Right meta panel
-    this.metaPanel = this.add.rectangle(GAME_W-10, 10, 168, 78, 0x0d0820, 0.98).setOrigin(1,0).setStrokeStyle(2, COLORS.gold, 0.82);
-    this.add.rectangle(GAME_W-178, 10, 168, 6, accent2, 0.96).setOrigin(0,0);
+    this.metaPanel = this.add.rectangle(GAME_W-10, 10, 144, 60, 0x0d0820, 0.96).setOrigin(1,0).setStrokeStyle(2, COLORS.gold, 0.72);
+    this.add.rectangle(GAME_W-154, 10, 144, 5, accent2, 0.94).setOrigin(0,0);
     this.timerText = this.add.text(GAME_W-18, 16, '00:00', {
-      fontFamily:'Georgia, serif', fontSize:'22px', fontStyle:'bold', color:'#ffffff', stroke:'#000000', strokeThickness:4
+      fontFamily:'Georgia, serif', fontSize:'18px', fontStyle:'bold', color:'#ffffff', stroke:'#000000', strokeThickness:3
     }).setOrigin(1,0);
-    this.scoreText = this.add.text(GAME_W-18, 46, 'SCORE 0', {
-      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'14px', fontStyle:'bold', color:'#f1e6ff', stroke:'#000000', strokeThickness:3
+    this.scoreText = this.add.text(GAME_W-18, 40, 'Score 0', {
+      fontFamily:'Courier New', fontSize:'12px', color:'#f1e6ff', stroke:'#000000', strokeThickness:2
     }).setOrigin(1,0);
 
-    this.footerPanel = this.add.rectangle(GAME_W/2, GAME_H-24, 352, 24, 0x0d0820, 0.84).setStrokeStyle(1, accent2, 0.35);
-    this.footerText = this.add.text(GAME_W/2, GAME_H-24, `${theme.footerGlyph} ${this.charData.name.toUpperCase()} — ${this.charData.title.toUpperCase()} ${theme.footerGlyph}`, {
-      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'12px', fontStyle:'bold', color:'#ebe1ff', stroke:'#000000', strokeThickness:3
+    this.add.rectangle(GAME_W/2, GAME_H-22, 310, 22, 0x0d0820, 0.62).setStrokeStyle(1, COLORS.gold, 0.15);
+    this.add.text(GAME_W/2, GAME_H-22, this.charData.name.toUpperCase()+' — '+this.charData.title.toUpperCase(), {
+      fontFamily:'Courier New', fontSize:'10px', color:'#c4acdf', stroke:'#000000', strokeThickness:2
     }).setOrigin(0.5);
   }
 
   update(time, delta) {
-    if(this.gameOver || this.upgradeMenuOpen || this.hitFreezeActive) return;
+    if(this.gameOver || this.upgradeMenuOpen) return;
 
     this.gameTime += delta;
     this.updateTimer();
@@ -1189,7 +1093,7 @@ class BattleScene extends Phaser.Scene {
       sfx.attackPrismel();
     }
     else if(gameState.selectedCharacter === 'kineza') {
-      this.kinezaMeleeStrike(nearest, range, nearestDist);
+      this.kinezaMeleeStrike(nearest, range);
       sfx.attackKineza();
     }
     else if(gameState.selectedCharacter === 'auryi') {
@@ -1247,86 +1151,33 @@ class BattleScene extends Phaser.Scene {
     this.projectiles.add(container);
   }
 
-  kinezaMeleeStrike(target, range, nearestDist) {
-    if(!target || !target.active) return;
+  kinezaMeleeStrike(target, range) {
+    // Visual slash effect
+    const slash = this.add.graphics();
     const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
-    const dirX = Math.cos(angle);
-    const dirY = Math.sin(angle);
-    const lungeDist = Math.min(28, Math.max(12, nearestDist - 18));
+    slash.lineStyle(4, COLORS.green, 0.8);
+    slash.beginPath();
+    slash.arc(this.player.x, this.player.y, range*0.7, angle-0.6, angle+0.6);
+    slash.strokePath();
 
     this.tweens.add({
-      targets: this.player,
-      x: this.player.x + dirX * lungeDist,
-      y: this.player.y + dirY * lungeDist,
-      duration: 58,
-      yoyo: true,
-      ease: 'Quad.easeOut'
-    });
-
-    const arc = this.add.graphics();
-    arc.lineStyle(7, COLORS.green, 0.95);
-    arc.beginPath();
-    arc.arc(this.player.x + dirX*12, this.player.y + dirY*10, Math.max(28, range*0.86), angle-0.52, angle+0.52);
-    arc.strokePath();
-
-    const trail = this.add.graphics();
-    trail.fillStyle(COLORS.green, 0.18);
-    trail.fillEllipse(this.player.x + dirX*22, this.player.y + dirY*16, 62, 26);
-    trail.rotation = angle;
-
-    this.tweens.add({
-      targets: [arc, trail],
+      targets: slash,
       alpha: 0,
-      duration: 150,
-      onComplete: () => { arc.destroy(); trail.destroy(); }
+      duration: 200,
+      onComplete: () => slash.destroy()
     });
 
-    this.time.delayedCall(64, () => {
-      if(this.gameOver || this.upgradeMenuOpen) return;
-      let hitCount = 0;
-      const enemies = this.enemies.getChildren().slice();
-      enemies.forEach(e => {
-        if(!e.active) return;
-        const dx = e.x - this.player.x;
-        const dy = e.y - this.player.y;
-        const d = Math.sqrt(dx*dx + dy*dy);
-        if(d > range + 22) return;
-        const enemyAngle = Math.atan2(dy, dx);
-        const diff = Phaser.Math.Angle.Wrap(enemyAngle - angle);
-        if(Math.abs(diff) <= 0.82) {
-          hitCount++;
-          this.damageEnemy(e, this.charData.baseDamage * this.attackDamageMult);
-          if(e.body && e.body.setVelocity) {
-            e.body.setVelocity(dirX * 210, dirY * 210);
-          }
-          const spark = this.add.circle(e.x, e.y, 12, COLORS.green, 0.18).setStrokeStyle(3, COLORS.yellow, 0.8);
-          this.tweens.add({
-            targets: spark,
-            scale: 1.5,
-            alpha: 0,
-            duration: 110,
-            onComplete: () => spark.destroy()
-          });
-        }
-      });
-      if(hitCount > 0) {
-        this.hitFreeze(42);
-        this.cameras.main.shake(90, 0.0028);
+    // Damage all enemies in range
+    const enemies = this.enemies.getChildren().slice();
+    enemies.forEach(e => {
+      const d = Phaser.Math.Distance.Between(this.player.x,this.player.y,e.x,e.y);
+      if(d <= range) {
+        this.damageEnemy(e, this.charData.baseDamage * this.attackDamageMult);
       }
     });
-  }
 
-  hitFreeze(duration = 42) {
-    if(this.hitFreezeActive || this.upgradeMenuOpen || this.gameOver) return;
-    this.hitFreezeActive = true;
-    if(this.physics && this.physics.world) this.physics.pause();
-    if(this.player && this.player.anims) this.player.anims.pause();
-
-    this.time.delayedCall(duration, () => {
-      this.hitFreezeActive = false;
-      if(!this.upgradeMenuOpen && !this.gameOver && this.physics && this.physics.world) this.physics.resume();
-      if(this.player && this.player.anims) this.player.anims.resume();
-    });
+    // Screen shake feel
+    this.cameras.main.shake(80, 0.002);
   }
 
   auryiAuraPulse(range) {
@@ -1410,49 +1261,36 @@ class BattleScene extends Phaser.Scene {
   }
 
   createEnemy(x,y,type) {
-    const shadow = this.add.ellipse(0, 14, 22, 8, 0x000000, 0.30);
-    const ring = this.add.circle(0, 0, 13, 0xffffff, 0);
     const g = this.add.graphics();
-    let hp, speed, color, dmg, hpColor;
+    let hp, speed, color, dmg;
 
     switch(type) {
       case 'veilshade':
-        hp = 12 + this.gameTime*0.002; speed=60; color=COLORS.indigo; dmg=8; hpColor = 0xa26cff;
-        ring.setStrokeStyle(2, COLORS.lavender, 0.45);
-        g.lineStyle(2, 0xd9c1ff, 0.55);
-        g.fillStyle(0x3a1c6d, 0.92);
-        g.fillRoundedRect(-9,-12,18,24,5);
-        g.strokeRoundedRect(-9,-12,18,24,5);
-        g.fillStyle(0xf0deff, 0.95);
+        hp = 12 + this.gameTime*0.002; speed=60; color=COLORS.indigo; dmg=8;
+        g.fillStyle(color, 0.8);
+        g.fillRoundedRect(-8,-12,16,24,4);
+        g.fillStyle(COLORS.violet);
         g.fillRect(-5,-8,3,3);
         g.fillRect(2,-8,3,3);
         break;
       case 'wraith':
-        hp = 8 + this.gameTime*0.0015; speed=90; color=COLORS.violet; dmg=6; hpColor = 0xff8cff;
-        ring.setStrokeStyle(2, 0xf2c6ff, 0.42);
-        g.lineStyle(2, 0xf6e8ff, 0.42);
-        g.fillStyle(0xbfdcff, 0.84);
-        g.fillRoundedRect(-8,-10,16,20,8);
-        g.strokeRoundedRect(-8,-10,16,20,8);
-        g.fillStyle(color, 0.95);
+        hp = 8 + this.gameTime*0.0015; speed=90; color=COLORS.violet; dmg=6;
+        g.fillStyle(0xaaccff, 0.7);
+        g.fillRoundedRect(-7,-10,14,20,8);
+        g.fillStyle(color);
         g.fillRect(-3,-14,3,5);
         g.fillRect(0,-14,3,5);
         break;
       default: // crawler
-        hp = 18 + this.gameTime*0.003; speed=45; color=COLORS.green; dmg=10; hpColor = 0x8cff5f;
-        ring.setStrokeStyle(2, 0x97ff77, 0.35);
-        g.lineStyle(2, 0x87cc5b, 0.45);
-        g.fillStyle(0x114400, 0.95);
+        hp = 18 + this.gameTime*0.003; speed=45; color=COLORS.green; dmg=10;
+        g.fillStyle(0x114400);
         g.fillRoundedRect(-10,-8,20,16,3);
-        g.strokeRoundedRect(-10,-8,20,16,3);
-        g.fillStyle(COLORS.orange, 0.95);
+        g.fillStyle(COLORS.orange);
         g.fillRect(-6,-4,4,4);
         g.fillRect(2,-4,4,4);
     }
 
-    const hpBg = this.add.rectangle(0, -18, 22, 4, 0x110a1a, 0.92).setStrokeStyle(1, 0xffffff, 0.12);
-    const hpFill = this.add.rectangle(-10, -18, 20, 2, hpColor, 1).setOrigin(0,0.5);
-    const container = this.add.container(x,y,[shadow, ring, g, hpBg, hpFill]);
+    const container = this.add.container(x,y,[g]);
     this.physics.world.enable(container);
     container.body.setSize(20,20);
     container.body.setOffset(-10,-10);
@@ -1461,33 +1299,19 @@ class BattleScene extends Phaser.Scene {
     container.speed = speed;
     container.enemyType = type;
     container.contactDamage = dmg;
-    container.hpFill = hpFill;
-    container.hpBg = hpBg;
-    container.spriteGraphic = g;
-    container.shadow = shadow;
-    container.ring = ring;
-    container.baseScale = type === 'crawler' ? 1.04 : 1.0;
-    container.setScale(container.baseScale);
 
     this.enemies.add(container);
   }
 
   updateEnemies(time, delta) {
     this.enemies.getChildren().forEach(e => {
+      // Move toward player
       const angle = Phaser.Math.Angle.Between(e.x,e.y,this.player.x,this.player.y);
       e.body.setVelocity(Math.cos(angle)*e.speed, Math.sin(angle)*e.speed);
 
-      if(e.hpFill) {
-        e.hpFill.width = 20 * Phaser.Math.Clamp(e.hp / e.maxHp, 0, 1);
-      }
-
+      // Flicker effect for veilshade
       if(e.enemyType === 'veilshade') {
-        e.spriteGraphic.setAlpha(0.78 + Math.sin(time*0.01)*0.15);
-        e.ring.setAlpha(0.35 + Math.sin(time*0.01)*0.12);
-      } else if(e.enemyType === 'wraith') {
-        e.ring.setScale(1 + Math.sin(time*0.012 + e.x*0.01) * 0.08);
-      } else if(e.enemyType === 'crawler') {
-        e.shadow.setAlpha(0.26 + Math.sin(time*0.016 + e.y*0.01) * 0.05);
+        e.list[0].setAlpha(0.7+Math.sin(time*0.01)*0.2);
       }
     });
   }
@@ -1495,28 +1319,15 @@ class BattleScene extends Phaser.Scene {
   damageEnemy(enemy, amount) {
     if(!enemy.active) return;
     enemy.hp -= amount;
+
+    // Damage number
     this.spawnDamageText(enemy.x, enemy.y-15, Math.round(amount), this.charData.color);
+
     sfx.hit();
 
-    if(enemy.spriteGraphic) enemy.spriteGraphic.setAlpha(0.36);
-    if(enemy.ring) enemy.ring.setAlpha(0.95);
-    this.tweens.add({
-      targets: enemy,
-      scaleX: enemy.baseScale * 1.08,
-      scaleY: enemy.baseScale * 1.08,
-      duration: 60,
-      yoyo: true,
-      onComplete: () => {
-        if(enemy.active) enemy.setScale(enemy.baseScale);
-      }
-    });
-    this.time.delayedCall(60, () => {
-      if(enemy.active && enemy.spriteGraphic) enemy.spriteGraphic.setAlpha(1);
-    });
-
-    if(enemy.hpFill) {
-      enemy.hpFill.width = 20 * Phaser.Math.Clamp(enemy.hp / enemy.maxHp, 0, 1);
-    }
+    // Flash
+    enemy.list[0].setAlpha(0.3);
+    this.time.delayedCall(60, () => { if(enemy.active) enemy.list[0].setAlpha(1); });
 
     if(enemy.hp <= 0) {
       this.killEnemy(enemy);
@@ -1532,8 +1343,7 @@ class BattleScene extends Phaser.Scene {
 
     // Death particle burst
     for(let i=0;i<5;i++) {
-      const burstColor = enemy.enemyType === 'crawler' ? COLORS.green : enemy.enemyType === 'wraith' ? COLORS.violet : COLORS.lavender;
-      const p = this.add.rectangle(enemy.x, enemy.y, 3, 3, burstColor);
+      const p = this.add.rectangle(enemy.x, enemy.y, 3, 3, COLORS.gold);
       const a = Math.random()*Math.PI*2;
       this.tweens.add({
         targets:p,
@@ -1656,67 +1466,67 @@ class BattleScene extends Phaser.Scene {
       });
     });
 
-    const overlay = this.add.rectangle(0,0,GAME_W,GAME_H,0x03020a,0.88).setOrigin(0,0);
+    const overlay = this.add.rectangle(0,0,GAME_W,GAME_H,0x03020a,0.82).setOrigin(0,0);
     const heroArtKey = gameState.selectedCharacter + '_full';
     const heroArt = this.textures.exists(heroArtKey)
-      ? this.add.image(GAME_W/2, GAME_H/2 + 38, heroArtKey).setScale(0.48).setAlpha(0.10)
+      ? this.add.image(GAME_W/2, GAME_H/2 + 40, heroArtKey).setScale(0.44).setAlpha(0.08)
       : null;
 
-    const panel = this.add.rectangle(GAME_W/2,GAME_H/2,472,360,0x0d0820,0.98)
-      .setStrokeStyle(2,COLORS.gold,0.78);
-    const inner = this.add.rectangle(GAME_W/2,GAME_H/2,456,344,0x120b22,0.94)
-      .setStrokeStyle(1,COLORS.lavender,0.22);
+    const panel = this.add.rectangle(GAME_W/2,GAME_H/2,452,338,0x0d0820,0.95)
+      .setStrokeStyle(2,COLORS.gold,0.6);
+    const inner = this.add.rectangle(GAME_W/2,GAME_H/2,438,324,0x120b22,0.92)
+      .setStrokeStyle(1,COLORS.lavender,0.18);
 
-    const title = this.add.text(GAME_W/2, GAME_H/2-144, '✦ PRISMATIC ASCENSION ✦', {
-      fontFamily:'Georgia, serif', fontSize:'22px', fontStyle:'bold', color:'#f7e8b6', stroke:'#201132', strokeThickness:5
+    const title = this.add.text(GAME_W/2, GAME_H/2-138, '✦ PRISMATIC ASCENSION ✦', {
+      fontFamily:'Georgia, serif', fontSize:'18px', fontStyle:'bold', color:'#f7e8b6', stroke:'#201132', strokeThickness:4
     }).setOrigin(0.5);
 
-    const subtitle = this.add.text(GAME_W/2, GAME_H/2-114, 'Choose one relic and deepen your attunement', {
-      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'12px', fontStyle:'bold', color:'#d8c0ff', stroke:'#000000', strokeThickness:2
+    const subtitle = this.add.text(GAME_W/2, GAME_H/2-112, 'Choose one relic and deepen your attunement', {
+      fontFamily:'Courier New', fontSize:'10px', color:'#b497de'
     }).setOrigin(0.5);
 
     const upgrades = this.getRandomUpgrades(3);
     const elements = [overlay, panel, inner, title, subtitle];
     if (heroArt) elements.push(heroArt);
 
-    const cardW = 140, cardH = 188, gap = 10;
+    const cardW = 132, cardH = 176, gap = 10;
     const totalW = upgrades.length * cardW + (upgrades.length-1) * gap;
     const startX = (GAME_W - totalW) / 2;
 
     upgrades.forEach((up, i) => {
       const x = startX + i*(cardW + gap);
       const y = GAME_H/2 - 66;
-      const card = this.add.rectangle(x, y, cardW, cardH, 0x17102a, 0.98)
+      const card = this.add.rectangle(x, y, cardW, cardH, 0x151028, 0.96)
         .setOrigin(0,0)
-        .setStrokeStyle(2, up.color, 0.98)
+        .setStrokeStyle(2, up.color, 0.95)
         .setInteractive({useHandCursor:true});
-      const trim = this.add.rectangle(x+6, y+6, cardW-12, cardH-12, 0x0f0a1d, 0.82)
+      const trim = this.add.rectangle(x+6, y+6, cardW-12, cardH-12, 0x0f0a1d, 0.78)
         .setOrigin(0,0)
-        .setStrokeStyle(1, COLORS.gold, 0.28);
-      const topBand = this.add.rectangle(x, y, cardW, 6, up.color, 0.98).setOrigin(0,0);
-      const glyph = this.add.text(x+cardW/2, y+28, '◆', {
-        fontFamily:'Georgia, serif', fontSize:'30px', fontStyle:'bold', color:'#'+up.color.toString(16).padStart(6,'0'), stroke:'#000000', strokeThickness:2
+        .setStrokeStyle(1, COLORS.gold, 0.25);
+      const topBand = this.add.rectangle(x, y, cardW, 5, up.color, 0.95).setOrigin(0,0);
+      const glyph = this.add.text(x+cardW/2, y+30, '◆', {
+        fontFamily:'Georgia, serif', fontSize:'28px', fontStyle:'bold', color:'#'+up.color.toString(16).padStart(6,'0')
       }).setOrigin(0.5);
       const keyword = this.add.text(x+cardW/2, y+56, up.keyword, {
-        fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'10px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:2
+        fontFamily:'Courier New', fontSize:'8px', color:'#f7e8b6'
       }).setOrigin(0.5);
-      const name = this.add.text(x+cardW/2, y+88, up.name, {
-        fontFamily:'Georgia, serif', fontSize:'15px', fontStyle:'bold', color:'#f3ecff', align:'center', stroke:'#000000', strokeThickness:3, wordWrap:{width: cardW-18}
+      const name = this.add.text(x+cardW/2, y+84, up.name, {
+        fontFamily:'Georgia, serif', fontSize:'14px', fontStyle:'bold', color:'#f3ecff', align:'center', wordWrap:{width: cardW-16}
       }).setOrigin(0.5);
-      const desc = this.add.text(x+cardW/2, y+122, up.desc, {
-        fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'11px', fontStyle:'bold', color:'#d7c6ee', stroke:'#000000', strokeThickness:2, align:'center', wordWrap:{width: cardW-20}
+      const desc = this.add.text(x+cardW/2, y+116, up.desc, {
+        fontFamily:'Courier New', fontSize:'9px', color:'#c5b4e2', align:'center', wordWrap:{width: cardW-18}
       }).setOrigin(0.5);
       const action = this.add.text(x+cardW/2, y+cardH-18, 'ATTUNE', {
-        fontFamily:'Georgia, serif', fontSize:'13px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:2
+        fontFamily:'Georgia, serif', fontSize:'12px', fontStyle:'bold', color:'#f7e8b6'
       }).setOrigin(0.5);
 
       card.on('pointerover', () => {
-        card.setFillStyle(0x241442, 0.99);
+        card.setFillStyle(0x20133a, 0.98);
         action.setColor('#ffffff');
         glyph.setScale(1.08);
       });
       card.on('pointerout', () => {
-        card.setFillStyle(0x17102a, 0.98);
+        card.setFillStyle(0x151028, 0.96);
         action.setColor('#f7e8b6');
         glyph.setScale(1.0);
       });
@@ -1790,30 +1600,21 @@ class BattleScene extends Phaser.Scene {
   }
 
   updateUI() {
-    const charKey = gameState.selectedCharacter;
-    const theme = HERO_UI_THEMES[charKey] || HERO_UI_THEMES.prismel;
-
+    // HP bar
     const hpPct = Math.max(0,this.playerHp/this.playerMaxHp);
-    this.hpBarFill.width = (this.hpBarMaxWidth - 2) * hpPct;
-    this.hpBarGloss.width = (this.hpBarMaxWidth - 2) * hpPct;
-    this.hpBarFill.fillColor = hpPct>0.5 ? 0x44ff88 : hpPct>0.25 ? 0xffd84d : 0xff4d5e;
-    this.hpText.setText(`${Math.max(0,Math.round(this.playerHp))} / ${this.playerMaxHp}`);
-    if(hpPct <= 0.25) {
-      const pulse = 0.65 + Math.sin(this.time.now*0.018)*0.28;
-      this.hpBarFill.setAlpha(pulse);
-      this.levelBadge.setScale(1 + Math.sin(this.time.now*0.018)*0.02);
-    } else {
-      this.hpBarFill.setAlpha(1);
-      this.levelBadge.setScale(1);
-    }
+    this.hpBarFill.width = 148*hpPct;
+    this.hpBarFill.fillColor = hpPct>0.5 ? 0x44ff88 : hpPct>0.25 ? 0xffee44 : 0xff4444;
+    this.hpText.setText(`${Math.max(0,Math.round(this.playerHp))}/${this.playerMaxHp}`);
 
-    const expPct = Phaser.Math.Clamp(this.playerExp/this.expToNext, 0, 1);
-    this.expBarFill.width = (this.expBarMaxWidth - 2) * expPct;
-    this.expBarFill.fillColor = theme.energyColor;
-    this.expBarFill.setAlpha(0.86 + Math.sin(this.time.now*0.012)*0.08);
+    // EXP bar
+    const expPct = this.playerExp/this.expToNext;
+    this.expBarFill.width = 148*expPct;
 
+    // Level
     this.levelText.setText('LV '+this.playerLevel);
-    this.scoreText.setText('SCORE ' + this.score);
+
+    // Score
+    this.scoreText.setText('Score ' + this.score);
   }
 
   endGame() {
@@ -1900,6 +1701,3 @@ const config = {
 new Phaser.Game(config);
 const __pvLoading = document.getElementById('loading');
 if (__pvLoading) __pvLoading.style.display = 'none';
-</script>
-</body>
-</html>
