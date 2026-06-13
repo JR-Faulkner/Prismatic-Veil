@@ -130,7 +130,8 @@ const ANIM_FRAMES = {
 
 const CHARACTER_ANIM_OVERRIDES = {
   kineza: {
-    attack: [24, 25, 26, 27]
+    // Dash-strike uses momentum/run frames; hit FX carries the impact.
+    attack: [18, 19, 20, 21]
   }
 };
 
@@ -153,7 +154,12 @@ function getBodyTuning(charKey) {
 }
 
 function fadeOutMenuMusic(scene, duration = 550) {
-  if (!gameState.titleMusic || !gameState.titleMusic.isPlaying) return;
+  if (!gameState.titleMusic) return;
+  if (!gameState.titleMusic.isPlaying) {
+    gameState.titleMusic.stop();
+    gameState.titleMusic.setVolume(0.45);
+    return;
+  }
   scene.tweens.add({
     targets: gameState.titleMusic,
     volume: 0,
@@ -165,6 +171,15 @@ function fadeOutMenuMusic(scene, duration = 550) {
       }
     }
   });
+}
+
+function stopMenuMusicNow() {
+  if (gameState.titleMusic) {
+    try {
+      gameState.titleMusic.stop();
+      gameState.titleMusic.setVolume(0.45);
+    } catch(e) {}
+  }
 }
 
 
@@ -195,7 +210,7 @@ function createHeroAnimations(scene, charKey) {
     frameRate: 10,
     repeat: -1
   });
-  const attackRate = charKey === 'kineza' ? 18 : charKey === 'prismel' ? 13 : 12;
+  const attackRate = charKey === 'kineza' ? 20 : charKey === 'prismel' ? 13 : 12;
   scene.anims.create({
     key: charKey + '_attack',
     frames: scene.anims.generateFrameNumbers(charKey, ANIM_FRAMES.attack),
@@ -357,6 +372,7 @@ const gameState = {
   titleMusic: null,
   musicEnabled: true,
   sfxEnabled: true,
+  titleStarted: false,
   selectedCharacter: 'prismel',
   level: 1,
   exp: 0,
@@ -390,8 +406,8 @@ const CHARACTER_DATA = {
     accentColor: COLORS.green,
     moveSpeed: 210,
     baseDamage: 13,
-    attackSpeed: 320,
-    attackRange: 70,
+    attackSpeed: 300,
+    attackRange: 84,
     projectileSpeed: 0, // melee
     description: 'Fast melee striker'
   },
@@ -495,7 +511,7 @@ class TitleScene extends Phaser.Scene {
       strokeThickness: 2
     }).setOrigin(0.5).setDepth(4);
 
-    this.add.text(8, GAME_H - 12, 'KINEZA ATTACK PASS 03', {
+    this.add.text(8, GAME_H - 12, 'KINEZA DASHSTRIKE PASS 04', {
       fontFamily: 'Courier New',
       fontSize: '8px',
       color: '#7d68aa'
@@ -722,9 +738,9 @@ class CharacterSelectScene extends Phaser.Scene {
         sfx.init();
         sfx.select();
         gameState.selectedCharacter = charKey;
-        fadeOutMenuMusic(this, 500);
+        fadeOutMenuMusic(this, 420);
         this.cameras.main.flash(180, 255, 255, 255, false);
-        this.time.delayedCall(520, () => this.scene.start('Battle'));
+        this.time.delayedCall(440, () => this.scene.start('Battle'));
       });
     });
 
@@ -854,6 +870,7 @@ class BattleScene extends Phaser.Scene {
     this.gameOver = false;
     this.facingDir = {x:1, y:0};
     this.isAttacking = false;
+    this.hitFreezeActive = false;
   }
 
   preload() {
@@ -868,6 +885,8 @@ class BattleScene extends Phaser.Scene {
   }
 
   create() {
+    stopMenuMusicNow();
+
     // ── Background ──
     this.bg = this.add.rectangle(0,0,GAME_W,GAME_H, COLORS.void).setOrigin(0,0);
 
@@ -1255,69 +1274,110 @@ class BattleScene extends Phaser.Scene {
 
   kinezaMeleeStrike(target, range, nearestDist) {
     if(!target || !target.active) return;
-    const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
+    const startX = this.player.x;
+    const startY = this.player.y;
+    const angle = Phaser.Math.Angle.Between(startX, startY, target.x, target.y);
     const dirX = Math.cos(angle);
     const dirY = Math.sin(angle);
-    const lungeDist = Math.min(22, Math.max(10, nearestDist - 20));
+
+    // Face left/right only; this prevents side-view art from fighting diagonal motion too much.
+    if(dirX < -0.12) this.player.setFlipX(true);
+    else if(dirX > 0.12) this.player.setFlipX(false);
+
+    const dashDist = Math.min(52, Math.max(28, nearestDist - 8));
+    const dashX = Phaser.Math.Clamp(startX + dirX * dashDist, 28, GAME_W - 28);
+    const dashY = Phaser.Math.Clamp(startY + dirY * dashDist, 92, GAME_H - 34);
+
+    // Kinetic afterimage trail
+    for(let i=0;i<3;i++) {
+      const ghost = this.add.sprite(startX - dirX*(i*7), startY - dirY*(i*5), gameState.selectedCharacter, this.player.frame.name)
+        .setOrigin(this.player.originX, this.player.originY)
+        .setScale(this.player.scaleX, this.player.scaleY)
+        .setAlpha(0.18 - i*0.04)
+        .setTint(0x66ff44)
+        .setDepth(this.player.depth - 1);
+      ghost.setFlipX(this.player.flipX);
+      this.tweens.add({
+        targets: ghost,
+        alpha: 0,
+        duration: 130 + i*35,
+        onComplete: () => ghost.destroy()
+      });
+    }
+
+    const streak = this.add.graphics();
+    streak.lineStyle(8, COLORS.green, 0.42);
+    streak.beginPath();
+    streak.moveTo(startX - dirX*8, startY - dirY*8);
+    streak.lineTo(dashX + dirX*24, dashY + dirY*18);
+    streak.strokePath();
+    streak.lineStyle(3, COLORS.yellow, 0.58);
+    streak.beginPath();
+    streak.moveTo(startX, startY);
+    streak.lineTo(dashX + dirX*20, dashY + dirY*14);
+    streak.strokePath();
 
     this.tweens.add({
-      targets: this.player,
-      x: this.player.x + dirX * lungeDist,
-      y: this.player.y + dirY * lungeDist,
-      duration: 58,
-      yoyo: true,
-      ease: 'Quad.easeOut'
-    });
-
-    const arc = this.add.graphics();
-    arc.lineStyle(7, COLORS.green, 0.95);
-    arc.beginPath();
-    arc.arc(this.player.x + dirX*12, this.player.y + dirY*10, Math.max(28, range*0.86), angle-0.52, angle+0.52);
-    arc.strokePath();
-
-    const trail = this.add.graphics();
-    trail.fillStyle(COLORS.green, 0.18);
-    trail.fillEllipse(this.player.x + dirX*22, this.player.y + dirY*16, 62, 26);
-    trail.rotation = angle;
-
-    this.tweens.add({
-      targets: [arc, trail],
+      targets: streak,
       alpha: 0,
       duration: 150,
-      onComplete: () => { arc.destroy(); trail.destroy(); }
+      onComplete: () => streak.destroy()
     });
 
-    this.time.delayedCall(132, () => {
-      if(this.gameOver || this.upgradeMenuOpen) return;
-      let hitCount = 0;
-      const enemies = this.enemies.getChildren().slice();
-      enemies.forEach(e => {
-        if(!e.active) return;
-        const dx = e.x - this.player.x;
-        const dy = e.y - this.player.y;
-        const d = Math.sqrt(dx*dx + dy*dy);
-        if(d > range + 22) return;
-        const enemyAngle = Math.atan2(dy, dx);
-        const diff = Phaser.Math.Angle.Wrap(enemyAngle - angle);
-        if(Math.abs(diff) <= 0.72) {
-          hitCount++;
-          this.damageEnemy(e, this.charData.baseDamage * this.attackDamageMult);
-          if(e.body && e.body.setVelocity) {
-            e.body.setVelocity(dirX * 210, dirY * 210);
+    // Dash body instead of polite standing punch
+    this.tweens.add({
+      targets: this.player,
+      x: dashX,
+      y: dashY,
+      duration: 82,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        let hitCount = 0;
+        const enemies = this.enemies.getChildren().slice();
+        enemies.forEach(e => {
+          if(!e.active) return;
+          const dx = e.x - this.player.x;
+          const dy = e.y - this.player.y;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          if(d > range + 24) return;
+
+          const enemyAngle = Math.atan2(dy, dx);
+          const diff = Phaser.Math.Angle.Wrap(enemyAngle - angle);
+
+          // Wider than a punch, narrower than a full circle: a kinetic shoulder-check zone.
+          if(Math.abs(diff) <= 1.05 || d < 34) {
+            hitCount++;
+            this.damageEnemy(e, this.charData.baseDamage * this.attackDamageMult);
+
+            if(e.body && e.body.setVelocity) {
+              e.body.setVelocity(dirX * 250, dirY * 250);
+            }
+
+            const impact = this.add.circle(e.x, e.y, 10, COLORS.green, 0.22).setStrokeStyle(4, COLORS.yellow, 0.92);
+            const burst = this.add.graphics();
+            burst.lineStyle(3, COLORS.green, 0.8);
+            for(let k=0;k<8;k++) {
+              const a = (Math.PI*2/8)*k;
+              burst.beginPath();
+              burst.moveTo(e.x, e.y);
+              burst.lineTo(e.x + Math.cos(a)*22, e.y + Math.sin(a)*22);
+              burst.strokePath();
+            }
+
+            this.tweens.add({
+              targets: [impact, burst],
+              alpha: 0,
+              scale: 1.45,
+              duration: 135,
+              onComplete: () => { impact.destroy(); burst.destroy(); }
+            });
           }
-          const spark = this.add.circle(e.x, e.y, 12, COLORS.green, 0.18).setStrokeStyle(3, COLORS.yellow, 0.8);
-          this.tweens.add({
-            targets: spark,
-            scale: 1.5,
-            alpha: 0,
-            duration: 110,
-            onComplete: () => spark.destroy()
-          });
+        });
+
+        if(hitCount > 0) {
+          this.hitFreeze(30);
+          this.cameras.main.shake(70, 0.0022);
         }
-      });
-      if(hitCount > 0) {
-        this.hitFreeze(34);
-        this.cameras.main.shake(75, 0.0023);
       }
     });
   }
