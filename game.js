@@ -16,7 +16,7 @@
 if (!window.Phaser) { throw new Error('Phaser did not load. Check phaser.min.js path.'); }
 
 // ═══════════════════════════════════════════════════════
-// THE PRISMATIC VEIL — STAGE BATTLER PROTOTYPE
+// THE PRISMATIC VEIL — SURVIVAL WEAPON BUILD
 // ═══════════════════════════════════════════════════════
 
 const GAME_W = 480;
@@ -41,11 +41,11 @@ const COLORS = {
   violet: 0xcc44ff,
 };
 
-// ── External Sprite Sheet Files (14 frames each: 4 idle, 6 walk/float, 4 attack) ──
+// ── External Sprite Sheet Files (stability pass: anchored frames, cleaner motion) ──
 const SPRITE_PATHS = {
-  prismel: './prismel_spritesheet.png',
-  kineza: './kineza_spritesheet.png',
-  auryi: './auryi_spritesheet.png'
+  prismel: './prismel_stable_spritesheet.png',
+  kineza: './kineza_stable_spritesheet.png',
+  auryi: './auryi_stable_spritesheet.png'
 };
 
 
@@ -81,25 +81,29 @@ const ANIM_FRAMES = {
 };
 
 // Curated animation maps to keep the updated hero sheets stable in motion.
-// Prismel uses a locked idle so the floating crystal does not jitter.
-// Kineza uses momentum-heavy attack frames instead of the clunky stand-and-punch set.
+// Prismel and Auryi now use calmer body animation while their spell foci are animated separately in code.
 const CHARACTER_ANIM_SETS = {
   prismel: {
-    idle: [0, 0, 2, 2],
+    idle: [1],
+    walk: [4, 5, 6, 7],
+    attack: [10, 10, 10, 10]
+  },
+  kineza: {
+    idle: [0, 2],
     walk: [4, 5, 6, 7, 8, 9],
     attack: [10, 11, 12, 13]
   },
-  kineza: {
-    idle: [0, 1, 2, 3],
-    walk: [4, 5, 6, 7, 8, 9],
-    attack: [6, 7, 8, 12]
+  auryi: {
+    idle: [1],
+    walk: [4, 5, 6, 7],
+    attack: [10, 10, 11, 11]
   }
 };
 
 const CHARACTER_ANIM_RATES = {
-  prismel: { idle: 4, walk: 9, attack: 11 },
-  kineza:  { idle: 5, walk: 11, attack: 17 },
-  auryi:   { idle: 4, walk: 8, attack: 10 }
+  prismel: { idle: 2, walk: 8, attack: 10 },
+  kineza:  { idle: 4, walk: 11, attack: 16 },
+  auryi:   { idle: 2, walk: 7, attack: 9 }
 };
 
 const CHARACTER_SPRITE_TUNING = {
@@ -255,24 +259,24 @@ class SoundFX {
   }
 
   attackPrismel() {
-    this.tone(560, 0.08, 'triangle', 0.060, 940);
-    this.tone(810, 0.06, 'square', 0.035, 1220, 0.01, 8);
-    this.tone(1420, 0.05, 'sine', 0.022, 1780, 0.03);
-    this.noise(0.05, 0.03, 0.018, 2600, 'highpass', 4);
+    this.tone(420, 0.11, 'triangle', 0.050, 780);
+    this.tone(660, 0.09, 'square', 0.032, 1120, 0.015, -4);
+    this.tone(1260, 0.08, 'sine', 0.020, 1700, 0.045);
+    this.noise(0.05, 0.026, 0.018, 2400, 'highpass', 3);
   }
 
   attackKineza() {
-    this.tone(84, 0.09, 'square', 0.16, 46);
-    this.tone(170, 0.07, 'sawtooth', 0.09, 92, 0.008);
-    this.noise(0.08, 0.070, 0.010, 700, 'bandpass', 5);
-    this.tone(620, 0.045, 'square', 0.03, 360, 0.028);
+    this.tone(78, 0.11, 'sawtooth', 0.17, 44);
+    this.tone(148, 0.08, 'square', 0.10, 86, 0.006);
+    this.noise(0.085, 0.075, 0.004, 760, 'bandpass', 5);
+    this.tone(560, 0.045, 'triangle', 0.026, 320, 0.022);
   }
 
   attackAuryi() {
-    this.tone(196, 0.24, 'sine', 0.05, 248);
-    this.tone(438, 0.18, 'triangle', 0.055, 640, 0.024);
-    this.tone(980, 0.12, 'sine', 0.040, 1400, 0.068);
-    this.noise(0.10, 0.025, 0.030, 1800, 'bandpass', 3);
+    this.tone(188, 0.20, 'sine', 0.048, 240);
+    this.tone(392, 0.18, 'triangle', 0.050, 620, 0.018);
+    this.tone(880, 0.15, 'sine', 0.032, 1240, 0.060);
+    this.noise(0.11, 0.024, 0.025, 1600, 'bandpass', 3);
   }
 
   hit() {
@@ -308,6 +312,32 @@ class SoundFX {
     this.tone(960, 0.04, 'triangle', 0.028, 1280, 0.020);
   }
 
+  cardReveal() {
+    this.tone(330, 0.10, 'triangle', 0.05, 440);
+    this.tone(660, 0.12, 'triangle', 0.04, 880, 0.06);
+    this.noise(0.12, 0.025, 0.035, 2600, 'highpass', 2);
+  }
+
+  rareRelic() {
+    this.tone(262, 0.12, 'sine', 0.06, 392);
+    this.tone(523, 0.16, 'triangle', 0.06, 784, 0.10);
+    this.tone(1046, 0.22, 'sine', 0.045, 1568, 0.18);
+  }
+
+  waveWarning() {
+    this.tone(90, 0.16, 'sawtooth', 0.08, 72);
+    this.tone(180, 0.16, 'square', 0.04, 144, 0.10);
+  }
+
+  battleTick() {
+    if(!gameState.battleMusicEnabled) return;
+    const step = Math.floor(performance.now() / 250) % 8;
+    if(step === 0) this.tone(82, 0.055, 'square', 0.026, 78);
+    if(step === 2) this.tone(123, 0.04, 'triangle', 0.018, 146);
+    if(step === 4) this.tone(98, 0.055, 'square', 0.022, 74);
+    if(step === 6) this.noise(0.035, 0.016, 0, 560, 'bandpass', 3);
+  }
+
   gameOver() {
     this.tone(330, 0.18, 'sawtooth', 0.10, 210);
     this.tone(220, 0.22, 'sawtooth', 0.095, 120, 0.18);
@@ -324,6 +354,8 @@ const gameState = {
   musicEnabled: true,
   sfxEnabled: true,
   titleStarted: false,
+  battleMusicEnabled: false,
+  sfxVolume: 1,
   selectedCharacter: 'prismel',
   level: 1,
   exp: 0,
@@ -403,6 +435,82 @@ const HERO_UI_THEMES = {
   }
 };
 
+const WEAPON_DEFS = {
+  prismShard: {
+    name: 'Prism Shard',
+    owner: 'prismel',
+    type: 'projectile',
+    level: 1,
+    maxLevel: 5,
+    desc: 'Crystals fired from Prismel’s focus.'
+  },
+  kineticDrive: {
+    name: 'Kinetic Drive',
+    owner: 'kineza',
+    type: 'dash',
+    level: 1,
+    maxLevel: 5,
+    desc: 'Dash-strikes with green momentum force.'
+  },
+  auraPulse: {
+    name: 'Aura Pulse',
+    owner: 'auryi',
+    type: 'aura',
+    level: 1,
+    maxLevel: 5,
+    desc: 'A pulsing orb-wave around Auryi.'
+  },
+  prismOrbit: {
+    name: 'Orbiting Prism',
+    owner: 'all',
+    type: 'orbit',
+    level: 0,
+    maxLevel: 5,
+    desc: 'A crystal satellite circles the hero.'
+  },
+  veilMine: {
+    name: 'Veil Mine',
+    owner: 'all',
+    type: 'mine',
+    level: 0,
+    maxLevel: 5,
+    desc: 'Drops timed veil sigils behind you.'
+  },
+  chainSpark: {
+    name: 'Chain Spark',
+    owner: 'all',
+    type: 'chain',
+    level: 0,
+    maxLevel: 5,
+    desc: 'Lightning jumps between nearby shades.'
+  }
+};
+
+const EVOLUTION_DEFS = {
+  prismaticBarrage: {
+    name: 'Prismatic Barrage',
+    requires: { weapon: 'prismShard', level: 4, passive: 'Spectrum Lens' },
+    desc: 'Prism Shards split into rainbow volleys.'
+  },
+  breakerDash: {
+    name: 'Breaker Dash',
+    requires: { weapon: 'kineticDrive', level: 4, passive: 'Momentum Core' },
+    desc: 'Kineza chains through multiple enemies.'
+  },
+  radiantSanctuary: {
+    name: 'Radiant Sanctuary',
+    requires: { weapon: 'auraPulse', level: 4, passive: 'Golden Halo' },
+    desc: 'Aura pulses heal and leave radiant fields.'
+  }
+};
+
+const STAGE_PHASES = [
+  { time: 0,   name: 'The First Veil',      msg: 'The First Veil opens.' },
+  { time: 60,  name: 'The Veil Deepens',    msg: 'The Veil deepens.' },
+  { time: 120, name: 'The Prism Fractures', msg: 'The Prism fractures.' },
+  { time: 180, name: 'Elder Pressure',      msg: 'An Elder pressure gathers.' }
+];
+
 
 // ═══════════════════════════════════════════════════════
 // TITLE SCENE
@@ -466,7 +574,7 @@ class TitleScene extends Phaser.Scene {
       strokeThickness: 2
     }).setOrigin(0.5).setDepth(4);
 
-    this.add.text(8, GAME_H - 12, 'FINAL POLISH PASS 05', {
+    this.add.text(8, GAME_H - 12, 'SURVIVAL WEAPON BATCH 07', {
       fontFamily: 'Courier New',
       fontSize: '8px',
       color: '#7d68aa'
@@ -826,6 +934,17 @@ class BattleScene extends Phaser.Scene {
     this.facingDir = {x:1, y:0};
     this.isAttacking = false;
     this.hitFreezeActive = false;
+    this.heroFx = {};
+    this.weapons = {};
+    this.passives = {};
+    this.evolutions = {};
+    this.orbiters = [];
+    this.mines = this.physics ? null : null;
+    this.lastMineDrop = 0;
+    this.lastChainSpark = 0;
+    this.lastBattleTick = 0;
+    this.nextStagePhase = 1;
+    this.eliteSpawned = {};
   }
 
   preload() {
@@ -876,17 +995,22 @@ class BattleScene extends Phaser.Scene {
     this.player.body.setCollideWorldBounds(true);
 
     this.currentAnim = 'idle';
+    this.createHeroEffects();
     this.isMoving = false;
 
     // ── Groups ──
     this.enemies = this.physics.add.group();
     this.projectiles = this.physics.add.group();
     this.expGems = this.physics.add.group();
+    this.mines = this.physics.add.group();
     this.damageTexts = [];
+
+    this.setupWeaponSystem();
 
     // ── Collisions ──
     this.physics.add.overlap(this.player, this.enemies, this.onPlayerHit, null, this);
     this.physics.add.overlap(this.projectiles, this.enemies, this.onProjectileHit, null, this);
+    this.physics.add.overlap(this.mines, this.enemies, this.onMineHit, null, this);
     this.physics.add.overlap(this.player, this.expGems, this.onGemCollect, null, this);
 
     // ── Input ──
@@ -924,10 +1048,138 @@ class BattleScene extends Phaser.Scene {
         this.tweens.add({targets:this.levelHint, alpha:0, duration:700, onComplete:()=>this.levelHint.destroy()});
       }
     });
+    this.time.delayedCall(700, () => this.showStageMessage('The First Veil opens.'));
 
     // ── Aura visual for Auryi ──
     if(gameState.selectedCharacter === 'auryi') {
       this.auraGraphics = this.add.graphics();
+    }
+  }
+
+  createHeroEffects() {
+    const charKey = gameState.selectedCharacter;
+    this.heroFx = {};
+
+    if(charKey === 'prismel') {
+      const glow = this.add.circle(0, 0, 13, 0x66ccff, 0.18);
+      const halo = this.add.circle(0, 0, 17, 0xffffff, 0).setStrokeStyle(2, 0xa879ff, 0.50);
+      const outer = this.add.rectangle(0, 0, 14, 14, 0x79b8ff, 0.95).setAngle(45).setStrokeStyle(2, 0xffffff, 0.75);
+      const inner = this.add.rectangle(0, 0, 8, 8, 0xff66ff, 0.95).setAngle(45);
+      const core = this.add.rectangle(0, 0, 4, 4, 0xffffff, 0.95).setAngle(45);
+      const crystal = this.add.container(this.player.x, this.player.y - 46, [glow, halo, outer, inner, core]).setDepth(16);
+      this.heroFx.prismel = { crystal, glow, halo, outer, inner, core, burstLock: false };
+    }
+    else if(charKey === 'auryi') {
+      const glow = this.add.circle(0, 0, 15, COLORS.yellow, 0.14);
+      const ring = this.add.circle(0, 0, 11, COLORS.white, 0).setStrokeStyle(2, COLORS.yellow, 0.70);
+      const core = this.add.circle(0, 0, 7, 0xffdf88, 0.98);
+      const shine = this.add.circle(-2, -2, 3, 0xffffff, 0.92);
+      const orb = this.add.container(this.player.x, this.player.y - 54, [glow, ring, core, shine]).setDepth(16);
+      this.heroFx.auryi = { orb, glow, ring, core, shine, burstLock: false };
+    }
+    else if(charKey === 'kineza') {
+      const leftGlow = this.add.circle(this.player.x, this.player.y, 10, COLORS.green, 0.0).setDepth(14).setStrokeStyle(2, COLORS.yellow, 0.0);
+      const rightGlow = this.add.circle(this.player.x, this.player.y, 12, COLORS.green, 0.0).setDepth(14).setStrokeStyle(2, COLORS.yellow, 0.0);
+      this.heroFx.kineza = { leftGlow, rightGlow, burstLock: false };
+    }
+  }
+
+  updateHeroEffects(delta) {
+    if(!this.player || !this.heroFx) return;
+    const t = this.time.now * 0.004;
+    const side = this.player.flipX ? -1 : 1;
+
+    if(this.heroFx.prismel) {
+      const fx = this.heroFx.prismel;
+      const baseX = this.player.x + side * 18;
+      const baseY = this.player.y - 58;
+      const targetX = baseX + side * (10 + Math.cos(t) * 8);
+      const targetY = baseY + Math.sin(t * 1.3) * 7;
+      fx.crystal.x = Phaser.Math.Linear(fx.crystal.x, targetX, 0.22);
+      fx.crystal.y = Phaser.Math.Linear(fx.crystal.y, targetY, 0.22);
+      fx.crystal.rotation += 0.015;
+      const pulse = 1 + Math.sin(t * 1.8) * 0.08;
+      fx.crystal.setScale(pulse);
+      const spectrum = [0xff5a7a, 0xffcc55, 0x7dff8d, 0x7dc8ff, 0xc68bff];
+      const idx = Math.floor((this.time.now / 180) % spectrum.length);
+      const next = spectrum[idx];
+      const innerNext = spectrum[(idx + 2) % spectrum.length];
+      fx.outer.setFillStyle(next, 0.95);
+      fx.inner.setFillStyle(innerNext, 0.95);
+      fx.glow.setFillStyle(next, 0.16);
+      fx.halo.setStrokeStyle(2, innerNext, 0.45 + Math.sin(t * 1.7) * 0.12);
+    }
+
+    if(this.heroFx.auryi) {
+      const fx = this.heroFx.auryi;
+      const baseX = this.player.x + side * 26;
+      const baseY = this.player.y - 54;
+      const targetX = baseX + side * (Math.cos(t * 0.8) * 4);
+      const targetY = baseY + Math.sin(t * 1.1) * 6;
+      fx.orb.x = Phaser.Math.Linear(fx.orb.x, targetX, 0.18);
+      fx.orb.y = Phaser.Math.Linear(fx.orb.y, targetY, 0.18);
+      const pulse = 1 + Math.sin(t * 1.4) * 0.10;
+      fx.orb.setScale(pulse);
+      fx.glow.setFillStyle(COLORS.yellow, 0.11 + Math.sin(t * 1.4) * 0.03);
+      fx.ring.setStrokeStyle(2, COLORS.yellow, 0.55 + Math.sin(t * 1.9) * 0.15);
+    }
+
+    if(this.heroFx.kineza) {
+      const fx = this.heroFx.kineza;
+      const moveBoost = this.isMoving ? 0.08 : 0.0;
+      const alpha = 0.12 + Math.sin(t * 2.4) * 0.05 + moveBoost;
+      const rightX = this.player.x + side * 24;
+      const rightY = this.player.y - 44;
+      const leftX = this.player.x - side * 10;
+      const leftY = this.player.y - 40;
+      fx.rightGlow.x = rightX; fx.rightGlow.y = rightY;
+      fx.leftGlow.x = leftX; fx.leftGlow.y = leftY;
+      fx.rightGlow.setFillStyle(COLORS.green, alpha);
+      fx.leftGlow.setFillStyle(COLORS.green, alpha * 0.85);
+      fx.rightGlow.setStrokeStyle(2, COLORS.yellow, alpha * 0.75);
+      fx.leftGlow.setStrokeStyle(2, COLORS.yellow, alpha * 0.60);
+    }
+  }
+
+  triggerHeroFocusBurst(kind) {
+    if(kind === 'prismel' && this.heroFx.prismel && !this.heroFx.prismel.burstLock) {
+      const fx = this.heroFx.prismel;
+      fx.burstLock = true;
+      this.tweens.add({
+        targets: fx.crystal,
+        scaleX: 1.48,
+        scaleY: 1.48,
+        duration: 90,
+        yoyo: true,
+        onComplete: () => { fx.burstLock = false; }
+      });
+    }
+    else if(kind === 'auryi' && this.heroFx.auryi && !this.heroFx.auryi.burstLock) {
+      const fx = this.heroFx.auryi;
+      fx.burstLock = true;
+      this.tweens.add({
+        targets: fx.orb,
+        scaleX: 1.42,
+        scaleY: 1.42,
+        duration: 120,
+        yoyo: true,
+        onComplete: () => { fx.burstLock = false; }
+      });
+    }
+    else if(kind === 'kineza' && this.heroFx.kineza && !this.heroFx.kineza.burstLock) {
+      const fx = this.heroFx.kineza;
+      fx.burstLock = true;
+      [fx.leftGlow, fx.rightGlow].forEach(glow => {
+        this.tweens.add({
+          targets: glow,
+          scaleX: 1.45,
+          scaleY: 1.45,
+          alpha: 0,
+          duration: 110,
+          yoyo: true
+        });
+      });
+      this.time.delayedCall(120, () => { fx.burstLock = false; });
     }
   }
 
@@ -1075,17 +1327,240 @@ class BattleScene extends Phaser.Scene {
     this.updateTimer();
     this.updateMovement(delta);
     this.updatePlayerSprite();
+    this.updateHeroEffects(delta);
     this.updateAttack(time);
+    this.updateWeapons(time, delta);
     this.updateEnemies(time, delta);
     this.spawnEnemies(time);
     this.updateProjectiles(delta);
+    this.updateMines(delta);
     this.updateExpGems(delta);
     this.updateDamageTexts(delta);
     this.updateVeil();
     this.updateUI();
+    this.updateStagePhase(time);
+    this.updateBattleAudio(time);
 
     if(gameState.selectedCharacter === 'auryi') {
       this.updateAura();
+    }
+  }
+
+  setupWeaponSystem() {
+    const hero = gameState.selectedCharacter;
+    const baseMap = {
+      prismel: 'prismShard',
+      kineza: 'kineticDrive',
+      auryi: 'auraPulse'
+    };
+    this.weapons[baseMap[hero]] = { level: 1, cooldown: 0 };
+    this.weaponCooldowns = {
+      prismOrbit: 0,
+      veilMine: 0,
+      chainSpark: 0
+    };
+  }
+
+  getWeaponLevel(key) {
+    return this.weapons[key] ? this.weapons[key].level : 0;
+  }
+
+  upgradeWeapon(key) {
+    const def = WEAPON_DEFS[key];
+    if(!def) return;
+    if(!this.weapons[key]) {
+      this.weapons[key] = { level: 1, cooldown: 0 };
+    } else {
+      this.weapons[key].level = Math.min(def.maxLevel, this.weapons[key].level + 1);
+    }
+    if(key === 'prismOrbit') this.rebuildOrbiters();
+  }
+
+  addPassive(name) {
+    this.passives[name] = (this.passives[name] || 0) + 1;
+    if(name === 'Magnet Charm') this.magnetBonus = (this.magnetBonus || 0) + 40;
+    if(name === 'Vital Thread') {
+      this.playerMaxHp += 15;
+      this.playerHp = Math.min(this.playerMaxHp, this.playerHp + 15);
+    }
+    if(name === 'Quickened Veil') this.attackSpeedMult *= 1.08;
+    if(name === 'Spectrum Lens') this.attackRangeMult *= 1.08;
+    if(name === 'Momentum Core') this.moveSpeedMult *= 1.08;
+    if(name === 'Golden Halo') this.regenBonus = (this.regenBonus || 0) + 0.006;
+  }
+
+  tryEvolutions() {
+    if(gameState.selectedCharacter === 'prismel' &&
+       this.getWeaponLevel('prismShard') >= 4 &&
+       this.passives['Spectrum Lens'] &&
+       !this.evolutions.prismaticBarrage) {
+      this.evolutions.prismaticBarrage = true;
+      this.showStageMessage('EVOLUTION: PRISMATIC BARRAGE');
+      sfx.rareRelic();
+    }
+    if(gameState.selectedCharacter === 'kineza' &&
+       this.getWeaponLevel('kineticDrive') >= 4 &&
+       this.passives['Momentum Core'] &&
+       !this.evolutions.breakerDash) {
+      this.evolutions.breakerDash = true;
+      this.showStageMessage('EVOLUTION: BREAKER DASH');
+      sfx.rareRelic();
+    }
+    if(gameState.selectedCharacter === 'auryi' &&
+       this.getWeaponLevel('auraPulse') >= 4 &&
+       this.passives['Golden Halo'] &&
+       !this.evolutions.radiantSanctuary) {
+      this.evolutions.radiantSanctuary = true;
+      this.showStageMessage('EVOLUTION: RADIANT SANCTUARY');
+      sfx.rareRelic();
+    }
+  }
+
+  updateWeapons(time, delta) {
+    const orbitLevel = this.getWeaponLevel('prismOrbit');
+    if(orbitLevel > 0) this.updateOrbiters(time, orbitLevel);
+
+    const mineLevel = this.getWeaponLevel('veilMine');
+    if(mineLevel > 0) this.dropVeilMine(time, mineLevel);
+
+    const chainLevel = this.getWeaponLevel('chainSpark');
+    if(chainLevel > 0) this.fireChainSpark(time, chainLevel);
+
+    if(this.regenBonus && !this.gameOver) {
+      this.playerHp = Math.min(this.playerMaxHp, this.playerHp + this.regenBonus * delta);
+    }
+  }
+
+  rebuildOrbiters() {
+    this.orbiters.forEach(o => o.destroy());
+    this.orbiters = [];
+    const level = this.getWeaponLevel('prismOrbit');
+    const count = Math.min(5, level + 1);
+    for(let i=0; i<count; i++) {
+      const color = [COLORS.blue, COLORS.violet, COLORS.green, COLORS.yellow, COLORS.red][i % 5];
+      const orb = this.add.container(this.player.x, this.player.y).setDepth(12);
+      const g = this.add.rectangle(0, 0, 10, 10, color, 0.95).setAngle(45).setStrokeStyle(1, COLORS.white, 0.6);
+      const glow = this.add.circle(0, 0, 12, color, 0.14);
+      orb.add([glow, g]);
+      orb.weaponIndex = i;
+      this.orbiters.push(orb);
+    }
+  }
+
+  updateOrbiters(time, level) {
+    const radius = 42 + level * 6;
+    const speed = 0.0022 + level * 0.00025;
+    this.orbiters.forEach((orb, i) => {
+      const a = time * speed + (Math.PI * 2 / this.orbiters.length) * i;
+      orb.x = this.player.x + Math.cos(a) * radius;
+      orb.y = this.player.y + Math.sin(a) * radius * 0.75;
+      orb.rotation += 0.04;
+      this.enemies.getChildren().forEach(e => {
+        if(e.active && Phaser.Math.Distance.Between(orb.x, orb.y, e.x, e.y) < 24) {
+          this.damageEnemy(e, 0.035 * level * this.charData.baseDamage);
+        }
+      });
+    });
+  }
+
+  dropVeilMine(time, level) {
+    const cooldown = Math.max(650, 1900 - level * 220);
+    if(time - this.lastMineDrop < cooldown) return;
+    this.lastMineDrop = time;
+
+    const ring = this.add.circle(0, 0, 13 + level * 2, COLORS.violet, 0.12).setStrokeStyle(2, COLORS.lavender, 0.7);
+    const core = this.add.star(0, 0, 5, 3, 9 + level, COLORS.lavender, 0.92);
+    const mine = this.add.container(this.player.x, this.player.y + 4, [ring, core]).setDepth(4);
+    this.physics.world.enable(mine);
+    mine.body.setSize(30 + level * 4, 30 + level * 4);
+    mine.body.setOffset(-(15 + level * 2), -(15 + level * 2));
+    mine.damage = (8 + level * 3) * this.attackDamageMult;
+    mine.lifetime = 4200;
+    mine.mineLevel = level;
+    this.mines.add(mine);
+  }
+
+  fireChainSpark(time, level) {
+    const cooldown = Math.max(700, 1500 - level * 160);
+    if(time - this.lastChainSpark < cooldown) return;
+    this.lastChainSpark = time;
+    const enemies = this.enemies.getChildren().filter(e => e.active);
+    if(enemies.length < 1) return;
+    enemies.sort((a,b) =>
+      Phaser.Math.Distance.Between(this.player.x,this.player.y,a.x,a.y) -
+      Phaser.Math.Distance.Between(this.player.x,this.player.y,b.x,b.y)
+    );
+    const maxJumps = Math.min(4, level + 1);
+    let lastX = this.player.x, lastY = this.player.y;
+    for(let i=0; i<Math.min(maxJumps, enemies.length); i++) {
+      const e = enemies[i];
+      const bolt = this.add.graphics().setDepth(18);
+      bolt.lineStyle(2, COLORS.blue, 0.88);
+      bolt.beginPath();
+      bolt.moveTo(lastX,lastY);
+      bolt.lineTo(e.x,e.y);
+      bolt.strokePath();
+      this.tweens.add({targets: bolt, alpha: 0, duration: 130, onComplete:()=>bolt.destroy()});
+      this.damageEnemy(e, (5 + level * 2) * this.attackDamageMult);
+      lastX = e.x; lastY = e.y;
+    }
+  }
+
+  updateMines(delta) {
+    this.mines.getChildren().forEach(m => {
+      m.lifetime -= delta;
+      m.rotation += 0.015;
+      if(m.lifetime <= 0) {
+        this.detonateMine(m);
+      }
+    });
+  }
+
+  detonateMine(mine) {
+    if(!mine || !mine.active) return;
+    const radius = 48 + mine.mineLevel * 8;
+    const ring = this.add.circle(mine.x, mine.y, 12, COLORS.violet, 0).setStrokeStyle(4, COLORS.lavender, 0.85);
+    this.tweens.add({
+      targets: ring,
+      radius,
+      alpha: 0,
+      duration: 220,
+      onComplete: () => ring.destroy()
+    });
+    this.enemies.getChildren().forEach(e => {
+      if(e.active && Phaser.Math.Distance.Between(mine.x, mine.y, e.x, e.y) < radius) {
+        this.damageEnemy(e, mine.damage);
+      }
+    });
+    mine.destroy();
+  }
+
+  updateStagePhase(time) {
+    const elapsed = this.gameTime / 1000;
+    if(this.nextStagePhase < STAGE_PHASES.length && elapsed >= STAGE_PHASES[this.nextStagePhase].time) {
+      const phase = STAGE_PHASES[this.nextStagePhase];
+      this.showStageMessage(phase.msg);
+      sfx.waveWarning();
+      this.nextStagePhase++;
+    }
+  }
+
+  showStageMessage(msg) {
+    const t = this.add.text(GAME_W/2, 136, msg, {
+      fontFamily:'Georgia, serif',
+      fontSize:'18px',
+      fontStyle:'bold',
+      color:'#f7e8b6',
+      stroke:'#000000',
+      strokeThickness:4
+    }).setOrigin(0.5).setDepth(2200);
+    this.tweens.add({targets:t, y:t.y-20, alpha:0, duration:1600, onComplete:()=>t.destroy()});
+  }
+
+  updateBattleAudio(time) {
+    if(time - this.lastBattleTick > 250) {
+      this.lastBattleTick = time;
+      sfx.battleTick();
     }
   }
 
@@ -1168,15 +1643,29 @@ class BattleScene extends Phaser.Scene {
     this.playHeroAttackAnim();
 
     if(gameState.selectedCharacter === 'prismel') {
+      this.triggerHeroFocusBurst('prismel');
+      const lvl = this.getWeaponLevel('prismShard');
       this.firePrismProjectile(nearest);
+      if(lvl >= 2 || this.evolutions.prismaticBarrage) {
+        const extras = this.evolutions.prismaticBarrage ? [-0.35, -0.18, 0.18, 0.35] : [-0.18, 0.18];
+        extras.forEach(offset => this.firePrismProjectile(nearest, offset));
+      }
       sfx.attackPrismel();
     }
     else if(gameState.selectedCharacter === 'kineza') {
-      this.kinezaMeleeStrike(nearest, range, nearestDist);
+      this.triggerHeroFocusBurst('kineza');
+      this.kinezaMeleeStrike(nearest, range + this.getWeaponLevel('kineticDrive')*6, nearestDist);
+      if(this.evolutions.breakerDash) {
+        this.time.delayedCall(115, () => {
+          const next = this.enemies.getChildren().find(e => e.active && Phaser.Math.Distance.Between(this.player.x,this.player.y,e.x,e.y) < range + 90);
+          if(next) this.kinezaMeleeStrike(next, range + 20, Phaser.Math.Distance.Between(this.player.x,this.player.y,next.x,next.y));
+        });
+      }
       sfx.attackKineza();
     }
     else if(gameState.selectedCharacter === 'auryi') {
-      this.auryiAuraPulse(range);
+      this.triggerHeroFocusBurst('auryi');
+      this.auryiAuraPulse(range + this.getWeaponLevel('auraPulse')*10);
       sfx.attackAuryi();
     }
   }
@@ -1193,39 +1682,57 @@ class BattleScene extends Phaser.Scene {
     });
   }
 
-  firePrismProjectile(target) {
-    const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
+  firePrismProjectile(target, angleOffset = 0) {
+    const startX = this.heroFx.prismel ? this.heroFx.prismel.crystal.x : this.player.x;
+    const startY = this.heroFx.prismel ? this.heroFx.prismel.crystal.y : this.player.y - 30;
+    const angle = Phaser.Math.Angle.Between(startX, startY, target.x, target.y) + angleOffset;
     const colors = [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green, COLORS.blue, COLORS.violet];
     const color = colors[Math.floor(Math.random()*colors.length)];
 
-    const proj = this.add.graphics();
-    // Outer glow
-    proj.fillStyle(color, 0.3);
-    proj.fillCircle(0,0,12);
-    // Crystal shape (diamond)
-    proj.fillStyle(color);
-    proj.fillRect(-7,-7,14,14);
-    proj.fillStyle(COLORS.white);
-    proj.fillRect(-3,-3,6,6);
+    const glow = this.add.circle(0, 0, 11, color, 0.22);
+    const ring = this.add.circle(0, 0, 15, color, 0).setStrokeStyle(2, color, 0.55);
+    const crystal = this.add.rectangle(0, 0, 12, 12, color, 0.98).setAngle(45).setStrokeStyle(2, 0xffffff, 0.70);
+    const core = this.add.rectangle(0, 0, 5, 5, 0xffffff, 0.95).setAngle(45);
 
-    const container = this.add.container(this.player.x, this.player.y, [proj]);
+    const container = this.add.container(startX, startY, [glow, ring, crystal, core]);
     this.physics.world.enable(container);
-    container.body.setSize(16,16);
-    container.body.setOffset(-8,-8);
+    container.body.setSize(18,18);
+    container.body.setOffset(-9,-9);
 
     const speed = this.charData.projectileSpeed;
     container.body.setVelocity(Math.cos(angle)*speed, Math.sin(angle)*speed);
     container.damage = this.charData.baseDamage * this.attackDamageMult;
     container.rotation = angle;
     container.lifetime = 1800;
+    container.prismProjectile = true;
 
-    // Spin animation for the crystal
     this.tweens.add({
-      targets: proj,
-      rotation: Math.PI*2,
-      duration: 500,
+      targets: [crystal, core],
+      angle: '+=360',
+      duration: 380,
       repeat: -1
     });
+    this.tweens.add({
+      targets: ring,
+      scaleX: 1.3,
+      scaleY: 1.3,
+      alpha: 0.18,
+      duration: 180,
+      yoyo: true,
+      repeat: -1
+    });
+
+    for(let i=0;i<3;i++) {
+      const shard = this.add.rectangle(startX - Math.cos(angle)*(8 + i*6), startY - Math.sin(angle)*(8 + i*6), 8 - i*2, 8 - i*2, color, 0.16 - i*0.03).setAngle(45);
+      this.tweens.add({
+        targets: shard,
+        alpha: 0,
+        scaleX: 0.5,
+        scaleY: 0.5,
+        duration: 180 + i*30,
+        onComplete: () => shard.destroy()
+      });
+    }
 
     this.projectiles.add(container);
   }
@@ -1354,6 +1861,13 @@ class BattleScene extends Phaser.Scene {
   }
 
   auryiAuraPulse(range) {
+    if(this.heroFx.auryi) {
+      this.tweens.add({
+        targets: this.heroFx.auryi.orb,
+        angle: '+=45',
+        duration: 140
+      });
+    }
     // Visual pulse - double ring for impact
     const ring1 = this.add.circle(this.player.x, this.player.y, 10, COLORS.lavender, 0);
     ring1.setStrokeStyle(5, COLORS.lavender, 0.9);
@@ -1400,6 +1914,11 @@ class BattleScene extends Phaser.Scene {
         this.damageEnemy(e, this.charData.baseDamage * this.attackDamageMult);
       }
     });
+    if(this.evolutions.radiantSanctuary) {
+      this.playerHp = Math.min(this.playerMaxHp, this.playerHp + 4);
+      const field = this.add.circle(this.player.x, this.player.y, range*0.45, COLORS.yellow, 0.08).setStrokeStyle(2, COLORS.yellow, 0.18);
+      this.tweens.add({targets: field, alpha: 0, duration: 1000, onComplete:()=>field.destroy()});
+    }
   }
 
   updateAura() {
@@ -1414,23 +1933,38 @@ class BattleScene extends Phaser.Scene {
     if(time - this.lastSpawn < this.spawnInterval) return;
     this.lastSpawn = time;
 
-    // Reduce spawn interval over time (harder)
-    this.spawnInterval = Math.max(400, 1800 - this.gameTime*0.03);
+    // Reduce spawn interval over time (harder), VS-style density ramp
+    this.spawnInterval = Math.max(220, 1350 - this.gameTime*0.055);
+    const elapsed = this.gameTime / 1000;
+    const packSize = Phaser.Math.Clamp(1 + Math.floor(elapsed / 35), 1, 7);
 
-    const enemyTypes = ['veilshade','wraith','crawler'];
+    const enemyTypes = elapsed > 120
+      ? ['veilshade','wraith','crawler','splitter','leech','brute']
+      : elapsed > 60
+        ? ['veilshade','wraith','crawler','splitter','leech']
+        : ['veilshade','wraith','crawler'];
+
     const type = enemyTypes[Math.floor(Math.random()*enemyTypes.length)];
-
-    // Spawn at edge of screen
     const side = Math.floor(Math.random()*4);
-    let x,y;
-    switch(side) {
-      case 0: x=Math.random()*GAME_W; y=-20; break;
-      case 1: x=GAME_W+20; y=Math.random()*GAME_H; break;
-      case 2: x=Math.random()*GAME_W; y=GAME_H+20; break;
-      default: x=-20; y=Math.random()*GAME_H;
+    const baseOffset = Phaser.Math.Between(-40,40);
+
+    for(let i=0; i<packSize; i++) {
+      let x,y;
+      const scatter = i * 18 + Phaser.Math.Between(-14,14);
+      switch(side) {
+        case 0: x=Phaser.Math.Clamp(GAME_W/2 + baseOffset + scatter, 0, GAME_W); y=-30-Phaser.Math.Between(0,80); break;
+        case 1: x=GAME_W+30+Phaser.Math.Between(0,80); y=Phaser.Math.Clamp(GAME_H/2 + baseOffset + scatter, 80, GAME_H); break;
+        case 2: x=Phaser.Math.Clamp(GAME_W/2 + baseOffset + scatter, 0, GAME_W); y=GAME_H+30+Phaser.Math.Between(0,80); break;
+        default: x=-30-Phaser.Math.Between(0,80); y=Phaser.Math.Clamp(GAME_H/2 + baseOffset + scatter, 80, GAME_H);
+      }
+      this.createEnemy(x,y,type);
     }
 
-    this.createEnemy(x,y,type);
+    if(elapsed > 150 && !this.eliteSpawned.elderBrute) {
+      this.eliteSpawned.elderBrute = true;
+      this.showStageMessage('RIFT BRUTE ENTERS');
+      this.createEnemy(GAME_W+60, GAME_H/2, 'brute');
+    }
   }
 
   createEnemy(x,y,type) {
@@ -1440,6 +1974,39 @@ class BattleScene extends Phaser.Scene {
     let hp, speed, color, dmg, hpColor;
 
     switch(type) {
+      case 'brute':
+        hp = 90 + this.gameTime*0.010; speed=34; color=COLORS.red; dmg=18; hpColor = 0xff5544;
+        ring.setStrokeStyle(3, COLORS.red, 0.60);
+        g.lineStyle(3, 0xffa15d, 0.70);
+        g.fillStyle(0x4a1020, 0.96);
+        g.fillRoundedRect(-14,-16,28,32,6);
+        g.strokeRoundedRect(-14,-16,28,32,6);
+        g.fillStyle(0xffdd66, 0.95);
+        g.fillRect(-7,-8,4,4);
+        g.fillRect(3,-8,4,4);
+        break;
+      case 'splitter':
+        hp = 11 + this.gameTime*0.002; speed=72; color=COLORS.orange; dmg=7; hpColor = 0xffbb55;
+        ring.setStrokeStyle(2, COLORS.orange, 0.45);
+        g.lineStyle(2, 0xffd37a, 0.55);
+        g.fillStyle(0x55310f, 0.92);
+        g.fillTriangle(-10,10, 10,10, 0,-13);
+        g.strokeTriangle(-10,10, 10,10, 0,-13);
+        g.fillStyle(0xfff1b3, 0.95);
+        g.fillRect(-4,-5,3,3);
+        g.fillRect(2,-5,3,3);
+        break;
+      case 'leech':
+        hp = 10 + this.gameTime*0.0018; speed=78; color=COLORS.blue; dmg=5; hpColor = 0x66d8ff;
+        ring.setStrokeStyle(2, COLORS.blue, 0.42);
+        g.lineStyle(2, 0x9de1ff, 0.50);
+        g.fillStyle(0x102a50, 0.92);
+        g.fillEllipse(0, 0, 22, 17);
+        g.strokeEllipse(0, 0, 22, 17);
+        g.fillStyle(0xdff8ff, 0.95);
+        g.fillRect(-5,-4,3,3);
+        g.fillRect(3,-4,3,3);
+        break;
       case 'veilshade':
         hp = 12 + this.gameTime*0.002; speed=60; color=COLORS.indigo; dmg=8; hpColor = 0xa26cff;
         ring.setStrokeStyle(2, COLORS.lavender, 0.45);
@@ -1494,11 +2061,25 @@ class BattleScene extends Phaser.Scene {
     container.setScale(container.baseScale);
 
     this.enemies.add(container);
+    return container;
   }
 
   updateEnemies(time, delta) {
     this.enemies.getChildren().forEach(e => {
-      const angle = Phaser.Math.Angle.Between(e.x,e.y,this.player.x,this.player.y);
+      let targetX = this.player.x, targetY = this.player.y;
+      if(e.enemyType === 'leech') {
+        let nearestGem = null, gd = Infinity;
+        this.expGems.getChildren().forEach(g => {
+          const d = Phaser.Math.Distance.Between(e.x,e.y,g.x,g.y);
+          if(d < gd) { gd = d; nearestGem = g; }
+        });
+        if(nearestGem && gd < 180) { targetX = nearestGem.x; targetY = nearestGem.y; }
+        if(nearestGem && gd < 14) {
+          nearestGem.destroy();
+          this.spawnDamageText(e.x, e.y-18, 'LEECH', COLORS.blue);
+        }
+      }
+      const angle = Phaser.Math.Angle.Between(e.x,e.y,targetX,targetY);
       e.body.setVelocity(Math.cos(angle)*e.speed, Math.sin(angle)*e.speed);
 
       if(e.hpFill) {
@@ -1549,7 +2130,13 @@ class BattleScene extends Phaser.Scene {
 
   killEnemy(enemy) {
     // Spawn exp gem
-    this.createExpGem(enemy.x, enemy.y);
+    this.createExpGem(deadX, deadY);
+    if(deadType === 'splitter') {
+      for(let i=0;i<2;i++) {
+        const child = this.createEnemy(deadX + Phaser.Math.Between(-18,18), deadY + Phaser.Math.Between(-18,18), 'wraith');
+        if(child && child.body) child.body.setVelocity(Phaser.Math.Between(-80,80), Phaser.Math.Between(-80,80));
+      }
+    }
     this.score += 10;
     this.killCount++;
     sfx.enemyDeath();
@@ -1597,9 +2184,25 @@ class BattleScene extends Phaser.Scene {
     proj.destroy();
   }
 
+  onMineHit(mine, enemy) {
+    if(!mine.active || !enemy.active) return;
+    this.detonateMine(mine);
+  }
+
   updateProjectiles(delta) {
     this.projectiles.getChildren().forEach(p => {
       p.lifetime -= delta;
+      if(p.prismProjectile) {
+        const trail = this.add.circle(p.x, p.y, 5, COLORS.white, 0.08);
+        this.tweens.add({
+          targets: trail,
+          alpha: 0,
+          scaleX: 0.4,
+          scaleY: 0.4,
+          duration: 150,
+          onComplete: () => trail.destroy()
+        });
+      }
       if(p.lifetime <= 0) p.destroy();
     });
   }
@@ -1624,7 +2227,7 @@ class BattleScene extends Phaser.Scene {
   updateExpGems(delta) {
     this.expGems.getChildren().forEach(gem => {
       const d = Phaser.Math.Distance.Between(gem.x,gem.y,this.player.x,this.player.y);
-      if(d < 130) {
+      if(d < 130 + (this.magnetBonus || 0)) {
         // Magnetize toward player
         const angle = Phaser.Math.Angle.Between(gem.x,gem.y,this.player.x,this.player.y);
         gem.body.setVelocity(Math.cos(angle)*280, Math.sin(angle)*280);
@@ -1652,6 +2255,7 @@ class BattleScene extends Phaser.Scene {
     this.playerMaxHp += 10;
     this.playerHp = Math.min(this.playerMaxHp, this.playerHp+10);
     sfx.levelUp();
+    sfx.cardReveal();
 
     const flash = this.add.text(GAME_W/2, GAME_H/2 - 185, 'RELIC CARDS REVEALED', {
       fontFamily:'Georgia, serif',
@@ -1776,41 +2380,58 @@ class BattleScene extends Phaser.Scene {
        apply:()=>{this.attackSpeedMult*=1.15;}},
       {name:'Azure Reach', keyword:'RANGE', color:COLORS.blue, desc:'+20% attack range',
        apply:()=>{this.attackRangeMult*=1.2;}},
-      {name:'Amber Vitalis', keyword:'VITAL', color:COLORS.orange, desc:'+20 maximum HP',
-       apply:()=>{this.playerMaxHp+=20; this.playerHp+=20;}},
-      {name:'Violet Renewal', keyword:'RESTORE', color:COLORS.violet, desc:'fully restore health',
-       apply:()=>{this.playerHp=this.playerMaxHp;}},
+      {name:'Amber Vitalis', keyword:'SURVIVAL', color:COLORS.orange, desc:'+25 max HP',
+       apply:()=>{this.playerMaxHp+=25; this.playerHp+=25;}},
+      {name:'Violet Renewal', keyword:'RESTORE', color:COLORS.violet, desc:'Heal 40 HP',
+       apply:()=>{this.playerHp=Math.min(this.playerMaxHp,this.playerHp+40);}},
+
+      {name:'Prism Shard +', keyword:'WEAPON', color:COLORS.blue, desc:'Upgrade Prism Shard',
+       condition:()=>gameState.selectedCharacter==='prismel' && this.getWeaponLevel('prismShard') < 5,
+       apply:()=>{this.upgradeWeapon('prismShard');}},
+      {name:'Kinetic Drive +', keyword:'WEAPON', color:COLORS.green, desc:'Upgrade Kinetic Drive',
+       condition:()=>gameState.selectedCharacter==='kineza' && this.getWeaponLevel('kineticDrive') < 5,
+       apply:()=>{this.upgradeWeapon('kineticDrive');}},
+      {name:'Aura Pulse +', keyword:'WEAPON', color:COLORS.yellow, desc:'Upgrade Aura Pulse',
+       condition:()=>gameState.selectedCharacter==='auryi' && this.getWeaponLevel('auraPulse') < 5,
+       apply:()=>{this.upgradeWeapon('auraPulse');}},
+      {name:'Orbiting Prism', keyword:'WEAPON', color:COLORS.violet, desc:'Crystal satellite',
+       condition:()=>this.getWeaponLevel('prismOrbit') < 5,
+       apply:()=>{this.upgradeWeapon('prismOrbit');}},
+      {name:'Veil Mine', keyword:'WEAPON', color:COLORS.lavender, desc:'Drop veil sigils',
+       condition:()=>this.getWeaponLevel('veilMine') < 5,
+       apply:()=>{this.upgradeWeapon('veilMine');}},
+      {name:'Chain Spark', keyword:'WEAPON', color:COLORS.blue, desc:'Lightning jumps',
+       condition:()=>this.getWeaponLevel('chainSpark') < 5,
+       apply:()=>{this.upgradeWeapon('chainSpark');}},
+
+      {name:'Magnet Charm', keyword:'PASSIVE', color:COLORS.lavender, desc:'Wider gem pickup',
+       apply:()=>{this.addPassive('Magnet Charm');}},
+      {name:'Spectrum Lens', keyword:'PASSIVE', color:COLORS.blue, desc:'Prism evolution key',
+       apply:()=>{this.addPassive('Spectrum Lens');}},
+      {name:'Momentum Core', keyword:'PASSIVE', color:COLORS.green, desc:'Dash evolution key',
+       apply:()=>{this.addPassive('Momentum Core');}},
+      {name:'Golden Halo', keyword:'PASSIVE', color:COLORS.yellow, desc:'Aura evolution key',
+       apply:()=>{this.addPassive('Golden Halo');}},
+      {name:'Vital Thread', keyword:'PASSIVE', color:COLORS.orange, desc:'Max HP + regen path',
+       apply:()=>{this.addPassive('Vital Thread');}},
+      {name:'Quickened Veil', keyword:'PASSIVE', color:COLORS.red, desc:'Faster weapon rhythm',
+       apply:()=>{this.addPassive('Quickened Veil');}},
     ];
-    // Shuffle and pick
-    const shuffled = [...pool].sort(()=>Math.random()-0.5);
-    return shuffled.slice(0,count);
-  }
 
-  // ═══ DAMAGE TEXT ═══
-  spawnDamageText(x,y,amount,color) {
-    const colorHex = '#'+color.toString(16).padStart(6,'0');
-    const text = this.add.text(x,y,'-'+amount, {
-      fontFamily:'Georgia, serif', fontSize:'12px', fontStyle:'bold', color:colorHex
-    }).setOrigin(0.5);
-    this.damageTexts.push({text, life:500, vy:-0.5});
-  }
-
-  updateDamageTexts(delta) {
-    this.damageTexts = this.damageTexts.filter(dt => {
-      dt.life -= delta;
-      dt.text.y += dt.vy;
-      dt.text.setAlpha(dt.life/500);
-      if(dt.life<=0) { dt.text.destroy(); return false; }
-      return true;
-    });
-  }
-
-  // ═══ UI UPDATES ═══
-  updateTimer() {
-    const totalSec = Math.floor(this.gameTime/1000);
-    const min = Math.floor(totalSec/60);
-    const sec = totalSec%60;
-    this.timerText.setText(`${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`);
+    const available = pool.filter(u => !u.condition || u.condition());
+    const chosen = [];
+    while(chosen.length < count && available.length) {
+      const idx = Math.floor(Math.random()*available.length);
+      const card = available.splice(idx,1)[0];
+      const wrapped = {...card};
+      const originalApply = wrapped.apply;
+      wrapped.apply = () => {
+        originalApply();
+        this.tryEvolutions();
+      };
+      chosen.push(wrapped);
+    }
+    return chosen;
   }
 
   updateUI() {
