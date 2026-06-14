@@ -44,7 +44,7 @@
 </head>
 <body>
 <div id="loading"><strong>Loading The Prismatic Veil...</strong>
-GitHub Pages UI style pass build</div>
+Final polish pass 05 build</div>
 <div id="game-container"></div>
 <script>
 (function(){
@@ -128,13 +128,27 @@ const ANIM_FRAMES = {
   attack: { start: 10, end: 13 },
 };
 
-const CHARACTER_ANIM_OVERRIDES = {
+// Curated animation maps to keep the updated hero sheets stable in motion.
+// Prismel uses a locked idle so the floating crystal does not jitter.
+// Kineza uses momentum-heavy attack frames instead of the clunky stand-and-punch set.
+const CHARACTER_ANIM_SETS = {
+  prismel: {
+    idle: [0, 0, 2, 2],
+    walk: [4, 5, 6, 7, 8, 9],
+    attack: [10, 11, 12, 13]
+  },
   kineza: {
-    // Dash-strike uses momentum/run frames; hit FX carries the impact.
-    attack: [18, 19, 20, 21]
+    idle: [0, 1, 2, 3],
+    walk: [4, 5, 6, 7, 8, 9],
+    attack: [6, 7, 8, 12]
   }
 };
 
+const CHARACTER_ANIM_RATES = {
+  prismel: { idle: 4, walk: 9, attack: 11 },
+  kineza:  { idle: 5, walk: 11, attack: 17 },
+  auryi:   { idle: 4, walk: 8, attack: 10 }
+};
 
 const CHARACTER_SPRITE_TUNING = {
   prismel: { previewScale: 0.50, battleScale: 0.55, originX: 0.5, originY: 0.90 },
@@ -182,7 +196,6 @@ function stopMenuMusicNow() {
   }
 }
 
-
 function getSpriteUrl(charKey) {
   return SPRITE_PATHS[charKey];
 }
@@ -196,26 +209,26 @@ function loadHeroSprites(scene) {
     }
   });
 }
+function getAnimationFrames(scene, charKey, animKey) {
+  const custom = CHARACTER_ANIM_SETS[charKey] && CHARACTER_ANIM_SETS[charKey][animKey];
+  if (Array.isArray(custom) && custom.length) {
+    return custom.map((frame) => ({ key: charKey, frame }));
+  }
+  return scene.anims.generateFrameNumbers(charKey, ANIM_FRAMES[animKey]);
+}
+function getAnimationRate(charKey, animKey) {
+  const rates = CHARACTER_ANIM_RATES[charKey] || CHARACTER_ANIM_RATES.auryi;
+  return rates[animKey] || 8;
+}
 function createHeroAnimations(scene, charKey) {
   if (scene.anims.exists(charKey + '_idle')) return;
-  scene.anims.create({
-    key: charKey + '_idle',
-    frames: scene.anims.generateFrameNumbers(charKey, ANIM_FRAMES.idle),
-    frameRate: 5,
-    repeat: -1
-  });
-  scene.anims.create({
-    key: charKey + '_walk',
-    frames: scene.anims.generateFrameNumbers(charKey, ANIM_FRAMES.walk),
-    frameRate: 10,
-    repeat: -1
-  });
-  const attackRate = charKey === 'kineza' ? 20 : charKey === 'prismel' ? 13 : 12;
-  scene.anims.create({
-    key: charKey + '_attack',
-    frames: scene.anims.generateFrameNumbers(charKey, ANIM_FRAMES.attack),
-    frameRate: attackRate,
-    repeat: 0
+  ['idle', 'walk', 'attack'].forEach((animKey) => {
+    scene.anims.create({
+      key: charKey + '_' + animKey,
+      frames: getAnimationFrames(scene, charKey, animKey),
+      frameRate: getAnimationRate(charKey, animKey),
+      repeat: animKey === 'attack' ? 0 : -1
+    });
   });
 }
 
@@ -227,7 +240,7 @@ class SoundFX {
   constructor() {
     this.ctx = null;
     this.enabled = true;
-    this.masterVolume = 0.72;
+    this.masterVolume = 0.78;
   }
 
   init() {
@@ -237,11 +250,6 @@ class SoundFX {
     if(this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
-  }
-
-  now() {
-    this.init();
-    return this.ctx.currentTime;
   }
 
   makeGain(volume, startTime, duration, attack = 0.004) {
@@ -254,14 +262,15 @@ class SoundFX {
     return gain;
   }
 
-  tone(freq, duration, type='square', volume=0.12, slideTo=null, delay=0) {
+  tone(freq, duration, type='square', volume=0.12, slideTo=null, delay=0, detune=0) {
     if(!this.enabled || (gameState && gameState.sfxEnabled === false)) return;
     this.init();
     const t = this.ctx.currentTime + delay;
     const osc = this.ctx.createOscillator();
     const gain = this.makeGain(volume, t, duration);
     osc.type = type;
-    osc.frequency.setValueAtTime(freq, t);
+    osc.detune.setValueAtTime(detune, t);
+    osc.frequency.setValueAtTime(Math.max(20, freq), t);
     if(slideTo !== null) {
       osc.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), t + duration);
     }
@@ -270,7 +279,7 @@ class SoundFX {
     osc.stop(t + duration + 0.02);
   }
 
-  noise(duration=0.08, volume=0.08, delay=0, filterFreq=900, filterType='bandpass') {
+  noise(duration=0.08, volume=0.08, delay=0, filterFreq=900, filterType='bandpass', q=7) {
     if(!this.enabled || (gameState && gameState.sfxEnabled === false)) return;
     this.init();
     const t = this.ctx.currentTime + delay;
@@ -278,7 +287,6 @@ class SoundFX {
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for(let i=0; i<bufferSize; i++) {
-      // crunchy, gated noise
       data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
     }
     const src = this.ctx.createBufferSource();
@@ -286,7 +294,7 @@ class SoundFX {
     const filter = this.ctx.createBiquadFilter();
     filter.type = filterType;
     filter.frequency.setValueAtTime(filterFreq, t);
-    filter.Q.setValueAtTime(7, t);
+    filter.Q.setValueAtTime(q, t);
     const gain = this.makeGain(volume, t, duration, 0.002);
     src.connect(filter);
     filter.connect(gain);
@@ -294,74 +302,65 @@ class SoundFX {
     src.stop(t + duration + 0.02);
   }
 
-  // Prismel: glass shard + prism flicker
   attackPrismel() {
-    this.tone(620, 0.055, 'triangle', 0.075, 920);
-    this.tone(1240, 0.045, 'sine', 0.045, 1660, 0.025);
-    this.noise(0.045, 0.035, 0.018, 2600, 'highpass');
+    this.tone(560, 0.08, 'triangle', 0.060, 940);
+    this.tone(810, 0.06, 'square', 0.035, 1220, 0.01, 8);
+    this.tone(1420, 0.05, 'sine', 0.022, 1780, 0.03);
+    this.noise(0.05, 0.03, 0.018, 2600, 'highpass', 4);
   }
 
-  // Kineza: kinetic punch, armor thump, green crackle
   attackKineza() {
-    this.tone(96, 0.075, 'square', 0.17, 52);
-    this.tone(240, 0.045, 'sawtooth', 0.08, 130, 0.012);
-    this.noise(0.06, 0.075, 0.008, 850, 'bandpass');
-    this.tone(720, 0.035, 'square', 0.035, 420, 0.02);
+    this.tone(84, 0.09, 'square', 0.16, 46);
+    this.tone(170, 0.07, 'sawtooth', 0.09, 92, 0.008);
+    this.noise(0.08, 0.070, 0.010, 700, 'bandpass', 5);
+    this.tone(620, 0.045, 'square', 0.03, 360, 0.028);
   }
 
-  // Auryi: veil bloom + golden orb chime
   attackAuryi() {
-    this.tone(196, 0.22, 'sine', 0.055, 260);
-    this.tone(520, 0.16, 'triangle', 0.06, 780, 0.035);
-    this.tone(1040, 0.12, 'sine', 0.045, 1320, 0.075);
-    this.noise(0.09, 0.025, 0.035, 1800, 'bandpass');
+    this.tone(196, 0.24, 'sine', 0.05, 248);
+    this.tone(438, 0.18, 'triangle', 0.055, 640, 0.024);
+    this.tone(980, 0.12, 'sine', 0.040, 1400, 0.068);
+    this.noise(0.10, 0.025, 0.030, 1800, 'bandpass', 3);
   }
 
-  // Enemy hit: crunchy impact tick
   hit() {
-    this.tone(170, 0.045, 'square', 0.07, 82);
-    this.noise(0.035, 0.045, 0.005, 700, 'bandpass');
+    this.tone(150, 0.055, 'square', 0.08, 74);
+    this.noise(0.04, 0.06, 0.004, 620, 'bandpass', 4);
   }
 
-  // Enemy death: bit-crumble
   enemyDeath() {
-    this.tone(260, 0.07, 'sawtooth', 0.09, 120);
-    this.noise(0.10, 0.07, 0.02, 520, 'lowpass');
-    this.tone(90, 0.08, 'square', 0.05, 48, 0.055);
+    this.tone(280, 0.08, 'sawtooth', 0.09, 130);
+    this.noise(0.12, 0.065, 0.02, 500, 'lowpass', 2);
+    this.tone(105, 0.10, 'square', 0.05, 52, 0.055);
   }
 
-  // Resonance gem pickup
   gem() {
-    this.tone(920, 0.04, 'triangle', 0.045, 1380);
-    this.tone(1840, 0.035, 'sine', 0.022, 2100, 0.025);
+    this.tone(880, 0.045, 'triangle', 0.045, 1240);
+    this.tone(1320, 0.040, 'sine', 0.032, 1860, 0.020);
   }
 
-  // Player takes damage: low grit + flash
   playerHit() {
-    this.tone(120, 0.12, 'sawtooth', 0.13, 54);
-    this.noise(0.08, 0.08, 0.01, 460, 'bandpass');
+    this.tone(118, 0.13, 'sawtooth', 0.14, 58);
+    this.noise(0.09, 0.08, 0.01, 430, 'bandpass', 5);
   }
 
-  // Level up: crystal fanfare, not toy-beep
   levelUp() {
-    this.tone(392, 0.11, 'triangle', 0.08, 523);
-    this.tone(523, 0.12, 'triangle', 0.085, 784, 0.105);
-    this.tone(784, 0.16, 'sine', 0.09, 1175, 0.215);
-    this.noise(0.18, 0.045, 0.12, 3000, 'highpass');
+    this.tone(392, 0.12, 'triangle', 0.08, 523);
+    this.tone(523, 0.13, 'triangle', 0.08, 784, 0.10);
+    this.tone(784, 0.18, 'sine', 0.09, 1175, 0.21);
+    this.noise(0.18, 0.04, 0.11, 3000, 'highpass', 2);
   }
 
-  // Menu confirm: arcade crystal snap
   select() {
-    this.tone(420, 0.045, 'square', 0.07, 630);
-    this.tone(1260, 0.035, 'triangle', 0.035, null, 0.025);
+    this.tone(420, 0.05, 'square', 0.07, 610);
+    this.tone(960, 0.04, 'triangle', 0.028, 1280, 0.020);
   }
 
-  // Game over: dark spectral fall
   gameOver() {
     this.tone(330, 0.18, 'sawtooth', 0.10, 210);
     this.tone(220, 0.22, 'sawtooth', 0.095, 120, 0.18);
     this.tone(110, 0.34, 'sine', 0.10, 55, 0.38);
-    this.noise(0.24, 0.06, 0.12, 300, 'lowpass');
+    this.noise(0.24, 0.06, 0.12, 300, 'lowpass', 2);
   }
 }
 
@@ -461,6 +460,10 @@ class TitleScene extends Phaser.Scene {
     super('Title');
   }
 
+  init() {
+    gameState.titleStarted = false;
+  }
+
   preload() {
     this.load.image('title_bg', TITLE_ASSETS.bg);
     this.load.audio('title_music', TITLE_ASSETS.music);
@@ -511,7 +514,7 @@ class TitleScene extends Phaser.Scene {
       strokeThickness: 2
     }).setOrigin(0.5).setDepth(4);
 
-    this.add.text(8, GAME_H - 12, 'KINEZA DASHSTRIKE PASS 04', {
+    this.add.text(8, GAME_H - 12, 'FINAL POLISH PASS 05', {
       fontFamily: 'Courier New',
       fontSize: '8px',
       color: '#7d68aa'
@@ -546,6 +549,8 @@ class TitleScene extends Phaser.Scene {
     }
 
     const startGame = () => {
+      if (gameState.titleStarted) return;
+      gameState.titleStarted = true;
       try {
         if (!gameState.titleMusic) {
           gameState.titleMusic = this.sound.add('title_music', {
@@ -560,8 +565,6 @@ class TitleScene extends Phaser.Scene {
         console.warn('Music could not start:', err);
       }
 
-      // Keep the title/menu music playing into character select.
-      // It fades out only when the player selects a hero and Battle starts.
       if (gameState.titleMusic && gameState.titleMusic.isPlaying) {
         gameState.titleMusic.setVolume(0.45);
       }
@@ -886,6 +889,7 @@ class BattleScene extends Phaser.Scene {
 
   create() {
     stopMenuMusicNow();
+    if (this.sound) { try { this.sound.stopByKey('title_music'); } catch(e) {} }
 
     // ── Background ──
     this.bg = this.add.rectangle(0,0,GAME_W,GAME_H, COLORS.void).setOrigin(0,0);
@@ -955,9 +959,9 @@ class BattleScene extends Phaser.Scene {
     // ── UI ──
     this.createUI();
 
-    this.levelHint = this.add.text(GAME_W/2, 98, 'Collect resonance orbs to reveal relic cards', {
+    this.levelHint = this.add.text(GAME_W/2, 110, 'Collect resonance orbs to reveal relic cards', {
       fontFamily:'Trebuchet MS, Arial, sans-serif',
-      fontSize:'12px',
+      fontSize:'13px',
       fontStyle:'bold',
       color:'#eddcff',
       stroke:'#000000',
@@ -1038,53 +1042,54 @@ class BattleScene extends Phaser.Scene {
     const accent = theme.panelTop;
     const accent2 = theme.panelTrim;
 
-    this.hpBarMaxWidth = 170;
-    this.expBarMaxWidth = 170;
+    this.hpBarMaxWidth = 182;
+    this.expBarMaxWidth = 182;
 
     // Left hero panel
-    this.uiPanel = this.add.rectangle(10, 10, 296, 90, 0x0d0820, 0.985)
+    this.uiPanelShadow = this.add.rectangle(14, 14, 314, 100, 0x000000, 0.24).setOrigin(0,0);
+    this.uiPanel = this.add.rectangle(10, 10, 314, 100, 0x0d0820, 0.988)
       .setOrigin(0,0)
-      .setStrokeStyle(2, COLORS.gold, 0.84);
-    this.add.rectangle(10, 10, 296, 6, accent, 0.98).setOrigin(0,0);
-    this.add.rectangle(18, 18, 62, 62, 0x171028, 0.98).setOrigin(0,0)
-      .setStrokeStyle(2, accent2, 0.78);
-    this.add.rectangle(21, 21, 56, 56, 0xffffff, 0.06).setOrigin(0,0);
+      .setStrokeStyle(2, COLORS.gold, 0.88);
+    this.add.rectangle(10, 10, 314, 7, accent, 0.98).setOrigin(0,0);
+    this.add.rectangle(18, 20, 64, 64, 0x171028, 0.98).setOrigin(0,0)
+      .setStrokeStyle(2, accent2, 0.82);
+    this.add.rectangle(21, 23, 58, 58, 0xffffff, 0.06).setOrigin(0,0);
     if (this.textures.exists(charKey + '_portrait')) {
-      this.add.image(49, 49, charKey + '_portrait').setScale(0.098);
+      this.add.image(50, 52, charKey + '_portrait').setScale(0.10);
     }
-    this.add.text(90, 12, this.charData.name.toUpperCase(), {
+    this.add.text(92, 14, this.charData.name.toUpperCase(), {
+      fontFamily:'Georgia, serif', fontSize:'15px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:3
+    });
+    this.add.text(92, 30, this.charData.title.toUpperCase(), {
+      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'10px', fontStyle:'bold', color:'#d8c7ef', stroke:'#000000', strokeThickness:2
+    });
+
+    this.hpLabel = this.add.text(92, 46, theme.hpLabel, {
       fontFamily:'Georgia, serif', fontSize:'13px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:3
     });
-    this.add.text(90, 24, this.charData.title.toUpperCase(), {
-      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'9px', fontStyle:'bold', color:'#d8c7ef', stroke:'#000000', strokeThickness:2
-    });
-
-    this.hpLabel = this.add.text(90, 38, theme.hpLabel, {
-      fontFamily:'Georgia, serif', fontSize:'12px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:3
-    });
-    this.hpBarBg = this.add.rectangle(90, 54, this.hpBarMaxWidth, 15, 0x150a24).setOrigin(0,0).setStrokeStyle(2, COLORS.border, 0.9);
-    this.hpBarFill = this.add.rectangle(91, 55, this.hpBarMaxWidth-2, 13, COLORS.green).setOrigin(0,0);
-    this.hpBarGloss = this.add.rectangle(91, 55, this.hpBarMaxWidth-2, 4, 0xffffff, 0.18).setOrigin(0,0);
-    this.hpText = this.add.text(176, 53, '', {
-      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'12px', fontStyle:'bold', color:'#ffffff', stroke:'#000000', strokeThickness:3
+    this.hpBarBg = this.add.rectangle(92, 64, this.hpBarMaxWidth, 16, 0x150a24).setOrigin(0,0).setStrokeStyle(2, COLORS.border, 0.92);
+    this.hpBarFill = this.add.rectangle(93, 65, this.hpBarMaxWidth-2, 14, COLORS.green).setOrigin(0,0);
+    this.hpBarGloss = this.add.rectangle(93, 65, this.hpBarMaxWidth-2, 4, 0xffffff, 0.18).setOrigin(0,0);
+    this.hpText = this.add.text(183, 63, '', {
+      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'13px', fontStyle:'bold', color:'#ffffff', stroke:'#000000', strokeThickness:3
     }).setOrigin(0.5, 0);
     for(let i=1;i<8;i++) {
-      const x = 90 + (this.hpBarMaxWidth/8)*i;
-      this.add.rectangle(x, 55, 2, 13, 0xffffff, 0.12).setOrigin(0,0);
+      const x = 92 + (this.hpBarMaxWidth/8)*i;
+      this.add.rectangle(x, 65, 2, 14, 0xffffff, 0.12).setOrigin(0,0);
     }
 
-    this.expLabel = this.add.text(90, 73, theme.energyLabel, {
-      fontFamily:'Georgia, serif', fontSize:'10px', fontStyle:'bold', color:'#d8b7ff', stroke:'#000000', strokeThickness:3
+    this.expLabel = this.add.text(92, 84, theme.energyLabel, {
+      fontFamily:'Georgia, serif', fontSize:'11px', fontStyle:'bold', color:'#d8b7ff', stroke:'#000000', strokeThickness:3
     });
-    this.expBarBg = this.add.rectangle(90, 85, this.expBarMaxWidth, 8, 0x150a24).setOrigin(0,0).setStrokeStyle(1, COLORS.border, 0.9);
-    this.expBarFill = this.add.rectangle(91, 86, this.expBarMaxWidth-2, 6, theme.energyColor).setOrigin(0,0);
+    this.expBarBg = this.add.rectangle(92, 99, this.expBarMaxWidth, 9, 0x150a24).setOrigin(0,0).setStrokeStyle(1, COLORS.border, 0.9);
+    this.expBarFill = this.add.rectangle(93, 100, this.expBarMaxWidth-2, 7, theme.energyColor).setOrigin(0,0);
     for(let i=1;i<8;i++) {
-      const x = 90 + (this.expBarMaxWidth/8)*i;
-      this.add.rectangle(x, 86, 1, 6, 0xffffff, 0.10).setOrigin(0,0);
+      const x = 92 + (this.expBarMaxWidth/8)*i;
+      this.add.rectangle(x, 100, 1, 7, 0xffffff, 0.10).setOrigin(0,0);
     }
 
-    this.levelBadge = this.add.circle(272, 54, 24, 0x171129, 0.99).setStrokeStyle(3, accent2, 0.95);
-    this.levelText = this.add.text(272, 54, 'LV 1', {
+    this.levelBadge = this.add.circle(286, 60, 24, 0x171129, 0.99).setStrokeStyle(3, accent2, 0.95);
+    this.levelText = this.add.text(286, 60, 'LV 1', {
       fontFamily:'Georgia, serif', fontSize:'14px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:3
     }).setOrigin(0.5);
     this.levelBadge.setInteractive({useHandCursor:true});
@@ -1095,18 +1100,19 @@ class BattleScene extends Phaser.Scene {
     });
 
     // Right meta panel
-    this.metaPanel = this.add.rectangle(GAME_W-10, 10, 168, 78, 0x0d0820, 0.98).setOrigin(1,0).setStrokeStyle(2, COLORS.gold, 0.82);
-    this.add.rectangle(GAME_W-178, 10, 168, 6, accent2, 0.96).setOrigin(0,0);
+    this.metaPanelShadow = this.add.rectangle(GAME_W-6, 14, 174, 84, 0x000000, 0.24).setOrigin(1,0);
+    this.metaPanel = this.add.rectangle(GAME_W-10, 10, 174, 84, 0x0d0820, 0.985).setOrigin(1,0).setStrokeStyle(2, COLORS.gold, 0.86);
+    this.add.rectangle(GAME_W-184, 10, 174, 6, accent2, 0.96).setOrigin(0,0);
     this.timerText = this.add.text(GAME_W-18, 16, '00:00', {
-      fontFamily:'Georgia, serif', fontSize:'22px', fontStyle:'bold', color:'#ffffff', stroke:'#000000', strokeThickness:4
+      fontFamily:'Georgia, serif', fontSize:'24px', fontStyle:'bold', color:'#ffffff', stroke:'#000000', strokeThickness:4
     }).setOrigin(1,0);
-    this.scoreText = this.add.text(GAME_W-18, 46, 'SCORE 0', {
-      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'14px', fontStyle:'bold', color:'#f1e6ff', stroke:'#000000', strokeThickness:3
+    this.scoreText = this.add.text(GAME_W-18, 50, 'SCORE 0', {
+      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'15px', fontStyle:'bold', color:'#f1e6ff', stroke:'#000000', strokeThickness:3
     }).setOrigin(1,0);
 
-    this.footerPanel = this.add.rectangle(GAME_W/2, GAME_H-24, 352, 24, 0x0d0820, 0.84).setStrokeStyle(1, accent2, 0.35);
-    this.footerText = this.add.text(GAME_W/2, GAME_H-24, `${theme.footerGlyph} ${this.charData.name.toUpperCase()} — ${this.charData.title.toUpperCase()} ${theme.footerGlyph}`, {
-      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'12px', fontStyle:'bold', color:'#ebe1ff', stroke:'#000000', strokeThickness:3
+    this.footerPanel = this.add.rectangle(GAME_W/2, GAME_H-38, 382, 28, 0x0d0820, 0.92).setStrokeStyle(1, accent2, 0.42);
+    this.footerText = this.add.text(GAME_W/2, GAME_H-38, `${theme.footerGlyph} ${this.charData.name.toUpperCase()} — ${this.charData.title.toUpperCase()} ${theme.footerGlyph}`, {
+      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'13px', fontStyle:'bold', color:'#ebe1ff', stroke:'#000000', strokeThickness:3
     }).setOrigin(0.5);
   }
 

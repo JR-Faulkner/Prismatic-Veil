@@ -1,0 +1,1926 @@
+
+(function(){
+  const boot = document.getElementById('loading');
+  function showBootError(err){
+    console.error(err);
+    if (!boot) return;
+    boot.style.display = 'flex';
+    boot.innerHTML = '<strong>Boot Error</strong>\n' +
+      (err && (err.stack || err.message) ? (err.stack || err.message) : String(err)) +
+      '\n\nMake sure index.html, phaser.min.js, and the sprite PNG files are all uploaded to the GitHub repo root.';
+  }
+  window.addEventListener('error', e => showBootError(e.error || e.message));
+  window.addEventListener('unhandledrejection', e => showBootError(e.reason || e));
+  window.PrismaticVeilBoot = { showBootError };
+})();
+if (!window.Phaser) { throw new Error('Phaser did not load. Check phaser.min.js path.'); }
+
+// ═══════════════════════════════════════════════════════
+// THE PRISMATIC VEIL — STAGE BATTLER PROTOTYPE
+// ═══════════════════════════════════════════════════════
+
+const GAME_W = 480;
+const GAME_H = 720;
+
+// ── Colors (matching established palette) ──
+const COLORS = {
+  void: 0x07060f,
+  deepPurp: 0x0d0820,
+  midPurp: 0x1a0a3e,
+  border: 0x2a1a5e,
+  lavender: 0xc8a8ff,
+  white: 0xffffff,
+  gold: 0xffd700,
+  // Spectrum
+  red: 0xff4444,
+  orange: 0xff9933,
+  yellow: 0xffee44,
+  green: 0x44ff88,
+  blue: 0x4488ff,
+  indigo: 0x8844ff,
+  violet: 0xcc44ff,
+};
+
+// ── External Sprite Sheet Files (14 frames each: 4 idle, 6 walk/float, 4 attack) ──
+const SPRITE_PATHS = {
+  prismel: './prismel_spritesheet.png',
+  kineza: './kineza_spritesheet.png',
+  auryi: './auryi_spritesheet.png'
+};
+
+
+const TITLE_ASSETS = {
+  bg: './title_screen.jpg',
+  music: './prism-of-elders.mp3'
+};
+
+const CHARACTER_ART = {
+  prismel: { portrait: './prismel_portrait.png', full: './prismel_full.png' },
+  kineza: { portrait: './kineza_portrait.png', full: './kineza_full.png' },
+  auryi: { portrait: './auryi_portrait.png', full: './auryi_full.png' }
+};
+
+function loadCharacterArt(scene, charKey = null) {
+  const keys = charKey ? [charKey] : Object.keys(CHARACTER_ART);
+  keys.forEach((key) => {
+    if (!scene.textures.exists(key + '_portrait')) {
+      scene.load.image(key + '_portrait', CHARACTER_ART[key].portrait);
+    }
+    if (!scene.textures.exists(key + '_full')) {
+      scene.load.image(key + '_full', CHARACTER_ART[key].full);
+    }
+  });
+}
+
+
+
+const ANIM_FRAMES = {
+  idle: { start: 0, end: 3 },
+  walk: { start: 4, end: 9 },
+  attack: { start: 10, end: 13 },
+};
+
+// Curated animation maps to keep the updated hero sheets stable in motion.
+// Prismel uses a locked idle so the floating crystal does not jitter.
+// Kineza uses momentum-heavy attack frames instead of the clunky stand-and-punch set.
+const CHARACTER_ANIM_SETS = {
+  prismel: {
+    idle: [0, 0, 2, 2],
+    walk: [4, 5, 6, 7, 8, 9],
+    attack: [10, 11, 12, 13]
+  },
+  kineza: {
+    idle: [0, 1, 2, 3],
+    walk: [4, 5, 6, 7, 8, 9],
+    attack: [6, 7, 8, 12]
+  }
+};
+
+const CHARACTER_ANIM_RATES = {
+  prismel: { idle: 4, walk: 9, attack: 11 },
+  kineza:  { idle: 5, walk: 11, attack: 17 },
+  auryi:   { idle: 4, walk: 8, attack: 10 }
+};
+
+const CHARACTER_SPRITE_TUNING = {
+  prismel: { previewScale: 0.50, battleScale: 0.55, originX: 0.5, originY: 0.90 },
+  kineza:  { previewScale: 0.55, battleScale: 0.60, originX: 0.5, originY: 0.90 },
+  auryi:   { previewScale: 0.46, battleScale: 0.50, originX: 0.5, originY: 0.90 }
+};
+const CHARACTER_BODY_TUNING = {
+  prismel: { w: 82, h: 118, offX: 71, offY: 86 },
+  kineza:  { w: 78, h: 112, offX: 73, offY: 90 },
+  auryi:   { w: 86, h: 124, offX: 69, offY: 82 }
+};
+function getSpriteTuning(charKey) {
+  return CHARACTER_SPRITE_TUNING[charKey] || { previewScale: 0.52, battleScale: 0.56, originX: 0.5, originY: 0.90 };
+}
+function getBodyTuning(charKey) {
+  return CHARACTER_BODY_TUNING[charKey] || { w: 80, h: 116, offX: 72, offY: 86 };
+}
+
+function fadeOutMenuMusic(scene, duration = 550) {
+  if (!gameState.titleMusic) return;
+  if (!gameState.titleMusic.isPlaying) {
+    gameState.titleMusic.stop();
+    gameState.titleMusic.setVolume(0.45);
+    return;
+  }
+  scene.tweens.add({
+    targets: gameState.titleMusic,
+    volume: 0,
+    duration,
+    onComplete: () => {
+      if (gameState.titleMusic) {
+        gameState.titleMusic.stop();
+        gameState.titleMusic.setVolume(0.45);
+      }
+    }
+  });
+}
+
+function stopMenuMusicNow() {
+  if (gameState.titleMusic) {
+    try {
+      gameState.titleMusic.stop();
+      gameState.titleMusic.setVolume(0.45);
+    } catch(e) {}
+  }
+}
+
+function getSpriteUrl(charKey) {
+  return SPRITE_PATHS[charKey];
+}
+function loadHeroSprites(scene) {
+  Object.keys(SPRITE_PATHS).forEach((charKey) => {
+    if (!scene.textures.exists(charKey)) {
+      scene.load.spritesheet(charKey, getSpriteUrl(charKey), {
+        frameWidth: 224,
+        frameHeight: 224
+      });
+    }
+  });
+}
+function getAnimationFrames(scene, charKey, animKey) {
+  const custom = CHARACTER_ANIM_SETS[charKey] && CHARACTER_ANIM_SETS[charKey][animKey];
+  if (Array.isArray(custom) && custom.length) {
+    return custom.map((frame) => ({ key: charKey, frame }));
+  }
+  return scene.anims.generateFrameNumbers(charKey, ANIM_FRAMES[animKey]);
+}
+function getAnimationRate(charKey, animKey) {
+  const rates = CHARACTER_ANIM_RATES[charKey] || CHARACTER_ANIM_RATES.auryi;
+  return rates[animKey] || 8;
+}
+function createHeroAnimations(scene, charKey) {
+  if (scene.anims.exists(charKey + '_idle')) return;
+  ['idle', 'walk', 'attack'].forEach((animKey) => {
+    scene.anims.create({
+      key: charKey + '_' + animKey,
+      frames: getAnimationFrames(scene, charKey, animKey),
+      frameRate: getAnimationRate(charKey, animKey),
+      repeat: animKey === 'attack' ? 0 : -1
+    });
+  });
+}
+
+
+// ═══════════════════════════════════════════════════════
+// SOUND FX — Synthesized chiptune beeps via Web Audio API
+// ═══════════════════════════════════════════════════════
+class SoundFX {
+  constructor() {
+    this.ctx = null;
+    this.enabled = true;
+    this.masterVolume = 0.78;
+  }
+
+  init() {
+    if(!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if(this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  makeGain(volume, startTime, duration, attack = 0.004) {
+    const gain = this.ctx.createGain();
+    const v = Math.max(0.0001, volume * this.masterVolume);
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(v, startTime + attack);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    gain.connect(this.ctx.destination);
+    return gain;
+  }
+
+  tone(freq, duration, type='square', volume=0.12, slideTo=null, delay=0, detune=0) {
+    if(!this.enabled || (gameState && gameState.sfxEnabled === false)) return;
+    this.init();
+    const t = this.ctx.currentTime + delay;
+    const osc = this.ctx.createOscillator();
+    const gain = this.makeGain(volume, t, duration);
+    osc.type = type;
+    osc.detune.setValueAtTime(detune, t);
+    osc.frequency.setValueAtTime(Math.max(20, freq), t);
+    if(slideTo !== null) {
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), t + duration);
+    }
+    osc.connect(gain);
+    osc.start(t);
+    osc.stop(t + duration + 0.02);
+  }
+
+  noise(duration=0.08, volume=0.08, delay=0, filterFreq=900, filterType='bandpass', q=7) {
+    if(!this.enabled || (gameState && gameState.sfxEnabled === false)) return;
+    this.init();
+    const t = this.ctx.currentTime + delay;
+    const bufferSize = Math.max(1, Math.floor(this.ctx.sampleRate * duration));
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0; i<bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    }
+    const src = this.ctx.createBufferSource();
+    src.buffer = buffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = filterType;
+    filter.frequency.setValueAtTime(filterFreq, t);
+    filter.Q.setValueAtTime(q, t);
+    const gain = this.makeGain(volume, t, duration, 0.002);
+    src.connect(filter);
+    filter.connect(gain);
+    src.start(t);
+    src.stop(t + duration + 0.02);
+  }
+
+  attackPrismel() {
+    this.tone(560, 0.08, 'triangle', 0.060, 940);
+    this.tone(810, 0.06, 'square', 0.035, 1220, 0.01, 8);
+    this.tone(1420, 0.05, 'sine', 0.022, 1780, 0.03);
+    this.noise(0.05, 0.03, 0.018, 2600, 'highpass', 4);
+  }
+
+  attackKineza() {
+    this.tone(84, 0.09, 'square', 0.16, 46);
+    this.tone(170, 0.07, 'sawtooth', 0.09, 92, 0.008);
+    this.noise(0.08, 0.070, 0.010, 700, 'bandpass', 5);
+    this.tone(620, 0.045, 'square', 0.03, 360, 0.028);
+  }
+
+  attackAuryi() {
+    this.tone(196, 0.24, 'sine', 0.05, 248);
+    this.tone(438, 0.18, 'triangle', 0.055, 640, 0.024);
+    this.tone(980, 0.12, 'sine', 0.040, 1400, 0.068);
+    this.noise(0.10, 0.025, 0.030, 1800, 'bandpass', 3);
+  }
+
+  hit() {
+    this.tone(150, 0.055, 'square', 0.08, 74);
+    this.noise(0.04, 0.06, 0.004, 620, 'bandpass', 4);
+  }
+
+  enemyDeath() {
+    this.tone(280, 0.08, 'sawtooth', 0.09, 130);
+    this.noise(0.12, 0.065, 0.02, 500, 'lowpass', 2);
+    this.tone(105, 0.10, 'square', 0.05, 52, 0.055);
+  }
+
+  gem() {
+    this.tone(880, 0.045, 'triangle', 0.045, 1240);
+    this.tone(1320, 0.040, 'sine', 0.032, 1860, 0.020);
+  }
+
+  playerHit() {
+    this.tone(118, 0.13, 'sawtooth', 0.14, 58);
+    this.noise(0.09, 0.08, 0.01, 430, 'bandpass', 5);
+  }
+
+  levelUp() {
+    this.tone(392, 0.12, 'triangle', 0.08, 523);
+    this.tone(523, 0.13, 'triangle', 0.08, 784, 0.10);
+    this.tone(784, 0.18, 'sine', 0.09, 1175, 0.21);
+    this.noise(0.18, 0.04, 0.11, 3000, 'highpass', 2);
+  }
+
+  select() {
+    this.tone(420, 0.05, 'square', 0.07, 610);
+    this.tone(960, 0.04, 'triangle', 0.028, 1280, 0.020);
+  }
+
+  gameOver() {
+    this.tone(330, 0.18, 'sawtooth', 0.10, 210);
+    this.tone(220, 0.22, 'sawtooth', 0.095, 120, 0.18);
+    this.tone(110, 0.34, 'sine', 0.10, 55, 0.38);
+    this.noise(0.24, 0.06, 0.12, 300, 'lowpass', 2);
+  }
+}
+
+const sfx = new SoundFX();
+
+// ── Game State (persists across scenes) ──
+const gameState = {
+  titleMusic: null,
+  musicEnabled: true,
+  sfxEnabled: true,
+  titleStarted: false,
+  selectedCharacter: 'prismel',
+  level: 1,
+  exp: 0,
+  expToNext: 5,
+  hp: 100,
+  maxHp: 100,
+  score: 0,
+  killCount: 0,
+  waveNumber: 1,
+  gameTime: 0,
+  upgrades: [],
+};
+
+const CHARACTER_DATA = {
+  prismel: {
+    name: 'Prismel',
+    title: 'Prism Weaver',
+    color: COLORS.blue,
+    accentColor: COLORS.violet,
+    moveSpeed: 160,
+    baseDamage: 16,
+    attackSpeed: 450, // ms between attacks
+    attackRange: 220,
+    projectileSpeed: 340,
+    description: 'Prism shots + spread'
+  },
+  kineza: {
+    name: 'Kineza',
+    title: 'Momentum Born',
+    color: COLORS.red,
+    accentColor: COLORS.green,
+    moveSpeed: 210,
+    baseDamage: 13,
+    attackSpeed: 300,
+    attackRange: 84,
+    projectileSpeed: 0, // melee
+    description: 'Fast melee striker'
+  },
+  auryi: {
+    name: 'Auryi',
+    title: 'Aura Spoken',
+    color: COLORS.lavender,
+    accentColor: COLORS.yellow,
+    moveSpeed: 130,
+    baseDamage: 14,
+    attackSpeed: 500,
+    attackRange: 150,
+    projectileSpeed: 0, // aura pulse, hits all in range
+    description: 'Area aura caster'
+  }
+};
+
+const HERO_UI_THEMES = {
+  prismel: {
+    hpLabel: 'VITAL',
+    energyLabel: 'PRISM CHARGE',
+    panelTop: COLORS.blue,
+    panelTrim: COLORS.violet,
+    energyColor: 0x9de1ff,
+    footerGlyph: '◇'
+  },
+  kineza: {
+    hpLabel: 'VITAL',
+    energyLabel: 'KINETIC DRIVE',
+    panelTop: COLORS.red,
+    panelTrim: COLORS.green,
+    energyColor: 0x86ff66,
+    footerGlyph: '✦'
+  },
+  auryi: {
+    hpLabel: 'VITAL',
+    energyLabel: 'AURA RESONANCE',
+    panelTop: COLORS.lavender,
+    panelTrim: COLORS.yellow,
+    energyColor: 0xffe07b,
+    footerGlyph: '✧'
+  }
+};
+
+
+// ═══════════════════════════════════════════════════════
+// TITLE SCENE
+// ═══════════════════════════════════════════════════════
+class TitleScene extends Phaser.Scene {
+  constructor() {
+    super('Title');
+  }
+
+  init() {
+    gameState.titleStarted = false;
+  }
+
+  preload() {
+    this.load.image('title_bg', TITLE_ASSETS.bg);
+    this.load.audio('title_music', TITLE_ASSETS.music);
+  }
+
+  create() {
+    this.cameras.main.setBackgroundColor('#07060f');
+
+    const bg = this.add.image(GAME_W / 2, GAME_H / 2, 'title_bg');
+    const scale = Math.max(GAME_W / bg.width, GAME_H / bg.height);
+    bg.setScale(scale);
+    bg.setDepth(0);
+
+    // Dark veil overlay for text readability
+    this.add.rectangle(0, 0, GAME_W, GAME_H, 0x03020a, 0.34)
+      .setOrigin(0, 0)
+      .setDepth(1);
+
+    // Subtle bottom gradient panel
+    this.add.rectangle(0, GAME_H - 160, GAME_W, 160, 0x03020a, 0.62)
+      .setOrigin(0, 0)
+      .setDepth(2);
+
+    const crest = this.add.text(GAME_W / 2, 54, '✦ PRISMATIC VEIL ✦', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '14px',
+      fontStyle: 'bold',
+      color: '#f7e8b6',
+      stroke: '#180f29',
+      strokeThickness: 3,
+      align: 'center'
+    }).setOrigin(0.5).setDepth(3).setAlpha(0.88);
+
+    const prompt = this.add.text(GAME_W / 2, GAME_H - 98, 'TAP TO BEGIN', {
+      fontFamily: 'Courier New',
+      fontSize: '18px',
+      fontStyle: 'bold',
+      color: '#c8a8ff',
+      stroke: '#000000',
+      strokeThickness: 3
+    }).setOrigin(0.5).setDepth(4);
+
+    const tip = this.add.text(GAME_W / 2, GAME_H - 68, 'Music: Prism of Elders', {
+      fontFamily: 'Courier New',
+      fontSize: '10px',
+      color: '#ffd56a',
+      stroke: '#000000',
+      strokeThickness: 2
+    }).setOrigin(0.5).setDepth(4);
+
+    this.add.text(8, GAME_H - 12, 'FINAL POLISH PASS 05', {
+      fontFamily: 'Courier New',
+      fontSize: '8px',
+      color: '#7d68aa'
+    }).setOrigin(0, 1).setDepth(4);
+
+    this.tweens.add({
+      targets: prompt,
+      alpha: { from: 0.35, to: 1 },
+      duration: 900,
+      yoyo: true,
+      repeat: -1
+    });
+
+    // Small drifting crystal motes
+    this.motes = [];
+    for (let i = 0; i < 24; i++) {
+      const mote = this.add.star(
+        Phaser.Math.Between(20, GAME_W - 20),
+        Phaser.Math.Between(150, GAME_H - 180),
+        4,
+        2,
+        Phaser.Math.Between(4, 8),
+        Phaser.Display.Color.GetColor(
+          Phaser.Math.Between(160, 255),
+          Phaser.Math.Between(120, 240),
+          255
+        ),
+        0.55
+      ).setDepth(3);
+      mote.speed = Phaser.Math.FloatBetween(4, 14);
+      this.motes.push(mote);
+    }
+
+    const startGame = () => {
+      if (gameState.titleStarted) return;
+      gameState.titleStarted = true;
+      try {
+        if (!gameState.titleMusic) {
+          gameState.titleMusic = this.sound.add('title_music', {
+            loop: true,
+            volume: 0.45
+          });
+          gameState.titleMusic.play();
+        } else if (!gameState.titleMusic.isPlaying) {
+          gameState.titleMusic.play();
+        }
+      } catch (err) {
+        console.warn('Music could not start:', err);
+      }
+
+      if (gameState.titleMusic && gameState.titleMusic.isPlaying) {
+        gameState.titleMusic.setVolume(0.45);
+      }
+
+      this.cameras.main.fadeOut(450, 7, 6, 15);
+      this.time.delayedCall(470, () => {
+        this.scene.start('CharacterSelect');
+      });
+    };
+
+    this.input.once('pointerdown', startGame);
+    if (this.input.keyboard) {
+      this.input.keyboard.once('keydown', startGame);
+    }
+  }
+
+  update(time, delta) {
+    if (!this.motes) return;
+    this.motes.forEach((mote, i) => {
+      mote.y -= mote.speed * delta / 1000;
+      mote.rotation += 0.01 + i * 0.0003;
+      if (mote.y < 135) {
+        mote.y = GAME_H - 175;
+        mote.x = Phaser.Math.Between(20, GAME_W - 20);
+      }
+    });
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════
+// CHARACTER SELECT SCENE
+// ═══════════════════════════════════════════════════════
+class CharacterSelectScene extends Phaser.Scene {
+  constructor() {
+    super('CharacterSelect');
+  }
+
+  preload() {
+    loadHeroSprites(this);
+    loadCharacterArt(this);
+    if (!this.textures.exists('title_bg')) {
+      this.load.image('title_bg', TITLE_ASSETS.bg);
+    }
+  }
+
+  create() {
+    // Background
+    if (this.textures.exists('title_bg')) {
+      const bg = this.add.image(GAME_W/2, GAME_H/2, 'title_bg');
+      const bgScale = Math.max(GAME_W / bg.width, GAME_H / bg.height);
+      bg.setScale(bgScale).setAlpha(0.22);
+    } else {
+      this.add.rectangle(0, 0, GAME_W, GAME_H, COLORS.void).setOrigin(0,0);
+    }
+    this.add.rectangle(0, 0, GAME_W, GAME_H, 0x05030c, 0.84).setOrigin(0,0);
+    Object.keys(SPRITE_PATHS).forEach((charKey) => createHeroAnimations(this, charKey));
+
+    // Subtle spectrum streaks
+    const streakColors = [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green, COLORS.blue, COLORS.indigo, COLORS.violet];
+    streakColors.forEach((c, i) => {
+      const y = 114 + i * 6;
+      this.add.rectangle(GAME_W/2, y, GAME_W * 0.74, 2, c, 0.10).setAngle(-10);
+    });
+
+    // Heading plaque
+    this.add.rectangle(GAME_W/2, 60, GAME_W - 42, 74, 0x0d0820, 0.88)
+      .setStrokeStyle(2, COLORS.gold, 0.45);
+    this.add.rectangle(GAME_W/2, 34, GAME_W - 42, 5, COLORS.lavender, 0.85);
+
+    this.add.text(GAME_W/2, 50, 'ATTUNE A HERO', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '22px',
+      fontStyle: 'bold',
+      color: '#f7e8b6',
+      stroke: '#211234',
+      strokeThickness: 4
+    }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, 75, 'Choose your spectrum bearer', {
+      fontFamily: 'Trebuchet MS, Arial, sans-serif',
+      fontSize: '13px',
+      color: '#d6c0ff',
+      stroke: '#000000',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+
+    const chars = ['prismel', 'kineza', 'auryi'];
+    const cardW = 144, cardH = 288, gap = 12;
+    const totalW = chars.length*cardW + (chars.length-1)*gap;
+    const startX = (GAME_W-totalW)/2;
+
+    chars.forEach((charKey, i) => {
+      const data = CHARACTER_DATA[charKey];
+      const x = startX + i*(cardW+gap);
+      const y = 118;
+      const portraitKey = charKey + '_portrait';
+
+      const cardShadow = this.add.rectangle(x+4, y+6, cardW, cardH, 0x000000, 0.30).setOrigin(0,0);
+      const card = this.add.rectangle(x, y, cardW, cardH, 0x0d0820, 0.96)
+        .setOrigin(0,0)
+        .setStrokeStyle(2, COLORS.gold, 0.80)
+        .setInteractive({useHandCursor:true});
+      const topBand = this.add.rectangle(x, y, cardW, 5, data.color, 0.96).setOrigin(0,0);
+      const inner = this.add.rectangle(x+6, y+6, cardW-12, cardH-12, 0x130d25, 0.84).setOrigin(0,0)
+        .setStrokeStyle(1, data.accentColor, 0.42);
+
+      this.add.text(x+16, y+16, '✦', { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#f7e8b6' });
+      this.add.text(x+cardW-20, y+16, '✦', { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#f7e8b6' });
+
+      this.add.rectangle(x+cardW/2, y+74, cardW-24, 104, 0xffffff, 0.04)
+        .setStrokeStyle(1, data.color, 0.25);
+      if (this.textures.exists(portraitKey)) {
+        this.add.image(x+cardW/2, y+74, portraitKey).setScale(0.155);
+      }
+
+      if (this.textures.exists(charKey)) {
+        const preview = this.add.sprite(x+cardW/2, y+182, charKey, 0);
+        const tuning = getSpriteTuning(charKey);
+        preview.setOrigin(tuning.originX, tuning.originY);
+        preview.setScale(Math.min(0.40, tuning.previewScale*0.82));
+        preview.play(charKey + '_idle');
+      }
+
+      this.add.text(x+cardW/2, y+214, data.name, {
+        fontFamily: 'Georgia, serif',
+        fontSize: '18px',
+        fontStyle: 'bold',
+        color: '#'+data.color.toString(16).padStart(6,'0'),
+        stroke: '#10081b',
+        strokeThickness: 3
+      }).setOrigin(0.5);
+
+      this.add.text(x+cardW/2, y+238, data.title.toUpperCase(), {
+        fontFamily: 'Trebuchet MS, Arial, sans-serif',
+        fontSize: '11px',
+        color: '#ecdfff',
+        stroke: '#000000',
+        strokeThickness: 2
+      }).setOrigin(0.5);
+
+      this.add.text(x+cardW/2, y+258, data.description, {
+        fontFamily: 'Trebuchet MS, Arial, sans-serif',
+        fontSize: '10px',
+        color: '#d0bee8',
+        stroke: '#000000',
+        strokeThickness: 1,
+        align: 'center',
+        wordWrap: {width: cardW-16}
+      }).setOrigin(0.5, 0.5);
+
+      const attune = this.add.text(x+cardW/2, y+cardH-18, 'ATTUNE', {
+        fontFamily: 'Georgia, serif',
+        fontSize: '13px',
+        fontStyle: 'bold',
+        color: '#f7e8b6',
+        stroke: '#000000',
+        strokeThickness: 2
+      }).setOrigin(0.5);
+
+      card.on('pointerover', () => {
+        card.setStrokeStyle(2, data.color, 1);
+        inner.setStrokeStyle(1, data.accentColor, 0.9);
+        card.setFillStyle(0x18102f, 0.98);
+        attune.setColor('#ffffff');
+      });
+      card.on('pointerout', () => {
+        card.setStrokeStyle(2, COLORS.gold, 0.80);
+        inner.setStrokeStyle(1, data.accentColor, 0.42);
+        card.setFillStyle(0x0d0820, 0.96);
+        attune.setColor('#f7e8b6');
+      });
+      card.on('pointerdown', () => {
+        sfx.init();
+        sfx.select();
+        gameState.selectedCharacter = charKey;
+        fadeOutMenuMusic(this, 420);
+        this.cameras.main.flash(180, 255, 255, 255, false);
+        this.time.delayedCall(440, () => this.scene.start('Battle'));
+      });
+    });
+
+    this.add.rectangle(GAME_W/2, GAME_H-34, GAME_W - 54, 44, 0x0d0820, 0.84)
+      .setStrokeStyle(1, COLORS.gold, 0.25);
+    this.add.text(GAME_W/2, GAME_H-42, 'Tap a bearer to enter the Veil', {
+      fontFamily: 'Courier New',
+      fontSize: '11px',
+      color: '#f4e9ff',
+      stroke: '#000000',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, GAME_H-24, 'Each hero channels a different spectrum force', {
+      fontFamily: 'Courier New',
+      fontSize: '9px',
+      color: '#b69ddd',
+      stroke: '#000000',
+      strokeThickness: 1
+    }).setOrigin(0.5);
+  }
+
+  drawCharacterIcondrawCharacterIcon(x, y, charKey, data, scale=1) {
+    const g = this.add.graphics();
+    const s = scale;
+
+    if(charKey === 'prismel') {
+      // Hooded cloak shape
+      g.fillStyle(0x1a1560);
+      g.fillRoundedRect(x-18*s, y-15*s, 36*s, 50*s, 8*s);
+      // Hood
+      g.fillStyle(0x0a0830);
+      g.fillCircle(x, y-18*s, 16*s);
+      // Gold trim
+      g.lineStyle(2, COLORS.gold);
+      g.strokeRoundedRect(x-18*s, y-15*s, 36*s, 50*s, 8*s);
+      // Crystal
+      g.fillStyle(COLORS.violet);
+      g.fillRect(x+22*s, y-10*s, 8*s, 8*s);
+      g.fillStyle(COLORS.white);
+      g.fillRect(x+24*s, y-8*s, 4*s, 4*s);
+      // Eyes
+      g.fillStyle(0x88aaff);
+      g.fillRect(x-6*s, y-20*s, 3*s, 3*s);
+      g.fillRect(x+3*s, y-20*s, 3*s, 3*s);
+    }
+    else if(charKey === 'kineza') {
+      // Body armor
+      g.fillStyle(0xcc2200);
+      g.fillRoundedRect(x-16*s, y-10*s, 32*s, 45*s, 6*s);
+      // Cape
+      g.fillStyle(0xaa0000);
+      g.fillRoundedRect(x-22*s, y-8*s, 8*s, 40*s, 3*s);
+      // Gold trim
+      g.lineStyle(2, COLORS.gold);
+      g.strokeRoundedRect(x-16*s, y-10*s, 32*s, 45*s, 6*s);
+      // Head
+      g.fillStyle(0xaa7744);
+      g.fillCircle(x, y-22*s, 14*s);
+      // Hair
+      g.fillStyle(0x220800);
+      g.fillCircle(x-6*s, y-30*s, 6*s);
+      g.fillCircle(x+2*s, y-32*s, 6*s);
+      g.fillCircle(x+9*s, y-28*s, 5*s);
+      // Energy fists
+      g.lineStyle(2, COLORS.green);
+      g.strokeCircle(x+20*s, y+5*s, 10*s);
+      g.strokeCircle(x-20*s, y+8*s, 8*s);
+    }
+    else if(charKey === 'auryi') {
+      // Flowing robes
+      g.fillStyle(0x5533aa);
+      g.fillTriangle(x-22*s, y+35*s, x+22*s, y+35*s, x, y-10*s);
+      g.fillStyle(0x7755cc);
+      g.fillRoundedRect(x-12*s, y-12*s, 24*s, 30*s, 6*s);
+      // White accent
+      g.fillStyle(0xddccff);
+      g.fillRect(x-3*s, y-8*s, 6*s, 25*s);
+      // Gold trim
+      g.lineStyle(2, COLORS.gold);
+      g.strokeRoundedRect(x-12*s, y-12*s, 24*s, 30*s, 6*s);
+      // Head
+      g.fillStyle(0xcc9966);
+      g.fillCircle(x, y-24*s, 13*s);
+      // Hair
+      g.fillStyle(0x331100);
+      g.fillCircle(x-10*s, y-26*s, 8*s);
+      g.fillCircle(x+10*s, y-24*s, 7*s);
+      g.fillCircle(x, y-34*s, 9*s);
+      // Orb
+      g.fillStyle(COLORS.yellow);
+      g.fillCircle(x-20*s, y+8*s, 6*s);
+      g.fillStyle(COLORS.white);
+      g.fillCircle(x-20*s, y+8*s, 2*s);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// MAIN BATTLE SCENE
+// ═══════════════════════════════════════════════════════
+class BattleScene extends Phaser.Scene {
+  constructor() {
+    super('Battle');
+  }
+
+  init() {
+    // Reset run-specific state
+    this.charData = CHARACTER_DATA[gameState.selectedCharacter];
+    this.playerHp = 100;
+    this.playerMaxHp = 100;
+    this.playerLevel = 1;
+    this.playerExp = 0;
+    this.expToNext = 5;
+    this.score = 0;
+    this.killCount = 0;
+    this.gameTime = 0;
+    this.lastAttack = 0;
+    this.invulnerable = false;
+    this.attackDamageMult = 1;
+    this.attackSpeedMult = 1;
+    this.attackRangeMult = 1;
+    this.moveSpeedMult = 1;
+    this.spawnInterval = 1800;
+    this.lastSpawn = 0;
+    this.isPaused = false;
+    this.gameOver = false;
+    this.facingDir = {x:1, y:0};
+    this.isAttacking = false;
+    this.hitFreezeActive = false;
+  }
+
+  preload() {
+    const charKey = gameState.selectedCharacter;
+    if (!this.textures.exists(charKey)) {
+      this.load.spritesheet(charKey, getSpriteUrl(charKey), {
+        frameWidth: 224,
+        frameHeight: 224
+      });
+    }
+    loadCharacterArt(this, charKey);
+  }
+
+  create() {
+    stopMenuMusicNow();
+    if (this.sound) { try { this.sound.stopByKey('title_music'); } catch(e) {} }
+
+    // ── Background ──
+    this.bg = this.add.rectangle(0,0,GAME_W,GAME_H, COLORS.void).setOrigin(0,0);
+
+    // Veil line down center (subtle, decorative)
+    this.veilGraphics = this.add.graphics();
+
+    // Stars
+    this.stars = [];
+    for(let i=0;i<40;i++) {
+      const x = Math.random()*GAME_W;
+      const y = Math.random()*GAME_H;
+      const star = this.add.rectangle(x,y,1,1,COLORS.white).setAlpha(0.3);
+      this.stars.push(star);
+    }
+
+    // ── Player ──
+    const charKey = gameState.selectedCharacter;
+    createHeroAnimations(this, charKey);
+
+    this.player = this.add.sprite(GAME_W/2, GAME_H/2, charKey, 0);
+    const tuning = getSpriteTuning(charKey);
+    this.player.setOrigin(tuning.originX, tuning.originY);
+    this.player.setScale(tuning.battleScale);
+    this.player.play(charKey + '_idle');
+    this.player.setDepth(10);
+
+    this.physics.world.enable(this.player);
+    const bodyTuning = getBodyTuning(charKey);
+    this.player.body.setSize(bodyTuning.w, bodyTuning.h);
+    this.player.body.setOffset(bodyTuning.offX, bodyTuning.offY);
+    this.player.body.setCollideWorldBounds(true);
+
+    this.currentAnim = 'idle';
+    this.isMoving = false;
+
+    // ── Groups ──
+    this.enemies = this.physics.add.group();
+    this.projectiles = this.physics.add.group();
+    this.expGems = this.physics.add.group();
+    this.damageTexts = [];
+
+    // ── Collisions ──
+    this.physics.add.overlap(this.player, this.enemies, this.onPlayerHit, null, this);
+    this.physics.add.overlap(this.projectiles, this.enemies, this.onProjectileHit, null, this);
+    this.physics.add.overlap(this.player, this.expGems, this.onGemCollect, null, this);
+
+    // ── Input ──
+    this.cursors = this.input.keyboard ? this.input.keyboard.createCursorKeys() : null;
+    this.wasd = this.input.keyboard ? this.input.keyboard.addKeys('W,A,S,D') : null;
+
+    // Touch/joystick for mobile
+    this.touchTarget = null;
+    this.input.on('pointerdown', (pointer) => {
+      if(this.upgradeMenuOpen) return;
+      this.touchTarget = {x: pointer.x, y: pointer.y};
+    });
+    this.input.on('pointermove', (pointer) => {
+      if(this.touchTarget && pointer.isDown) {
+        this.touchTarget = {x: pointer.x, y: pointer.y};
+      }
+    });
+    this.input.on('pointerup', () => {
+      this.touchTarget = null;
+    });
+
+    // ── UI ──
+    this.createUI();
+
+    this.levelHint = this.add.text(GAME_W/2, 110, 'Collect resonance orbs to reveal relic cards', {
+      fontFamily:'Trebuchet MS, Arial, sans-serif',
+      fontSize:'13px',
+      fontStyle:'bold',
+      color:'#eddcff',
+      stroke:'#000000',
+      strokeThickness:3
+    }).setOrigin(0.5).setAlpha(0.85);
+    this.time.delayedCall(6500, () => {
+      if(this.levelHint) {
+        this.tweens.add({targets:this.levelHint, alpha:0, duration:700, onComplete:()=>this.levelHint.destroy()});
+      }
+    });
+
+    // ── Aura visual for Auryi ──
+    if(gameState.selectedCharacter === 'auryi') {
+      this.auraGraphics = this.add.graphics();
+    }
+  }
+
+  drawPlayerSprite() {
+    const g = this.playerGraphics;
+    g.clear();
+    const charKey = gameState.selectedCharacter;
+    const bob = Math.sin(this.time.now*0.005)*2;
+
+    if(charKey === 'prismel') {
+      g.fillStyle(0x1a1560);
+      g.fillRoundedRect(-14, -5+bob, 28, 30, 6);
+      g.fillStyle(0x0a0830);
+      g.fillCircle(0, -14+bob, 13);
+      g.lineStyle(2, COLORS.gold);
+      g.strokeRoundedRect(-14, -5+bob, 28, 30, 6);
+      g.fillStyle(0x88aaff);
+      g.fillRect(-5,-17+bob,3,3);
+      g.fillRect(2,-17+bob,3,3);
+      const flick = Math.floor(this.time.now/150)%4;
+      const crystColors = [COLORS.red, COLORS.green, COLORS.blue, COLORS.violet];
+      g.fillStyle(crystColors[flick]);
+      g.fillRect(16,-8+bob,6,6);
+    }
+    else if(charKey === 'kineza') {
+      g.fillStyle(0xcc2200);
+      g.fillRoundedRect(-13,-8+bob,26,32,5);
+      g.fillStyle(0xaa0000);
+      g.fillRoundedRect(-18,-6+bob,6,28,2);
+      g.lineStyle(2,COLORS.gold);
+      g.strokeRoundedRect(-13,-8+bob,26,32,5);
+      g.fillStyle(0xaa7744);
+      g.fillCircle(0,-18+bob,11);
+      g.fillStyle(0x220800);
+      g.fillCircle(-5,-24+bob,5);
+      g.fillCircle(2,-26+bob,5);
+      g.fillCircle(7,-22+bob,4);
+      g.lineStyle(2,COLORS.green);
+      g.strokeCircle(16,4+bob,8);
+    }
+    else if(charKey === 'auryi') {
+      g.fillStyle(0x5533aa);
+      g.fillTriangle(-18,28+bob,18,28+bob,0,-8+bob);
+      g.fillStyle(0x7755cc);
+      g.fillRoundedRect(-10,-10+bob,20,24,5);
+      g.fillStyle(0xddccff);
+      g.fillRect(-2,-6+bob,4,20);
+      g.lineStyle(2,COLORS.gold);
+      g.strokeRoundedRect(-10,-10+bob,20,24,5);
+      g.fillStyle(0xcc9966);
+      g.fillCircle(0,-20+bob,11);
+      g.fillStyle(0x331100);
+      g.fillCircle(-8,-22+bob,7);
+      g.fillCircle(8,-20+bob,6);
+      g.fillCircle(0,-28+bob,7);
+      g.fillStyle(COLORS.yellow);
+      g.fillCircle(-16,6+bob,5);
+    }
+  }
+
+  createUI() {
+    const charKey = gameState.selectedCharacter;
+    const theme = HERO_UI_THEMES[charKey] || HERO_UI_THEMES.prismel;
+    const accent = theme.panelTop;
+    const accent2 = theme.panelTrim;
+
+    this.hpBarMaxWidth = 182;
+    this.expBarMaxWidth = 182;
+
+    // Left hero panel
+    this.uiPanelShadow = this.add.rectangle(14, 14, 314, 100, 0x000000, 0.24).setOrigin(0,0);
+    this.uiPanel = this.add.rectangle(10, 10, 314, 100, 0x0d0820, 0.988)
+      .setOrigin(0,0)
+      .setStrokeStyle(2, COLORS.gold, 0.88);
+    this.add.rectangle(10, 10, 314, 7, accent, 0.98).setOrigin(0,0);
+    this.add.rectangle(18, 20, 64, 64, 0x171028, 0.98).setOrigin(0,0)
+      .setStrokeStyle(2, accent2, 0.82);
+    this.add.rectangle(21, 23, 58, 58, 0xffffff, 0.06).setOrigin(0,0);
+    if (this.textures.exists(charKey + '_portrait')) {
+      this.add.image(50, 52, charKey + '_portrait').setScale(0.10);
+    }
+    this.add.text(92, 14, this.charData.name.toUpperCase(), {
+      fontFamily:'Georgia, serif', fontSize:'15px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:3
+    });
+    this.add.text(92, 30, this.charData.title.toUpperCase(), {
+      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'10px', fontStyle:'bold', color:'#d8c7ef', stroke:'#000000', strokeThickness:2
+    });
+
+    this.hpLabel = this.add.text(92, 46, theme.hpLabel, {
+      fontFamily:'Georgia, serif', fontSize:'13px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:3
+    });
+    this.hpBarBg = this.add.rectangle(92, 64, this.hpBarMaxWidth, 16, 0x150a24).setOrigin(0,0).setStrokeStyle(2, COLORS.border, 0.92);
+    this.hpBarFill = this.add.rectangle(93, 65, this.hpBarMaxWidth-2, 14, COLORS.green).setOrigin(0,0);
+    this.hpBarGloss = this.add.rectangle(93, 65, this.hpBarMaxWidth-2, 4, 0xffffff, 0.18).setOrigin(0,0);
+    this.hpText = this.add.text(183, 63, '', {
+      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'13px', fontStyle:'bold', color:'#ffffff', stroke:'#000000', strokeThickness:3
+    }).setOrigin(0.5, 0);
+    for(let i=1;i<8;i++) {
+      const x = 92 + (this.hpBarMaxWidth/8)*i;
+      this.add.rectangle(x, 65, 2, 14, 0xffffff, 0.12).setOrigin(0,0);
+    }
+
+    this.expLabel = this.add.text(92, 84, theme.energyLabel, {
+      fontFamily:'Georgia, serif', fontSize:'11px', fontStyle:'bold', color:'#d8b7ff', stroke:'#000000', strokeThickness:3
+    });
+    this.expBarBg = this.add.rectangle(92, 99, this.expBarMaxWidth, 9, 0x150a24).setOrigin(0,0).setStrokeStyle(1, COLORS.border, 0.9);
+    this.expBarFill = this.add.rectangle(93, 100, this.expBarMaxWidth-2, 7, theme.energyColor).setOrigin(0,0);
+    for(let i=1;i<8;i++) {
+      const x = 92 + (this.expBarMaxWidth/8)*i;
+      this.add.rectangle(x, 100, 1, 7, 0xffffff, 0.10).setOrigin(0,0);
+    }
+
+    this.levelBadge = this.add.circle(286, 60, 24, 0x171129, 0.99).setStrokeStyle(3, accent2, 0.95);
+    this.levelText = this.add.text(286, 60, 'LV 1', {
+      fontFamily:'Georgia, serif', fontSize:'14px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:3
+    }).setOrigin(0.5);
+    this.levelBadge.setInteractive({useHandCursor:true});
+    this.levelBadge.on('pointerdown', () => {
+      if(!this.upgradeMenuOpen && this.playerLevel === 1 && this.gameTime < 12000) {
+        this.levelUp();
+      }
+    });
+
+    // Right meta panel
+    this.metaPanelShadow = this.add.rectangle(GAME_W-6, 14, 174, 84, 0x000000, 0.24).setOrigin(1,0);
+    this.metaPanel = this.add.rectangle(GAME_W-10, 10, 174, 84, 0x0d0820, 0.985).setOrigin(1,0).setStrokeStyle(2, COLORS.gold, 0.86);
+    this.add.rectangle(GAME_W-184, 10, 174, 6, accent2, 0.96).setOrigin(0,0);
+    this.timerText = this.add.text(GAME_W-18, 16, '00:00', {
+      fontFamily:'Georgia, serif', fontSize:'24px', fontStyle:'bold', color:'#ffffff', stroke:'#000000', strokeThickness:4
+    }).setOrigin(1,0);
+    this.scoreText = this.add.text(GAME_W-18, 50, 'SCORE 0', {
+      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'15px', fontStyle:'bold', color:'#f1e6ff', stroke:'#000000', strokeThickness:3
+    }).setOrigin(1,0);
+
+    this.footerPanel = this.add.rectangle(GAME_W/2, GAME_H-38, 382, 28, 0x0d0820, 0.92).setStrokeStyle(1, accent2, 0.42);
+    this.footerText = this.add.text(GAME_W/2, GAME_H-38, `${theme.footerGlyph} ${this.charData.name.toUpperCase()} — ${this.charData.title.toUpperCase()} ${theme.footerGlyph}`, {
+      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'13px', fontStyle:'bold', color:'#ebe1ff', stroke:'#000000', strokeThickness:3
+    }).setOrigin(0.5);
+  }
+
+  update(time, delta) {
+    if(this.gameOver || this.upgradeMenuOpen || this.hitFreezeActive) return;
+
+    this.gameTime += delta;
+    this.updateTimer();
+    this.updateMovement(delta);
+    this.updatePlayerSprite();
+    this.updateAttack(time);
+    this.updateEnemies(time, delta);
+    this.spawnEnemies(time);
+    this.updateProjectiles(delta);
+    this.updateExpGems(delta);
+    this.updateDamageTexts(delta);
+    this.updateVeil();
+    this.updateUI();
+
+    if(gameState.selectedCharacter === 'auryi') {
+      this.updateAura();
+    }
+  }
+
+  updateVeil() {
+    this.veilGraphics.clear();
+    const t = this.time.now*0.001;
+    const veilX = GAME_W/2 + Math.sin(t*0.5)*10;
+    this.veilGraphics.lineStyle(1, COLORS.white, 0.1+Math.sin(t)*0.05);
+    this.veilGraphics.beginPath();
+    this.veilGraphics.moveTo(veilX, 0);
+    this.veilGraphics.lineTo(veilX, GAME_H);
+    this.veilGraphics.strokePath();
+  }
+
+  updateMovement(delta) {
+    let dx=0, dy=0;
+    const speed = this.charData.moveSpeed * this.moveSpeedMult;
+
+    if(this.cursors) {
+      if(this.cursors.left.isDown || (this.wasd && this.wasd.A.isDown)) dx=-1;
+      if(this.cursors.right.isDown || (this.wasd && this.wasd.D.isDown)) dx=1;
+      if(this.cursors.up.isDown || (this.wasd && this.wasd.W.isDown)) dy=-1;
+      if(this.cursors.down.isDown || (this.wasd && this.wasd.S.isDown)) dy=1;
+    }
+
+    // Touch movement - move toward touch point
+    if(this.touchTarget) {
+      const tdx = this.touchTarget.x - this.player.x;
+      const tdy = this.touchTarget.y - this.player.y;
+      const dist = Math.sqrt(tdx*tdx+tdy*tdy);
+      if(dist > 5) {
+        dx = tdx/dist;
+        dy = tdy/dist;
+      }
+    }
+
+    const len = Math.sqrt(dx*dx+dy*dy);
+    if(len>0) {
+      dx/=len; dy/=len;
+      this.player.body.setVelocity(dx*speed, dy*speed);
+      this.facingDir = {x:dx,y:dy};
+      this.isMoving = true;
+      // Flip sprite based on horizontal direction (sprites face right by default)
+      if(dx < -0.1) this.player.setFlipX(true);
+      else if(dx > 0.1) this.player.setFlipX(false);
+    } else {
+      this.player.body.setVelocity(0,0);
+      this.isMoving = false;
+    }
+  }
+
+  updatePlayerSprite() {
+    if (this.isAttacking) return;
+    const charKey = gameState.selectedCharacter;
+    const targetAnim = this.isMoving ? 'walk' : 'idle';
+    if (this.currentAnim !== targetAnim) {
+      this.currentAnim = targetAnim;
+      this.player.play(charKey + '_' + targetAnim, true);
+    }
+  }
+
+  updateAttack(time) {
+    const interval = this.charData.attackSpeed / this.attackSpeedMult;
+    if(time - this.lastAttack < interval) return;
+
+    // Find nearest enemy
+    const enemies = this.enemies.getChildren();
+    if(enemies.length === 0) return;
+
+    let nearest = null, nearestDist = Infinity;
+    enemies.forEach(e => {
+      const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y);
+      if(d < nearestDist) { nearestDist = d; nearest = e; }
+    });
+
+    const range = this.charData.attackRange * this.attackRangeMult;
+    if(nearestDist > range) return;
+
+    this.lastAttack = time;
+    this.playHeroAttackAnim();
+
+    if(gameState.selectedCharacter === 'prismel') {
+      this.firePrismProjectile(nearest);
+      sfx.attackPrismel();
+    }
+    else if(gameState.selectedCharacter === 'kineza') {
+      this.kinezaMeleeStrike(nearest, range, nearestDist);
+      sfx.attackKineza();
+    }
+    else if(gameState.selectedCharacter === 'auryi') {
+      this.auryiAuraPulse(range);
+      sfx.attackAuryi();
+    }
+  }
+
+  playHeroAttackAnim() {
+    const charKey = gameState.selectedCharacter;
+    this.isAttacking = true;
+    this.currentAnim = 'attack';
+    this.player.play(charKey + '_attack', true);
+    this.player.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+      this.isAttacking = false;
+      this.currentAnim = '';
+      this.updatePlayerSprite();
+    });
+  }
+
+  firePrismProjectile(target) {
+    const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
+    const colors = [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green, COLORS.blue, COLORS.violet];
+    const color = colors[Math.floor(Math.random()*colors.length)];
+
+    const proj = this.add.graphics();
+    // Outer glow
+    proj.fillStyle(color, 0.3);
+    proj.fillCircle(0,0,12);
+    // Crystal shape (diamond)
+    proj.fillStyle(color);
+    proj.fillRect(-7,-7,14,14);
+    proj.fillStyle(COLORS.white);
+    proj.fillRect(-3,-3,6,6);
+
+    const container = this.add.container(this.player.x, this.player.y, [proj]);
+    this.physics.world.enable(container);
+    container.body.setSize(16,16);
+    container.body.setOffset(-8,-8);
+
+    const speed = this.charData.projectileSpeed;
+    container.body.setVelocity(Math.cos(angle)*speed, Math.sin(angle)*speed);
+    container.damage = this.charData.baseDamage * this.attackDamageMult;
+    container.rotation = angle;
+    container.lifetime = 1800;
+
+    // Spin animation for the crystal
+    this.tweens.add({
+      targets: proj,
+      rotation: Math.PI*2,
+      duration: 500,
+      repeat: -1
+    });
+
+    this.projectiles.add(container);
+  }
+
+  kinezaMeleeStrike(target, range, nearestDist) {
+    if(!target || !target.active) return;
+    const startX = this.player.x;
+    const startY = this.player.y;
+    const angle = Phaser.Math.Angle.Between(startX, startY, target.x, target.y);
+    const dirX = Math.cos(angle);
+    const dirY = Math.sin(angle);
+
+    // Face left/right only; this prevents side-view art from fighting diagonal motion too much.
+    if(dirX < -0.12) this.player.setFlipX(true);
+    else if(dirX > 0.12) this.player.setFlipX(false);
+
+    const dashDist = Math.min(52, Math.max(28, nearestDist - 8));
+    const dashX = Phaser.Math.Clamp(startX + dirX * dashDist, 28, GAME_W - 28);
+    const dashY = Phaser.Math.Clamp(startY + dirY * dashDist, 92, GAME_H - 34);
+
+    // Kinetic afterimage trail
+    for(let i=0;i<3;i++) {
+      const ghost = this.add.sprite(startX - dirX*(i*7), startY - dirY*(i*5), gameState.selectedCharacter, this.player.frame.name)
+        .setOrigin(this.player.originX, this.player.originY)
+        .setScale(this.player.scaleX, this.player.scaleY)
+        .setAlpha(0.18 - i*0.04)
+        .setTint(0x66ff44)
+        .setDepth(this.player.depth - 1);
+      ghost.setFlipX(this.player.flipX);
+      this.tweens.add({
+        targets: ghost,
+        alpha: 0,
+        duration: 130 + i*35,
+        onComplete: () => ghost.destroy()
+      });
+    }
+
+    const streak = this.add.graphics();
+    streak.lineStyle(8, COLORS.green, 0.42);
+    streak.beginPath();
+    streak.moveTo(startX - dirX*8, startY - dirY*8);
+    streak.lineTo(dashX + dirX*24, dashY + dirY*18);
+    streak.strokePath();
+    streak.lineStyle(3, COLORS.yellow, 0.58);
+    streak.beginPath();
+    streak.moveTo(startX, startY);
+    streak.lineTo(dashX + dirX*20, dashY + dirY*14);
+    streak.strokePath();
+
+    this.tweens.add({
+      targets: streak,
+      alpha: 0,
+      duration: 150,
+      onComplete: () => streak.destroy()
+    });
+
+    // Dash body instead of polite standing punch
+    this.tweens.add({
+      targets: this.player,
+      x: dashX,
+      y: dashY,
+      duration: 82,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        let hitCount = 0;
+        const enemies = this.enemies.getChildren().slice();
+        enemies.forEach(e => {
+          if(!e.active) return;
+          const dx = e.x - this.player.x;
+          const dy = e.y - this.player.y;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          if(d > range + 24) return;
+
+          const enemyAngle = Math.atan2(dy, dx);
+          const diff = Phaser.Math.Angle.Wrap(enemyAngle - angle);
+
+          // Wider than a punch, narrower than a full circle: a kinetic shoulder-check zone.
+          if(Math.abs(diff) <= 1.05 || d < 34) {
+            hitCount++;
+            this.damageEnemy(e, this.charData.baseDamage * this.attackDamageMult);
+
+            if(e.body && e.body.setVelocity) {
+              e.body.setVelocity(dirX * 250, dirY * 250);
+            }
+
+            const impact = this.add.circle(e.x, e.y, 10, COLORS.green, 0.22).setStrokeStyle(4, COLORS.yellow, 0.92);
+            const burst = this.add.graphics();
+            burst.lineStyle(3, COLORS.green, 0.8);
+            for(let k=0;k<8;k++) {
+              const a = (Math.PI*2/8)*k;
+              burst.beginPath();
+              burst.moveTo(e.x, e.y);
+              burst.lineTo(e.x + Math.cos(a)*22, e.y + Math.sin(a)*22);
+              burst.strokePath();
+            }
+
+            this.tweens.add({
+              targets: [impact, burst],
+              alpha: 0,
+              scale: 1.45,
+              duration: 135,
+              onComplete: () => { impact.destroy(); burst.destroy(); }
+            });
+          }
+        });
+
+        if(hitCount > 0) {
+          this.hitFreeze(30);
+          this.cameras.main.shake(70, 0.0022);
+        }
+      }
+    });
+  }
+
+  hitFreeze(duration = 42) {
+    if(this.hitFreezeActive || this.upgradeMenuOpen || this.gameOver) return;
+    this.hitFreezeActive = true;
+    if(this.physics && this.physics.world) this.physics.pause();
+    if(this.player && this.player.anims) this.player.anims.pause();
+
+    this.time.delayedCall(duration, () => {
+      this.hitFreezeActive = false;
+      if(!this.upgradeMenuOpen && !this.gameOver && this.physics && this.physics.world) this.physics.resume();
+      if(this.player && this.player.anims) this.player.anims.resume();
+    });
+  }
+
+  auryiAuraPulse(range) {
+    // Visual pulse - double ring for impact
+    const ring1 = this.add.circle(this.player.x, this.player.y, 10, COLORS.lavender, 0);
+    ring1.setStrokeStyle(5, COLORS.lavender, 0.9);
+
+    const ring2 = this.add.circle(this.player.x, this.player.y, 10, COLORS.yellow, 0);
+    ring2.setStrokeStyle(3, COLORS.yellow, 0.7);
+
+    // Fill flash
+    const flash = this.add.circle(this.player.x, this.player.y, 10, COLORS.lavender, 0.15);
+
+    this.tweens.add({
+      targets: ring1,
+      radius: range,
+      alpha: 0,
+      duration: 350,
+      ease: 'Cubic.easeOut',
+      onUpdate: () => ring1.setStrokeStyle(5, COLORS.lavender, ring1.alpha),
+      onComplete: () => ring1.destroy()
+    });
+
+    this.tweens.add({
+      targets: ring2,
+      radius: range*0.85,
+      alpha: 0,
+      duration: 300,
+      delay: 60,
+      ease: 'Cubic.easeOut',
+      onUpdate: () => ring2.setStrokeStyle(3, COLORS.yellow, ring2.alpha),
+      onComplete: () => ring2.destroy()
+    });
+
+    this.tweens.add({
+      targets: flash,
+      radius: range,
+      alpha: 0,
+      duration: 250,
+      onComplete: () => flash.destroy()
+    });
+
+    const enemies = this.enemies.getChildren().slice();
+    enemies.forEach(e => {
+      const d = Phaser.Math.Distance.Between(this.player.x,this.player.y,e.x,e.y);
+      if(d <= range) {
+        this.damageEnemy(e, this.charData.baseDamage * this.attackDamageMult);
+      }
+    });
+  }
+
+  updateAura() {
+    this.auraGraphics.clear();
+    const range = this.charData.attackRange * this.attackRangeMult;
+    this.auraGraphics.lineStyle(1, COLORS.yellow, 0.1);
+    this.auraGraphics.strokeCircle(this.player.x, this.player.y, range);
+  }
+
+  // ═══ ENEMIES ═══
+  spawnEnemies(time) {
+    if(time - this.lastSpawn < this.spawnInterval) return;
+    this.lastSpawn = time;
+
+    // Reduce spawn interval over time (harder)
+    this.spawnInterval = Math.max(400, 1800 - this.gameTime*0.03);
+
+    const enemyTypes = ['veilshade','wraith','crawler'];
+    const type = enemyTypes[Math.floor(Math.random()*enemyTypes.length)];
+
+    // Spawn at edge of screen
+    const side = Math.floor(Math.random()*4);
+    let x,y;
+    switch(side) {
+      case 0: x=Math.random()*GAME_W; y=-20; break;
+      case 1: x=GAME_W+20; y=Math.random()*GAME_H; break;
+      case 2: x=Math.random()*GAME_W; y=GAME_H+20; break;
+      default: x=-20; y=Math.random()*GAME_H;
+    }
+
+    this.createEnemy(x,y,type);
+  }
+
+  createEnemy(x,y,type) {
+    const shadow = this.add.ellipse(0, 14, 22, 8, 0x000000, 0.30);
+    const ring = this.add.circle(0, 0, 13, 0xffffff, 0);
+    const g = this.add.graphics();
+    let hp, speed, color, dmg, hpColor;
+
+    switch(type) {
+      case 'veilshade':
+        hp = 12 + this.gameTime*0.002; speed=60; color=COLORS.indigo; dmg=8; hpColor = 0xa26cff;
+        ring.setStrokeStyle(2, COLORS.lavender, 0.45);
+        g.lineStyle(2, 0xd9c1ff, 0.55);
+        g.fillStyle(0x3a1c6d, 0.92);
+        g.fillRoundedRect(-9,-12,18,24,5);
+        g.strokeRoundedRect(-9,-12,18,24,5);
+        g.fillStyle(0xf0deff, 0.95);
+        g.fillRect(-5,-8,3,3);
+        g.fillRect(2,-8,3,3);
+        break;
+      case 'wraith':
+        hp = 8 + this.gameTime*0.0015; speed=90; color=COLORS.violet; dmg=6; hpColor = 0xff8cff;
+        ring.setStrokeStyle(2, 0xf2c6ff, 0.42);
+        g.lineStyle(2, 0xf6e8ff, 0.42);
+        g.fillStyle(0xbfdcff, 0.84);
+        g.fillRoundedRect(-8,-10,16,20,8);
+        g.strokeRoundedRect(-8,-10,16,20,8);
+        g.fillStyle(color, 0.95);
+        g.fillRect(-3,-14,3,5);
+        g.fillRect(0,-14,3,5);
+        break;
+      default: // crawler
+        hp = 18 + this.gameTime*0.003; speed=45; color=COLORS.green; dmg=10; hpColor = 0x8cff5f;
+        ring.setStrokeStyle(2, 0x97ff77, 0.35);
+        g.lineStyle(2, 0x87cc5b, 0.45);
+        g.fillStyle(0x114400, 0.95);
+        g.fillRoundedRect(-10,-8,20,16,3);
+        g.strokeRoundedRect(-10,-8,20,16,3);
+        g.fillStyle(COLORS.orange, 0.95);
+        g.fillRect(-6,-4,4,4);
+        g.fillRect(2,-4,4,4);
+    }
+
+    const hpBg = this.add.rectangle(0, -18, 22, 4, 0x110a1a, 0.92).setStrokeStyle(1, 0xffffff, 0.12);
+    const hpFill = this.add.rectangle(-10, -18, 20, 2, hpColor, 1).setOrigin(0,0.5);
+    const container = this.add.container(x,y,[shadow, ring, g, hpBg, hpFill]);
+    this.physics.world.enable(container);
+    container.body.setSize(20,20);
+    container.body.setOffset(-10,-10);
+    container.hp = hp;
+    container.maxHp = hp;
+    container.speed = speed;
+    container.enemyType = type;
+    container.contactDamage = dmg;
+    container.hpFill = hpFill;
+    container.hpBg = hpBg;
+    container.spriteGraphic = g;
+    container.shadow = shadow;
+    container.ring = ring;
+    container.baseScale = type === 'crawler' ? 1.04 : 1.0;
+    container.setScale(container.baseScale);
+
+    this.enemies.add(container);
+  }
+
+  updateEnemies(time, delta) {
+    this.enemies.getChildren().forEach(e => {
+      const angle = Phaser.Math.Angle.Between(e.x,e.y,this.player.x,this.player.y);
+      e.body.setVelocity(Math.cos(angle)*e.speed, Math.sin(angle)*e.speed);
+
+      if(e.hpFill) {
+        e.hpFill.width = 20 * Phaser.Math.Clamp(e.hp / e.maxHp, 0, 1);
+      }
+
+      if(e.enemyType === 'veilshade') {
+        e.spriteGraphic.setAlpha(0.78 + Math.sin(time*0.01)*0.15);
+        e.ring.setAlpha(0.35 + Math.sin(time*0.01)*0.12);
+      } else if(e.enemyType === 'wraith') {
+        e.ring.setScale(1 + Math.sin(time*0.012 + e.x*0.01) * 0.08);
+      } else if(e.enemyType === 'crawler') {
+        e.shadow.setAlpha(0.26 + Math.sin(time*0.016 + e.y*0.01) * 0.05);
+      }
+    });
+  }
+
+  damageEnemy(enemy, amount) {
+    if(!enemy.active) return;
+    enemy.hp -= amount;
+    this.spawnDamageText(enemy.x, enemy.y-15, Math.round(amount), this.charData.color);
+    sfx.hit();
+
+    if(enemy.spriteGraphic) enemy.spriteGraphic.setAlpha(0.36);
+    if(enemy.ring) enemy.ring.setAlpha(0.95);
+    this.tweens.add({
+      targets: enemy,
+      scaleX: enemy.baseScale * 1.08,
+      scaleY: enemy.baseScale * 1.08,
+      duration: 60,
+      yoyo: true,
+      onComplete: () => {
+        if(enemy.active) enemy.setScale(enemy.baseScale);
+      }
+    });
+    this.time.delayedCall(60, () => {
+      if(enemy.active && enemy.spriteGraphic) enemy.spriteGraphic.setAlpha(1);
+    });
+
+    if(enemy.hpFill) {
+      enemy.hpFill.width = 20 * Phaser.Math.Clamp(enemy.hp / enemy.maxHp, 0, 1);
+    }
+
+    if(enemy.hp <= 0) {
+      this.killEnemy(enemy);
+    }
+  }
+
+  killEnemy(enemy) {
+    // Spawn exp gem
+    this.createExpGem(enemy.x, enemy.y);
+    this.score += 10;
+    this.killCount++;
+    sfx.enemyDeath();
+
+    // Death particle burst
+    for(let i=0;i<5;i++) {
+      const burstColor = enemy.enemyType === 'crawler' ? COLORS.green : enemy.enemyType === 'wraith' ? COLORS.violet : COLORS.lavender;
+      const p = this.add.rectangle(enemy.x, enemy.y, 3, 3, burstColor);
+      const a = Math.random()*Math.PI*2;
+      this.tweens.add({
+        targets:p,
+        x: enemy.x+Math.cos(a)*20,
+        y: enemy.y+Math.sin(a)*20,
+        alpha:0,
+        duration:300,
+        onComplete:()=>p.destroy()
+      });
+    }
+
+    enemy.destroy();
+  }
+
+  onPlayerHit(player, enemy) {
+    if(this.invulnerable) return;
+    this.playerHp -= enemy.contactDamage;
+    this.invulnerable = true;
+    this.player.setAlpha(0.4);
+    sfx.playerHit();
+
+    this.time.delayedCall(500, () => {
+      this.invulnerable = false;
+      this.player.setAlpha(1);
+    });
+
+    this.cameras.main.shake(100, 0.005);
+
+    if(this.playerHp <= 0) {
+      this.endGame();
+    }
+  }
+
+  // ═══ PROJECTILES ═══
+  onProjectileHit(proj, enemy) {
+    this.damageEnemy(enemy, proj.damage);
+    proj.destroy();
+  }
+
+  updateProjectiles(delta) {
+    this.projectiles.getChildren().forEach(p => {
+      p.lifetime -= delta;
+      if(p.lifetime <= 0) p.destroy();
+    });
+  }
+
+  // ═══ EXP GEMS ═══
+  createExpGem(x,y) {
+    const g = this.add.graphics();
+    g.fillStyle(COLORS.lavender);
+    g.fillCircle(0,0,4);
+    g.fillStyle(COLORS.white);
+    g.fillCircle(0,0,2);
+
+    const container = this.add.container(x,y,[g]);
+    this.physics.world.enable(container);
+    container.body.setSize(10,10);
+    container.body.setOffset(-5,-5);
+    container.expValue = 2;
+
+    this.expGems.add(container);
+  }
+
+  updateExpGems(delta) {
+    this.expGems.getChildren().forEach(gem => {
+      const d = Phaser.Math.Distance.Between(gem.x,gem.y,this.player.x,this.player.y);
+      if(d < 130) {
+        // Magnetize toward player
+        const angle = Phaser.Math.Angle.Between(gem.x,gem.y,this.player.x,this.player.y);
+        gem.body.setVelocity(Math.cos(angle)*280, Math.sin(angle)*280);
+      } else {
+        gem.body.setVelocity(0,0);
+      }
+    });
+  }
+
+  onGemCollect(player, gem) {
+    this.playerExp += gem.expValue;
+    this.score += 5;
+    gem.destroy();
+    sfx.gem();
+
+    if(this.playerExp >= this.expToNext) {
+      this.levelUp();
+    }
+  }
+
+  levelUp() {
+    this.playerLevel++;
+    this.playerExp -= this.expToNext;
+    this.expToNext = Math.floor(this.expToNext * 1.4);
+    this.playerMaxHp += 10;
+    this.playerHp = Math.min(this.playerMaxHp, this.playerHp+10);
+    sfx.levelUp();
+
+    const flash = this.add.text(GAME_W/2, GAME_H/2 - 185, 'RELIC CARDS REVEALED', {
+      fontFamily:'Georgia, serif',
+      fontSize:'18px',
+      fontStyle:'bold',
+      color:'#f7e8b6',
+      stroke:'#2d164e',
+      strokeThickness:4
+    }).setOrigin(0.5).setDepth(2000);
+    this.tweens.add({targets: flash, alpha: 0, y: flash.y - 20, duration: 650, onComplete:()=>flash.destroy()});
+
+    this.showUpgradeMenu();
+  }
+
+  // ═══ UPGRADE MENU ═══
+  showUpgradeMenu() {
+    this.upgradeMenuOpen = true;
+    this.player.body.setVelocity(0,0);
+    if (this.physics && this.physics.world) {
+      this.physics.pause();
+    }
+    [this.enemies, this.projectiles, this.expGems].forEach(group => {
+      if (!group) return;
+      group.getChildren().forEach(obj => {
+        if (obj.body && obj.body.setVelocity) obj.body.setVelocity(0, 0);
+      });
+    });
+
+    const overlay = this.add.rectangle(0,0,GAME_W,GAME_H,0x03020a,0.88).setOrigin(0,0);
+    const heroArtKey = gameState.selectedCharacter + '_full';
+    const heroArt = this.textures.exists(heroArtKey)
+      ? this.add.image(GAME_W/2, GAME_H/2 + 38, heroArtKey).setScale(0.48).setAlpha(0.10)
+      : null;
+
+    const panel = this.add.rectangle(GAME_W/2,GAME_H/2,472,360,0x0d0820,0.98)
+      .setStrokeStyle(2,COLORS.gold,0.78);
+    const inner = this.add.rectangle(GAME_W/2,GAME_H/2,456,344,0x120b22,0.94)
+      .setStrokeStyle(1,COLORS.lavender,0.22);
+
+    const title = this.add.text(GAME_W/2, GAME_H/2-144, '✦ PRISMATIC ASCENSION ✦', {
+      fontFamily:'Georgia, serif', fontSize:'22px', fontStyle:'bold', color:'#f7e8b6', stroke:'#201132', strokeThickness:5
+    }).setOrigin(0.5);
+
+    const subtitle = this.add.text(GAME_W/2, GAME_H/2-114, 'Choose one relic and deepen your attunement', {
+      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'12px', fontStyle:'bold', color:'#d8c0ff', stroke:'#000000', strokeThickness:2
+    }).setOrigin(0.5);
+
+    const upgrades = this.getRandomUpgrades(3);
+    const elements = [overlay, panel, inner, title, subtitle];
+    if (heroArt) elements.push(heroArt);
+
+    const cardW = 140, cardH = 188, gap = 10;
+    const totalW = upgrades.length * cardW + (upgrades.length-1) * gap;
+    const startX = (GAME_W - totalW) / 2;
+
+    upgrades.forEach((up, i) => {
+      const x = startX + i*(cardW + gap);
+      const y = GAME_H/2 - 66;
+      const card = this.add.rectangle(x, y, cardW, cardH, 0x17102a, 0.98)
+        .setOrigin(0,0)
+        .setStrokeStyle(2, up.color, 0.98)
+        .setInteractive({useHandCursor:true});
+      const trim = this.add.rectangle(x+6, y+6, cardW-12, cardH-12, 0x0f0a1d, 0.82)
+        .setOrigin(0,0)
+        .setStrokeStyle(1, COLORS.gold, 0.28);
+      const topBand = this.add.rectangle(x, y, cardW, 6, up.color, 0.98).setOrigin(0,0);
+      const glyph = this.add.text(x+cardW/2, y+28, '◆', {
+        fontFamily:'Georgia, serif', fontSize:'30px', fontStyle:'bold', color:'#'+up.color.toString(16).padStart(6,'0'), stroke:'#000000', strokeThickness:2
+      }).setOrigin(0.5);
+      const keyword = this.add.text(x+cardW/2, y+56, up.keyword, {
+        fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'10px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:2
+      }).setOrigin(0.5);
+      const name = this.add.text(x+cardW/2, y+88, up.name, {
+        fontFamily:'Georgia, serif', fontSize:'15px', fontStyle:'bold', color:'#f3ecff', align:'center', stroke:'#000000', strokeThickness:3, wordWrap:{width: cardW-18}
+      }).setOrigin(0.5);
+      const desc = this.add.text(x+cardW/2, y+122, up.desc, {
+        fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'11px', fontStyle:'bold', color:'#d7c6ee', stroke:'#000000', strokeThickness:2, align:'center', wordWrap:{width: cardW-20}
+      }).setOrigin(0.5);
+      const action = this.add.text(x+cardW/2, y+cardH-18, 'ATTUNE', {
+        fontFamily:'Georgia, serif', fontSize:'13px', fontStyle:'bold', color:'#f7e8b6', stroke:'#000000', strokeThickness:2
+      }).setOrigin(0.5);
+
+      card.on('pointerover', () => {
+        card.setFillStyle(0x241442, 0.99);
+        action.setColor('#ffffff');
+        glyph.setScale(1.08);
+      });
+      card.on('pointerout', () => {
+        card.setFillStyle(0x17102a, 0.98);
+        action.setColor('#f7e8b6');
+        glyph.setScale(1.0);
+      });
+      card.on('pointerdown', () => {
+        sfx.select();
+        up.apply();
+        this.cleanupUpgradeMenu();
+      });
+
+      elements.push(card, trim, topBand, glyph, keyword, name, desc, action);
+    });
+
+    this.upgradeMenuElements = elements;
+  }
+
+  cleanupUpgradeMenu() {
+    if(this.upgradeMenuElements) {
+      this.upgradeMenuElements.forEach(el => { if(el && el.destroy) el.destroy(); });
+    }
+    this.upgradeMenuOpen = false;
+    if (this.physics && this.physics.world && !this.gameOver) {
+      this.physics.resume();
+    }
+  }
+
+  getRandomUpgrades(count) {
+    const pool = [
+      {name:'Crimson Surge', keyword:'OFFENSE', color:COLORS.red, desc:'+20% attack damage',
+       apply:()=>{this.attackDamageMult*=1.2;}},
+      {name:'Emerald Drift', keyword:'MOTION', color:COLORS.green, desc:'+15% movement speed',
+       apply:()=>{this.moveSpeedMult*=1.15;}},
+      {name:'Solar Tempo', keyword:'RHYTHM', color:COLORS.yellow, desc:'+15% attack speed',
+       apply:()=>{this.attackSpeedMult*=1.15;}},
+      {name:'Azure Reach', keyword:'RANGE', color:COLORS.blue, desc:'+20% attack range',
+       apply:()=>{this.attackRangeMult*=1.2;}},
+      {name:'Amber Vitalis', keyword:'VITAL', color:COLORS.orange, desc:'+20 maximum HP',
+       apply:()=>{this.playerMaxHp+=20; this.playerHp+=20;}},
+      {name:'Violet Renewal', keyword:'RESTORE', color:COLORS.violet, desc:'fully restore health',
+       apply:()=>{this.playerHp=this.playerMaxHp;}},
+    ];
+    // Shuffle and pick
+    const shuffled = [...pool].sort(()=>Math.random()-0.5);
+    return shuffled.slice(0,count);
+  }
+
+  // ═══ DAMAGE TEXT ═══
+  spawnDamageText(x,y,amount,color) {
+    const colorHex = '#'+color.toString(16).padStart(6,'0');
+    const text = this.add.text(x,y,'-'+amount, {
+      fontFamily:'Georgia, serif', fontSize:'12px', fontStyle:'bold', color:colorHex
+    }).setOrigin(0.5);
+    this.damageTexts.push({text, life:500, vy:-0.5});
+  }
+
+  updateDamageTexts(delta) {
+    this.damageTexts = this.damageTexts.filter(dt => {
+      dt.life -= delta;
+      dt.text.y += dt.vy;
+      dt.text.setAlpha(dt.life/500);
+      if(dt.life<=0) { dt.text.destroy(); return false; }
+      return true;
+    });
+  }
+
+  // ═══ UI UPDATES ═══
+  updateTimer() {
+    const totalSec = Math.floor(this.gameTime/1000);
+    const min = Math.floor(totalSec/60);
+    const sec = totalSec%60;
+    this.timerText.setText(`${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`);
+  }
+
+  updateUI() {
+    const charKey = gameState.selectedCharacter;
+    const theme = HERO_UI_THEMES[charKey] || HERO_UI_THEMES.prismel;
+
+    const hpPct = Math.max(0,this.playerHp/this.playerMaxHp);
+    this.hpBarFill.width = (this.hpBarMaxWidth - 2) * hpPct;
+    this.hpBarGloss.width = (this.hpBarMaxWidth - 2) * hpPct;
+    this.hpBarFill.fillColor = hpPct>0.5 ? 0x44ff88 : hpPct>0.25 ? 0xffd84d : 0xff4d5e;
+    this.hpText.setText(`${Math.max(0,Math.round(this.playerHp))} / ${this.playerMaxHp}`);
+    if(hpPct <= 0.25) {
+      const pulse = 0.65 + Math.sin(this.time.now*0.018)*0.28;
+      this.hpBarFill.setAlpha(pulse);
+      this.levelBadge.setScale(1 + Math.sin(this.time.now*0.018)*0.02);
+    } else {
+      this.hpBarFill.setAlpha(1);
+      this.levelBadge.setScale(1);
+    }
+
+    const expPct = Phaser.Math.Clamp(this.playerExp/this.expToNext, 0, 1);
+    this.expBarFill.width = (this.expBarMaxWidth - 2) * expPct;
+    this.expBarFill.fillColor = theme.energyColor;
+    this.expBarFill.setAlpha(0.86 + Math.sin(this.time.now*0.012)*0.08);
+
+    this.levelText.setText('LV '+this.playerLevel);
+    this.scoreText.setText('SCORE ' + this.score);
+  }
+
+  endGame() {
+    this.gameOver = true;
+    sfx.gameOver();
+    gameState.score = this.score;
+    gameState.killCount = this.killCount;
+    gameState.gameTime = this.gameTime;
+    this.scene.start('GameOver');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME OVER SCENE
+// ═══════════════════════════════════════════════════════
+class GameOverScene extends Phaser.Scene {
+  constructor() {
+    super('GameOver');
+  }
+
+  create() {
+    this.add.rectangle(0,0,GAME_W,GAME_H,COLORS.void).setOrigin(0,0);
+
+    this.add.text(GAME_W/2, 200, 'THE VEIL CLAIMS YOU', {
+      fontFamily:'Georgia, serif', fontSize:'24px', fontStyle:'bold', color:'#ff4444'
+    }).setOrigin(0.5);
+
+    const totalSec = Math.floor(gameState.gameTime/1000);
+    const min = Math.floor(totalSec/60);
+    const sec = totalSec%60;
+
+    this.add.text(GAME_W/2, 280, `Survived: ${min}:${sec.toString().padStart(2,'0')}`, {
+      fontFamily:'Courier New', fontSize:'14px', color:'#c8a8ff'
+    }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, 310, `Enemies Defeated: ${gameState.killCount}`, {
+      fontFamily:'Courier New', fontSize:'14px', color:'#c8a8ff'
+    }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, 340, `Score: ${gameState.score}`, {
+      fontFamily:'Courier New', fontSize:'16px', fontStyle:'bold', color:'#ffd700'
+    }).setOrigin(0.5);
+
+    const btn = this.add.rectangle(GAME_W/2, 440, 200, 50, 0x1a0a3e)
+      .setStrokeStyle(2, COLORS.lavender)
+      .setInteractive({useHandCursor:true});
+
+    this.add.text(GAME_W/2, 440, 'TRY AGAIN', {
+      fontFamily:'Georgia, serif', fontSize:'16px', fontStyle:'bold', color:'#c8a8ff'
+    }).setOrigin(0.5);
+
+    btn.on('pointerover', ()=>btn.setStrokeStyle(2,COLORS.gold));
+    btn.on('pointerout', ()=>btn.setStrokeStyle(2,COLORS.lavender));
+    btn.on('pointerdown', ()=>{ sfx.select(); this.scene.start('CharacterSelect'); });
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME CONFIG
+// ═══════════════════════════════════════════════════════
+const config = {
+  type: Phaser.CANVAS,
+  width: GAME_W,
+  height: GAME_H,
+  parent: 'game-container',
+  backgroundColor: '#07060f',
+  render: { pixelArt: true, antialias: false, roundPixels: true, antialiasGL: false },
+  audio: {
+    disableWebAudio: false
+  },
+  physics: {
+    default: 'arcade',
+    arcade: { debug: false }
+  },
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: GAME_W,
+    height: GAME_H
+  },
+  scene: [TitleScene, CharacterSelectScene, BattleScene, GameOverScene]
+};
+
+new Phaser.Game(config);
+const __pvLoading = document.getElementById('loading');
+if (__pvLoading) __pvLoading.style.display = 'none';
