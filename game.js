@@ -1,3 +1,8 @@
+window.__pvBootErrorHook = true;
+window.addEventListener('error', function(e) {
+  const msg = (e && (e.message || e.error && e.error.message)) || 'Unknown runtime error';
+  console.error('Prismatic Veil runtime error:', msg, e);
+});
 
 (function(){
   const boot = document.getElementById('loading');
@@ -574,7 +579,7 @@ class TitleScene extends Phaser.Scene {
       strokeThickness: 2
     }).setOrigin(0.5).setDepth(4);
 
-    this.add.text(8, GAME_H - 12, 'SURVIVAL WEAPON BATCH 07', {
+    this.add.text(8, GAME_H - 12, 'SURVIVAL WEAPON BATCH 07 HOTFIX 01', {
       fontFamily: 'Courier New',
       fontSize: '8px',
       color: '#7d68aa'
@@ -938,6 +943,8 @@ class BattleScene extends Phaser.Scene {
     this.weapons = {};
     this.passives = {};
     this.evolutions = {};
+    this.magnetBonus = 0;
+    this.regenBonus = 0;
     this.orbiters = [];
     this.mines = this.physics ? null : null;
     this.lastMineDrop = 0;
@@ -1417,6 +1424,7 @@ class BattleScene extends Phaser.Scene {
   }
 
   updateWeapons(time, delta) {
+    if(!this.weapons) return;
     const orbitLevel = this.getWeaponLevel('prismOrbit');
     if(orbitLevel > 0) this.updateOrbiters(time, orbitLevel);
 
@@ -1469,11 +1477,18 @@ class BattleScene extends Phaser.Scene {
     this.lastMineDrop = time;
 
     const ring = this.add.circle(0, 0, 13 + level * 2, COLORS.violet, 0.12).setStrokeStyle(2, COLORS.lavender, 0.7);
-    const core = this.add.star(0, 0, 5, 3, 9 + level, COLORS.lavender, 0.92);
+    const core = this.add.graphics();
+    core.fillStyle(COLORS.lavender, 0.92);
+    core.fillRect(-3, -9-level, 6, 18 + level*2);
+    core.fillRect(-9-level, -3, 18 + level*2, 6);
+    core.fillStyle(COLORS.white, 0.55);
+    core.fillCircle(0, 0, 3);
     const mine = this.add.container(this.player.x, this.player.y + 4, [ring, core]).setDepth(4);
     this.physics.world.enable(mine);
-    mine.body.setSize(30 + level * 4, 30 + level * 4);
-    mine.body.setOffset(-(15 + level * 2), -(15 + level * 2));
+    if(mine.body) {
+      mine.body.setSize(30 + level * 4, 30 + level * 4);
+      mine.body.setOffset(-(15 + level * 2), -(15 + level * 2));
+    }
     mine.damage = (8 + level * 3) * this.attackDamageMult;
     mine.lifetime = 4200;
     mine.mineLevel = level;
@@ -1507,6 +1522,7 @@ class BattleScene extends Phaser.Scene {
   }
 
   updateMines(delta) {
+    if(!this.mines || !this.mines.getChildren) return;
     this.mines.getChildren().forEach(m => {
       m.lifetime -= delta;
       m.rotation += 0.015;
@@ -1696,8 +1712,10 @@ class BattleScene extends Phaser.Scene {
 
     const container = this.add.container(startX, startY, [glow, ring, crystal, core]);
     this.physics.world.enable(container);
-    container.body.setSize(18,18);
-    container.body.setOffset(-9,-9);
+    if(container.body) {
+      container.body.setSize(18,18);
+      container.body.setOffset(-9,-9);
+    }
 
     const speed = this.charData.projectileSpeed;
     container.body.setVelocity(Math.cos(angle)*speed, Math.sin(angle)*speed);
@@ -2045,8 +2063,10 @@ class BattleScene extends Phaser.Scene {
     const hpFill = this.add.rectangle(-10, -18, 20, 2, hpColor, 1).setOrigin(0,0.5);
     const container = this.add.container(x,y,[shadow, ring, g, hpBg, hpFill]);
     this.physics.world.enable(container);
-    container.body.setSize(20,20);
-    container.body.setOffset(-10,-10);
+    if(container.body) {
+      container.body.setSize(20,20);
+      container.body.setOffset(-10,-10);
+    }
     container.hp = hp;
     container.maxHp = hp;
     container.speed = speed;
@@ -2065,6 +2085,7 @@ class BattleScene extends Phaser.Scene {
   }
 
   updateEnemies(time, delta) {
+    if(!this.enemies || !this.enemies.getChildren) return;
     this.enemies.getChildren().forEach(e => {
       let targetX = this.player.x, targetY = this.player.y;
       if(e.enemyType === 'leech') {
@@ -2080,7 +2101,9 @@ class BattleScene extends Phaser.Scene {
         }
       }
       const angle = Phaser.Math.Angle.Between(e.x,e.y,targetX,targetY);
-      e.body.setVelocity(Math.cos(angle)*e.speed, Math.sin(angle)*e.speed);
+      if(e.body && e.body.setVelocity) {
+        e.body.setVelocity(Math.cos(angle)*e.speed, Math.sin(angle)*e.speed);
+      }
 
       if(e.hpFill) {
         e.hpFill.width = 20 * Phaser.Math.Clamp(e.hp / e.maxHp, 0, 1);
@@ -2190,6 +2213,7 @@ class BattleScene extends Phaser.Scene {
   }
 
   updateProjectiles(delta) {
+    if(!this.projectiles || !this.projectiles.getChildren) return;
     this.projectiles.getChildren().forEach(p => {
       p.lifetime -= delta;
       if(p.prismProjectile) {
@@ -2217,8 +2241,10 @@ class BattleScene extends Phaser.Scene {
 
     const container = this.add.container(x,y,[g]);
     this.physics.world.enable(container);
-    container.body.setSize(10,10);
-    container.body.setOffset(-5,-5);
+    if(container.body) {
+      container.body.setSize(10,10);
+      container.body.setOffset(-5,-5);
+    }
     container.expValue = 2;
 
     this.expGems.add(container);
@@ -2230,9 +2256,9 @@ class BattleScene extends Phaser.Scene {
       if(d < 130 + (this.magnetBonus || 0)) {
         // Magnetize toward player
         const angle = Phaser.Math.Angle.Between(gem.x,gem.y,this.player.x,this.player.y);
-        gem.body.setVelocity(Math.cos(angle)*280, Math.sin(angle)*280);
+        if(gem.body && gem.body.setVelocity) gem.body.setVelocity(Math.cos(angle)*280, Math.sin(angle)*280);
       } else {
-        gem.body.setVelocity(0,0);
+        if(gem.body && gem.body.setVelocity) gem.body.setVelocity(0,0);
       }
     });
   }
