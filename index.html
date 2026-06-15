@@ -1793,47 +1793,38 @@ class BattleScene extends Phaser.Scene {
     this.tweens.add({ targets: flash, scaleX: 2.4, scaleY: 2.4, alpha: 0, duration: 130,
       onComplete: () => flash.destroy() });
 
-    // Crystal shard — single bold Graphics triangle, VS-knife style
-    // Drawn along Y axis: tip at -y (front), base at +y (back)
-    // Container is then rotated so tip points in direction of travel
-    const TIP  = Math.round(18*WS);  // tip length above center
-    const BASE = Math.round(12*WS);  // base length below center
-    const HW   = Math.round(7*WS);   // half-width at widest
-
-    const g = this.add.graphics();
-    // Outer glow halo (color)
-    g.fillStyle(color, 0.35);
-    g.fillEllipse(0, Math.round(2*WS), HW*3.2, (TIP+BASE)*1.4);
-    // Main shard body — fully opaque colored triangle
-    g.fillStyle(color, 1.0);
-    g.fillTriangle(0, -TIP,  -HW, BASE,  HW, BASE);
-    // Bright white center stripe (prism highlight)
-    g.fillStyle(0xffffff, 0.92);
-    g.fillTriangle(0, -TIP+Math.round(2*WS),  -Math.round(2*WS), Math.round(BASE*0.55),  Math.round(2*WS), Math.round(BASE*0.55));
-    // Glowing white tip
-    g.fillStyle(0xffffff, 1.0);
-    g.fillCircle(0, -TIP, Math.round(3*WS));
-
-    const container = this.add.container(startX, startY, [g]);
-    container.rotation = angle + Math.PI / 2;  // rotate tip to face travel direction
-    container.setDepth(13);
-
-    this.physics.world.enable(container);
-    const speed = this.charData.projectileSpeed * WORLD_SCALE;
-    if(container.body) {
-      container.body.setSize(Math.round(10*WS), TIP + BASE);
-      container.body.setOffset(Math.round(-5*WS), -TIP);
-      container.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+    // Generate shard texture once (white triangle tip-at-top, tinted per shot)
+    if (!this.textures.exists('prismShardTex')) {
+      const pw = Math.round(14*WS), ph = Math.round(32*WS);
+      const sg = this.make.graphics({ x: 0, y: 0, add: false });
+      sg.fillStyle(0xffffff, 1.0);
+      sg.fillTriangle(pw/2, 0, 0, ph, pw, ph);
+      sg.fillStyle(0xffffff, 0.92);
+      sg.fillTriangle(pw/2, Math.round(3*WS), pw/2-Math.round(2*WS), Math.round(ph*0.55), pw/2+Math.round(2*WS), Math.round(ph*0.55));
+      sg.generateTexture('prismShardTex', pw, ph);
+      sg.destroy();
     }
 
-    container.damage = this.charData.baseDamage * this.attackDamageMult;
-    container.lifetime = 2800;
-    container.prismProjectile = true;
-    container.piercing = true;
-    container.hitList = new Set();
-    container.prismColor = color;
+    // Plain image + manual physics — bypasses Container quirks entirely
+    const shard = this.add.image(startX, startY, 'prismShardTex');
+    shard.setTint(color);
+    shard.rotation = angle + Math.PI / 2;  // rotate tip (top of texture) to face travel direction
+    shard.setDepth(13);
 
-    this.projectiles.add(container);
+    this.physics.world.enable(shard);
+    const speed = this.charData.projectileSpeed * WORLD_SCALE;
+    if (shard.body) {
+      shard.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+    }
+
+    shard.damage = this.charData.baseDamage * this.attackDamageMult;
+    shard.lifetime = 2800;
+    shard.prismProjectile = true;
+    shard.piercing = true;
+    shard.hitList = new Set();
+    shard.prismColor = color;
+
+    this.projectiles.add(shard);
   }
 
   kinezaMeleeStrike(target, range, nearestDist) {
