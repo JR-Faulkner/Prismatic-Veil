@@ -1629,6 +1629,31 @@ class BattleScene extends Phaser.Scene {
     }
   }
 
+  updateTimer() {
+    const totalSec = Math.floor(this.gameTime / 1000);
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    this.timerText.setText(`${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`);
+  }
+
+  spawnDamageText(x, y, amount, color) {
+    const colorHex = '#' + color.toString(16).padStart(6, '0');
+    const text = this.add.text(x, y, '-' + amount, {
+      fontFamily: 'Georgia, serif', fontSize: '12px', fontStyle: 'bold', color: colorHex
+    }).setOrigin(0.5).setDepth(50);
+    this.damageTexts.push({ text, life: 500, vy: -0.5 });
+  }
+
+  updateDamageTexts(delta) {
+    this.damageTexts = this.damageTexts.filter(dt => {
+      dt.life -= delta;
+      dt.text.y += dt.vy;
+      dt.text.setAlpha(dt.life / 500);
+      if (dt.life <= 0) { dt.text.destroy(); return false; }
+      return true;
+    });
+  }
+
   updateVeil() {
     this.veilGraphics.clear();
     const t = this.time.now*0.001;
