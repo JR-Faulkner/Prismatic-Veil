@@ -432,8 +432,8 @@ const CHARACTER_DATA = {
     moveSpeed: 160,
     baseDamage: 16,
     attackSpeed: 450, // ms between attacks
-    attackRange: 500,
-    projectileSpeed: 520,
+    attackRange: 9999,
+    projectileSpeed: 620,
     description: 'Prism shots + spread'
   },
   kineza: {
@@ -1778,64 +1778,51 @@ class BattleScene extends Phaser.Scene {
     const startY = this.heroFx.prismel ? this.heroFx.prismel.crystal.y : this.player.y - 30;
     const angle = Phaser.Math.Angle.Between(startX, startY, target.x, target.y) + angleOffset;
     const colors = [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green, COLORS.blue, COLORS.violet];
-    const color = colors[Math.floor(Math.random()*colors.length)];
+    const color = colors[Math.floor(Math.random() * colors.length)];
 
-    // Launch flash at crystal position
-    const flash = this.add.circle(startX, startY, 14, color, 0.75).setDepth(17);
-    const flashRing = this.add.circle(startX, startY, 10, 0xffffff, 0).setStrokeStyle(2, color, 0.9).setDepth(17);
+    // Launch flash burst from the crystal
+    const flash = this.add.circle(startX, startY, 14, color, 0.85).setDepth(17);
+    const flashRing = this.add.circle(startX, startY, 8, 0xffffff, 0).setDepth(17).setStrokeStyle(2, 0xffffff, 0.95);
     this.tweens.add({
       targets: [flash, flashRing],
-      scaleX: 2.2, scaleY: 2.2, alpha: 0,
-      duration: 140,
+      scaleX: 2.8, scaleY: 2.8, alpha: 0, duration: 160,
       onComplete: () => { flash.destroy(); flashRing.destroy(); }
     });
 
-    const glow = this.add.circle(0, 0, 11, color, 0.28);
-    const ring = this.add.circle(0, 0, 16, color, 0).setStrokeStyle(2, color, 0.60);
-    const crystal = this.add.rectangle(0, 0, 13, 13, color, 0.98).setAngle(45).setStrokeStyle(2, 0xffffff, 0.75);
-    const core = this.add.rectangle(0, 0, 6, 6, 0xffffff, 0.95).setAngle(45);
+    // Elongated crystal shard — VS knife style, pierces through enemies
+    const outerGlow = this.add.circle(0, 0, 22, color, 0.18);
+    const trailB   = this.add.rectangle(0, 18, 3, 14, color, 0.16);
+    const trailA   = this.add.rectangle(0, 11, 5, 16, color, 0.35);
+    const body     = this.add.rectangle(0, 0, 8, 28, color, 0.97).setStrokeStyle(1, 0xffffff, 0.40);
+    const shine    = this.add.rectangle(-1, -6, 2, 13, 0xffffff, 0.88);
+    const tipGlow  = this.add.circle(0, -15, 5, 0xffffff, 0.92);
 
-    const container = this.add.container(startX, startY, [glow, ring, crystal, core]);
+    const container = this.add.container(startX, startY, [outerGlow, trailB, trailA, body, shine, tipGlow]);
+    // Rotate so the shard's long axis points in the direction of travel
+    container.rotation = angle + Math.PI / 2;
+    container.setDepth(12);
+
     this.physics.world.enable(container);
     const speed = this.charData.projectileSpeed;
     if(container.body) {
-      container.body.setSize(18,18);
-      container.body.setOffset(-9,-9);
-      container.body.setVelocity(Math.cos(angle)*speed, Math.sin(angle)*speed);
+      container.body.setSize(10, 30);
+      container.body.setOffset(-5, -15);
+      container.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
     }
+
     container.damage = this.charData.baseDamage * this.attackDamageMult;
-    container.rotation = angle;
     container.lifetime = 2800;
     container.prismProjectile = true;
+    container.piercing = true;
+    container.hitList = new Set();
+    container.prismColor = color;
 
+    // Tip pulse so it reads clearly as a flying projectile
     this.tweens.add({
-      targets: [crystal, core],
-      angle: '+=360',
-      duration: 300,
-      repeat: -1
+      targets: tipGlow,
+      scaleX: 1.6, scaleY: 1.6, alpha: 0.5,
+      duration: 200, yoyo: true, repeat: -1
     });
-    this.tweens.add({
-      targets: ring,
-      scaleX: 1.4, scaleY: 1.4, alpha: 0.22,
-      duration: 160,
-      yoyo: true,
-      repeat: -1
-    });
-
-    // Launch streak behind the shot
-    for(let i=0;i<4;i++) {
-      const shard = this.add.rectangle(
-        startX - Math.cos(angle)*(6 + i*8),
-        startY - Math.sin(angle)*(6 + i*8),
-        10 - i*2, 10 - i*2, color, 0.22 - i*0.04
-      ).setAngle(45);
-      this.tweens.add({
-        targets: shard,
-        alpha: 0, scaleX: 0.3, scaleY: 0.3,
-        duration: 140 + i*25,
-        onComplete: () => shard.destroy()
-      });
-    }
 
     this.projectiles.add(container);
   }
@@ -2294,8 +2281,16 @@ class BattleScene extends Phaser.Scene {
 
   // ═══ PROJECTILES ═══
   onProjectileHit(proj, enemy) {
-    this.damageEnemy(enemy, proj.damage);
-    proj.destroy();
+    if(!proj.active || !enemy.active) return;
+    if(proj.piercing) {
+      if(proj.hitList && proj.hitList.has(enemy)) return;
+      if(!proj.hitList) proj.hitList = new Set();
+      proj.hitList.add(enemy);
+      this.damageEnemy(enemy, proj.damage);
+    } else {
+      this.damageEnemy(enemy, proj.damage);
+      proj.destroy();
+    }
   }
 
   onMineHit(mine, enemy) {
@@ -2308,13 +2303,12 @@ class BattleScene extends Phaser.Scene {
     this.projectiles.getChildren().forEach(p => {
       p.lifetime -= delta;
       if(p.prismProjectile) {
-        const trail = this.add.circle(p.x, p.y, 5, COLORS.white, 0.08);
+        const c = p.prismColor || COLORS.white;
+        const trail = this.add.circle(p.x, p.y, 5, c, 0.30).setDepth(11);
         this.tweens.add({
           targets: trail,
-          alpha: 0,
-          scaleX: 0.4,
-          scaleY: 0.4,
-          duration: 150,
+          alpha: 0, scaleX: 0.2, scaleY: 0.2,
+          duration: 110,
           onComplete: () => trail.destroy()
         });
       }
