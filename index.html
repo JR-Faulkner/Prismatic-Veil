@@ -1805,17 +1805,15 @@ class BattleScene extends Phaser.Scene {
       sg.destroy();
     }
 
-    // Plain image + manual physics — bypasses Container quirks entirely
+    // Plain tinted image — position driven manually each frame (bypasses all physics body quirks)
     const shard = this.add.image(startX, startY, 'prismShardTex');
     shard.setTint(color);
-    shard.rotation = angle + Math.PI / 2;  // rotate tip (top of texture) to face travel direction
+    shard.rotation = angle + Math.PI / 2;
     shard.setDepth(13);
 
-    this.physics.world.enable(shard);
     const speed = this.charData.projectileSpeed * WORLD_SCALE;
-    if (shard.body) {
-      shard.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
-    }
+    shard.velX = Math.cos(angle) * speed;
+    shard.velY = Math.sin(angle) * speed;
 
     shard.damage = this.charData.baseDamage * this.attackDamageMult;
     shard.lifetime = 2800;
@@ -2301,19 +2299,41 @@ class BattleScene extends Phaser.Scene {
 
   updateProjectiles(delta) {
     if(!this.projectiles || !this.projectiles.getChildren) return;
+    const dt = delta / 1000;
     this.projectiles.getChildren().forEach(p => {
+      if(!p.active) return;
       p.lifetime -= delta;
+
       if(p.prismProjectile) {
-        const c = p.prismColor || COLORS.white;
-        const trail = this.add.circle(p.x, p.y, Math.round(8*WORLD_SCALE), c, 0.55).setDepth(11);
-        this.tweens.add({
-          targets: trail,
-          alpha: 0, scaleX: 0.05, scaleY: 0.05,
-          duration: 80,
-          onComplete: () => trail.destroy()
-        });
+        // Manual position update — no Arcade Physics body needed
+        p.x += p.velX * dt;
+        p.y += p.velY * dt;
+
+        // Manual collision against enemies
+        if(this.enemies) {
+          const hitR = 18 * WORLD_SCALE;
+          this.enemies.getChildren().forEach(e => {
+            if(!e.active || !p.active) return;
+            if(Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y) < hitR) {
+              if(p.piercing) {
+                if(!p.hitList.has(e)) { p.hitList.add(e); this.damageEnemy(e, p.damage); }
+              } else {
+                this.damageEnemy(e, p.damage); p.destroy();
+              }
+            }
+          });
+        }
+
+        // Colored trail dot
+        if(p.active) {
+          const c = p.prismColor || COLORS.white;
+          const trail = this.add.circle(p.x, p.y, Math.round(8*WORLD_SCALE), c, 0.55).setDepth(11);
+          this.tweens.add({ targets: trail, alpha: 0, scaleX: 0.05, scaleY: 0.05, duration: 80,
+            onComplete: () => trail.destroy() });
+        }
       }
-      if(p.lifetime <= 0) p.destroy();
+
+      if(p.active && p.lifetime <= 0) p.destroy();
     });
   }
 
