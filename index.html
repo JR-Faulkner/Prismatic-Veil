@@ -1690,14 +1690,14 @@ class BattleScene extends Phaser.Scene {
     const len = Math.sqrt(dx*dx+dy*dy);
     if(len>0) {
       dx/=len; dy/=len;
-      this.player.body.setVelocity(dx*speed, dy*speed);
+      if(this.player.body) this.player.body.setVelocity(dx*speed, dy*speed);
       this.facingDir = {x:dx,y:dy};
       this.isMoving = true;
       // Flip sprite based on horizontal direction (sprites face right by default)
       if(dx < -0.1) this.player.setFlipX(true);
       else if(dx > 0.1) this.player.setFlipX(false);
     } else {
-      this.player.body.setVelocity(0,0);
+      if(this.player.body) this.player.body.setVelocity(0,0);
       this.isMoving = false;
     }
   }
@@ -1747,6 +1747,7 @@ class BattleScene extends Phaser.Scene {
       this.kinezaMeleeStrike(nearest, range + this.getWeaponLevel('kineticDrive')*6, nearestDist);
       if(this.evolutions.breakerDash) {
         this.time.delayedCall(115, () => {
+          if(this.gameOver || !this.enemies || !this.player || !this.player.active) return;
           const next = this.enemies.getChildren().find(e => e.active && Phaser.Math.Distance.Between(this.player.x,this.player.y,e.x,e.y) < range + 90);
           if(next) this.kinezaMeleeStrike(next, range + 20, Phaser.Math.Distance.Between(this.player.x,this.player.y,next.x,next.y));
         });
@@ -1786,13 +1787,12 @@ class BattleScene extends Phaser.Scene {
 
     const container = this.add.container(startX, startY, [glow, ring, crystal, core]);
     this.physics.world.enable(container);
+    const speed = this.charData.projectileSpeed;
     if(container.body) {
       container.body.setSize(18,18);
       container.body.setOffset(-9,-9);
+      container.body.setVelocity(Math.cos(angle)*speed, Math.sin(angle)*speed);
     }
-
-    const speed = this.charData.projectileSpeed;
-    container.body.setVelocity(Math.cos(angle)*speed, Math.sin(angle)*speed);
     container.damage = this.charData.baseDamage * this.attackDamageMult;
     container.rotation = angle;
     container.lifetime = 1800;
@@ -1847,7 +1847,8 @@ class BattleScene extends Phaser.Scene {
 
     // Kinetic afterimage trail
     for(let i=0;i<3;i++) {
-      const ghost = this.add.sprite(startX - dirX*(i*7), startY - dirY*(i*5), gameState.selectedCharacter, this.player.frame.name)
+      const frameName = (this.player.frame && this.player.frame.name != null) ? this.player.frame.name : 0;
+      const ghost = this.add.sprite(startX - dirX*(i*7), startY - dirY*(i*5), gameState.selectedCharacter, frameName)
         .setOrigin(this.player.originX, this.player.originY)
         .setScale(this.player.scaleX, this.player.scaleY)
         .setAlpha(0.18 - i*0.04)
@@ -1889,6 +1890,7 @@ class BattleScene extends Phaser.Scene {
       duration: 82,
       ease: 'Quad.easeOut',
       onComplete: () => {
+        if(this.gameOver || !this.enemies || !this.player || !this.player.active) return;
         let hitCount = 0;
         const enemies = this.enemies.getChildren().slice();
         enemies.forEach(e => {
@@ -2014,6 +2016,7 @@ class BattleScene extends Phaser.Scene {
   }
 
   updateAura() {
+    if(!this.auraGraphics) return;
     this.auraGraphics.clear();
     const range = this.charData.attackRange * this.attackRangeMult;
     this.auraGraphics.lineStyle(1, COLORS.yellow, 0.1);
@@ -2226,6 +2229,9 @@ class BattleScene extends Phaser.Scene {
   }
 
   killEnemy(enemy) {
+    const deadX = enemy.x;
+    const deadY = enemy.y;
+    const deadType = enemy.enemyType;
     // Spawn exp gem
     this.createExpGem(deadX, deadY);
     if(deadType === 'splitter') {
@@ -2265,7 +2271,7 @@ class BattleScene extends Phaser.Scene {
 
     this.time.delayedCall(500, () => {
       this.invulnerable = false;
-      this.player.setAlpha(1);
+      if(this.player && this.player.active) this.player.setAlpha(1);
     });
 
     this.cameras.main.shake(100, 0.005);
@@ -2373,7 +2379,7 @@ class BattleScene extends Phaser.Scene {
   // ═══ UPGRADE MENU ═══
   showUpgradeMenu() {
     this.upgradeMenuOpen = true;
-    this.player.body.setVelocity(0,0);
+    if(this.player && this.player.body) this.player.body.setVelocity(0,0);
     if (this.physics && this.physics.world) {
       this.physics.pause();
     }
