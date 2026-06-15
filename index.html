@@ -1788,33 +1788,41 @@ class BattleScene extends Phaser.Scene {
     const color = colors[Math.floor(Math.random() * colors.length)];
     const WS = WORLD_SCALE;
 
-    // Launch flash burst from the crystal
-    const flash = this.add.circle(startX, startY, Math.round(14*WS), color, 0.85).setDepth(17);
-    const flashRing = this.add.circle(startX, startY, Math.round(8*WS), 0xffffff, 0).setDepth(17).setStrokeStyle(2, 0xffffff, 0.95);
-    this.tweens.add({
-      targets: [flash, flashRing],
-      scaleX: 2.8, scaleY: 2.8, alpha: 0, duration: 160,
-      onComplete: () => { flash.destroy(); flashRing.destroy(); }
-    });
+    // Launch flash at crystal
+    const flash = this.add.circle(startX, startY, Math.round(10*WS), color, 0.95).setDepth(17);
+    this.tweens.add({ targets: flash, scaleX: 2.4, scaleY: 2.4, alpha: 0, duration: 130,
+      onComplete: () => flash.destroy() });
 
-    // Elongated crystal shard — VS knife style, pierces through enemies
-    const outerGlow = this.add.circle(0, 0, Math.round(22*WS), color, 0.18);
-    const trailB   = this.add.rectangle(0, Math.round(18*WS), Math.round(3*WS), Math.round(14*WS), color, 0.16);
-    const trailA   = this.add.rectangle(0, Math.round(11*WS), Math.round(5*WS), Math.round(16*WS), color, 0.35);
-    const body     = this.add.rectangle(0, 0, Math.round(8*WS), Math.round(28*WS), color, 0.97).setStrokeStyle(1, 0xffffff, 0.40);
-    const shine    = this.add.rectangle(Math.round(-1*WS), Math.round(-6*WS), Math.round(2*WS), Math.round(13*WS), 0xffffff, 0.88);
-    const tipGlow  = this.add.circle(0, Math.round(-15*WS), Math.round(5*WS), 0xffffff, 0.92);
+    // Crystal shard — single bold Graphics triangle, VS-knife style
+    // Drawn along Y axis: tip at -y (front), base at +y (back)
+    // Container is then rotated so tip points in direction of travel
+    const TIP  = Math.round(18*WS);  // tip length above center
+    const BASE = Math.round(12*WS);  // base length below center
+    const HW   = Math.round(7*WS);   // half-width at widest
 
-    const container = this.add.container(startX, startY, [outerGlow, trailB, trailA, body, shine, tipGlow]);
-    // Rotate so the shard's long axis points in the direction of travel
-    container.rotation = angle + Math.PI / 2;
-    container.setDepth(12);
+    const g = this.add.graphics();
+    // Outer glow halo (color)
+    g.fillStyle(color, 0.35);
+    g.fillEllipse(0, Math.round(2*WS), HW*3.2, (TIP+BASE)*1.4);
+    // Main shard body — fully opaque colored triangle
+    g.fillStyle(color, 1.0);
+    g.fillTriangle(0, -TIP,  -HW, BASE,  HW, BASE);
+    // Bright white center stripe (prism highlight)
+    g.fillStyle(0xffffff, 0.92);
+    g.fillTriangle(0, -TIP+Math.round(2*WS),  -Math.round(2*WS), Math.round(BASE*0.55),  Math.round(2*WS), Math.round(BASE*0.55));
+    // Glowing white tip
+    g.fillStyle(0xffffff, 1.0);
+    g.fillCircle(0, -TIP, Math.round(3*WS));
+
+    const container = this.add.container(startX, startY, [g]);
+    container.rotation = angle + Math.PI / 2;  // rotate tip to face travel direction
+    container.setDepth(13);
 
     this.physics.world.enable(container);
-    const speed = this.charData.projectileSpeed;
+    const speed = this.charData.projectileSpeed * WORLD_SCALE;
     if(container.body) {
-      container.body.setSize(Math.round(10*WS), Math.round(30*WS));
-      container.body.setOffset(Math.round(-5*WS), Math.round(-15*WS));
+      container.body.setSize(Math.round(10*WS), TIP + BASE);
+      container.body.setOffset(Math.round(-5*WS), -TIP);
       container.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
     }
 
@@ -1824,13 +1832,6 @@ class BattleScene extends Phaser.Scene {
     container.piercing = true;
     container.hitList = new Set();
     container.prismColor = color;
-
-    // Tip pulse so it reads clearly as a flying projectile
-    this.tweens.add({
-      targets: tipGlow,
-      scaleX: 1.6, scaleY: 1.6, alpha: 0.5,
-      duration: 200, yoyo: true, repeat: -1
-    });
 
     this.projectiles.add(container);
   }
@@ -2313,11 +2314,11 @@ class BattleScene extends Phaser.Scene {
       p.lifetime -= delta;
       if(p.prismProjectile) {
         const c = p.prismColor || COLORS.white;
-        const trail = this.add.circle(p.x, p.y, Math.round(5*WORLD_SCALE), c, 0.30).setDepth(11);
+        const trail = this.add.circle(p.x, p.y, Math.round(8*WORLD_SCALE), c, 0.55).setDepth(11);
         this.tweens.add({
           targets: trail,
-          alpha: 0, scaleX: 0.2, scaleY: 0.2,
-          duration: 110,
+          alpha: 0, scaleX: 0.05, scaleY: 0.05,
+          duration: 80,
           onComplete: () => trail.destroy()
         });
       }
