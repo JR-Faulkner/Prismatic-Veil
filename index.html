@@ -70,7 +70,7 @@ window.addEventListener('error', function(e) {
 if (!window.Phaser) { throw new Error('Phaser did not load. Check phaser.min.js path.'); }
 
 // ═══════════════════════════════════════════════════════
-// THE PRISMATIC VEIL — SURVIVAL WEAPON BUILD
+// THE PRISMATIC VEIL — SURVIVAL RESONANT ART BUILD
 // ═══════════════════════════════════════════════════════
 
 const GAME_W = window.innerWidth;
@@ -512,7 +512,7 @@ const HERO_UI_THEMES = {
   }
 };
 
-const WEAPON_DEFS = {
+const RESONANT_ART_DEFS = {
   prismShard: {
     name: 'Prism Shard',
     owner: 'prismel',
@@ -566,17 +566,17 @@ const WEAPON_DEFS = {
 const EVOLUTION_DEFS = {
   prismaticBarrage: {
     name: 'Prismatic Barrage',
-    requires: { weapon: 'prismShard', level: 4, passive: 'Shard of Reach' },
+    requires: { art: 'prismShard', level: 4, passive: 'Shard of Reach' },
     desc: 'Prism Shards split into rainbow volleys.'
   },
   breakerDash: {
     name: 'Breaker Dash',
-    requires: { weapon: 'kineticDrive', level: 4, passive: 'Shard of Current' },
+    requires: { art: 'kineticDrive', level: 4, passive: 'Shard of Current' },
     desc: 'Kineza chains through multiple enemies.'
   },
   radiantSanctuary: {
     name: 'Radiant Sanctuary',
-    requires: { weapon: 'auraPulse', level: 4, passive: 'Shard of Resonance' },
+    requires: { art: 'auraPulse', level: 4, passive: 'Shard of Resonance' },
     desc: 'Aura pulses heal and leave radiant fields.'
   }
 };
@@ -1014,7 +1014,7 @@ class BattleScene extends Phaser.Scene {
     this.isAttacking = false;
     this.hitFreezeActive = false;
     this.heroFx = {};
-    this.weapons = {};
+    this.arts = {};
     this.passives = {};
     this.evolutions = {};
     this.magnetBonus = 0;
@@ -1086,7 +1086,7 @@ class BattleScene extends Phaser.Scene {
     this.mines = this.physics.add.group();
     this.damageTexts = [];
 
-    this.setupWeaponSystem();
+    this.setupResonantArts();
 
     // ── Collisions ──
     this.physics.add.overlap(this.player, this.enemies, this.onPlayerHit, null, this);
@@ -1411,7 +1411,7 @@ class BattleScene extends Phaser.Scene {
     this.updatePlayerSprite();
     this.updateHeroEffects(delta);
     this.updateAttack(time);
-    this.updateWeapons(time, delta);
+    this.updateResonantArts(time, delta);
     this.updateEnemies(time, delta);
     this.spawnEnemies(time);
     this.updateProjectiles(delta);
@@ -1428,32 +1428,32 @@ class BattleScene extends Phaser.Scene {
     }
   }
 
-  setupWeaponSystem() {
+  setupResonantArts() {
     const hero = gameState.selectedCharacter;
     const baseMap = {
       prismel: 'prismShard',
       kineza: 'kineticDrive',
       auryi: 'auraPulse'
     };
-    this.weapons[baseMap[hero]] = { level: 1, cooldown: 0 };
-    this.weaponCooldowns = {
+    this.arts[baseMap[hero]] = { level: 1, cooldown: 0 };
+    this.artCooldowns = {
       prismOrbit: 0,
       veilMine: 0,
       chainSpark: 0
     };
   }
 
-  getWeaponLevel(key) {
-    return this.weapons[key] ? this.weapons[key].level : 0;
+  getArtLevel(key) {
+    return this.arts[key] ? this.arts[key].level : 0;
   }
 
-  upgradeWeapon(key) {
-    const def = WEAPON_DEFS[key];
+  upgradeArt(key) {
+    const def = RESONANT_ART_DEFS[key];
     if(!def) return;
-    if(!this.weapons[key]) {
-      this.weapons[key] = { level: 1, cooldown: 0 };
+    if(!this.arts[key]) {
+      this.arts[key] = { level: 1, cooldown: 0 };
     } else {
-      this.weapons[key].level = Math.min(def.maxLevel, this.weapons[key].level + 1);
+      this.arts[key].level = Math.min(def.maxLevel, this.arts[key].level + 1);
     }
     if(key === 'prismOrbit') this.rebuildOrbiters();
   }
@@ -1473,7 +1473,7 @@ class BattleScene extends Phaser.Scene {
 
   tryEvolutions() {
     if(gameState.selectedCharacter === 'prismel' &&
-       this.getWeaponLevel('prismShard') >= 4 &&
+       this.getArtLevel('prismShard') >= 4 &&
        this.passives['Shard of Reach'] &&
        !this.evolutions.prismaticBarrage) {
       this.evolutions.prismaticBarrage = true;
@@ -1481,7 +1481,7 @@ class BattleScene extends Phaser.Scene {
       sfx.rareRelic();
     }
     if(gameState.selectedCharacter === 'kineza' &&
-       this.getWeaponLevel('kineticDrive') >= 4 &&
+       this.getArtLevel('kineticDrive') >= 4 &&
        this.passives['Shard of Current'] &&
        !this.evolutions.breakerDash) {
       this.evolutions.breakerDash = true;
@@ -1489,7 +1489,7 @@ class BattleScene extends Phaser.Scene {
       sfx.rareRelic();
     }
     if(gameState.selectedCharacter === 'auryi' &&
-       this.getWeaponLevel('auraPulse') >= 4 &&
+       this.getArtLevel('auraPulse') >= 4 &&
        this.passives['Shard of Resonance'] &&
        !this.evolutions.radiantSanctuary) {
       this.evolutions.radiantSanctuary = true;
@@ -1498,15 +1498,15 @@ class BattleScene extends Phaser.Scene {
     }
   }
 
-  updateWeapons(time, delta) {
-    if(!this.weapons) return;
-    const orbitLevel = this.getWeaponLevel('prismOrbit');
+  updateResonantArts(time, delta) {
+    if(!this.arts) return;
+    const orbitLevel = this.getArtLevel('prismOrbit');
     if(orbitLevel > 0) this.updateOrbiters(time, orbitLevel);
 
-    const mineLevel = this.getWeaponLevel('veilMine');
+    const mineLevel = this.getArtLevel('veilMine');
     if(mineLevel > 0) this.dropVeilMine(time, mineLevel);
 
-    const chainLevel = this.getWeaponLevel('chainSpark');
+    const chainLevel = this.getArtLevel('chainSpark');
     if(chainLevel > 0) this.fireChainSpark(time, chainLevel);
 
     if(this.regenBonus && !this.gameOver) {
@@ -1517,7 +1517,7 @@ class BattleScene extends Phaser.Scene {
   rebuildOrbiters() {
     this.orbiters.forEach(o => o.destroy());
     this.orbiters = [];
-    const level = this.getWeaponLevel('prismOrbit');
+    const level = this.getArtLevel('prismOrbit');
     const count = Math.min(5, level + 1);
     for(let i=0; i<count; i++) {
       const color = [COLORS.blue, COLORS.violet, COLORS.green, COLORS.yellow, COLORS.red][i % 5];
@@ -1525,7 +1525,7 @@ class BattleScene extends Phaser.Scene {
       const g = this.add.rectangle(0, 0, 10, 10, color, 0.95).setAngle(45).setStrokeStyle(1, COLORS.white, 0.6);
       const glow = this.add.circle(0, 0, 12, color, 0.14);
       orb.add([glow, g]);
-      orb.weaponIndex = i;
+      orb.artIndex = i;
       this.orbiters.push(orb);
     }
   }
@@ -1760,7 +1760,7 @@ class BattleScene extends Phaser.Scene {
 
     if(gameState.selectedCharacter === 'prismel') {
       this.triggerHeroFocusBurst('prismel');
-      const lvl = this.getWeaponLevel('prismShard');
+      const lvl = this.getArtLevel('prismShard');
       this.firePrismProjectile(nearest);
       if(lvl >= 2 || this.evolutions.prismaticBarrage) {
         const extras = this.evolutions.prismaticBarrage ? [-0.35, -0.18, 0.18, 0.35] : [-0.18, 0.18];
@@ -1770,7 +1770,7 @@ class BattleScene extends Phaser.Scene {
     }
     else if(gameState.selectedCharacter === 'kineza') {
       this.triggerHeroFocusBurst('kineza');
-      this.kinezaMeleeStrike(nearest, range + this.getWeaponLevel('kineticDrive')*6, nearestDist);
+      this.kinezaMeleeStrike(nearest, range + this.getArtLevel('kineticDrive')*6, nearestDist);
       if(this.evolutions.breakerDash) {
         this.time.delayedCall(115, () => {
           if(this.gameOver || !this.enemies || !this.player || !this.player.active) return;
@@ -1782,7 +1782,7 @@ class BattleScene extends Phaser.Scene {
     }
     else if(gameState.selectedCharacter === 'auryi') {
       this.triggerHeroFocusBurst('auryi');
-      this.auryiAuraPulse(range + this.getWeaponLevel('auraPulse')*10);
+      this.auryiAuraPulse(range + this.getArtLevel('auraPulse')*10);
       sfx.attackAuryi();
     }
   }
@@ -2536,24 +2536,24 @@ class BattleScene extends Phaser.Scene {
       {name:'Violet Renewal', keyword:'RESTORE', color:COLORS.violet, desc:'Heal 40 HP',
        apply:()=>{this.playerHp=Math.min(this.playerMaxHp,this.playerHp+40);}},
 
-      {name:'Prism Shard +', keyword:'WEAPON', color:COLORS.blue, desc:'Upgrade Prism Shard',
-       condition:()=>gameState.selectedCharacter==='prismel' && this.getWeaponLevel('prismShard') < 5,
-       apply:()=>{this.upgradeWeapon('prismShard');}},
-      {name:'Kinetic Drive +', keyword:'WEAPON', color:COLORS.green, desc:'Upgrade Kinetic Drive',
-       condition:()=>gameState.selectedCharacter==='kineza' && this.getWeaponLevel('kineticDrive') < 5,
-       apply:()=>{this.upgradeWeapon('kineticDrive');}},
-      {name:'Aura Pulse +', keyword:'WEAPON', color:COLORS.yellow, desc:'Upgrade Aura Pulse',
-       condition:()=>gameState.selectedCharacter==='auryi' && this.getWeaponLevel('auraPulse') < 5,
-       apply:()=>{this.upgradeWeapon('auraPulse');}},
-      {name:'Orbiting Prism', keyword:'WEAPON', color:COLORS.violet, desc:'Crystal satellite',
-       condition:()=>this.getWeaponLevel('prismOrbit') < 5,
-       apply:()=>{this.upgradeWeapon('prismOrbit');}},
-      {name:'Veil Mine', keyword:'WEAPON', color:COLORS.lavender, desc:'Drop veil sigils',
-       condition:()=>this.getWeaponLevel('veilMine') < 5,
-       apply:()=>{this.upgradeWeapon('veilMine');}},
-      {name:'Chain Spark', keyword:'WEAPON', color:COLORS.blue, desc:'Lightning jumps',
-       condition:()=>this.getWeaponLevel('chainSpark') < 5,
-       apply:()=>{this.upgradeWeapon('chainSpark');}},
+      {name:'Prism Shard +', keyword:'ART', color:COLORS.blue, desc:'Upgrade Prism Shard',
+       condition:()=>gameState.selectedCharacter==='prismel' && this.getArtLevel('prismShard') < 5,
+       apply:()=>{this.upgradeArt('prismShard');}},
+      {name:'Kinetic Drive +', keyword:'ART', color:COLORS.green, desc:'Upgrade Kinetic Drive',
+       condition:()=>gameState.selectedCharacter==='kineza' && this.getArtLevel('kineticDrive') < 5,
+       apply:()=>{this.upgradeArt('kineticDrive');}},
+      {name:'Aura Pulse +', keyword:'ART', color:COLORS.yellow, desc:'Upgrade Aura Pulse',
+       condition:()=>gameState.selectedCharacter==='auryi' && this.getArtLevel('auraPulse') < 5,
+       apply:()=>{this.upgradeArt('auraPulse');}},
+      {name:'Orbiting Prism', keyword:'ART', color:COLORS.violet, desc:'Crystal satellite',
+       condition:()=>this.getArtLevel('prismOrbit') < 5,
+       apply:()=>{this.upgradeArt('prismOrbit');}},
+      {name:'Veil Mine', keyword:'ART', color:COLORS.lavender, desc:'Drop veil sigils',
+       condition:()=>this.getArtLevel('veilMine') < 5,
+       apply:()=>{this.upgradeArt('veilMine');}},
+      {name:'Chain Spark', keyword:'ART', color:COLORS.blue, desc:'Lightning jumps',
+       condition:()=>this.getArtLevel('chainSpark') < 5,
+       apply:()=>{this.upgradeArt('chainSpark');}},
 
       {name:'Shard of Mending', keyword:'PASSIVE', color:COLORS.lavender, desc:'Violet frequency — wider gem pickup',
        apply:()=>{this.addPassive('Shard of Mending');}},
@@ -2565,7 +2565,7 @@ class BattleScene extends Phaser.Scene {
        apply:()=>{this.addPassive('Shard of Resonance');}},
       {name:'Shard of Endurance', keyword:'PASSIVE', color:COLORS.orange, desc:'Orange frequency — Max HP + regen path',
        apply:()=>{this.addPassive('Shard of Endurance');}},
-      {name:'Shard of Ardence', keyword:'PASSIVE', color:COLORS.red, desc:'Red frequency — faster weapon rhythm',
+      {name:'Shard of Ardence', keyword:'PASSIVE', color:COLORS.red, desc:'Red frequency — faster Resonant Art rhythm',
        apply:()=>{this.addPassive('Shard of Ardence');}},
     ];
 
