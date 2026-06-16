@@ -581,6 +581,9 @@ const EVOLUTION_DEFS = {
   }
 };
 
+const MAX_ART_SLOTS = 4;     // primary + secondaries
+const MAX_PASSIVE_SLOTS = 6; // distinct Resonance Shards
+
 const STAGE_PHASES = [
   { time: 0,   name: 'The First Veil',      msg: 'The First Veil opens.' },
   { time: 60,  name: 'The Veil Deepens',    msg: 'The Veil deepens.' },
@@ -1395,6 +1398,9 @@ class BattleScene extends Phaser.Scene {
     this.scoreText = this.add.text(GAME_W-18, 50, 'SCORE 0', {
       fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'15px', fontStyle:'bold', color:'#f1e6ff', stroke:'#000000', strokeThickness:3
     }).setOrigin(1,0);
+    this.slotsText = this.add.text(GAME_W-18, 72, `ARTS 1/${MAX_ART_SLOTS}  SHARDS 0/${MAX_PASSIVE_SLOTS}`, {
+      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'11px', fontStyle:'bold', color:'#bda9e8', stroke:'#000000', strokeThickness:2
+    }).setOrigin(1,0);
 
     this.footerPanel = this.add.rectangle(GAME_W/2, GAME_H-38, 382, 28, 0x0d0820, 0.92).setStrokeStyle(1, accent2, 0.42);
     this.footerText = this.add.text(GAME_W/2, GAME_H-38, `${theme.footerGlyph} ${this.charData.name.toUpperCase()} — ${this.charData.title.toUpperCase()} ${theme.footerGlyph}`, {
@@ -1445,6 +1451,22 @@ class BattleScene extends Phaser.Scene {
 
   getArtLevel(key) {
     return this.arts[key] ? this.arts[key].level : 0;
+  }
+
+  ownedArtCount() {
+    return Object.keys(this.arts).length;
+  }
+
+  ownedPassiveCount() {
+    return Object.keys(this.passives).length;
+  }
+
+  hasArtSlot() {
+    return this.ownedArtCount() < MAX_ART_SLOTS;
+  }
+
+  hasPassiveSlot() {
+    return this.ownedPassiveCount() < MAX_PASSIVE_SLOTS;
   }
 
   upgradeArt(key) {
@@ -2546,26 +2568,32 @@ class BattleScene extends Phaser.Scene {
        condition:()=>gameState.selectedCharacter==='auryi' && this.getArtLevel('auraPulse') < 5,
        apply:()=>{this.upgradeArt('auraPulse');}},
       {name:'Orbiting Prism', keyword:'ART', color:COLORS.violet, desc:'Crystal satellite',
-       condition:()=>this.getArtLevel('prismOrbit') < 5,
+       condition:()=>this.getArtLevel('prismOrbit') < 5 && (this.arts['prismOrbit'] || this.hasArtSlot()),
        apply:()=>{this.upgradeArt('prismOrbit');}},
       {name:'Veil Mine', keyword:'ART', color:COLORS.lavender, desc:'Drop veil sigils',
-       condition:()=>this.getArtLevel('veilMine') < 5,
+       condition:()=>this.getArtLevel('veilMine') < 5 && (this.arts['veilMine'] || this.hasArtSlot()),
        apply:()=>{this.upgradeArt('veilMine');}},
       {name:'Chain Spark', keyword:'ART', color:COLORS.blue, desc:'Lightning jumps',
-       condition:()=>this.getArtLevel('chainSpark') < 5,
+       condition:()=>this.getArtLevel('chainSpark') < 5 && (this.arts['chainSpark'] || this.hasArtSlot()),
        apply:()=>{this.upgradeArt('chainSpark');}},
 
       {name:'Shard of Mending', keyword:'PASSIVE', color:COLORS.lavender, desc:'Violet frequency — wider gem pickup',
+       condition:()=>this.passives['Shard of Mending'] || this.hasPassiveSlot(),
        apply:()=>{this.addPassive('Shard of Mending');}},
       {name:'Shard of Reach', keyword:'PASSIVE', color:COLORS.blue, desc:'Blue frequency — Prism evolution key',
+       condition:()=>this.passives['Shard of Reach'] || this.hasPassiveSlot(),
        apply:()=>{this.addPassive('Shard of Reach');}},
       {name:'Shard of Current', keyword:'PASSIVE', color:COLORS.green, desc:'Green frequency — Dash evolution key',
+       condition:()=>this.passives['Shard of Current'] || this.hasPassiveSlot(),
        apply:()=>{this.addPassive('Shard of Current');}},
       {name:'Shard of Resonance', keyword:'PASSIVE', color:COLORS.yellow, desc:'Yellow frequency — Aura evolution key',
+       condition:()=>this.passives['Shard of Resonance'] || this.hasPassiveSlot(),
        apply:()=>{this.addPassive('Shard of Resonance');}},
       {name:'Shard of Endurance', keyword:'PASSIVE', color:COLORS.orange, desc:'Orange frequency — Max HP + regen path',
+       condition:()=>this.passives['Shard of Endurance'] || this.hasPassiveSlot(),
        apply:()=>{this.addPassive('Shard of Endurance');}},
       {name:'Shard of Ardence', keyword:'PASSIVE', color:COLORS.red, desc:'Red frequency — faster Resonant Art rhythm',
+       condition:()=>this.passives['Shard of Ardence'] || this.hasPassiveSlot(),
        apply:()=>{this.addPassive('Shard of Ardence');}},
     ];
 
@@ -2610,6 +2638,7 @@ class BattleScene extends Phaser.Scene {
 
     this.levelText.setText('LV '+this.playerLevel);
     this.scoreText.setText('SCORE ' + this.score);
+    this.slotsText.setText(`ARTS ${this.ownedArtCount()}/${MAX_ART_SLOTS}  SHARDS ${this.ownedPassiveCount()}/${MAX_PASSIVE_SLOTS}`);
   }
 
   endGame() {
