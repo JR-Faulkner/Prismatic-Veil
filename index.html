@@ -566,17 +566,17 @@ const WEAPON_DEFS = {
 const EVOLUTION_DEFS = {
   prismaticBarrage: {
     name: 'Prismatic Barrage',
-    requires: { weapon: 'prismShard', level: 4, passive: 'Spectrum Lens' },
+    requires: { weapon: 'prismShard', level: 4, passive: 'Shard of Reach' },
     desc: 'Prism Shards split into rainbow volleys.'
   },
   breakerDash: {
     name: 'Breaker Dash',
-    requires: { weapon: 'kineticDrive', level: 4, passive: 'Momentum Core' },
+    requires: { weapon: 'kineticDrive', level: 4, passive: 'Shard of Current' },
     desc: 'Kineza chains through multiple enemies.'
   },
   radiantSanctuary: {
     name: 'Radiant Sanctuary',
-    requires: { weapon: 'auraPulse', level: 4, passive: 'Golden Halo' },
+    requires: { weapon: 'auraPulse', level: 4, passive: 'Shard of Resonance' },
     desc: 'Aura pulses heal and leave radiant fields.'
   }
 };
@@ -1460,21 +1460,21 @@ class BattleScene extends Phaser.Scene {
 
   addPassive(name) {
     this.passives[name] = (this.passives[name] || 0) + 1;
-    if(name === 'Magnet Charm') this.magnetBonus = (this.magnetBonus || 0) + 40;
-    if(name === 'Vital Thread') {
+    if(name === 'Shard of Mending') this.magnetBonus = (this.magnetBonus || 0) + 40;
+    if(name === 'Shard of Endurance') {
       this.playerMaxHp += 15;
       this.playerHp = Math.min(this.playerMaxHp, this.playerHp + 15);
     }
-    if(name === 'Quickened Veil') this.attackSpeedMult *= 1.08;
-    if(name === 'Spectrum Lens') this.attackRangeMult *= 1.08;
-    if(name === 'Momentum Core') this.moveSpeedMult *= 1.08;
-    if(name === 'Golden Halo') this.regenBonus = (this.regenBonus || 0) + 0.006;
+    if(name === 'Shard of Ardence') this.attackSpeedMult *= 1.08;
+    if(name === 'Shard of Reach') this.attackRangeMult *= 1.08;
+    if(name === 'Shard of Current') this.moveSpeedMult *= 1.08;
+    if(name === 'Shard of Resonance') this.regenBonus = (this.regenBonus || 0) + 0.006;
   }
 
   tryEvolutions() {
     if(gameState.selectedCharacter === 'prismel' &&
        this.getWeaponLevel('prismShard') >= 4 &&
-       this.passives['Spectrum Lens'] &&
+       this.passives['Shard of Reach'] &&
        !this.evolutions.prismaticBarrage) {
       this.evolutions.prismaticBarrage = true;
       this.showStageMessage('EVOLUTION: PRISMATIC BARRAGE');
@@ -1482,7 +1482,7 @@ class BattleScene extends Phaser.Scene {
     }
     if(gameState.selectedCharacter === 'kineza' &&
        this.getWeaponLevel('kineticDrive') >= 4 &&
-       this.passives['Momentum Core'] &&
+       this.passives['Shard of Current'] &&
        !this.evolutions.breakerDash) {
       this.evolutions.breakerDash = true;
       this.showStageMessage('EVOLUTION: BREAKER DASH');
@@ -1490,7 +1490,7 @@ class BattleScene extends Phaser.Scene {
     }
     if(gameState.selectedCharacter === 'auryi' &&
        this.getWeaponLevel('auraPulse') >= 4 &&
-       this.passives['Golden Halo'] &&
+       this.passives['Shard of Resonance'] &&
        !this.evolutions.radiantSanctuary) {
       this.evolutions.radiantSanctuary = true;
       this.showStageMessage('EVOLUTION: RADIANT SANCTUARY');
@@ -2555,18 +2555,18 @@ class BattleScene extends Phaser.Scene {
        condition:()=>this.getWeaponLevel('chainSpark') < 5,
        apply:()=>{this.upgradeWeapon('chainSpark');}},
 
-      {name:'Magnet Charm', keyword:'PASSIVE', color:COLORS.lavender, desc:'Wider gem pickup',
-       apply:()=>{this.addPassive('Magnet Charm');}},
-      {name:'Spectrum Lens', keyword:'PASSIVE', color:COLORS.blue, desc:'Prism evolution key',
-       apply:()=>{this.addPassive('Spectrum Lens');}},
-      {name:'Momentum Core', keyword:'PASSIVE', color:COLORS.green, desc:'Dash evolution key',
-       apply:()=>{this.addPassive('Momentum Core');}},
-      {name:'Golden Halo', keyword:'PASSIVE', color:COLORS.yellow, desc:'Aura evolution key',
-       apply:()=>{this.addPassive('Golden Halo');}},
-      {name:'Vital Thread', keyword:'PASSIVE', color:COLORS.orange, desc:'Max HP + regen path',
-       apply:()=>{this.addPassive('Vital Thread');}},
-      {name:'Quickened Veil', keyword:'PASSIVE', color:COLORS.red, desc:'Faster weapon rhythm',
-       apply:()=>{this.addPassive('Quickened Veil');}},
+      {name:'Shard of Mending', keyword:'PASSIVE', color:COLORS.lavender, desc:'Violet frequency — wider gem pickup',
+       apply:()=>{this.addPassive('Shard of Mending');}},
+      {name:'Shard of Reach', keyword:'PASSIVE', color:COLORS.blue, desc:'Blue frequency — Prism evolution key',
+       apply:()=>{this.addPassive('Shard of Reach');}},
+      {name:'Shard of Current', keyword:'PASSIVE', color:COLORS.green, desc:'Green frequency — Dash evolution key',
+       apply:()=>{this.addPassive('Shard of Current');}},
+      {name:'Shard of Resonance', keyword:'PASSIVE', color:COLORS.yellow, desc:'Yellow frequency — Aura evolution key',
+       apply:()=>{this.addPassive('Shard of Resonance');}},
+      {name:'Shard of Endurance', keyword:'PASSIVE', color:COLORS.orange, desc:'Orange frequency — Max HP + regen path',
+       apply:()=>{this.addPassive('Shard of Endurance');}},
+      {name:'Shard of Ardence', keyword:'PASSIVE', color:COLORS.red, desc:'Red frequency — faster weapon rhythm',
+       apply:()=>{this.addPassive('Shard of Ardence');}},
     ];
 
     const available = pool.filter(u => !u.condition || u.condition());
