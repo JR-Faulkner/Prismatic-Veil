@@ -485,6 +485,27 @@ const CHARACTER_DATA = {
   }
 };
 
+const CHARACTER_TRAITS = {
+  prismel: {
+    name: 'Spectral Focus',
+    desc: '+10% attack range. +5% attack range every 5 levels (max +25%)',
+    flat: { attackRangeMult: 0.10 },
+    scaling: { every: 5, maxStacks: 3, attackRangeMult: 0.05 }
+  },
+  kineza: {
+    name: 'Restless Momentum',
+    desc: '+15 max HP. +6% move speed every 5 levels (max +18%)',
+    flat: { maxHp: 15 },
+    scaling: { every: 5, maxStacks: 3, moveSpeedMult: 0.06 }
+  },
+  auryi: {
+    name: 'Veil Attunement',
+    desc: '+20 max HP, slow regen. +5% attack range every 5 levels (max +15%)',
+    flat: { maxHp: 20, regen: 0.004 },
+    scaling: { every: 5, maxStacks: 3, attackRangeMult: 0.05 }
+  }
+};
+
 const HERO_UI_THEMES = {
   prismel: {
     hpLabel: 'VITAL',
@@ -1003,7 +1024,6 @@ class BattleScene extends Phaser.Scene {
     this.score = 0;
     this.killCount = 0;
     this.gameTime = 0;
-    this.lastAttack = 0;
     this.invulnerable = false;
     this.attackDamageMult = 1;
     this.attackSpeedMult = 1;
@@ -1029,6 +1049,31 @@ class BattleScene extends Phaser.Scene {
     this.lastBattleTick = 0;
     this.nextStagePhase = 1;
     this.eliteSpawned = {};
+    this.traitStacks = 0;
+    this.applyCharacterTraitBase();
+  }
+
+  applyCharacterTraitBase() {
+    const trait = CHARACTER_TRAITS[gameState.selectedCharacter];
+    this.characterTrait = trait;
+    if(!trait) return;
+    if(trait.flat.maxHp) {
+      this.playerMaxHp += trait.flat.maxHp;
+      this.playerHp += trait.flat.maxHp;
+    }
+    if(trait.flat.attackRangeMult) this.attackRangeMult *= (1 + trait.flat.attackRangeMult);
+    if(trait.flat.moveSpeedMult) this.moveSpeedMult *= (1 + trait.flat.moveSpeedMult);
+    if(trait.flat.regen) this.regenBonus += trait.flat.regen;
+  }
+
+  applyCharacterTraitLevel(level) {
+    const trait = this.characterTrait;
+    if(!trait || !trait.scaling) return;
+    const { every, maxStacks } = trait.scaling;
+    if(level % every !== 0 || this.traitStacks >= maxStacks) return;
+    this.traitStacks++;
+    if(trait.scaling.attackRangeMult) this.attackRangeMult *= (1 + trait.scaling.attackRangeMult);
+    if(trait.scaling.moveSpeedMult) this.moveSpeedMult *= (1 + trait.scaling.moveSpeedMult);
   }
 
   preload() {
@@ -1761,9 +1806,6 @@ class BattleScene extends Phaser.Scene {
   }
 
   updateAttack(time) {
-    const interval = this.charData.attackSpeed / this.attackSpeedMult;
-    if(time - this.lastAttack < interval) return;
-
     // Find nearest enemy
     const enemies = this.enemies.getChildren();
     if(enemies.length === 0) return;
@@ -1777,10 +1819,23 @@ class BattleScene extends Phaser.Scene {
     const range = this.charData.attackRange * this.attackRangeMult;
     if(nearestDist > range) return;
 
-    this.lastAttack = time;
-    this.playHeroAttackAnim();
+    const interval = this.charData.attackSpeed / this.attackSpeedMult;
+    let firedAny = false;
 
-    if(gameState.selectedCharacter === 'prismel') {
+    ['prismShard', 'kineticDrive', 'auraPulse'].forEach(key => {
+      const art = this.arts[key];
+      if(!art) return;
+      if(time - (art.lastFired || 0) < interval) return;
+      art.lastFired = time;
+      firedAny = true;
+      this.firePrimaryArt(key, nearest, range, nearestDist);
+    });
+
+    if(firedAny) this.playHeroAttackAnim();
+  }
+
+  firePrimaryArt(key, nearest, range, nearestDist) {
+    if(key === 'prismShard') {
       this.triggerHeroFocusBurst('prismel');
       const lvl = this.getArtLevel('prismShard');
       this.firePrismProjectile(nearest);
@@ -1790,7 +1845,7 @@ class BattleScene extends Phaser.Scene {
       }
       sfx.attackPrismel();
     }
-    else if(gameState.selectedCharacter === 'kineza') {
+    else if(key === 'kineticDrive') {
       this.triggerHeroFocusBurst('kineza');
       this.kinezaMeleeStrike(nearest, range + this.getArtLevel('kineticDrive')*6, nearestDist);
       if(this.evolutions.breakerDash) {
@@ -1802,7 +1857,7 @@ class BattleScene extends Phaser.Scene {
       }
       sfx.attackKineza();
     }
-    else if(gameState.selectedCharacter === 'auryi') {
+    else if(key === 'auraPulse') {
       this.triggerHeroFocusBurst('auryi');
       this.auryiAuraPulse(range + this.getArtLevel('auraPulse')*10);
       sfx.attackAuryi();
@@ -2427,6 +2482,7 @@ class BattleScene extends Phaser.Scene {
     this.expToNext = Math.floor(this.expToNext * 1.4);
     this.playerMaxHp += 10;
     this.playerHp = Math.min(this.playerMaxHp, this.playerHp+10);
+    this.applyCharacterTraitLevel(this.playerLevel);
     sfx.levelUp();
     sfx.cardReveal();
 
@@ -2545,27 +2601,14 @@ class BattleScene extends Phaser.Scene {
 
   getRandomUpgrades(count) {
     const pool = [
-      {name:'Crimson Surge', keyword:'OFFENSE', color:COLORS.red, desc:'+20% attack damage',
-       apply:()=>{this.attackDamageMult*=1.2;}},
-      {name:'Emerald Drift', keyword:'MOTION', color:COLORS.green, desc:'+15% movement speed',
-       apply:()=>{this.moveSpeedMult*=1.15;}},
-      {name:'Solar Tempo', keyword:'RHYTHM', color:COLORS.yellow, desc:'+15% attack speed',
-       apply:()=>{this.attackSpeedMult*=1.15;}},
-      {name:'Azure Reach', keyword:'RANGE', color:COLORS.blue, desc:'+20% attack range',
-       apply:()=>{this.attackRangeMult*=1.2;}},
-      {name:'Amber Vitalis', keyword:'SURVIVAL', color:COLORS.orange, desc:'+25 max HP',
-       apply:()=>{this.playerMaxHp+=25; this.playerHp+=25;}},
-      {name:'Violet Renewal', keyword:'RESTORE', color:COLORS.violet, desc:'Heal 40 HP',
-       apply:()=>{this.playerHp=Math.min(this.playerMaxHp,this.playerHp+40);}},
-
-      {name:'Prism Shard +', keyword:'ART', color:COLORS.blue, desc:'Upgrade Prism Shard',
-       condition:()=>gameState.selectedCharacter==='prismel' && this.getArtLevel('prismShard') < 5,
+      {name:'Prism Shard', keyword:'ART', color:COLORS.blue, desc:'Crystals fired from a focus',
+       condition:()=>this.getArtLevel('prismShard') < 5 && (this.arts['prismShard'] || this.hasArtSlot()),
        apply:()=>{this.upgradeArt('prismShard');}},
-      {name:'Kinetic Drive +', keyword:'ART', color:COLORS.green, desc:'Upgrade Kinetic Drive',
-       condition:()=>gameState.selectedCharacter==='kineza' && this.getArtLevel('kineticDrive') < 5,
+      {name:'Kinetic Drive', keyword:'ART', color:COLORS.green, desc:'Dash-strike with momentum force',
+       condition:()=>this.getArtLevel('kineticDrive') < 5 && (this.arts['kineticDrive'] || this.hasArtSlot()),
        apply:()=>{this.upgradeArt('kineticDrive');}},
-      {name:'Aura Pulse +', keyword:'ART', color:COLORS.yellow, desc:'Upgrade Aura Pulse',
-       condition:()=>gameState.selectedCharacter==='auryi' && this.getArtLevel('auraPulse') < 5,
+      {name:'Aura Pulse', keyword:'ART', color:COLORS.yellow, desc:'A pulsing wave around you',
+       condition:()=>this.getArtLevel('auraPulse') < 5 && (this.arts['auraPulse'] || this.hasArtSlot()),
        apply:()=>{this.upgradeArt('auraPulse');}},
       {name:'Orbiting Prism', keyword:'ART', color:COLORS.violet, desc:'Crystal satellite',
        condition:()=>this.getArtLevel('prismOrbit') < 5 && (this.arts['prismOrbit'] || this.hasArtSlot()),
