@@ -317,90 +317,109 @@ class SoundFX {
   }
 
   attackPrismel() {
-    this.tone(420, 0.11, 'triangle', 0.050, 780);
-    this.tone(660, 0.09, 'square', 0.032, 1120, 0.015, -4);
-    this.tone(1260, 0.08, 'sine', 0.020, 1700, 0.045);
-    this.noise(0.05, 0.026, 0.018, 2400, 'highpass', 3);
+    // Blaster Master crystal laser "pew" — fast square descend
+    this.tone(1700, 0.09, 'square', 0.060, 160);
+    this.tone(2400, 0.04, 'triangle', 0.022, 900, 0.005);
+    this.noise(0.04, 0.016, 0.003, 4500, 'highpass', 6);
   }
 
   attackKineza() {
-    this.tone(78, 0.11, 'sawtooth', 0.17, 44);
-    this.tone(148, 0.08, 'square', 0.10, 86, 0.006);
-    this.noise(0.085, 0.075, 0.004, 760, 'bandpass', 5);
-    this.tone(560, 0.045, 'triangle', 0.026, 320, 0.022);
+    // Ninja Gaiden sword slash — air whoosh + hard metallic crack
+    this.noise(0.055, 0.11, 0, 3200, 'highpass', 2);
+    this.tone(280, 0.038, 'square', 0.14, 110, 0.004);
+    this.tone(960, 0.024, 'sawtooth', 0.030, 280, 0.007);
   }
 
   attackAuryi() {
-    this.tone(188, 0.20, 'sine', 0.048, 240);
-    this.tone(392, 0.18, 'triangle', 0.050, 620, 0.018);
-    this.tone(880, 0.15, 'sine', 0.032, 1240, 0.060);
-    this.noise(0.11, 0.024, 0.025, 1600, 'bandpass', 3);
+    // Zelda magic bloom — warm triangle rise, aura spread
+    this.tone(220, 0.09, 'triangle', 0.042, 440);
+    this.tone(440, 0.12, 'triangle', 0.052, 880, 0.02);
+    this.tone(880, 0.09, 'sine', 0.028, 1320, 0.06);
+    this.noise(0.055, 0.016, 0.025, 1800, 'bandpass', 3);
   }
 
   hit() {
-    this.tone(150, 0.055, 'square', 0.08, 74);
-    this.noise(0.04, 0.06, 0.004, 620, 'bandpass', 4);
+    // NES standard enemy hit — quick square buzz down
+    this.tone(190, 0.038, 'square', 0.10, 80);
+    this.noise(0.028, 0.050, 0, 900, 'bandpass', 5);
   }
 
   enemyDeath() {
-    this.tone(280, 0.08, 'sawtooth', 0.09, 130);
-    this.noise(0.12, 0.065, 0.02, 500, 'lowpass', 2);
-    this.tone(105, 0.10, 'square', 0.05, 52, 0.055);
+    // NES explosion burst — noise punch + square descend
+    this.noise(0.10, 0.10, 0, 520, 'lowpass', 2);
+    this.tone(200, 0.08, 'square', 0.068, 80, 0.008);
+    this.tone(110, 0.10, 'triangle', 0.040, 52, 0.038);
   }
 
   gem() {
-    this.tone(880, 0.045, 'triangle', 0.045, 1240);
-    this.tone(1320, 0.040, 'sine', 0.032, 1860, 0.020);
+    // Zelda rupee pickup — clean two-note triangle ascend
+    this.tone(784, 0.055, 'triangle', 0.058, null);
+    this.tone(1047, 0.075, 'triangle', 0.058, null, 0.048);
   }
 
   playerHit() {
-    this.tone(118, 0.13, 'sawtooth', 0.14, 58);
-    this.noise(0.09, 0.08, 0.01, 430, 'bandpass', 5);
+    // NES player damage — heavy sawtooth drop + noise
+    this.tone(110, 0.13, 'sawtooth', 0.15, 52);
+    this.noise(0.075, 0.08, 0.008, 460, 'bandpass', 3);
+    this.tone(220, 0.055, 'square', 0.040, 100, 0.018);
   }
 
   levelUp() {
-    this.tone(392, 0.12, 'triangle', 0.08, 523);
-    this.tone(523, 0.13, 'triangle', 0.08, 784, 0.10);
-    this.tone(784, 0.18, 'sine', 0.09, 1175, 0.21);
-    this.noise(0.18, 0.04, 0.11, 3000, 'highpass', 2);
+    // Zelda discovery fanfare — C major arpeggio ascending
+    this.tone(262, 0.07, 'triangle', 0.08, null, 0);
+    this.tone(330, 0.07, 'triangle', 0.08, null, 0.065);
+    this.tone(392, 0.07, 'triangle', 0.08, null, 0.13);
+    this.tone(523, 0.17, 'triangle', 0.10, null, 0.195);
+    this.tone(784, 0.10, 'sine', 0.040, null, 0.235);
+    this.noise(0.14, 0.028, 0.20, 3200, 'highpass', 2);
   }
 
   select() {
-    this.tone(420, 0.05, 'square', 0.07, 610);
-    this.tone(960, 0.04, 'triangle', 0.028, 1280, 0.020);
+    // NES menu blip — square "bop"
+    this.tone(523, 0.040, 'square', 0.075, 660);
+    this.tone(784, 0.048, 'square', 0.040, null, 0.032);
   }
 
   cardReveal() {
-    this.tone(330, 0.10, 'triangle', 0.05, 440);
-    this.tone(660, 0.12, 'triangle', 0.04, 880, 0.06);
-    this.noise(0.12, 0.025, 0.035, 2600, 'highpass', 2);
+    // Mysterious shimmer — descending magic reveal
+    this.tone(880, 0.09, 'triangle', 0.048, 660, 0);
+    this.tone(660, 0.11, 'triangle', 0.050, 440, 0.06);
+    this.tone(440, 0.09, 'sine', 0.030, 330, 0.13);
+    this.noise(0.10, 0.018, 0.04, 2400, 'highpass', 2);
   }
 
   rareRelic() {
-    this.tone(262, 0.12, 'sine', 0.06, 392);
-    this.tone(523, 0.16, 'triangle', 0.06, 784, 0.10);
-    this.tone(1046, 0.22, 'sine', 0.045, 1568, 0.18);
+    // Zelda item-get — G major arpeggio, classic ascending fanfare
+    this.tone(392, 0.08, 'triangle', 0.07, null, 0);
+    this.tone(494, 0.08, 'triangle', 0.07, null, 0.075);
+    this.tone(587, 0.08, 'triangle', 0.07, null, 0.150);
+    this.tone(784, 0.24, 'triangle', 0.10, null, 0.225);
+    this.noise(0.16, 0.028, 0.23, 2800, 'highpass', 2);
   }
 
   waveWarning() {
-    this.tone(90, 0.16, 'sawtooth', 0.08, 72);
-    this.tone(180, 0.16, 'square', 0.04, 144, 0.10);
+    // Zelda danger pulse — low square alarm
+    this.tone(110, 0.15, 'square', 0.070, 98);
+    this.tone(147, 0.12, 'square', 0.042, 131, 0.14);
   }
 
   battleTick() {
     if(!gameState.battleMusicEnabled) return;
+    // Ninja Gaiden-style driving pulse — square kick, triangle melody, noise hat
     const step = Math.floor(performance.now() / 250) % 8;
-    if(step === 0) this.tone(82, 0.055, 'square', 0.026, 78);
-    if(step === 2) this.tone(123, 0.04, 'triangle', 0.018, 146);
-    if(step === 4) this.tone(98, 0.055, 'square', 0.022, 74);
-    if(step === 6) this.noise(0.035, 0.016, 0, 560, 'bandpass', 3);
+    if(step === 0) this.tone(82, 0.055, 'square', 0.022, 78);
+    if(step === 2) this.tone(131, 0.040, 'triangle', 0.018, 147);
+    if(step === 4) this.tone(82, 0.055, 'square', 0.022, 74);
+    if(step === 6) this.noise(0.035, 0.014, 0, 480, 'bandpass', 3);
   }
 
   gameOver() {
-    this.tone(330, 0.18, 'sawtooth', 0.10, 210);
-    this.tone(220, 0.22, 'sawtooth', 0.095, 120, 0.18);
-    this.tone(110, 0.34, 'sine', 0.10, 55, 0.38);
-    this.noise(0.24, 0.06, 0.12, 300, 'lowpass', 2);
+    // NES death descent — sawtooth drops, final low thud
+    this.tone(392, 0.13, 'sawtooth', 0.09, 330, 0);
+    this.tone(330, 0.13, 'sawtooth', 0.09, 262, 0.14);
+    this.tone(262, 0.13, 'sawtooth', 0.09, 220, 0.28);
+    this.tone(220, 0.24, 'sawtooth', 0.08, 147, 0.42);
+    this.noise(0.18, 0.050, 0.10, 300, 'lowpass', 2);
   }
 }
 
