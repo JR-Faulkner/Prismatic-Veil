@@ -331,11 +331,11 @@ class SoundFX {
   }
 
   attackAuryi() {
-    // Zelda magic bloom — warm triangle rise, aura spread
-    this.tone(220, 0.09, 'triangle', 0.042, 440);
-    this.tone(440, 0.12, 'triangle', 0.052, 880, 0.02);
-    this.tone(880, 0.09, 'sine', 0.028, 1320, 0.06);
-    this.noise(0.055, 0.016, 0.025, 1800, 'bandpass', 3);
+    // Super Metroid charge-beam plasma shot — descending sine with phased detune wobble + metallic ring
+    this.tone(1100, 0.10, 'sine', 0.048, 360);
+    this.tone(1106, 0.10, 'sine', 0.040, 364, 0, 14);
+    this.tone(2200, 0.045, 'triangle', 0.020, 700, 0.006);
+    this.noise(0.07, 0.022, 0.004, 2600, 'highpass', 4);
   }
 
   hit() {
