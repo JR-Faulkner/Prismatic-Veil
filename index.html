@@ -99,7 +99,9 @@ const COLORS = {
 const SPRITE_PATHS = {
   prismel: './prismel_stable_spritesheet.png',
   kineza: './kineza_stable_spritesheet.png',
-  auryi: './auryi_stable_spritesheet.png'
+  auryi: './auryi_stable_spritesheet.png',
+  vyan: './vyan_stable_spritesheet.png',
+  sarallel: './sarallel_stable_spritesheet.png'
 };
 
 
@@ -111,7 +113,9 @@ const TITLE_ASSETS = {
 const CHARACTER_ART = {
   prismel: { portrait: './prismel_portrait.png', full: './prismel_full.png' },
   kineza: { portrait: './kineza_portrait.png', full: './kineza_full.png' },
-  auryi: { portrait: './auryi_portrait.png', full: './auryi_full.png' }
+  auryi: { portrait: './auryi_portrait.png', full: './auryi_full.png' },
+  vyan: { portrait: './vyan_portrait.png', full: './vyan_full.png' },
+  sarallel: { portrait: './sarallel_portrait.png', full: './sarallel_full.png' }
 };
 
 function loadCharacterArt(scene, charKey = null) {
@@ -137,38 +141,35 @@ const ANIM_FRAMES = {
 // Curated animation maps to keep the updated hero sheets stable in motion.
 // Prismel and Auryi now use calmer body animation while their spell foci are animated separately in code.
 const CHARACTER_ANIM_SETS = {
-  prismel: {
-    idle: [1],
-    walk: [4, 5, 6, 7],
-    attack: [10, 10, 10, 10]
-  },
-  kineza: {
-    idle: [0, 2],
-    walk: [4, 5, 6, 7, 8, 9],
-    attack: [10, 11, 12, 13]
-  },
-  auryi: {
-    idle: [1],
-    walk: [4, 5, 6, 7],
-    attack: [10, 10, 11, 11]
-  }
+  prismel:  { idle: [1],     walk: [4,5,6,7],     attack: [10,10,10,10] },
+  kineza:   { idle: [0,2],   walk: [4,5,6,7,8,9], attack: [10,11,12,13] },
+  auryi:    { idle: [1],     walk: [4,5,6,7],     attack: [10,10,11,11] },
+  vyan:     { idle: [0,1],   walk: [4,5,6,7],     attack: [10,11,12,13] },
+  sarallel: { idle: [1,2],   walk: [4,5,6,7],     attack: [10,11,12,12] }
 };
 
 const CHARACTER_ANIM_RATES = {
-  prismel: { idle: 2, walk: 8, attack: 10 },
-  kineza:  { idle: 4, walk: 11, attack: 16 },
-  auryi:   { idle: 2, walk: 7, attack: 9 }
+  prismel:  { idle: 2, walk: 8,  attack: 10 },
+  kineza:   { idle: 4, walk: 11, attack: 16 },
+  auryi:    { idle: 2, walk: 7,  attack: 9  },
+  vyan:     { idle: 3, walk: 8,  attack: 11 },
+  sarallel: { idle: 2, walk: 8,  attack: 10 }
 };
 
 const CHARACTER_SPRITE_TUNING = {
-  prismel: { previewScale: 0.50, battleScale: 0.55, originX: 0.5, originY: 0.90 },
-  kineza:  { previewScale: 0.55, battleScale: 0.60, originX: 0.5, originY: 0.90 },
-  auryi:   { previewScale: 0.46, battleScale: 0.50, originX: 0.5, originY: 0.90 }
+  prismel:  { previewScale: 1.30, battleScale: 2.00, originX: 0.5, originY: 0.90 },
+  kineza:   { previewScale: 1.20, battleScale: 1.90, originX: 0.5, originY: 0.90 },
+  auryi:    { previewScale: 1.30, battleScale: 2.00, originX: 0.5, originY: 0.90 },
+  vyan:     { previewScale: 1.40, battleScale: 2.10, originX: 0.5, originY: 0.90 },
+  sarallel: { previewScale: 1.25, battleScale: 1.95, originX: 0.5, originY: 0.90 }
 };
+// Body tuning for 48×72 frames at ~2.0 battleScale (values in world-px at WS=1)
 const CHARACTER_BODY_TUNING = {
-  prismel: { w: 82, h: 118, offX: 71, offY: 86 },
-  kineza:  { w: 78, h: 112, offX: 73, offY: 90 },
-  auryi:   { w: 86, h: 124, offX: 69, offY: 82 }
+  prismel:  { w: 50, h: 100, offX: 23, offY: 30 },
+  kineza:   { w: 44, h:  96, offX: 26, offY: 30 },
+  auryi:    { w: 50, h: 100, offX: 23, offY: 30 },
+  vyan:     { w: 54, h: 100, offX: 21, offY: 30 },
+  sarallel: { w: 48, h: 100, offX: 24, offY: 30 }
 };
 function getSpriteTuning(charKey) {
   return CHARACTER_SPRITE_TUNING[charKey] || { previewScale: 0.52, battleScale: 0.56, originX: 0.5, originY: 0.90 };
@@ -213,8 +214,8 @@ function loadHeroSprites(scene) {
   Object.keys(SPRITE_PATHS).forEach((charKey) => {
     if (!scene.textures.exists(charKey)) {
       scene.load.spritesheet(charKey, getSpriteUrl(charKey), {
-        frameWidth: 224,
-        frameHeight: 224
+        frameWidth: 48,
+        frameHeight: 72
       });
     }
   });
@@ -457,8 +458,65 @@ const CHARACTER_DATA = {
     baseDamage: 14,
     attackSpeed: 500,
     attackRange: 150,
-    projectileSpeed: 0, // aura pulse, hits all in range
+    projectileSpeed: 0,
     description: 'Area aura caster'
+  },
+  vyan: {
+    name: 'Vyan',
+    title: 'Iron Bastion',
+    color: COLORS.orange,
+    accentColor: COLORS.red,
+    moveSpeed: 130,
+    baseDamage: 22,
+    attackSpeed: 700,
+    attackRange: 9999,
+    projectileSpeed: 480,
+    description: 'Heavy ordnance striker'
+  },
+  sarallel: {
+    name: 'Sarallel',
+    title: 'Sigil Weaver',
+    color: COLORS.gold,
+    accentColor: COLORS.blue,
+    moveSpeed: 145,
+    baseDamage: 12,
+    attackSpeed: 520,
+    attackRange: 180,
+    projectileSpeed: 0,
+    description: 'Sigil-mark area mage'
+  }
+};
+
+const CHARACTER_TRAITS = {
+  prismel: {
+    name: 'Spectral Focus',
+    desc: '+10% attack range. +5% attack range every 5 levels (max +25%)',
+    flat: { attackRangeMult: 0.10 },
+    scaling: { every: 5, maxStacks: 3, attackRangeMult: 0.05 }
+  },
+  kineza: {
+    name: 'Restless Momentum',
+    desc: '+15 max HP. +6% move speed every 5 levels (max +18%)',
+    flat: { maxHp: 15 },
+    scaling: { every: 5, maxStacks: 3, moveSpeedMult: 0.06 }
+  },
+  auryi: {
+    name: 'Veil Attunement',
+    desc: '+20 max HP, slow regen. +5% attack range every 5 levels (max +15%)',
+    flat: { maxHp: 20, regen: 0.004 },
+    scaling: { every: 5, maxStacks: 3, attackRangeMult: 0.05 }
+  },
+  vyan: {
+    name: 'Iron Resolve',
+    desc: '+30 max HP. +8% damage every 5 levels (max +24%)',
+    flat: { maxHp: 30 },
+    scaling: { every: 5, maxStacks: 3, damageMult: 0.08 }
+  },
+  sarallel: {
+    name: 'Sigil Bond',
+    desc: '+10% attack range. +5% damage every 5 levels (max +15%)',
+    flat: { attackRangeMult: 0.10 },
+    scaling: { every: 5, maxStacks: 3, damageMult: 0.05 }
   }
 };
 
@@ -486,6 +544,22 @@ const HERO_UI_THEMES = {
     panelTrim: COLORS.yellow,
     energyColor: 0xffe07b,
     footerGlyph: '✧'
+  },
+  vyan: {
+    hpLabel: 'VITAL',
+    energyLabel: 'ORB CHARGE',
+    panelTop: COLORS.orange,
+    panelTrim: COLORS.red,
+    energyColor: 0xff7733,
+    footerGlyph: '⬡'
+  },
+  sarallel: {
+    hpLabel: 'VITAL',
+    energyLabel: 'SIGIL POWER',
+    panelTop: COLORS.gold,
+    panelTrim: COLORS.blue,
+    energyColor: 0x88ccff,
+    footerGlyph: '◈'
   }
 };
 
@@ -799,7 +873,7 @@ class CharacterSelectScene extends Phaser.Scene {
         const preview = this.add.sprite(x+cardW/2, y+182, charKey, 0);
         const tuning = getSpriteTuning(charKey);
         preview.setOrigin(tuning.originX, tuning.originY);
-        preview.setScale(Math.min(0.40, tuning.previewScale*0.82));
+        preview.setScale(tuning.previewScale * WS);
         preview.play(charKey + '_idle');
       }
 
@@ -861,7 +935,62 @@ class CharacterSelectScene extends Phaser.Scene {
       });
     });
 
-    this.add.rectangle(GAME_W/2, GAME_H-34, GAME_W - 54, 44, 0x0d0820, 0.84)
+    // ── Coming Soon row (Vyan + Sarallel) ──
+    const csChars = ['vyan', 'sarallel'];
+    const csCardW = Math.round(110*WS), csCardH = Math.round(148*WS), csGap = Math.round(18*WS);
+    const csTotalW = csChars.length*csCardW + (csChars.length-1)*csGap;
+    const csStartX = (GAME_W - csTotalW) / 2;
+    const csY = Math.round(GAME_H * 0.605);
+
+    this.add.text(GAME_W/2, csY - Math.round(16*WS), '— COMING SOON —', {
+      fontFamily: 'Courier New, monospace',
+      fontSize: `${Math.round(11*WS)}px`,
+      color: '#8866aa',
+      stroke: '#000000',
+      strokeThickness: 1
+    }).setOrigin(0.5);
+
+    csChars.forEach((charKey, i) => {
+      const data = CHARACTER_DATA[charKey];
+      const cx = csStartX + i*(csCardW + csGap);
+      this.add.rectangle(cx+Math.round(3*WS), csY+Math.round(4*WS), csCardW, csCardH, 0x000000, 0.25).setOrigin(0,0);
+      const csCard = this.add.rectangle(cx, csY, csCardW, csCardH, 0x0d0820, 0.72)
+        .setOrigin(0,0)
+        .setStrokeStyle(1, 0x443366, 0.55);
+      this.add.rectangle(cx, csY, csCardW, Math.round(4*WS), data.color, 0.50).setOrigin(0,0);
+      if (this.textures.exists(charKey)) {
+        const csPreview = this.add.sprite(cx+csCardW/2, csY+Math.round(70*WS), charKey, 0);
+        const tuning = getSpriteTuning(charKey);
+        csPreview.setOrigin(tuning.originX, tuning.originY);
+        csPreview.setScale(tuning.previewScale * 0.58 * WS);
+        csPreview.play(charKey + '_idle');
+        csPreview.setAlpha(0.55);
+      }
+      this.add.text(cx+csCardW/2, csY+Math.round(96*WS), data.name, {
+        fontFamily: 'Georgia, serif',
+        fontSize: `${Math.round(15*WS)}px`,
+        fontStyle: 'bold',
+        color: '#'+data.color.toString(16).padStart(6,'0'),
+        stroke: '#10081b',
+        strokeThickness: 3
+      }).setOrigin(0.5).setAlpha(0.70);
+      this.add.text(cx+csCardW/2, csY+Math.round(116*WS), data.title.toUpperCase(), {
+        fontFamily: 'Trebuchet MS, Arial, sans-serif',
+        fontSize: `${Math.round(9*WS)}px`,
+        color: '#9977bb',
+        stroke: '#000000',
+        strokeThickness: 1
+      }).setOrigin(0.5);
+      this.add.text(cx+csCardW/2, csY+Math.round(133*WS), 'COMING SOON', {
+        fontFamily: 'Courier New, monospace',
+        fontSize: `${Math.round(9*WS)}px`,
+        color: '#665588',
+        stroke: '#000000',
+        strokeThickness: 1
+      }).setOrigin(0.5);
+    });
+
+    this.add.rectangle(GAME_W/2, GAME_H-Math.round(34*WS), GAME_W - Math.round(54*WS), Math.round(44*WS), 0x0d0820, 0.84)
       .setStrokeStyle(1, COLORS.gold, 0.25);
     this.add.text(GAME_W/2, GAME_H-42, 'Tap a bearer to enter the Veil', {
       fontFamily: 'Courier New',
@@ -1001,14 +1130,40 @@ class BattleScene extends Phaser.Scene {
     this.lastBattleTick = 0;
     this.nextStagePhase = 1;
     this.eliteSpawned = {};
+    this.traitStacks = 0;
+    this.applyCharacterTraitBase();
+  }
+
+  applyCharacterTraitBase() {
+    const trait = CHARACTER_TRAITS[gameState.selectedCharacter];
+    this.characterTrait = trait;
+    if(!trait) return;
+    if(trait.flat.maxHp) {
+      this.playerMaxHp += trait.flat.maxHp;
+      this.playerHp += trait.flat.maxHp;
+    }
+    if(trait.flat.attackRangeMult) this.attackRangeMult *= (1 + trait.flat.attackRangeMult);
+    if(trait.flat.moveSpeedMult) this.moveSpeedMult *= (1 + trait.flat.moveSpeedMult);
+    if(trait.flat.regen) this.regenBonus += trait.flat.regen;
+  }
+
+  applyCharacterTraitLevel(level) {
+    const trait = this.characterTrait;
+    if(!trait || !trait.scaling) return;
+    const { every, maxStacks } = trait.scaling;
+    if(level % every !== 0 || this.traitStacks >= maxStacks) return;
+    this.traitStacks++;
+    if(trait.scaling.attackRangeMult) this.attackRangeMult *= (1 + trait.scaling.attackRangeMult);
+    if(trait.scaling.moveSpeedMult)   this.moveSpeedMult   *= (1 + trait.scaling.moveSpeedMult);
+    if(trait.scaling.damageMult)      this.attackDamageMult *= (1 + trait.scaling.damageMult);
   }
 
   preload() {
     const charKey = gameState.selectedCharacter;
     if (!this.textures.exists(charKey)) {
       this.load.spritesheet(charKey, getSpriteUrl(charKey), {
-        frameWidth: 224,
-        frameHeight: 224
+        frameWidth: 48,
+        frameHeight: 72
       });
     }
     loadCharacterArt(this, charKey);
@@ -1405,9 +1560,11 @@ class BattleScene extends Phaser.Scene {
   setupWeaponSystem() {
     const hero = gameState.selectedCharacter;
     const baseMap = {
-      prismel: 'prismShard',
-      kineza: 'kineticDrive',
-      auryi: 'auraPulse'
+      prismel:  'prismShard',
+      kineza:   'kineticDrive',
+      auryi:    'auraPulse',
+      vyan:     'prismShard',
+      sarallel: 'auraPulse'
     };
     this.weapons[baseMap[hero]] = { level: 1, cooldown: 0 };
     this.weaponCooldowns = {
