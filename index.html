@@ -553,27 +553,6 @@ const CHARACTER_TRAITS = {
   }
 };
 
-const CHARACTER_TRAITS = {
-  prismel: {
-    name: 'Spectral Focus',
-    desc: '+10% attack range. +5% attack range every 5 levels (max +25%)',
-    flat: { attackRangeMult: 0.10 },
-    scaling: { every: 5, maxStacks: 3, attackRangeMult: 0.05 }
-  },
-  kineza: {
-    name: 'Restless Momentum',
-    desc: '+15 max HP. +6% move speed every 5 levels (max +18%)',
-    flat: { maxHp: 15 },
-    scaling: { every: 5, maxStacks: 3, moveSpeedMult: 0.06 }
-  },
-  auryi: {
-    name: 'Veil Attunement',
-    desc: '+20 max HP, slow regen. +5% attack range every 5 levels (max +15%)',
-    flat: { maxHp: 20, regen: 0.004 },
-    scaling: { every: 5, maxStacks: 3, attackRangeMult: 0.05 }
-  }
-};
-
 const HERO_UI_THEMES = {
   prismel: {
     hpLabel: 'VITAL',
