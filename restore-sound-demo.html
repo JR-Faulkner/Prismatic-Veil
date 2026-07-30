@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Prismatic Veil — Restore Sound Demo</title>
+<meta name="theme-color" content="#07060f">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #07060f;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+  #game-container {
+    width: 100vw;
+    height: 100vh;
+  }
+  canvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  #loading {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    white-space: pre-wrap;
+    text-align: center;
+    color: #f7e8b6;
+    background: radial-gradient(circle at 50% 30%, #24124b 0%, #07060f 70%);
+    line-height: 1.45;
+  }
+</style>
+<script src="./phaser.min.js"></script>
+</head>
+<body>
+<div id="loading">✦ Loading Restore Sound Tactical Demo ✦</div>
+<div id="game-container"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const boot = document.getElementById("loading");
+  function fail(err) {
+    console.error(err);
+    if (!boot) return;
+    boot.style.display = "flex";
+    boot.textContent = "Boot Error\n\n" + (err && (err.stack || err.message) ? (err.stack || err.message) : String(err));
+  }
+
+  window.addEventListener("error", function (e) { fail(e.error || e.message); });
+  window.addEventListener("unhandledrejection", function (e) { fail(e.reason || e); });
+
+  if (!window.Phaser) {
+    fail("Phaser did not load. Make sure phaser.min.js is in the repo root.");
+    return;
+  }
+
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const WS = Math.max(0.78, Math.min(1.30, Math.min(W / 480, H / 720)));
+
+  const C = {
+    void: 0x07060f,
+    panel: 0x120b28,
+    panel2: 0x21123f,
+    tileA: 0x25203f,
+    tileB: 0x2d2750,
+    border: 0x5a3a88,
+    gold: 0xffd56a,
+    blue: 0x67c8ff,
+    violet: 0xc477ff,
+    pink: 0xff65c8,
+    green: 0x71ff88,
+    kinetic: 0x7dff48,
+    red: 0xff503c,
+    orange: 0xff9d45,
+    yellow: 0xffef7d,
+    lavender: 0xc8a8ff,
+    silence: 0x3b215c,
+    unknown: 0x8a45ff,
+    white: 0xffffff
+  };
+
+  const HEROES = [
+    {
+      key: "prismel",
+      name: "Prismel",
+      title: "Prism Weaver",
+      x: 1,
+      y: 5,
+      hp: 12,
+      maxHp: 12,
+      move: 3,
+      range: 4,
+      color: C.blue,
+      accent: C.violet,
+      ability: "Prismatic Shard",
+      role: "Ranged setup",
+      sheet: "./prismel_stable_spritesheet.png"
+    },
+    {
+      key: "auryi",
+      name: "Auryi",
+      title: "Aurora Guardian",
+      x: 1,
+      y: 6,
+      hp: 16,
+      maxHp: 16,
+      move: 3,
+      range: 2,
+      color: C.lavender,
+      accent: C.yellow,
+      ability: "Lumisong Renewal",
+      role: "Restore / shield",
+      sheet: "./auryi_stable_spritesheet.png"
+    },
+    {
+      key: "kineza",
+      name: "Kineza",
+      title: "Momentum Born",
+      x: 2,
+      y: 6,
+      hp: 14,
+      maxHp: 14,
+      move: 4,
+      range: 1,
+      color: C.red,
+      accent: C.kinetic,
+      ability: "Momentum Fist",
+      role: "Close pressure",
+      sheet: "./kineza_stable_spritesheet.png"
+    }
+  ];
+
+  const NODES = [
+    { id: "dogs", label: "Dogs Barking", x: 1, y: 1, color: C.gold, restored: false },
+    { id: "pool", label: "Pool Splash", x: 4, y: 2, color: C.blue, restored: false },
+    { id: "laugh", label: "Backyard Laughter", x: 6, y: 5, color: C.pink, restored: false }
+  ];
+
+  const ENEMIES = [
+    { id: "h1", x: 5, y: 1, hp: 4, maxHp: 4, intent: null },
+    { id: "h2", x: 6, y: 3, hp: 4, maxHp: 4, intent: null },
+    { id: "h3", x: 3, y: 4, hp: 4, maxHp: 4, intent: null }
+  ];
+
+  class TinyAudio {
+    constructor() {
+      this.ctx = null;
+      this.enabled = true;
+      this.volume = 0.58;
+    }
+
+    init() {
+      if (!this.enabled) return;
+      try {
+        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (this.ctx.state === "suspended") this.ctx.resume();
+      } catch (err) {
+        this.enabled = false;
+        this.ctx = null;
+      }
+    }
+
+    tone(freq, dur, type, vol, delay, slide) {
+      this.init();
+      if (!this.ctx) return;
+      const t = this.ctx.currentTime + (delay || 0);
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = type || "triangle";
+      o.frequency.setValueAtTime(freq, t);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, slide), t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime((vol || 0.07) * this.volume, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g);
+      g.connect(this.ctx.destination);
+      o.start(t);
+      o.stop(t + dur + 0.03);
+    }
+
+    select() { this.tone(620, 0.05, "square", 0.06, 0, 880); }
+    reject() { this.tone(120, 0.08, "sawtooth", 0.05, 0, 70); }
+    step() { this.tone(220, 0.04, "triangle", 0.035); }
+    hush() { this.tone(88, 0.16, "sawtooth", 0.06, 0, 54); }
+    attack() {
+      this.tone(392, 0.08, "square", 0.06, 0, 196);
+      this.tone(1175, 0.08, "triangle", 0.04, 0.05, 880);
+    }
+    restore() {
+      [262, 330, 392, 523, 784].forEach((n, i) => this.tone(n, 0.12, "triangle", 0.07, i * 0.07));
+    }
+    win() {
+      [392, 494, 587, 784, 1047].forEach((n, i) => this.tone(n, 0.14, "triangle", 0.08, i * 0.08));
+    }
+  }
+
+  const sfx = new TinyAudio();
+
+  class DemoScene extends Phaser.Scene {
+    constructor() {
+      super("Demo");
+    }
+
+    preload() {
+      HEROES.forEach(h => {
+        this.load.spritesheet(h.key, h.sheet, { frameWidth: 48, frameHeight: 72 });
+      });
+    }
+
+    create() {
+      if (boot) boot.style.display = "none";
+      this.cameras.main.setBackgroundColor("#07060f");
+
+      this.gridW = 8;
+      this.gridH = 8;
+      this.tileW = Math.round((W < 480 ? 48 : 58) * WS);
+      this.tileH = Math.round((W < 480 ? 25 : 30) * WS);
+      this.originX = Math.round(W * 0.50);
+      this.originY = Math.round(H * (W < 480 ? 0.20 : 0.23));
+
+      this.turn = 1;
+      this.phase = "player";
+      this.message = "Restore all sound nodes. The Hushlings are eating the quiet.";
+      this.selected = null;
+      this.mode = null;
+      this.finished = false;
+
+      this.heroes = HEROES.map(h => Object.assign({}, h, { acted: false, moved: false }));
+      this.nodes = NODES.map(n => Object.assign({}, n));
+      this.enemies = ENEMIES.map(e => Object.assign({}, e));
+
+      this.makeAnims();
+      this.drawBackdrop();
+      this.planIntents();
+      this.redraw();
+
+      this.input.on("pointerdown", this.handleTap, this);
+      if (this.input.keyboard) {
+        this.input.keyboard.on("keydown-SPACE", () => this.endTurn());
+      }
+    }
+
+    makeAnims() {
+      HEROES.forEach(h => {
+        if (this.textures.exists(h.key) && !this.anims.exists(h.key + "_idle")) {
+          this.anims.create({ key: h.key + "_idle", frames: [{ key: h.key, frame: 1 }], frameRate: 1, repeat: -1 });
+          this.anims.create({
+            key: h.key + "_attack",
+            frames: [{ key: h.key, frame: 10 }, { key: h.key, frame: 11 }, { key: h.key, frame: 12 }, { key: h.key, frame: 13 }],
+            frameRate: 10,
+            repeat: 0
+          });
+        }
+      });
+    }
+
+    drawBackdrop() {
+      this.add.rectangle(0, 0, W, H, C.void, 1).setOrigin(0, 0);
+
+      for (let i = 0; i < 7; i++) {
+        const colors = [C.red, C.orange, C.yellow, C.green, C.blue, C.violet, C.pink];
+        const line = this.add.rectangle(W / 2, Math.round(80 * WS) + i * Math.round(7 * WS), W * 0.85, 2, colors[i], 0.10);
+        line.setAngle(-10);
+      }
+
+      for (let i = 0; i < 34; i++) {
+        const star = this.add.circle(
+          Phaser.Math.Between(0, W),
+          Phaser.Math.Between(0, H),
+          Phaser.Math.FloatBetween(0.6, 1.8),
+          C.white,
+          Phaser.Math.FloatBetween(0.08, 0.24)
+        );
+        this.tweens.add({ targets: star, alpha: star.alpha * 0.35, duration: Phaser.Math.Between(900, 1800), yoyo: true, repeat: -1 });
+      }
+    }
+
+    newLayer() {
+      if (this.layer) this.layer.destroy(true);
+      this.layer = this.add.container(0, 0);
+    }
+
+    redraw() {
+      this.newLayer();
+      this.drawGrid();
+      this.drawHighlights();
+      this.drawNodes();
+      this.drawEnemyIntents();
+      this.drawEnemies();
+      this.drawHeroes();
+      this.drawUI();
+    }
+
+    toScreen(x, y) {
+      return {
+        x: this.originX + (x - y) * this.tileW / 2,
+        y: this.originY + (x + y) * this.tileH / 2
+      };
+    }
+
+    toTile(px, py) {
+      const dx = px - this.originX;
+      const dy = py - this.originY;
+      const x = Math.floor((dy / (this.tileH / 2) + dx / (this.tileW / 2)) / 2 + 0.5);
+      const y = Math.floor((dy / (this.tileH / 2) - dx / (this.tileW / 2)) / 2 + 0.5);
+      if (x < 0 || y < 0 || x >= this.gridW || y >= this.gridH) return null;
+      return { x, y };
+    }
+
+    diamond(g, sx, sy, fill, alpha, stroke, strokeAlpha) {
+      g.fillStyle(fill, alpha);
+      g.lineStyle(1, stroke, strokeAlpha);
+      g.beginPath();
+      g.moveTo(sx, sy - this.tileH / 2);
+      g.lineTo(sx + this.tileW / 2, sy);
+      g.lineTo(sx, sy + this.tileH / 2);
+      g.lineTo(sx - this.tileW / 2, sy);
+      g.closePath();
+      g.fillPath();
+      g.strokePath();
+    }
+
+    drawGrid() {
+      const g = this.add.graphics();
+      this.layer.add(g);
+      for (let y = 0; y < this.gridH; y++) {
+        for (let x = 0; x < this.gridW; x++) {
+          const p = this.toScreen(x, y);
+          const silenced = this.isSilenced(x, y);
+          this.diamond(g, p.x, p.y, silenced ? C.silence : ((x + y) % 2 ? C.tileA : C.tileB), silenced ? 0.48 : 0.78, silenced ? C.unknown : C.border, silenced ? 0.65 : 0.32);
+        }
+      }
+    }
+
+    drawHighlights() {
+      if (!this.selected || this.selected.acted) return;
+      const g = this.add.graphics();
+      this.layer.add(g);
+      for (let y = 0; y < this.gridH; y++) {
+        for (let x = 0; x < this.gridW; x++) {
+          const d = this.dist(this.selected, { x, y });
+          const p = this.toScreen(x, y);
+          if (!this.selected.moved && d <= this.selected.move && !this.occupied(x, y, this.selected)) {
+            this.diamond(g, p.x, p.y, this.selected.color, 0.16, this.selected.color, 0.75);
+          }
+          if (this.mode === "attack" && d <= this.selected.range) {
+            this.diamond(g, p.x, p.y, C.red, 0.13, C.red, 0.62);
+          }
+        }
+      }
+    }
+
+    drawNodes() {
+      this.nodes.forEach(n => {
+        const p = this.toScreen(n.x, n.y);
+        const col = n.restored ? n.color : C.silence;
+        const ring = this.add.circle(p.x, p.y - 13 * WS, 17 * WS, col, n.restored ? 0.18 : 0.10).setStrokeStyle(2, col, n.restored ? 0.86 : 0.55);
+        const star = this.add.star(p.x, p.y - 13 * WS, 6, 4 * WS, 11 * WS, col, n.restored ? 0.96 : 0.46);
+        const label = this.add.text(p.x, p.y + 14 * WS, n.label, {
+          fontFamily: "Georgia, serif",
+          fontSize: Math.round(10 * WS) + "px",
+          color: n.restored ? "#f7e8b6" : "#b99bd8",
+          stroke: "#000000",
+          strokeThickness: 3,
+          align: "center"
+        }).setOrigin(0.5, 0);
+        const status = this.add.text(p.x, p.y + 29 * WS, n.restored ? "RESTORED" : "SILENCED", {
+          fontFamily: "Courier New",
+          fontSize: Math.round(8 * WS) + "px",
+          color: n.restored ? "#71ff88" : "#b99bd8",
+          stroke: "#000000",
+          strokeThickness: 2
+        }).setOrigin(0.5, 0);
+        this.layer.add([ring, star, label, status]);
+      });
+    }
+
+    drawEnemyIntents() {
+      const g = this.add.graphics();
+      this.layer.add(g);
+      this.enemies.forEach(e => {
+        if (!e.intent) return;
+        const p = this.toScreen(e.intent.x, e.intent.y);
+        this.diamond(g, p.x, p.y, C.red, 0.23, C.red, 0.92);
+        const bang = this.add.text(p.x, p.y - 7 * WS, "!", {
+          fontFamily: "Georgia, serif",
+          fontSize: Math.round(22 * WS) + "px",
+          color: "#ffcab8",
+          stroke: "#000000",
+          strokeThickness: 3
+        }).setOrigin(0.5);
+        this.layer.add(bang);
+      });
+    }
+
+    drawHeroes() {
+      this.heroes.forEach(h => {
+        const p = this.toScreen(h.x, h.y);
+        const base = this.add.circle(p.x, p.y + 9 * WS, 18 * WS, h.color, h.acted ? 0.10 : 0.20).setStrokeStyle(2, h.acted ? C.border : h.accent, h.acted ? 0.35 : 0.85);
+        let sprite;
+        if (this.textures.exists(h.key)) {
+          sprite = this.add.sprite(p.x, p.y - 34 * WS, h.key, 1).setOrigin(0.5, 0.90).setScale(1.42 * WS).setAlpha(h.acted ? 0.58 : 1);
+          if (this.anims.exists(h.key + "_idle")) sprite.play(h.key + "_idle");
+        } else {
+          sprite = this.drawFallbackHero(h, p.x, p.y - 28 * WS, 1);
+        }
+        const name = this.add.text(p.x, p.y + 25 * WS, h.name, {
+          fontFamily: "Georgia, serif",
+          fontSize: Math.round(11 * WS) + "px",
+          color: "#f7e8b6",
+          stroke: "#000000",
+          strokeThickness: 3
+        }).setOrigin(0.5);
+        this.layer.add([base, sprite, name]);
+      });
+    }
+
+    drawFallbackHero(h, x, y, s) {
+      const g = this.add.graphics();
+      s *= WS;
+      if (h.key === "prismel") {
+        g.fillStyle(0x111033, 1).fillRoundedRect(x - 14*s, y - 20*s, 28*s, 42*s, 8*s);
+        g.lineStyle(2, C.gold).strokeRoundedRect(x - 14*s, y - 20*s, 28*s, 42*s, 8*s);
+        g.fillStyle(0x9a6a3a, 1).fillCircle(x, y - 21*s, 10*s);
+        g.fillStyle(C.violet, 1).fillRect(x + 17*s, y - 18*s, 9*s, 9*s);
+      } else if (h.key === "auryi") {
+        g.fillStyle(0x7452c8, 1).fillTriangle(x - 19*s, y + 22*s, x + 19*s, y + 22*s, x, y - 24*s);
+        g.lineStyle(2, C.gold).strokeTriangle(x - 19*s, y + 22*s, x + 19*s, y + 22*s, x, y - 24*s);
+        g.fillStyle(0xb47a54, 1).fillCircle(x, y - 24*s, 10*s);
+        g.fillStyle(C.yellow, 1).fillCircle(x + 21*s, y - 6*s, 7*s);
+      } else {
+        g.fillStyle(C.red, 1).fillRoundedRect(x - 13*s, y - 18*s, 26*s, 37*s, 6*s);
+        g.lineStyle(2, C.gold).strokeRoundedRect(x - 13*s, y - 18*s, 26*s, 37*s, 6*s);
+        g.fillStyle(0xaa7744, 1).fillCircle(x, y - 24*s, 10*s);
+        g.lineStyle(2, C.kinetic).strokeCircle(x + 19*s, y - 3*s, 8*s).strokeCircle(x - 17*s, y, 7*s);
+      }
+      return g;
+    }
+
+    drawEnemies() {
+      this.enemies.forEach(e => {
+        const p = this.toScreen(e.x, e.y);
+        const base = this.add.circle(p.x, p.y + 9 * WS, 18 * WS, C.unknown, 0.18).setStrokeStyle(2, C.unknown, 0.55);
+        const body = this.add.graphics();
+        body.fillStyle(0x12051d, 0.94);
+        body.fillTriangle(p.x, p.y - 45*WS, p.x + 20*WS, p.y + 8*WS, p.x - 20*WS, p.y + 8*WS);
+        body.lineStyle(2, C.unknown, 0.88);
+        body.strokeTriangle(p.x, p.y - 45*WS, p.x + 20*WS, p.y + 8*WS, p.x - 20*WS, p.y + 8*WS);
+        body.fillStyle(0xdab8ff, 0.9);
+        body.fillCircle(p.x - 6*WS, p.y - 18*WS, 2.4*WS);
+        body.fillCircle(p.x + 6*WS, p.y - 18*WS, 2.4*WS);
+        const hp = this.add.text(p.x, p.y + 26 * WS, e.hp + "/" + e.maxHp, {
+          fontFamily: "Courier New",
+          fontSize: Math.round(9 * WS) + "px",
+          color: "#caa8ff",
+          stroke: "#000000",
+          strokeThickness: 2
+        }).setOrigin(0.5);
+        this.layer.add([base, body, hp]);
+      });
+    }
+
+    drawUI() {
+      const title = this.add.text(W / 2, 14 * WS, "THE PRISMATIC VEIL", {
+        fontFamily: "Georgia, serif",
+        fontSize: Math.round(22 * WS) + "px",
+        fontStyle: "bold",
+        color: "#f7e8b6",
+        stroke: "#000000",
+        strokeThickness: 4
+      }).setOrigin(0.5, 0);
+
+      const sub = this.add.text(W / 2, 43 * WS, "RESTORE SOUND — TACTICAL DEMO v0.1", {
+        fontFamily: "Courier New",
+        fontSize: Math.round(10 * WS) + "px",
+        color: "#c8a8ff",
+        stroke: "#000000",
+        strokeThickness: 2
+      }).setOrigin(0.5, 0);
+
+      const bottomH = 134 * WS;
+      const panelW = Math.min(W - 24, 468 * WS);
+      const panel = this.add.rectangle(W / 2, H - bottomH + 12 * WS, panelW, 108 * WS, C.panel, 0.94).setOrigin(0.5, 0).setStrokeStyle(2, C.gold, 0.58);
+
+      const restored = this.nodes.filter(n => n.restored).length;
+      const objective = this.add.text(W / 2, H - bottomH + 23 * WS, "Bring back sound: " + restored + " / " + this.nodes.length, {
+        fontFamily: "Georgia, serif",
+        fontSize: Math.round(17 * WS) + "px",
+        fontStyle: "bold",
+        color: "#f7e8b6",
+        stroke: "#000000",
+        strokeThickness: 3
+      }).setOrigin(0.5, 0);
+
+      const msg = this.add.text(W / 2, H - bottomH + 49 * WS, this.message, {
+        fontFamily: "Trebuchet MS, Arial, sans-serif",
+        fontSize: Math.round(11 * WS) + "px",
+        color: "#e8ddff",
+        stroke: "#000000",
+        strokeThickness: 2,
+        align: "center",
+        wordWrap: { width: panelW - 24 }
+      }).setOrigin(0.5, 0);
+
+      this.drawHeroCards();
+      this.drawButtons(panelW, bottomH);
+
+      this.layer.add([title, sub, panel, objective, msg]);
+    }
+
+    drawHeroCards() {
+      const narrow = W < 520;
+      const cardW = narrow ? Math.floor((W - 36) / 3) : Math.round(145 * WS);
+      const cardH = Math.round(64 * WS);
+      const gap = Math.round(6 * WS);
+      const total = cardW * 3 + gap * 2;
+      const startX = (W - total) / 2;
+      const y = Math.round(64 * WS);
+
+      this.heroes.forEach((h, i) => {
+        const x = startX + i * (cardW + gap);
+        const active = this.selected && this.selected.key === h.key;
+        const card = this.add.rectangle(x, y, cardW, cardH, active ? C.panel2 : C.panel, h.acted ? 0.58 : 0.92).setOrigin(0, 0).setStrokeStyle(active ? 3 : 1, active ? h.accent : C.gold, active ? 0.98 : 0.36);
+        card.setInteractive({ useHandCursor: true });
+        card.on("pointerdown", () => this.selectHero(h));
+
+        let icon;
+        if (this.textures.exists(h.key)) {
+          icon = this.add.sprite(x + 23 * WS, y + 48 * WS, h.key, 1).setOrigin(0.5, 0.90).setScale(0.76 * WS).setAlpha(h.acted ? 0.52 : 1);
+        } else {
+          icon = this.drawFallbackHero(h, x + 23 * WS, y + 39 * WS, 0.60);
+        }
+
+        const name = this.add.text(x + 47 * WS, y + 8 * WS, h.name, {
+          fontFamily: "Georgia, serif",
+          fontSize: Math.round(13 * WS) + "px",
+          fontStyle: "bold",
+          color: "#f7e8b6",
+          stroke: "#000000",
+          strokeThickness: 3
+        }).setOrigin(0, 0);
+
+        const hp = this.add.text(x + 47 * WS, y + 28 * WS, "HP " + h.hp + "/" + h.maxHp, {
+          fontFamily: "Courier New",
+          fontSize: Math.round(9 * WS) + "px",
+          color: "#d7c8ef",
+          stroke: "#000000",
+          strokeThickness: 2
+        }).setOrigin(0, 0);
+
+        const status = this.add.text(x + 47 * WS, y + 43 * WS, h.acted ? "DONE" : (active ? "READY" : h.role), {
+          fontFamily: "Courier New",
+          fontSize: Math.round(8 * WS) + "px",
+          color: h.acted ? "#7a668d" : "#bfffea",
+          stroke: "#000000",
+          strokeThickness: 2,
+          wordWrap: { width: cardW - 52 * WS }
+        }).setOrigin(0, 0);
+
+        this.layer.add([card, icon, name, hp, status]);
+      });
+    }
+
+    button(x, y, w, h, label, enabled, color, cb) {
+      const bg = this.add.rectangle(x, y, w, h, enabled ? C.panel2 : 0x141020, enabled ? 0.96 : 0.52).setOrigin(0.5).setStrokeStyle(2, enabled ? color : C.border, enabled ? 0.82 : 0.34);
+      const txt = this.add.text(x, y, label, {
+        fontFamily: "Georgia, serif",
+        fontSize: Math.round(12 * WS) + "px",
+        fontStyle: "bold",
+        color: enabled ? "#f7e8b6" : "#776a86",
+        stroke: "#000000",
+        strokeThickness: 3
+      }).setOrigin(0.5);
+
+      if (enabled) {
+        bg.setInteractive({ useHandCursor: true });
+        bg.on("pointerdown", () => {
+          sfx.select();
+          cb();
+        });
+      }
+      this.layer.add([bg, txt]);
+    }
+
+    drawButtons(panelW, bottomH) {
+      const y = H - 33 * WS;
+      const btnW = Math.min(112 * WS, Math.floor((panelW - 24) / 3));
+      const gap = 8 * WS;
+      const h = 36 * WS;
+      const baseX = W / 2 - btnW - gap;
+      const ready = this.selected && !this.selected.acted && this.phase === "player";
+      const canRestore = ready && this.canRestore(this.selected);
+
+      this.button(baseX, y, btnW, h, "Resonate", !!canRestore, C.yellow, () => this.restoreNode());
+      this.button(W / 2, y, btnW, h, "Attack", !!ready, ready ? this.selected.accent : C.violet, () => this.startAttack());
+      this.button(W / 2 + btnW + gap, y, btnW, h, "End Turn", this.phase === "player" && !this.finished, C.blue, () => this.endTurn());
+    }
+
+    handleTap(pointer) {
+      if (this.phase !== "player" || this.finished) return;
+      const tile = this.toTile(pointer.x, pointer.y);
+      if (!tile) return;
+
+      const hero = this.heroAt(tile.x, tile.y);
+      if (hero) {
+        this.selectHero(hero);
+        return;
+      }
+
+      if (!this.selected || this.selected.acted) return;
+
+      if (this.mode === "attack") {
+        const enemy = this.enemyAt(tile.x, tile.y);
+        if (enemy && this.dist(this.selected, enemy) <= this.selected.range) {
+          this.attack(this.selected, enemy);
+        } else {
+          sfx.reject();
+          this.message = "No Hushling in range.";
+          this.redraw();
+        }
+        return;
+      }
+
+      if (!this.selected.moved && this.dist(this.selected, tile) <= this.selected.move && !this.occupied(tile.x, tile.y, this.selected)) {
+        this.selected.x = tile.x;
+        this.selected.y = tile.y;
+        this.selected.moved = true;
+        this.message = this.selected.name + " moves into position.";
+        sfx.step();
+        this.redraw();
+      }
+    }
+
+    selectHero(hero) {
+      if (this.phase !== "player") return;
+      this.selected = hero;
+      this.mode = null;
+      this.message = hero.acted ? hero.name + " has already acted." : hero.name + " ready. Move, attack, or restore sound near a node.";
+      sfx.select();
+      this.redraw();
+    }
+
+    canRestore(hero) {
+      return this.nodes.some(n => !n.restored && this.dist(hero, n) <= 1);
+    }
+
+    restoreNode() {
+      const hero = this.selected;
+      if (!hero || hero.acted) return;
+
+      const node = this.nodes.find(n => !n.restored && this.dist(hero, n) <= 1);
+      if (!node) {
+        sfx.reject();
+        this.message = "Move next to a silenced sound node first.";
+        this.redraw();
+        return;
+      }
+
+      node.restored = true;
+      hero.acted = true;
+      hero.moved = true;
+      this.mode = null;
+      this.message = hero.name + " restores " + node.label + ". The backyard breathes again.";
+      sfx.restore();
+      this.burst(node.x, node.y, node.color);
+      this.time.delayedCall(250, () => {
+        this.checkEnd();
+        if (!this.finished) this.redraw();
+      });
+    }
+
+    startAttack() {
+      if (!this.selected || this.selected.acted) return;
+      this.mode = "attack";
+      this.message = "Choose a Hushling within range for " + this.selected.ability + ".";
+      this.redraw();
+    }
+
+    attack(hero, enemy) {
+      hero.acted = true;
+      hero.moved = true;
+      this.mode = null;
+      const dmg = hero.key === "kineza" ? 3 : 2;
+      enemy.hp -= dmg;
+      this.message = hero.name + " uses " + hero.ability + " for " + dmg + " damage.";
+      sfx.attack();
+      this.cutIn(hero, enemy, () => {
+        if (enemy.hp <= 0) {
+          this.message = hero.name + " breaks a Hushling. Sound leaks through the crack.";
+          this.enemies = this.enemies.filter(e => e.id !== enemy.id);
+          this.burst(enemy.x, enemy.y, hero.accent);
+        }
+        this.checkEnd();
+        if (!this.finished) this.redraw();
+      });
+    }
+
+    cutIn(hero, enemy, done) {
+      const overlay = this.add.rectangle(0, 0, W, H, 0x000000, 0.0).setOrigin(0, 0).setDepth(100);
+      const panelW = Math.min(W - 24, 430 * WS);
+      const panelH = 160 * WS;
+      const panel = this.add.rectangle(W / 2, H / 2, panelW, panelH, C.panel, 0.96).setDepth(101).setStrokeStyle(3, hero.accent, 0.90);
+      const title = this.add.text(W / 2, H / 2 - panelH / 2 + 12 * WS, hero.name + " — " + hero.ability, {
+        fontFamily: "Georgia, serif",
+        fontSize: Math.round(18 * WS) + "px",
+        fontStyle: "bold",
+        color: "#f7e8b6",
+        stroke: "#000000",
+        strokeThickness: 4
+      }).setOrigin(0.5, 0).setDepth(102);
+
+      let sprite;
+      if (this.textures.exists(hero.key)) {
+        sprite = this.add.sprite(W / 2 - panelW * 0.26, H / 2 + 48 * WS, hero.key, 10).setOrigin(0.5, 0.90).setScale(3.2 * WS).setDepth(102);
+        if (this.anims.exists(hero.key + "_attack")) sprite.play(hero.key + "_attack");
+      } else {
+        sprite = this.drawFallbackHero(hero, W / 2 - panelW * 0.26, H / 2 + 30 * WS, 2.35);
+        sprite.setDepth(102);
+      }
+
+      const fx = this.add.graphics().setDepth(103);
+      const colors = [C.red, C.orange, C.yellow, C.green, C.blue, C.violet, C.pink];
+      const sx = W / 2 - panelW * 0.06;
+      const sy = H / 2 + 20 * WS;
+      for (let i = 0; i < 7; i++) {
+        fx.lineStyle(3, colors[i], 0.78);
+        fx.beginPath();
+        fx.moveTo(sx - 30 * WS, sy + (i - 3) * 6 * WS);
+        fx.lineTo(sx + panelW * 0.36, sy - 35 * WS + i * 9 * WS);
+        fx.strokePath();
+      }
+
+      const impact = this.add.star(W / 2 + panelW * 0.28, H / 2 + 16 * WS, 8, 5 * WS, 30 * WS, hero.accent, 0.92).setDepth(104).setScale(0.2);
+      this.tweens.add({ targets: overlay, alpha: 0.58, duration: 110 });
+      this.tweens.add({ targets: impact, scaleX: 1, scaleY: 1, angle: 90, duration: 290, ease: "Back.Out" });
+      this.cameras.main.shake(160, 0.006);
+
+      this.time.delayedCall(520, () => {
+        overlay.destroy();
+        panel.destroy();
+        title.destroy();
+        sprite.destroy();
+        fx.destroy();
+        impact.destroy();
+        done();
+      });
+    }
+
+    burst(tx, ty, color) {
+      const p = this.toScreen(tx, ty);
+      const ring = this.add.circle(p.x, p.y - 14 * WS, 6 * WS, color, 0).setStrokeStyle(3, color, 0.92).setDepth(90);
+      this.tweens.add({ targets: ring, radius: 68 * WS, alpha: 0, duration: 700, onComplete: () => ring.destroy() });
+
+      const colors = [C.red, C.orange, C.yellow, C.green, C.blue, C.violet, C.pink];
+      for (let i = 0; i < 18; i++) {
+        const mote = this.add.circle(p.x, p.y - 14 * WS, Phaser.Math.FloatBetween(2, 4) * WS, colors[i % colors.length], 0.86).setDepth(91);
+        this.tweens.add({
+          targets: mote,
+          x: p.x + Math.cos(i / 18 * Math.PI * 2) * Phaser.Math.Between(42, 88) * WS,
+          y: p.y - 14 * WS + Math.sin(i / 18 * Math.PI * 2) * Phaser.Math.Between(22, 58) * WS,
+          alpha: 0,
+          scaleX: 0.15,
+          scaleY: 0.15,
+          duration: 620,
+          ease: "Quad.Out",
+          onComplete: () => mote.destroy()
+        });
+      }
+    }
+
+    planIntents() {
+      this.enemies.forEach(e => {
+        const target = this.nearestUnrestoredNode(e) || this.nearestHero(e);
+        e.intent = target ? this.stepToward(e, target) : null;
+      });
+    }
+
+    endTurn() {
+      if (this.phase !== "player" || this.finished) return;
+      this.phase = "enemy";
+      this.selected = null;
+      this.mode = null;
+      this.message = "The Hushlings move through the silence.";
+      this.redraw();
+      this.time.delayedCall(420, () => this.enemyTurn());
+    }
+
+    enemyTurn() {
+      sfx.hush();
+
+      this.enemies.forEach(e => {
+        if (e.intent && !this.occupied(e.intent.x, e.intent.y, e)) {
+          e.x = e.intent.x;
+          e.y = e.intent.y;
+        }
+
+        const hero = this.heroes.find(h => this.dist(e, h) <= 1);
+        if (hero) hero.hp = Math.max(0, hero.hp - 2);
+      });
+
+      this.heroes.forEach(h => {
+        h.acted = false;
+        h.moved = false;
+      });
+
+      this.turn += 1;
+      this.phase = "player";
+      this.planIntents();
+      this.message = "Turn " + this.turn + ": restore nodes or break Hushlings before the quiet spreads.";
+      this.checkEnd();
+      if (!this.finished) this.redraw();
+    }
+
+    checkEnd() {
+      if (this.nodes.every(n => n.restored)) {
+        this.finished = true;
+        this.message = "Sound returns: dogs bark, pool water moves, and somebody laughs first.";
+        this.redraw();
+        sfx.win();
+        this.endPanel("SOUND RESTORED", "The first battle goal works: bring life and noise back, not just defeat enemies.");
+      } else if (this.heroes.every(h => h.hp <= 0)) {
+        this.finished = true;
+        this.message = "The backyard falls silent.";
+        this.redraw();
+        this.endPanel("THE QUIET HOLDS", "Fail state reached. Enemy pressure needs tuning, but the objective loop is here.");
+      }
+    }
+
+    endPanel(titleText, bodyText) {
+      const overlay = this.add.rectangle(0, 0, W, H, 0x000000, 0.68).setOrigin(0, 0).setDepth(200);
+      const pw = Math.min(W - 32, 430 * WS);
+      const ph = 210 * WS;
+      const panel = this.add.rectangle(W / 2, H / 2, pw, ph, C.panel, 0.98).setDepth(201).setStrokeStyle(3, C.gold, 0.9);
+      const title = this.add.text(W / 2, H / 2 - ph / 2 + 20 * WS, titleText, {
+        fontFamily: "Georgia, serif",
+        fontSize: Math.round(23 * WS) + "px",
+        fontStyle: "bold",
+        color: "#f7e8b6",
+        stroke: "#000000",
+        strokeThickness: 4
+      }).setOrigin(0.5, 0).setDepth(202);
+
+      const body = this.add.text(W / 2, H / 2 - ph / 2 + 66 * WS, bodyText, {
+        fontFamily: "Trebuchet MS, Arial, sans-serif",
+        fontSize: Math.round(13 * WS) + "px",
+        color: "#eee6ff",
+        stroke: "#000000",
+        strokeThickness: 2,
+        align: "center",
+        wordWrap: { width: pw - 36 }
+      }).setOrigin(0.5, 0).setDepth(202);
+
+      const button = this.add.rectangle(W / 2, H / 2 + ph / 2 - 33 * WS, 150 * WS, 36 * WS, C.panel2, 1).setDepth(202).setStrokeStyle(2, C.gold, 0.85).setInteractive({ useHandCursor: true });
+      const txt = this.add.text(W / 2, H / 2 + ph / 2 - 33 * WS, "Restart Demo", {
+        fontFamily: "Georgia, serif",
+        fontSize: Math.round(14 * WS) + "px",
+        fontStyle: "bold",
+        color: "#f7e8b6",
+        stroke: "#000000",
+        strokeThickness: 3
+      }).setOrigin(0.5).setDepth(203);
+
+      button.on("pointerdown", () => this.scene.restart());
+    }
+
+    isSilenced(x, y) {
+      return this.enemies.some(e => this.dist(e, { x, y }) <= 1) || this.nodes.some(n => !n.restored && this.dist(n, { x, y }) <= 1);
+    }
+
+    occupied(x, y, ignore) {
+      return this.heroes.some(h => h !== ignore && h.x === x && h.y === y) || this.enemies.some(e => e !== ignore && e.x === x && e.y === y);
+    }
+
+    heroAt(x, y) {
+      return this.heroes.find(h => h.x === x && h.y === y);
+    }
+
+    enemyAt(x, y) {
+      return this.enemies.find(e => e.x === x && e.y === y);
+    }
+
+    dist(a, b) {
+      return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+    }
+
+    nearestHero(e) {
+      return this.heroes.slice().sort((a, b) => this.dist(e, a) - this.dist(e, b))[0];
+    }
+
+    nearestUnrestoredNode(e) {
+      return this.nodes.filter(n => !n.restored).sort((a, b) => this.dist(e, a) - this.dist(e, b))[0];
+    }
+
+    stepToward(from, to) {
+      const candidates = [
+        { x: from.x + Math.sign(to.x - from.x), y: from.y },
+        { x: from.x, y: from.y + Math.sign(to.y - from.y) },
+        { x: from.x + 1, y: from.y },
+        { x: from.x - 1, y: from.y },
+        { x: from.x, y: from.y + 1 },
+        { x: from.x, y: from.y - 1 }
+      ].filter(p => p.x >= 0 && p.y >= 0 && p.x < this.gridW && p.y < this.gridH);
+
+      candidates.sort((a, b) => this.dist(a, to) - this.dist(b, to));
+      return candidates[0] || { x: from.x, y: from.y };
+    }
+  }
+
+  const config = {
+    type: Phaser.AUTO,
+    parent: "game-container",
+    width: W,
+    height: H,
+    backgroundColor: "#07060f",
+    scale: {
+      mode: Phaser.Scale.RESIZE,
+      autoCenter: Phaser.Scale.CENTER_BOTH
+    },
+    render: {
+      pixelArt: true,
+      antialias: false,
+      roundPixels: true
+    },
+    scene: [DemoScene]
+  };
+
+  try {
+    new Phaser.Game(config);
+  } catch (err) {
+    fail(err);
+  }
+})();
+</script>
+</body>
+</html>
