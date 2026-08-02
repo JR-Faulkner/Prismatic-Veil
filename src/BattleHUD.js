@@ -20,14 +20,31 @@ export default class BattleHUD {
     this.messageText.setText(text).setVisible(true);
   }
   clearMessage(){ this.messageText.setVisible(false); }
-  queueMessage(text){
-    this._queue.push(text);
+  // Types each message out character by character, holds it, then plays
+  // the next. onDone fires after the message finishes its hold.
+  queueMessage(text,onDone){
+    this._queue.push({text,onDone});
     if(!this._showing) this._nextMessage();
   }
   _nextMessage(){
-    if(!this._queue.length){ this._showing=false; return; }
+    const item=this._queue.shift();
+    if(!item){ this._showing=false; return; }
     this._showing=true;
-    this.setMessage(this._queue.shift());
-    this.scene.time.delayedCall(900,()=>this._nextMessage());
+    this.messageText.setText("").setVisible(true);
+    let i=0;
+    this.scene.time.addEvent({
+      delay:28,
+      repeat:item.text.length-1,
+      callback:()=>{
+        i++;
+        this.messageText.setText(item.text.slice(0,i));
+        if(i>=item.text.length){
+          this.scene.time.delayedCall(850,()=>{
+            if(item.onDone) item.onDone();
+            this._nextMessage();
+          });
+        }
+      }
+    });
   }
 }
