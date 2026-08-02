@@ -95,7 +95,9 @@ export default class BattleHUD {
     const margin = Math.max(18, Math.round(width * 0.03));
     const dialogWidth = Math.min(720, width - margin * 2);
     const dialogHeight = Math.min(120, Math.max(96, height * 0.20));
-    const dialogY = height - dialogHeight / 2 - margin;
+    // Extra bottom clearance on phones for the iOS home indicator
+    const bottomClear = width < 560 ? margin + 12 : margin;
+    const dialogY = height - dialogHeight / 2 - bottomClear;
 
     // Compact fonts on narrow screens so the top HUD row doesn't collide
     // and the dialog text fits phone portrait widths
