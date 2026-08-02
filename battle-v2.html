@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Prismatic Veil — Battle Presentation v2</title>
+<meta name="theme-color" content="#070611">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #070611;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #game-container { width: 100vw; height: 100vh; }
+  canvas { display: block; }
+  #loading {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    white-space: pre-wrap;
+    text-align: center;
+    color: #f7e8b6;
+    font-family: Georgia, serif;
+    background: radial-gradient(circle at 50% 30%, #24124b 0%, #070611 70%);
+    line-height: 1.45;
+  }
+</style>
+<script src="./phaser.min.js"></script>
+</head>
+<body>
+<div id="loading">✦ Loading Battle Presentation v2 ✦</div>
+<div id="game-container"></div>
+
+<script type="module">
+  import BattleScene from './src/BattleScene.js';
+
+  const boot = document.getElementById('loading');
+  function fail(err) {
+    console.error(err);
+    if (!boot) return;
+    boot.style.display = 'flex';
+    boot.textContent = 'Boot Error\n\n' + (err && (err.stack || err.message) ? (err.stack || err.message) : String(err));
+  }
+
+  window.addEventListener('error', e => fail(e.error || e.message));
+  window.addEventListener('unhandledrejection', e => fail(e.reason || e));
+
+  if (!window.Phaser) {
+    fail('Phaser did not load. Make sure phaser.min.js is in the repo root.');
+  } else {
+    class HarnessScene extends BattleScene {
+      create() {
+        if (boot) boot.style.display = 'none';
+        super.create();
+      }
+    }
+
+    try {
+      new Phaser.Game({
+        type: Phaser.AUTO,
+        parent: 'game-container',
+        width: 800,
+        height: 600,
+        backgroundColor: '#070611',
+        scale: {
+          mode: Phaser.Scale.FIT,
+          autoCenter: Phaser.Scale.CENTER_BOTH
+        },
+        scene: [HarnessScene]
+      });
+    } catch (err) {
+      fail(err);
+    }
+  }
+</script>
+</body>
+</html>
