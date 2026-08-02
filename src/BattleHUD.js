@@ -98,11 +98,14 @@ export default class BattleHUD {
     const dialogY = height - dialogHeight / 2 - margin;
 
     // Compact fonts on narrow screens so the top HUD row doesn't collide
+    // and the dialog text fits phone portrait widths
     const compact = width < 560;
     this.hpText.setFontSize(compact ? 13 : 20);
     this.veilText.setFontSize(compact ? 11 : 16);
     this.enemyText.setFontSize(compact ? 13 : 20);
     this.turnText.setFontSize(compact ? 12 : 18);
+    this.messageText.setFontSize(compact ? 17 : 24);
+    this.msgCursor.setDisplaySize(compact ? 18 : 24, compact ? 18 : 24);
 
     // On compact screens the turn indicator gets its own row so the
     // three top labels never collide.

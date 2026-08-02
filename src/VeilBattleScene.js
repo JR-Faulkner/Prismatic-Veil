@@ -34,21 +34,19 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor('#070611');
 
-    const width = this.scale.width;
-    this.titleText = this.add.text(width / 2, 120, 'VEIL FRACTURE', {
-      fontSize: '40px',
+    this.titleText = this.add.text(0, 0, 'VEIL FRACTURE', {
       color: '#FFE8A0'
     }).setOrigin(0.5);
 
-    this.subtitleText = this.add.text(width / 2, 180, 'Battle Presentation v2 - Package 04', {
-      fontSize: '20px',
+    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v2 - Package 04', {
       color: '#D6C8F2'
     }).setOrigin(0.5);
 
-    this.hintText = this.add.text(width / 2, 220, 'Tap to run the next round', {
-      fontSize: '14px',
+    this.hintText = this.add.text(0, 0, 'Tap to run the next round', {
       color: '#8A7AB0'
     }).setOrigin(0.5);
+
+    this.layoutSceneText();
 
     this.hud = new BattleHUD(this, this.battleConfig);
     this.hud.create();
@@ -85,10 +83,12 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.input.on('pointerdown', () => this.controller.startNextRound());
   }
 
-  layoutSceneText(gameSize) {
-    const width = gameSize.width;
-    this.titleText.setX(width / 2);
-    this.subtitleText.setX(width / 2);
-    this.hintText.setX(width / 2);
+  layoutSceneText() {
+    const width = this.scale.width;
+    const compact = width < 560;
+
+    this.titleText.setFontSize(compact ? 26 : 40).setPosition(width / 2, compact ? 96 : 120);
+    this.subtitleText.setFontSize(compact ? 13 : 20).setPosition(width / 2, compact ? 132 : 180);
+    this.hintText.setFontSize(compact ? 11 : 14).setPosition(width / 2, compact ? 156 : 220);
   }
 }
