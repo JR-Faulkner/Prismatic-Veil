@@ -10,12 +10,24 @@ export default class BattleHUD {
     this.turnText=this.scene.add.text(400,20,"PLAYER TURN",{fontSize:"18px",color:"#FFE68A"}).setOrigin(.5,0);
     this.messageText=this.scene.add.text(400,560,"",{fontSize:"18px",color:"#F8E7B0",backgroundColor:"#1a1033",padding:{x:14,y:6}}).setOrigin(.5,1).setVisible(false);
     this.container.add([this.hpText,this.veilText,this.enemyText,this.turnText,this.messageText]);
+    this._queue=[];
+    this._showing=false;
   }
   setTurn(text){ this.turnText.setText(text); }
+  updateHP(cur,max){ this.hpText.setText(`PRISMEL  HP ${cur}/${max}`); }
+  updateVeil(p){ this.veilText.setText(`VEIL ${p}%`); }
   setMessage(text){
     this.messageText.setText(text).setVisible(true);
   }
   clearMessage(){ this.messageText.setVisible(false); }
-  updateHP(cur,max){ this.hpText.setText(`PRISMEL  HP ${cur}/${max}`); }
-  updateVeil(p){ this.veilText.setText(`VEIL ${p}%`); }
+  queueMessage(text){
+    this._queue.push(text);
+    if(!this._showing) this._nextMessage();
+  }
+  _nextMessage(){
+    if(!this._queue.length){ this._showing=false; return; }
+    this._showing=true;
+    this.setMessage(this._queue.shift());
+    this.scene.time.delayedCall(900,()=>this._nextMessage());
+  }
 }

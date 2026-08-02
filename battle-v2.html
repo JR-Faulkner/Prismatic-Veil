@@ -41,7 +41,7 @@
 <div id="game-container"></div>
 
 <script type="module">
-  import BattleScene from './src/BattleScene.js';
+  import VeilBattleScene from './src/VeilBattleScene.js';
 
   const boot = document.getElementById('loading');
   function fail(err) {
@@ -57,7 +57,7 @@
   if (!window.Phaser) {
     fail('Phaser did not load. Make sure phaser.min.js is in the repo root.');
   } else {
-    class HarnessScene extends BattleScene {
+    class HarnessScene extends VeilBattleScene {
       create() {
         if (boot) boot.style.display = 'none';
         super.create();
