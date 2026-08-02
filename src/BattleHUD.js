@@ -8,9 +8,14 @@ export default class BattleHUD {
     this.veilText=this.scene.add.text(24,48,"VEIL 100%",{fontSize:"16px",color:"#8EDCFF"});
     this.enemyText=this.scene.add.text(760,20,"VEIL WRAITH",{fontSize:"20px",color:"#F4B5C2"}).setOrigin(1,0);
     this.turnText=this.scene.add.text(400,20,"PLAYER TURN",{fontSize:"18px",color:"#FFE68A"}).setOrigin(.5,0);
-    this.container.add([this.hpText,this.veilText,this.enemyText,this.turnText]);
+    this.messageText=this.scene.add.text(400,560,"",{fontSize:"18px",color:"#F8E7B0",backgroundColor:"#1a1033",padding:{x:14,y:6}}).setOrigin(.5,1).setVisible(false);
+    this.container.add([this.hpText,this.veilText,this.enemyText,this.turnText,this.messageText]);
   }
   setTurn(text){ this.turnText.setText(text); }
+  setMessage(text){
+    this.messageText.setText(text).setVisible(true);
+  }
+  clearMessage(){ this.messageText.setVisible(false); }
   updateHP(cur,max){ this.hpText.setText(`PRISMEL  HP ${cur}/${max}`); }
   updateVeil(p){ this.veilText.setText(`VEIL ${p}%`); }
 }

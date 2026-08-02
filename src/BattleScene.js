@@ -17,7 +17,7 @@ export default class BattleScene extends Phaser.Scene{
         duration:350,
         yoyo:true
       });
-      this.hud.setTurn('PRISMATIC RELEASE');
+      this.hud.setMessage('Prismel uses Prismatic Release!');
     });
   }
 }
