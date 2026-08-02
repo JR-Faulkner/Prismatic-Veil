@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>The Prismatic Veil — Battle Presentation v2</title>
+<title>The Prismatic Veil — Battle Presentation v2 Package 04</title>
 <meta name="theme-color" content="#070611">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,25 +37,30 @@
 <script src="./phaser.min.js"></script>
 </head>
 <body>
-<div id="loading">✦ Loading Battle Presentation v2 ✦</div>
+<div id="loading">✦ Loading Battle Presentation v2 Package 04 ✦</div>
 <div id="game-container"></div>
 
 <script type="module">
   import VeilBattleScene from './src/VeilBattleScene.js';
 
   const boot = document.getElementById('loading');
-  function fail(err) {
-    console.error(err);
+
+  function fail(error) {
+    console.error(error);
     if (!boot) return;
     boot.style.display = 'flex';
-    boot.textContent = 'Boot Error\n\n' + (err && (err.stack || err.message) ? (err.stack || err.message) : String(err));
+    boot.textContent = 'Boot Error\n\n' + (
+      error && (error.stack || error.message)
+        ? (error.stack || error.message)
+        : String(error)
+    );
   }
 
-  window.addEventListener('error', e => fail(e.error || e.message));
-  window.addEventListener('unhandledrejection', e => fail(e.reason || e));
+  window.addEventListener('error', event => fail(event.error || event.message));
+  window.addEventListener('unhandledrejection', event => fail(event.reason || event));
 
   if (!window.Phaser) {
-    fail('Phaser did not load. Make sure phaser.min.js is in the repo root.');
+    fail('Phaser did not load. Make sure phaser.min.js is in the repository root.');
   } else {
     class HarnessScene extends VeilBattleScene {
       create() {
@@ -72,13 +77,13 @@
         height: 600,
         backgroundColor: '#070611',
         scale: {
-          mode: Phaser.Scale.FIT,
+          mode: Phaser.Scale.RESIZE,
           autoCenter: Phaser.Scale.CENTER_BOTH
         },
         scene: [HarnessScene]
       });
-    } catch (err) {
-      fail(err);
+    } catch (error) {
+      fail(error);
     }
   }
 </script>
