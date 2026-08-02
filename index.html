@@ -57,6 +57,7 @@ window.addEventListener('error', function(e) {
   const boot = document.getElementById('loading');
   function showBootError(err){
     console.error(err);
+    if (window.__pvGameBooted) return;
     if (!boot) return;
     boot.style.display = 'flex';
     boot.innerHTML = '<strong>Boot Error</strong>\n' +
@@ -73,8 +74,11 @@ if (!window.Phaser) { throw new Error('Phaser did not load. Check phaser.min.js 
 // THE PRISMATIC VEIL — SURVIVAL WEAPON BUILD
 // ═══════════════════════════════════════════════════════
 
-const GAME_W = 480;
-const GAME_H = 720;
+const GAME_W = window.innerWidth;
+const GAME_H = window.innerHeight;
+// Scale factor vs the original 480×720 mobile base — keeps sprites/enemies proportional on any screen
+const WORLD_SCALE = Math.max(1, Math.min(GAME_W / 480, GAME_H / 720));
+const SPEED_SCALE = Math.max(1, Math.sqrt(GAME_W / 480));
 
 // ── Colors (matching established palette) ──
 const COLORS = {
@@ -175,7 +179,8 @@ function getSpriteTuning(charKey) {
   return CHARACTER_SPRITE_TUNING[charKey] || { previewScale: 0.52, battleScale: 0.56, originX: 0.5, originY: 0.90 };
 }
 function getBodyTuning(charKey) {
-  return CHARACTER_BODY_TUNING[charKey] || { w: 80, h: 116, offX: 72, offY: 86 };
+  const t = CHARACTER_BODY_TUNING[charKey] || { w: 80, h: 116, offX: 72, offY: 86 };
+  return { w: Math.round(t.w*WORLD_SCALE), h: Math.round(t.h*WORLD_SCALE), offX: Math.round(t.offX*WORLD_SCALE), offY: Math.round(t.offY*WORLD_SCALE) };
 }
 
 function fadeOutMenuMusic(scene, duration = 550) {
@@ -255,11 +260,18 @@ class SoundFX {
   }
 
   init() {
-    if(!this.ctx) {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if(this.ctx.state === 'suspended') {
-      this.ctx.resume();
+    if(!this.enabled) return;
+    try {
+      if(!this.ctx) {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if(this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    } catch(err) {
+      console.warn('SFX audio device unavailable, disabling sound effects:', err);
+      this.enabled = false;
+      this.ctx = null;
     }
   }
 
@@ -276,6 +288,7 @@ class SoundFX {
   tone(freq, duration, type='square', volume=0.12, slideTo=null, delay=0, detune=0) {
     if(!this.enabled || (gameState && gameState.sfxEnabled === false)) return;
     this.init();
+    if(!this.ctx) return;
     const t = this.ctx.currentTime + delay;
     const osc = this.ctx.createOscillator();
     const gain = this.makeGain(volume, t, duration);
@@ -293,6 +306,7 @@ class SoundFX {
   noise(duration=0.08, volume=0.08, delay=0, filterFreq=900, filterType='bandpass', q=7) {
     if(!this.enabled || (gameState && gameState.sfxEnabled === false)) return;
     this.init();
+    if(!this.ctx) return;
     const t = this.ctx.currentTime + delay;
     const bufferSize = Math.max(1, Math.floor(this.ctx.sampleRate * duration));
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
@@ -314,90 +328,109 @@ class SoundFX {
   }
 
   attackPrismel() {
-    this.tone(420, 0.11, 'triangle', 0.050, 780);
-    this.tone(660, 0.09, 'square', 0.032, 1120, 0.015, -4);
-    this.tone(1260, 0.08, 'sine', 0.020, 1700, 0.045);
-    this.noise(0.05, 0.026, 0.018, 2400, 'highpass', 3);
+    // Blaster Master crystal laser "pew" — fast square descend
+    this.tone(1700, 0.09, 'square', 0.060, 160);
+    this.tone(2400, 0.04, 'triangle', 0.022, 900, 0.005);
+    this.noise(0.04, 0.016, 0.003, 4500, 'highpass', 6);
   }
 
   attackKineza() {
-    this.tone(78, 0.11, 'sawtooth', 0.17, 44);
-    this.tone(148, 0.08, 'square', 0.10, 86, 0.006);
-    this.noise(0.085, 0.075, 0.004, 760, 'bandpass', 5);
-    this.tone(560, 0.045, 'triangle', 0.026, 320, 0.022);
+    // Ninja Gaiden sword slash — air whoosh + hard metallic crack
+    this.noise(0.055, 0.11, 0, 3200, 'highpass', 2);
+    this.tone(280, 0.038, 'square', 0.14, 110, 0.004);
+    this.tone(960, 0.024, 'sawtooth', 0.030, 280, 0.007);
   }
 
   attackAuryi() {
-    this.tone(188, 0.20, 'sine', 0.048, 240);
-    this.tone(392, 0.18, 'triangle', 0.050, 620, 0.018);
-    this.tone(880, 0.15, 'sine', 0.032, 1240, 0.060);
-    this.noise(0.11, 0.024, 0.025, 1600, 'bandpass', 3);
+    // Rygar (Arcade) / Olympus (NES) mythic strike — deep bass thump, metallic clang, clean shimmer accent, no tail
+    this.tone(196, 0.085, 'triangle', 0.066, 98);
+    this.tone(392, 0.05, 'square', 0.032, 294, 0.008);
+    this.tone(587, 0.045, 'sine', 0.022, 392, 0.02);
+    this.noise(0.035, 0.018, 0.002, 1200, 'bandpass', 6);
   }
 
   hit() {
-    this.tone(150, 0.055, 'square', 0.08, 74);
-    this.noise(0.04, 0.06, 0.004, 620, 'bandpass', 4);
+    // NES standard enemy hit — quick square buzz down
+    this.tone(190, 0.038, 'square', 0.10, 80);
+    this.noise(0.028, 0.050, 0, 900, 'bandpass', 5);
   }
 
   enemyDeath() {
-    this.tone(280, 0.08, 'sawtooth', 0.09, 130);
-    this.noise(0.12, 0.065, 0.02, 500, 'lowpass', 2);
-    this.tone(105, 0.10, 'square', 0.05, 52, 0.055);
+    // NES explosion burst — noise punch + square descend
+    this.noise(0.10, 0.10, 0, 520, 'lowpass', 2);
+    this.tone(200, 0.08, 'square', 0.068, 80, 0.008);
+    this.tone(110, 0.10, 'triangle', 0.040, 52, 0.038);
   }
 
   gem() {
-    this.tone(880, 0.045, 'triangle', 0.045, 1240);
-    this.tone(1320, 0.040, 'sine', 0.032, 1860, 0.020);
+    // Zelda rupee pickup — clean two-note triangle ascend
+    this.tone(784, 0.055, 'triangle', 0.058, null);
+    this.tone(1047, 0.075, 'triangle', 0.058, null, 0.048);
   }
 
   playerHit() {
-    this.tone(118, 0.13, 'sawtooth', 0.14, 58);
-    this.noise(0.09, 0.08, 0.01, 430, 'bandpass', 5);
+    // NES player damage — heavy sawtooth drop + noise
+    this.tone(110, 0.13, 'sawtooth', 0.15, 52);
+    this.noise(0.075, 0.08, 0.008, 460, 'bandpass', 3);
+    this.tone(220, 0.055, 'square', 0.040, 100, 0.018);
   }
 
   levelUp() {
-    this.tone(392, 0.12, 'triangle', 0.08, 523);
-    this.tone(523, 0.13, 'triangle', 0.08, 784, 0.10);
-    this.tone(784, 0.18, 'sine', 0.09, 1175, 0.21);
-    this.noise(0.18, 0.04, 0.11, 3000, 'highpass', 2);
+    // Zelda discovery fanfare — C major arpeggio ascending
+    this.tone(262, 0.07, 'triangle', 0.08, null, 0);
+    this.tone(330, 0.07, 'triangle', 0.08, null, 0.065);
+    this.tone(392, 0.07, 'triangle', 0.08, null, 0.13);
+    this.tone(523, 0.17, 'triangle', 0.10, null, 0.195);
+    this.tone(784, 0.10, 'sine', 0.040, null, 0.235);
+    this.noise(0.14, 0.028, 0.20, 3200, 'highpass', 2);
   }
 
   select() {
-    this.tone(420, 0.05, 'square', 0.07, 610);
-    this.tone(960, 0.04, 'triangle', 0.028, 1280, 0.020);
+    // NES menu blip — square "bop"
+    this.tone(523, 0.040, 'square', 0.075, 660);
+    this.tone(784, 0.048, 'square', 0.040, null, 0.032);
   }
 
   cardReveal() {
-    this.tone(330, 0.10, 'triangle', 0.05, 440);
-    this.tone(660, 0.12, 'triangle', 0.04, 880, 0.06);
-    this.noise(0.12, 0.025, 0.035, 2600, 'highpass', 2);
+    // Mysterious shimmer — descending magic reveal
+    this.tone(880, 0.09, 'triangle', 0.048, 660, 0);
+    this.tone(660, 0.11, 'triangle', 0.050, 440, 0.06);
+    this.tone(440, 0.09, 'sine', 0.030, 330, 0.13);
+    this.noise(0.10, 0.018, 0.04, 2400, 'highpass', 2);
   }
 
   rareRelic() {
-    this.tone(262, 0.12, 'sine', 0.06, 392);
-    this.tone(523, 0.16, 'triangle', 0.06, 784, 0.10);
-    this.tone(1046, 0.22, 'sine', 0.045, 1568, 0.18);
+    // Zelda item-get — G major arpeggio, classic ascending fanfare
+    this.tone(392, 0.08, 'triangle', 0.07, null, 0);
+    this.tone(494, 0.08, 'triangle', 0.07, null, 0.075);
+    this.tone(587, 0.08, 'triangle', 0.07, null, 0.150);
+    this.tone(784, 0.24, 'triangle', 0.10, null, 0.225);
+    this.noise(0.16, 0.028, 0.23, 2800, 'highpass', 2);
   }
 
   waveWarning() {
-    this.tone(90, 0.16, 'sawtooth', 0.08, 72);
-    this.tone(180, 0.16, 'square', 0.04, 144, 0.10);
+    // Zelda danger pulse — low square alarm
+    this.tone(110, 0.15, 'square', 0.070, 98);
+    this.tone(147, 0.12, 'square', 0.042, 131, 0.14);
   }
 
   battleTick() {
     if(!gameState.battleMusicEnabled) return;
+    // Ninja Gaiden-style driving pulse — square kick, triangle melody, noise hat
     const step = Math.floor(performance.now() / 250) % 8;
-    if(step === 0) this.tone(82, 0.055, 'square', 0.026, 78);
-    if(step === 2) this.tone(123, 0.04, 'triangle', 0.018, 146);
-    if(step === 4) this.tone(98, 0.055, 'square', 0.022, 74);
-    if(step === 6) this.noise(0.035, 0.016, 0, 560, 'bandpass', 3);
+    if(step === 0) this.tone(82, 0.055, 'square', 0.022, 78);
+    if(step === 2) this.tone(131, 0.040, 'triangle', 0.018, 147);
+    if(step === 4) this.tone(82, 0.055, 'square', 0.022, 74);
+    if(step === 6) this.noise(0.035, 0.014, 0, 480, 'bandpass', 3);
   }
 
   gameOver() {
-    this.tone(330, 0.18, 'sawtooth', 0.10, 210);
-    this.tone(220, 0.22, 'sawtooth', 0.095, 120, 0.18);
-    this.tone(110, 0.34, 'sine', 0.10, 55, 0.38);
-    this.noise(0.24, 0.06, 0.12, 300, 'lowpass', 2);
+    // NES death descent — sawtooth drops, final low thud
+    this.tone(392, 0.13, 'sawtooth', 0.09, 330, 0);
+    this.tone(330, 0.13, 'sawtooth', 0.09, 262, 0.14);
+    this.tone(262, 0.13, 'sawtooth', 0.09, 220, 0.28);
+    this.tone(220, 0.24, 'sawtooth', 0.08, 147, 0.42);
+    this.noise(0.18, 0.050, 0.10, 300, 'lowpass', 2);
   }
 }
 
@@ -433,8 +466,8 @@ const CHARACTER_DATA = {
     moveSpeed: 160,
     baseDamage: 16,
     attackSpeed: 450, // ms between attacks
-    attackRange: 220,
-    projectileSpeed: 340,
+    attackRange: 9999,
+    projectileSpeed: 620,
     description: 'Prism shots + spread'
   },
   kineza: {
@@ -617,20 +650,23 @@ const WEAPON_DEFS = {
 const EVOLUTION_DEFS = {
   prismaticBarrage: {
     name: 'Prismatic Barrage',
-    requires: { weapon: 'prismShard', level: 4, passive: 'Spectrum Lens' },
+    requires: { weapon: 'prismShard', level: 4, passive: 'Shard of Reach' },
     desc: 'Prism Shards split into rainbow volleys.'
   },
   breakerDash: {
     name: 'Breaker Dash',
-    requires: { weapon: 'kineticDrive', level: 4, passive: 'Momentum Core' },
+    requires: { weapon: 'kineticDrive', level: 4, passive: 'Shard of Current' },
     desc: 'Kineza chains through multiple enemies.'
   },
   radiantSanctuary: {
     name: 'Radiant Sanctuary',
-    requires: { weapon: 'auraPulse', level: 4, passive: 'Golden Halo' },
+    requires: { weapon: 'auraPulse', level: 4, passive: 'Shard of Resonance' },
     desc: 'Aura pulses heal and leave radiant fields.'
   }
 };
+
+const MAX_WEAPON_SLOTS = 4;     // primary + secondaries
+const MAX_PASSIVE_SLOTS = 6; // distinct Resonance Shards
 
 const STAGE_PHASES = [
   { time: 0,   name: 'The First Veil',      msg: 'The First Veil opens.' },
@@ -811,102 +847,104 @@ class CharacterSelectScene extends Phaser.Scene {
     this.add.rectangle(0, 0, GAME_W, GAME_H, 0x05030c, 0.84).setOrigin(0,0);
     Object.keys(SPRITE_PATHS).forEach((charKey) => createHeroAnimations(this, charKey));
 
+    const WS = WORLD_SCALE;
+
     // Subtle spectrum streaks
     const streakColors = [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green, COLORS.blue, COLORS.indigo, COLORS.violet];
     streakColors.forEach((c, i) => {
-      const y = 114 + i * 6;
-      this.add.rectangle(GAME_W/2, y, GAME_W * 0.74, 2, c, 0.10).setAngle(-10);
+      const sy = Math.round((114 + i * 6) * WS);
+      this.add.rectangle(GAME_W/2, sy, GAME_W * 0.74, 2, c, 0.10).setAngle(-10);
     });
 
     // Heading plaque
-    this.add.rectangle(GAME_W/2, 60, GAME_W - 42, 74, 0x0d0820, 0.88)
+    this.add.rectangle(GAME_W/2, Math.round(60*WS), GAME_W - Math.round(42*WS), Math.round(74*WS), 0x0d0820, 0.88)
       .setStrokeStyle(2, COLORS.gold, 0.45);
-    this.add.rectangle(GAME_W/2, 34, GAME_W - 42, 5, COLORS.lavender, 0.85);
+    this.add.rectangle(GAME_W/2, Math.round(34*WS), GAME_W - Math.round(42*WS), Math.round(5*WS), COLORS.lavender, 0.85);
 
-    this.add.text(GAME_W/2, 50, 'ATTUNE A HERO', {
+    this.add.text(GAME_W/2, Math.round(50*WS), 'ATTUNE A HERO', {
       fontFamily: 'Georgia, serif',
-      fontSize: '22px',
+      fontSize: `${Math.round(22*WS)}px`,
       fontStyle: 'bold',
       color: '#f7e8b6',
       stroke: '#211234',
       strokeThickness: 4
     }).setOrigin(0.5);
 
-    this.add.text(GAME_W/2, 75, 'Choose your spectrum bearer', {
+    this.add.text(GAME_W/2, Math.round(75*WS), 'Choose your spectrum bearer', {
       fontFamily: 'Trebuchet MS, Arial, sans-serif',
-      fontSize: '13px',
+      fontSize: `${Math.round(13*WS)}px`,
       color: '#d6c0ff',
       stroke: '#000000',
       strokeThickness: 2
     }).setOrigin(0.5);
 
     const chars = ['prismel', 'kineza', 'auryi'];
-    const cardW = 144, cardH = 288, gap = 12;
+    const cardW = Math.round(144*WS), cardH = Math.round(288*WS), gap = Math.round(12*WS);
     const totalW = chars.length*cardW + (chars.length-1)*gap;
     const startX = (GAME_W-totalW)/2;
 
     chars.forEach((charKey, i) => {
       const data = CHARACTER_DATA[charKey];
       const x = startX + i*(cardW+gap);
-      const y = 118;
+      const y = Math.round(GAME_H * 0.164);
       const portraitKey = charKey + '_portrait';
 
-      const cardShadow = this.add.rectangle(x+4, y+6, cardW, cardH, 0x000000, 0.30).setOrigin(0,0);
+      const cardShadow = this.add.rectangle(x+Math.round(4*WS), y+Math.round(6*WS), cardW, cardH, 0x000000, 0.30).setOrigin(0,0);
       const card = this.add.rectangle(x, y, cardW, cardH, 0x0d0820, 0.96)
         .setOrigin(0,0)
         .setStrokeStyle(2, COLORS.gold, 0.80)
         .setInteractive({useHandCursor:true});
-      const topBand = this.add.rectangle(x, y, cardW, 5, data.color, 0.96).setOrigin(0,0);
-      const inner = this.add.rectangle(x+6, y+6, cardW-12, cardH-12, 0x130d25, 0.84).setOrigin(0,0)
+      const topBand = this.add.rectangle(x, y, cardW, Math.round(5*WS), data.color, 0.96).setOrigin(0,0);
+      const inner = this.add.rectangle(x+Math.round(6*WS), y+Math.round(6*WS), cardW-Math.round(12*WS), cardH-Math.round(12*WS), 0x130d25, 0.84).setOrigin(0,0)
         .setStrokeStyle(1, data.accentColor, 0.42);
 
-      this.add.text(x+16, y+16, '✦', { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#f7e8b6' });
-      this.add.text(x+cardW-20, y+16, '✦', { fontFamily: 'Georgia, serif', fontSize: '14px', color: '#f7e8b6' });
+      this.add.text(x+Math.round(16*WS), y+Math.round(16*WS), '✦', { fontFamily: 'Georgia, serif', fontSize: `${Math.round(14*WS)}px`, color: '#f7e8b6' });
+      this.add.text(x+cardW-Math.round(20*WS), y+Math.round(16*WS), '✦', { fontFamily: 'Georgia, serif', fontSize: `${Math.round(14*WS)}px`, color: '#f7e8b6' });
 
-      this.add.rectangle(x+cardW/2, y+74, cardW-24, 104, 0xffffff, 0.04)
+      this.add.rectangle(x+cardW/2, y+Math.round(74*WS), cardW-Math.round(24*WS), Math.round(104*WS), 0xffffff, 0.04)
         .setStrokeStyle(1, data.color, 0.25);
       if (this.textures.exists(portraitKey)) {
-        this.add.image(x+cardW/2, y+74, portraitKey).setScale(0.155);
+        this.add.image(x+cardW/2, y+Math.round(74*WS), portraitKey).setScale(0.155*WS);
       }
 
       if (this.textures.exists(charKey)) {
-        const preview = this.add.sprite(x+cardW/2, y+182, charKey, 0);
+        const preview = this.add.sprite(x+cardW/2, y+Math.round(182*WS), charKey, 0);
         const tuning = getSpriteTuning(charKey);
         preview.setOrigin(tuning.originX, tuning.originY);
         preview.setScale(tuning.previewScale * WS);
         preview.play(charKey + '_idle');
       }
 
-      this.add.text(x+cardW/2, y+214, data.name, {
+      this.add.text(x+cardW/2, y+Math.round(214*WS), data.name, {
         fontFamily: 'Georgia, serif',
-        fontSize: '18px',
+        fontSize: `${Math.round(18*WS)}px`,
         fontStyle: 'bold',
         color: '#'+data.color.toString(16).padStart(6,'0'),
         stroke: '#10081b',
         strokeThickness: 3
       }).setOrigin(0.5);
 
-      this.add.text(x+cardW/2, y+238, data.title.toUpperCase(), {
+      this.add.text(x+cardW/2, y+Math.round(238*WS), data.title.toUpperCase(), {
         fontFamily: 'Trebuchet MS, Arial, sans-serif',
-        fontSize: '11px',
+        fontSize: `${Math.round(11*WS)}px`,
         color: '#ecdfff',
         stroke: '#000000',
         strokeThickness: 2
       }).setOrigin(0.5);
 
-      this.add.text(x+cardW/2, y+258, data.description, {
+      this.add.text(x+cardW/2, y+Math.round(258*WS), data.description, {
         fontFamily: 'Trebuchet MS, Arial, sans-serif',
-        fontSize: '10px',
+        fontSize: `${Math.round(10*WS)}px`,
         color: '#d0bee8',
         stroke: '#000000',
         strokeThickness: 1,
         align: 'center',
-        wordWrap: {width: cardW-16}
+        wordWrap: {width: cardW-Math.round(16*WS)}
       }).setOrigin(0.5, 0.5);
 
-      const attune = this.add.text(x+cardW/2, y+cardH-18, 'ATTUNE', {
+      const attune = this.add.text(x+cardW/2, y+cardH-Math.round(18*WS), 'ATTUNE', {
         fontFamily: 'Georgia, serif',
-        fontSize: '13px',
+        fontSize: `${Math.round(13*WS)}px`,
         fontStyle: 'bold',
         color: '#f7e8b6',
         stroke: '#000000',
@@ -992,17 +1030,17 @@ class CharacterSelectScene extends Phaser.Scene {
 
     this.add.rectangle(GAME_W/2, GAME_H-Math.round(34*WS), GAME_W - Math.round(54*WS), Math.round(44*WS), 0x0d0820, 0.84)
       .setStrokeStyle(1, COLORS.gold, 0.25);
-    this.add.text(GAME_W/2, GAME_H-42, 'Tap a bearer to enter the Veil', {
+    this.add.text(GAME_W/2, GAME_H-Math.round(42*WS), 'Tap a bearer to enter the Veil', {
       fontFamily: 'Courier New',
-      fontSize: '11px',
+      fontSize: `${Math.round(11*WS)}px`,
       color: '#f4e9ff',
       stroke: '#000000',
       strokeThickness: 2
     }).setOrigin(0.5);
 
-    this.add.text(GAME_W/2, GAME_H-24, 'Each hero channels a different spectrum force', {
+    this.add.text(GAME_W/2, GAME_H-Math.round(24*WS), 'Each hero channels a different spectrum force', {
       fontFamily: 'Courier New',
-      fontSize: '9px',
+      fontSize: `${Math.round(9*WS)}px`,
       color: '#b69ddd',
       stroke: '#000000',
       strokeThickness: 1
@@ -1104,7 +1142,6 @@ class BattleScene extends Phaser.Scene {
     this.score = 0;
     this.killCount = 0;
     this.gameTime = 0;
-    this.lastAttack = 0;
     this.invulnerable = false;
     this.attackDamageMult = 1;
     this.attackSpeedMult = 1;
@@ -1195,7 +1232,7 @@ class BattleScene extends Phaser.Scene {
     this.player = this.add.sprite(GAME_W/2, GAME_H/2, charKey, 0);
     const tuning = getSpriteTuning(charKey);
     this.player.setOrigin(tuning.originX, tuning.originY);
-    this.player.setScale(tuning.battleScale);
+    this.player.setScale(tuning.battleScale * WORLD_SCALE);
     this.player.play(charKey + '_idle');
     this.player.setDepth(10);
 
@@ -1216,7 +1253,7 @@ class BattleScene extends Phaser.Scene {
     this.mines = this.physics.add.group();
     this.damageTexts = [];
 
-    this.setupWeaponSystem();
+    this.setupWeapons();
 
     // ── Collisions ──
     this.physics.add.overlap(this.player, this.enemies, this.onPlayerHit, null, this);
@@ -1271,26 +1308,27 @@ class BattleScene extends Phaser.Scene {
     const charKey = gameState.selectedCharacter;
     this.heroFx = {};
 
+    const WS = WORLD_SCALE;
     if(charKey === 'prismel') {
-      const glow = this.add.circle(0, 0, 13, 0x66ccff, 0.18);
-      const halo = this.add.circle(0, 0, 17, 0xffffff, 0).setStrokeStyle(2, 0xa879ff, 0.50);
-      const outer = this.add.rectangle(0, 0, 14, 14, 0x79b8ff, 0.95).setAngle(45).setStrokeStyle(2, 0xffffff, 0.75);
-      const inner = this.add.rectangle(0, 0, 8, 8, 0xff66ff, 0.95).setAngle(45);
-      const core = this.add.rectangle(0, 0, 4, 4, 0xffffff, 0.95).setAngle(45);
-      const crystal = this.add.container(this.player.x, this.player.y - 46, [glow, halo, outer, inner, core]).setDepth(16);
+      const glow = this.add.circle(0, 0, Math.round(13*WS), 0x66ccff, 0.18);
+      const halo = this.add.circle(0, 0, Math.round(17*WS), 0xffffff, 0).setStrokeStyle(2, 0xa879ff, 0.50);
+      const outer = this.add.rectangle(0, 0, Math.round(14*WS), Math.round(14*WS), 0x79b8ff, 0.95).setAngle(45).setStrokeStyle(2, 0xffffff, 0.75);
+      const inner = this.add.rectangle(0, 0, Math.round(8*WS), Math.round(8*WS), 0xff66ff, 0.95).setAngle(45);
+      const core = this.add.rectangle(0, 0, Math.round(4*WS), Math.round(4*WS), 0xffffff, 0.95).setAngle(45);
+      const crystal = this.add.container(this.player.x, this.player.y - Math.round(46*WS), [glow, halo, outer, inner, core]).setDepth(16);
       this.heroFx.prismel = { crystal, glow, halo, outer, inner, core, burstLock: false };
     }
     else if(charKey === 'auryi') {
-      const glow = this.add.circle(0, 0, 15, COLORS.yellow, 0.14);
-      const ring = this.add.circle(0, 0, 11, COLORS.white, 0).setStrokeStyle(2, COLORS.yellow, 0.70);
-      const core = this.add.circle(0, 0, 7, 0xffdf88, 0.98);
-      const shine = this.add.circle(-2, -2, 3, 0xffffff, 0.92);
-      const orb = this.add.container(this.player.x, this.player.y - 54, [glow, ring, core, shine]).setDepth(16);
+      const glow = this.add.circle(0, 0, Math.round(15*WS), COLORS.yellow, 0.14);
+      const ring = this.add.circle(0, 0, Math.round(11*WS), COLORS.white, 0).setStrokeStyle(2, COLORS.yellow, 0.70);
+      const core = this.add.circle(0, 0, Math.round(7*WS), 0xffdf88, 0.98);
+      const shine = this.add.circle(Math.round(-2*WS), Math.round(-2*WS), Math.round(3*WS), 0xffffff, 0.92);
+      const orb = this.add.container(this.player.x, this.player.y - Math.round(54*WS), [glow, ring, core, shine]).setDepth(16);
       this.heroFx.auryi = { orb, glow, ring, core, shine, burstLock: false };
     }
     else if(charKey === 'kineza') {
-      const leftGlow = this.add.circle(this.player.x, this.player.y, 10, COLORS.green, 0.0).setDepth(14).setStrokeStyle(2, COLORS.yellow, 0.0);
-      const rightGlow = this.add.circle(this.player.x, this.player.y, 12, COLORS.green, 0.0).setDepth(14).setStrokeStyle(2, COLORS.yellow, 0.0);
+      const leftGlow = this.add.circle(this.player.x, this.player.y, Math.round(10*WS), COLORS.green, 0.0).setDepth(14).setStrokeStyle(2, COLORS.yellow, 0.0);
+      const rightGlow = this.add.circle(this.player.x, this.player.y, Math.round(12*WS), COLORS.green, 0.0).setDepth(14).setStrokeStyle(2, COLORS.yellow, 0.0);
       this.heroFx.kineza = { leftGlow, rightGlow, burstLock: false };
     }
   }
@@ -1302,10 +1340,10 @@ class BattleScene extends Phaser.Scene {
 
     if(this.heroFx.prismel) {
       const fx = this.heroFx.prismel;
-      const baseX = this.player.x + side * 18;
-      const baseY = this.player.y - 58;
-      const targetX = baseX + side * (10 + Math.cos(t) * 8);
-      const targetY = baseY + Math.sin(t * 1.3) * 7;
+      const baseX = this.player.x + side * Math.round(18*WORLD_SCALE);
+      const baseY = this.player.y - Math.round(58*WORLD_SCALE);
+      const targetX = baseX + side * Math.round((10 + Math.cos(t) * 8) * WORLD_SCALE);
+      const targetY = baseY + Math.sin(t * 1.3) * Math.round(7*WORLD_SCALE);
       fx.crystal.x = Phaser.Math.Linear(fx.crystal.x, targetX, 0.22);
       fx.crystal.y = Phaser.Math.Linear(fx.crystal.y, targetY, 0.22);
       fx.crystal.rotation += 0.015;
@@ -1323,10 +1361,10 @@ class BattleScene extends Phaser.Scene {
 
     if(this.heroFx.auryi) {
       const fx = this.heroFx.auryi;
-      const baseX = this.player.x + side * 26;
-      const baseY = this.player.y - 54;
-      const targetX = baseX + side * (Math.cos(t * 0.8) * 4);
-      const targetY = baseY + Math.sin(t * 1.1) * 6;
+      const baseX = this.player.x + side * Math.round(26*WORLD_SCALE);
+      const baseY = this.player.y - Math.round(54*WORLD_SCALE);
+      const targetX = baseX + side * Math.round(Math.cos(t * 0.8) * 4 * WORLD_SCALE);
+      const targetY = baseY + Math.sin(t * 1.1) * Math.round(6*WORLD_SCALE);
       fx.orb.x = Phaser.Math.Linear(fx.orb.x, targetX, 0.18);
       fx.orb.y = Phaser.Math.Linear(fx.orb.y, targetY, 0.18);
       const pulse = 1 + Math.sin(t * 1.4) * 0.10;
@@ -1524,6 +1562,9 @@ class BattleScene extends Phaser.Scene {
     this.scoreText = this.add.text(GAME_W-18, 50, 'SCORE 0', {
       fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'15px', fontStyle:'bold', color:'#f1e6ff', stroke:'#000000', strokeThickness:3
     }).setOrigin(1,0);
+    this.slotsText = this.add.text(GAME_W-18, 72, `WEAPONS 1/${MAX_WEAPON_SLOTS}  SHARDS 0/${MAX_PASSIVE_SLOTS}`, {
+      fontFamily:'Trebuchet MS, Arial, sans-serif', fontSize:'11px', fontStyle:'bold', color:'#bda9e8', stroke:'#000000', strokeThickness:2
+    }).setOrigin(1,0);
 
     this.footerPanel = this.add.rectangle(GAME_W/2, GAME_H-38, 382, 28, 0x0d0820, 0.92).setStrokeStyle(1, accent2, 0.42);
     this.footerText = this.add.text(GAME_W/2, GAME_H-38, `${theme.footerGlyph} ${this.charData.name.toUpperCase()} — ${this.charData.title.toUpperCase()} ${theme.footerGlyph}`, {
@@ -1557,7 +1598,7 @@ class BattleScene extends Phaser.Scene {
     }
   }
 
-  setupWeaponSystem() {
+  setupWeapons() {
     const hero = gameState.selectedCharacter;
     const baseMap = {
       prismel:  'prismShard',
@@ -1567,7 +1608,7 @@ class BattleScene extends Phaser.Scene {
       sarallel: 'auraPulse'
     };
     this.weapons[baseMap[hero]] = { level: 1, cooldown: 0 };
-    this.weaponCooldowns = {
+    this.artCooldowns = {
       prismOrbit: 0,
       veilMine: 0,
       chainSpark: 0
@@ -1576,6 +1617,22 @@ class BattleScene extends Phaser.Scene {
 
   getWeaponLevel(key) {
     return this.weapons[key] ? this.weapons[key].level : 0;
+  }
+
+  ownedWeaponCount() {
+    return Object.keys(this.weapons).length;
+  }
+
+  ownedPassiveCount() {
+    return Object.keys(this.passives).length;
+  }
+
+  hasWeaponSlot() {
+    return this.ownedWeaponCount() < MAX_WEAPON_SLOTS;
+  }
+
+  hasPassiveSlot() {
+    return this.ownedPassiveCount() < MAX_PASSIVE_SLOTS;
   }
 
   upgradeWeapon(key) {
@@ -1591,21 +1648,21 @@ class BattleScene extends Phaser.Scene {
 
   addPassive(name) {
     this.passives[name] = (this.passives[name] || 0) + 1;
-    if(name === 'Magnet Charm') this.magnetBonus = (this.magnetBonus || 0) + 40;
-    if(name === 'Vital Thread') {
+    if(name === 'Shard of Mending') this.magnetBonus = (this.magnetBonus || 0) + 40;
+    if(name === 'Shard of Endurance') {
       this.playerMaxHp += 15;
       this.playerHp = Math.min(this.playerMaxHp, this.playerHp + 15);
     }
-    if(name === 'Quickened Veil') this.attackSpeedMult *= 1.08;
-    if(name === 'Spectrum Lens') this.attackRangeMult *= 1.08;
-    if(name === 'Momentum Core') this.moveSpeedMult *= 1.08;
-    if(name === 'Golden Halo') this.regenBonus = (this.regenBonus || 0) + 0.006;
+    if(name === 'Shard of Ardence') this.attackSpeedMult *= 1.08;
+    if(name === 'Shard of Reach') this.attackRangeMult *= 1.08;
+    if(name === 'Shard of Current') this.moveSpeedMult *= 1.08;
+    if(name === 'Shard of Resonance') this.regenBonus = (this.regenBonus || 0) + 0.006;
   }
 
   tryEvolutions() {
     if(gameState.selectedCharacter === 'prismel' &&
        this.getWeaponLevel('prismShard') >= 4 &&
-       this.passives['Spectrum Lens'] &&
+       this.passives['Shard of Reach'] &&
        !this.evolutions.prismaticBarrage) {
       this.evolutions.prismaticBarrage = true;
       this.showStageMessage('EVOLUTION: PRISMATIC BARRAGE');
@@ -1613,7 +1670,7 @@ class BattleScene extends Phaser.Scene {
     }
     if(gameState.selectedCharacter === 'kineza' &&
        this.getWeaponLevel('kineticDrive') >= 4 &&
-       this.passives['Momentum Core'] &&
+       this.passives['Shard of Current'] &&
        !this.evolutions.breakerDash) {
       this.evolutions.breakerDash = true;
       this.showStageMessage('EVOLUTION: BREAKER DASH');
@@ -1621,7 +1678,7 @@ class BattleScene extends Phaser.Scene {
     }
     if(gameState.selectedCharacter === 'auryi' &&
        this.getWeaponLevel('auraPulse') >= 4 &&
-       this.passives['Golden Halo'] &&
+       this.passives['Shard of Resonance'] &&
        !this.evolutions.radiantSanctuary) {
       this.evolutions.radiantSanctuary = true;
       this.showStageMessage('EVOLUTION: RADIANT SANCTUARY');
@@ -1656,7 +1713,7 @@ class BattleScene extends Phaser.Scene {
       const g = this.add.rectangle(0, 0, 10, 10, color, 0.95).setAngle(45).setStrokeStyle(1, COLORS.white, 0.6);
       const glow = this.add.circle(0, 0, 12, color, 0.14);
       orb.add([glow, g]);
-      orb.weaponIndex = i;
+      orb.artIndex = i;
       this.orbiters.push(orb);
     }
   }
@@ -1870,9 +1927,6 @@ class BattleScene extends Phaser.Scene {
   }
 
   updateAttack(time) {
-    const interval = this.charData.attackSpeed / this.attackSpeedMult;
-    if(time - this.lastAttack < interval) return;
-
     // Find nearest enemy
     const enemies = this.enemies.getChildren();
     if(enemies.length === 0) return;
@@ -1886,10 +1940,23 @@ class BattleScene extends Phaser.Scene {
     const range = this.charData.attackRange * this.attackRangeMult;
     if(nearestDist > range) return;
 
-    this.lastAttack = time;
-    this.playHeroAttackAnim();
+    const interval = this.charData.attackSpeed / this.attackSpeedMult;
+    let firedAny = false;
 
-    if(gameState.selectedCharacter === 'prismel') {
+    ['prismShard', 'kineticDrive', 'auraPulse'].forEach(key => {
+      const weapon = this.weapons[key];
+      if(!weapon) return;
+      if(time - (weapon.lastFired || 0) < interval) return;
+      weapon.lastFired = time;
+      firedAny = true;
+      this.firePrimaryWeapon(key, nearest, range, nearestDist);
+    });
+
+    if(firedAny) this.playHeroAttackAnim();
+  }
+
+  firePrimaryWeapon(key, nearest, range, nearestDist) {
+    if(key === 'prismShard') {
       this.triggerHeroFocusBurst('prismel');
       const lvl = this.getWeaponLevel('prismShard');
       this.firePrismProjectile(nearest);
@@ -1899,7 +1966,7 @@ class BattleScene extends Phaser.Scene {
       }
       sfx.attackPrismel();
     }
-    else if(gameState.selectedCharacter === 'kineza') {
+    else if(key === 'kineticDrive') {
       this.triggerHeroFocusBurst('kineza');
       this.kinezaMeleeStrike(nearest, range + this.getWeaponLevel('kineticDrive')*6, nearestDist);
       if(this.evolutions.breakerDash) {
@@ -1911,7 +1978,7 @@ class BattleScene extends Phaser.Scene {
       }
       sfx.attackKineza();
     }
-    else if(gameState.selectedCharacter === 'auryi') {
+    else if(key === 'auraPulse') {
       this.triggerHeroFocusBurst('auryi');
       this.auryiAuraPulse(range + this.getWeaponLevel('auraPulse')*10);
       sfx.attackAuryi();
@@ -1932,58 +1999,47 @@ class BattleScene extends Phaser.Scene {
 
   firePrismProjectile(target, angleOffset = 0) {
     const startX = this.heroFx.prismel ? this.heroFx.prismel.crystal.x : this.player.x;
-    const startY = this.heroFx.prismel ? this.heroFx.prismel.crystal.y : this.player.y - 30;
+    const startY = this.heroFx.prismel ? this.heroFx.prismel.crystal.y : this.player.y - Math.round(30*WORLD_SCALE);
     const angle = Phaser.Math.Angle.Between(startX, startY, target.x, target.y) + angleOffset;
     const colors = [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green, COLORS.blue, COLORS.violet];
-    const color = colors[Math.floor(Math.random()*colors.length)];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const WS = WORLD_SCALE;
 
-    const glow = this.add.circle(0, 0, 11, color, 0.22);
-    const ring = this.add.circle(0, 0, 15, color, 0).setStrokeStyle(2, color, 0.55);
-    const crystal = this.add.rectangle(0, 0, 12, 12, color, 0.98).setAngle(45).setStrokeStyle(2, 0xffffff, 0.70);
-    const core = this.add.rectangle(0, 0, 5, 5, 0xffffff, 0.95).setAngle(45);
+    // Launch flash at crystal
+    const flash = this.add.circle(startX, startY, Math.round(10*WS), color, 0.95).setDepth(17);
+    this.tweens.add({ targets: flash, scaleX: 2.4, scaleY: 2.4, alpha: 0, duration: 130,
+      onComplete: () => flash.destroy() });
 
-    const container = this.add.container(startX, startY, [glow, ring, crystal, core]);
-    this.physics.world.enable(container);
-    const speed = this.charData.projectileSpeed;
-    if(container.body) {
-      container.body.setSize(18,18);
-      container.body.setOffset(-9,-9);
-      container.body.setVelocity(Math.cos(angle)*speed, Math.sin(angle)*speed);
-    }
-    container.damage = this.charData.baseDamage * this.attackDamageMult;
-    container.rotation = angle;
-    container.lifetime = 1800;
-    container.prismProjectile = true;
-
-    this.tweens.add({
-      targets: [crystal, core],
-      angle: '+=360',
-      duration: 380,
-      repeat: -1
-    });
-    this.tweens.add({
-      targets: ring,
-      scaleX: 1.3,
-      scaleY: 1.3,
-      alpha: 0.18,
-      duration: 180,
-      yoyo: true,
-      repeat: -1
-    });
-
-    for(let i=0;i<3;i++) {
-      const shard = this.add.rectangle(startX - Math.cos(angle)*(8 + i*6), startY - Math.sin(angle)*(8 + i*6), 8 - i*2, 8 - i*2, color, 0.16 - i*0.03).setAngle(45);
-      this.tweens.add({
-        targets: shard,
-        alpha: 0,
-        scaleX: 0.5,
-        scaleY: 0.5,
-        duration: 180 + i*30,
-        onComplete: () => shard.destroy()
-      });
+    // Generate shard texture once (white triangle tip-at-top, tinted per shot)
+    if (!this.textures.exists('prismShardTex')) {
+      const pw = Math.round(14*WS), ph = Math.round(32*WS);
+      const sg = this.make.graphics({ x: 0, y: 0, add: false });
+      sg.fillStyle(0xffffff, 1.0);
+      sg.fillTriangle(pw/2, 0, 0, ph, pw, ph);
+      sg.fillStyle(0xffffff, 0.92);
+      sg.fillTriangle(pw/2, Math.round(3*WS), pw/2-Math.round(2*WS), Math.round(ph*0.55), pw/2+Math.round(2*WS), Math.round(ph*0.55));
+      sg.generateTexture('prismShardTex', pw, ph);
+      sg.destroy();
     }
 
-    this.projectiles.add(container);
+    // Plain tinted image — position driven manually each frame (bypasses all physics body quirks)
+    const shard = this.add.image(startX, startY, 'prismShardTex');
+    shard.setTint(color);
+    shard.rotation = angle + Math.PI / 2;
+    shard.setDepth(13);
+
+    const speed = this.charData.projectileSpeed * WORLD_SCALE;
+    shard.velX = Math.cos(angle) * speed;
+    shard.velY = Math.sin(angle) * speed;
+
+    shard.damage = this.charData.baseDamage * this.attackDamageMult;
+    shard.lifetime = 2800;
+    shard.prismProjectile = true;
+    shard.piercing = true;
+    shard.hitList = new Set();
+    shard.prismColor = color;
+
+    this.projectiles.add(shard);
   }
 
   kinezaMeleeStrike(target, range, nearestDist) {
@@ -2293,6 +2349,7 @@ class BattleScene extends Phaser.Scene {
         g.fillRect(2,-4,4,4);
     }
 
+    speed *= SPEED_SCALE;
     const hpBg = this.add.rectangle(0, -18, 22, 4, 0x110a1a, 0.92).setStrokeStyle(1, 0xffffff, 0.12);
     const hpFill = this.add.rectangle(-10, -18, 20, 2, hpColor, 1).setOrigin(0,0.5);
     const container = this.add.container(x,y,[shadow, ring, g, hpBg, hpFill]);
@@ -2440,8 +2497,16 @@ class BattleScene extends Phaser.Scene {
 
   // ═══ PROJECTILES ═══
   onProjectileHit(proj, enemy) {
-    this.damageEnemy(enemy, proj.damage);
-    proj.destroy();
+    if(!proj.active || !enemy.active) return;
+    if(proj.piercing) {
+      if(proj.hitList && proj.hitList.has(enemy)) return;
+      if(!proj.hitList) proj.hitList = new Set();
+      proj.hitList.add(enemy);
+      this.damageEnemy(enemy, proj.damage);
+    } else {
+      this.damageEnemy(enemy, proj.damage);
+      proj.destroy();
+    }
   }
 
   onMineHit(mine, enemy) {
@@ -2451,20 +2516,41 @@ class BattleScene extends Phaser.Scene {
 
   updateProjectiles(delta) {
     if(!this.projectiles || !this.projectiles.getChildren) return;
+    const dt = delta / 1000;
     this.projectiles.getChildren().forEach(p => {
+      if(!p.active) return;
       p.lifetime -= delta;
+
       if(p.prismProjectile) {
-        const trail = this.add.circle(p.x, p.y, 5, COLORS.white, 0.08);
-        this.tweens.add({
-          targets: trail,
-          alpha: 0,
-          scaleX: 0.4,
-          scaleY: 0.4,
-          duration: 150,
-          onComplete: () => trail.destroy()
-        });
+        // Manual position update — no Arcade Physics body needed
+        p.x += p.velX * dt;
+        p.y += p.velY * dt;
+
+        // Manual collision against enemies
+        if(this.enemies) {
+          const hitR = 18 * WORLD_SCALE;
+          this.enemies.getChildren().forEach(e => {
+            if(!e.active || !p.active) return;
+            if(Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y) < hitR) {
+              if(p.piercing) {
+                if(!p.hitList.has(e)) { p.hitList.add(e); this.damageEnemy(e, p.damage); }
+              } else {
+                this.damageEnemy(e, p.damage); p.destroy();
+              }
+            }
+          });
+        }
+
+        // Colored trail dot
+        if(p.active) {
+          const c = p.prismColor || COLORS.white;
+          const trail = this.add.circle(p.x, p.y, Math.round(8*WORLD_SCALE), c, 0.55).setDepth(11);
+          this.tweens.add({ targets: trail, alpha: 0, scaleX: 0.05, scaleY: 0.05, duration: 80,
+            onComplete: () => trail.destroy() });
+        }
       }
-      if(p.lifetime <= 0) p.destroy();
+
+      if(p.active && p.lifetime <= 0) p.destroy();
     });
   }
 
@@ -2517,6 +2603,7 @@ class BattleScene extends Phaser.Scene {
     this.expToNext = Math.floor(this.expToNext * 1.4);
     this.playerMaxHp += 10;
     this.playerHp = Math.min(this.playerMaxHp, this.playerHp+10);
+    this.applyCharacterTraitLevel(this.playerLevel);
     sfx.levelUp();
     sfx.cardReveal();
 
@@ -2635,50 +2722,43 @@ class BattleScene extends Phaser.Scene {
 
   getRandomUpgrades(count) {
     const pool = [
-      {name:'Crimson Surge', keyword:'OFFENSE', color:COLORS.red, desc:'+20% attack damage',
-       apply:()=>{this.attackDamageMult*=1.2;}},
-      {name:'Emerald Drift', keyword:'MOTION', color:COLORS.green, desc:'+15% movement speed',
-       apply:()=>{this.moveSpeedMult*=1.15;}},
-      {name:'Solar Tempo', keyword:'RHYTHM', color:COLORS.yellow, desc:'+15% attack speed',
-       apply:()=>{this.attackSpeedMult*=1.15;}},
-      {name:'Azure Reach', keyword:'RANGE', color:COLORS.blue, desc:'+20% attack range',
-       apply:()=>{this.attackRangeMult*=1.2;}},
-      {name:'Amber Vitalis', keyword:'SURVIVAL', color:COLORS.orange, desc:'+25 max HP',
-       apply:()=>{this.playerMaxHp+=25; this.playerHp+=25;}},
-      {name:'Violet Renewal', keyword:'RESTORE', color:COLORS.violet, desc:'Heal 40 HP',
-       apply:()=>{this.playerHp=Math.min(this.playerMaxHp,this.playerHp+40);}},
-
-      {name:'Prism Shard +', keyword:'WEAPON', color:COLORS.blue, desc:'Upgrade Prism Shard',
-       condition:()=>gameState.selectedCharacter==='prismel' && this.getWeaponLevel('prismShard') < 5,
+      {name:'Prism Shard', keyword:'WEAPON', color:COLORS.blue, desc:'Crystals fired from a focus',
+       condition:()=>this.getWeaponLevel('prismShard') < 5 && (this.weapons['prismShard'] || this.hasWeaponSlot()),
        apply:()=>{this.upgradeWeapon('prismShard');}},
-      {name:'Kinetic Drive +', keyword:'WEAPON', color:COLORS.green, desc:'Upgrade Kinetic Drive',
-       condition:()=>gameState.selectedCharacter==='kineza' && this.getWeaponLevel('kineticDrive') < 5,
+      {name:'Kinetic Drive', keyword:'WEAPON', color:COLORS.green, desc:'Dash-strike with momentum force',
+       condition:()=>this.getWeaponLevel('kineticDrive') < 5 && (this.weapons['kineticDrive'] || this.hasWeaponSlot()),
        apply:()=>{this.upgradeWeapon('kineticDrive');}},
-      {name:'Aura Pulse +', keyword:'WEAPON', color:COLORS.yellow, desc:'Upgrade Aura Pulse',
-       condition:()=>gameState.selectedCharacter==='auryi' && this.getWeaponLevel('auraPulse') < 5,
+      {name:'Aura Pulse', keyword:'WEAPON', color:COLORS.yellow, desc:'A pulsing wave around you',
+       condition:()=>this.getWeaponLevel('auraPulse') < 5 && (this.weapons['auraPulse'] || this.hasWeaponSlot()),
        apply:()=>{this.upgradeWeapon('auraPulse');}},
       {name:'Orbiting Prism', keyword:'WEAPON', color:COLORS.violet, desc:'Crystal satellite',
-       condition:()=>this.getWeaponLevel('prismOrbit') < 5,
+       condition:()=>this.getWeaponLevel('prismOrbit') < 5 && (this.weapons['prismOrbit'] || this.hasWeaponSlot()),
        apply:()=>{this.upgradeWeapon('prismOrbit');}},
       {name:'Veil Mine', keyword:'WEAPON', color:COLORS.lavender, desc:'Drop veil sigils',
-       condition:()=>this.getWeaponLevel('veilMine') < 5,
+       condition:()=>this.getWeaponLevel('veilMine') < 5 && (this.weapons['veilMine'] || this.hasWeaponSlot()),
        apply:()=>{this.upgradeWeapon('veilMine');}},
       {name:'Chain Spark', keyword:'WEAPON', color:COLORS.blue, desc:'Lightning jumps',
-       condition:()=>this.getWeaponLevel('chainSpark') < 5,
+       condition:()=>this.getWeaponLevel('chainSpark') < 5 && (this.weapons['chainSpark'] || this.hasWeaponSlot()),
        apply:()=>{this.upgradeWeapon('chainSpark');}},
 
-      {name:'Magnet Charm', keyword:'PASSIVE', color:COLORS.lavender, desc:'Wider gem pickup',
-       apply:()=>{this.addPassive('Magnet Charm');}},
-      {name:'Spectrum Lens', keyword:'PASSIVE', color:COLORS.blue, desc:'Prism evolution key',
-       apply:()=>{this.addPassive('Spectrum Lens');}},
-      {name:'Momentum Core', keyword:'PASSIVE', color:COLORS.green, desc:'Dash evolution key',
-       apply:()=>{this.addPassive('Momentum Core');}},
-      {name:'Golden Halo', keyword:'PASSIVE', color:COLORS.yellow, desc:'Aura evolution key',
-       apply:()=>{this.addPassive('Golden Halo');}},
-      {name:'Vital Thread', keyword:'PASSIVE', color:COLORS.orange, desc:'Max HP + regen path',
-       apply:()=>{this.addPassive('Vital Thread');}},
-      {name:'Quickened Veil', keyword:'PASSIVE', color:COLORS.red, desc:'Faster weapon rhythm',
-       apply:()=>{this.addPassive('Quickened Veil');}},
+      {name:'Shard of Mending', keyword:'PASSIVE', color:COLORS.lavender, desc:'Violet frequency — wider gem pickup',
+       condition:()=>this.passives['Shard of Mending'] || this.hasPassiveSlot(),
+       apply:()=>{this.addPassive('Shard of Mending');}},
+      {name:'Shard of Reach', keyword:'PASSIVE', color:COLORS.blue, desc:'Blue frequency — Prism evolution key',
+       condition:()=>this.passives['Shard of Reach'] || this.hasPassiveSlot(),
+       apply:()=>{this.addPassive('Shard of Reach');}},
+      {name:'Shard of Current', keyword:'PASSIVE', color:COLORS.green, desc:'Green frequency — Dash evolution key',
+       condition:()=>this.passives['Shard of Current'] || this.hasPassiveSlot(),
+       apply:()=>{this.addPassive('Shard of Current');}},
+      {name:'Shard of Resonance', keyword:'PASSIVE', color:COLORS.yellow, desc:'Yellow frequency — Aura evolution key',
+       condition:()=>this.passives['Shard of Resonance'] || this.hasPassiveSlot(),
+       apply:()=>{this.addPassive('Shard of Resonance');}},
+      {name:'Shard of Endurance', keyword:'PASSIVE', color:COLORS.orange, desc:'Orange frequency — Max HP + regen path',
+       condition:()=>this.passives['Shard of Endurance'] || this.hasPassiveSlot(),
+       apply:()=>{this.addPassive('Shard of Endurance');}},
+      {name:'Shard of Ardence', keyword:'PASSIVE', color:COLORS.red, desc:'Red frequency — faster weapon rhythm',
+       condition:()=>this.passives['Shard of Ardence'] || this.hasPassiveSlot(),
+       apply:()=>{this.addPassive('Shard of Ardence');}},
     ];
 
     const available = pool.filter(u => !u.condition || u.condition());
@@ -2722,6 +2802,7 @@ class BattleScene extends Phaser.Scene {
 
     this.levelText.setText('LV '+this.playerLevel);
     this.scoreText.setText('SCORE ' + this.score);
+    this.slotsText.setText(`WEAPONS ${this.ownedWeaponCount()}/${MAX_WEAPON_SLOTS}  SHARDS ${this.ownedPassiveCount()}/${MAX_PASSIVE_SLOTS}`);
   }
 
   endGame() {
@@ -2797,7 +2878,7 @@ const config = {
     arcade: { debug: false }
   },
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.NONE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: GAME_W,
     height: GAME_H
@@ -2805,7 +2886,22 @@ const config = {
   scene: [TitleScene, CharacterSelectScene, BattleScene, GameOverScene]
 };
 
-new Phaser.Game(config);
+function bootGame(noAudio) {
+  try {
+    const game = new Phaser.Game(noAudio
+      ? Object.assign({}, config, { audio: { disableWebAudio: true, noAudio: true } })
+      : config);
+    window.__pvGameBooted = true;
+    return game;
+  } catch (err) {
+    if (!noAudio) {
+      console.warn('Phaser failed to boot with audio enabled, retrying with audio disabled:', err);
+      return bootGame(true);
+    }
+    throw err;
+  }
+}
+bootGame(false);
 const __pvLoading = document.getElementById('loading');
 if (__pvLoading) __pvLoading.style.display = 'none';
 

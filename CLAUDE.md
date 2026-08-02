@@ -18,6 +18,21 @@ Use cache-busting query params when testing deployed changes: `?v=<tagname>`
 
 There are no automated tests, no linter config, and no package.json.
 
+## Required: Run Check Before Every Commit
+
+**Always run this before `git commit`:**
+
+```bash
+bash pv-check.sh
+```
+
+It must pass cleanly before pushing. It catches:
+- JS syntax errors in the inline `<script>` block
+- Duplicate top-level `const` declarations (data tables defined twice — a common merge artifact)
+- Unresolved merge conflict markers left in the file
+
+The pre-commit git hook runs this automatically, but call it manually too after resolving merge conflicts since those happen outside of `git commit`.
+
 ## Codebase Architecture
 
 ### Single-file design
@@ -52,7 +67,7 @@ Each hero has two sprite sheet variants in the repo root:
 - `*_spritesheet.png` — original/experimental sheets
 - `*_stable_spritesheet.png` — **the active version** referenced in `SPRITE_PATHS`
 
-Frame layout: 224×224px per frame, 14 frames per sheet — frames 0–3 idle, 4–9 walk/float, 10–13 attack.
+Frame layout: 48×72px per frame, 14 frames per sheet (672×72px strip) — frames 0–3 idle, 4–9 walk, 10–13 attack.
 
 ### BattleScene internals
 `BattleScene` is the bulk of the code. Key systems:
