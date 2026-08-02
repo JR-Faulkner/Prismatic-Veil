@@ -14,7 +14,8 @@ export default class BattleController{
     this.running=true;
     this.hud.updateHP(100,100);
     this.hud.setTurn('PLAYER TURN');
-    this.hud.queueMessage('Prismel uses Prismatic Release!',()=>this.fracture.open());
+    this.hud.queueMessage('Prismel uses Prismatic Release!');
+    this.hud.queueMessage('Crystal energy gathers...',()=>this.fracture.open());
     this.hud.queueMessage('Veil Wraith is hit for 14 damage!',()=>{
       this.fracture.close();
       this.startEnemyTurn();

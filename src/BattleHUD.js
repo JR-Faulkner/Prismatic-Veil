@@ -8,13 +8,19 @@ export default class BattleHUD {
     this.veilText=this.scene.add.text(24,48,"VEIL 100%",{fontSize:"16px",color:"#8EDCFF"});
     this.enemyText=this.scene.add.text(760,20,"VEIL WRAITH",{fontSize:"20px",color:"#F4B5C2"}).setOrigin(1,0);
     this.turnText=this.scene.add.text(400,20,"PLAYER TURN",{fontSize:"18px",color:"#FFE68A"}).setOrigin(.5,0);
-    // Floating battle dialog box — drawn placeholder until DAI supplies frame art
-    this.msgBox=this.scene.add.graphics().setVisible(false);
-    this.msgBox.fillStyle(0x1a1033,0.94).fillRoundedRect(90,496,620,80,12);
-    this.msgBox.lineStyle(2,0xffd56a,0.92).strokeRoundedRect(90,496,620,80,12);
-    this.msgBox.lineStyle(1,0x8564d9,0.5).strokeRoundedRect(94,500,612,72,10);
-    this.messageText=this.scene.add.text(114,536,"",{fontSize:"24px",color:"#F8E7B0",wordWrap:{width:572}}).setOrigin(0,.5).setVisible(false);
-    this.container.add([this.hpText,this.veilText,this.enemyText,this.turnText,this.msgBox,this.messageText]);
+    // Floating battle dialog box — Package 03 frame art, drawn fallback if missing
+    if(this.scene.textures.exists('dialogFrame')){
+      this.msgBox=this.scene.add.image(400,520,'dialogFrame').setVisible(false);
+    } else {
+      this.msgBox=this.scene.add.graphics().setVisible(false);
+      this.msgBox.fillStyle(0x1a1033,0.94).fillRoundedRect(40,460,720,120,12);
+      this.msgBox.lineStyle(3,0xe2bf67,0.92).strokeRoundedRect(40,460,720,120,12);
+      this.msgBox.lineStyle(1,0x6dd6ff,0.35).strokeRoundedRect(50,470,700,100,10);
+    }
+    this.messageText=this.scene.add.text(72,520,"",{fontSize:"24px",color:"#F8E7B0",wordWrap:{width:640}}).setOrigin(0,.5).setVisible(false);
+    this.msgCursor=this.scene.add.text(730,556,"◆",{fontSize:"20px",color:"#7DDCFF"}).setOrigin(.5).setVisible(false);
+    this.scene.tweens.add({targets:this.msgCursor,alpha:0.15,duration:420,yoyo:true,repeat:-1});
+    this.container.add([this.hpText,this.veilText,this.enemyText,this.turnText,this.msgBox,this.messageText,this.msgCursor]);
     this._queue=[];
     this._showing=false;
   }
@@ -34,6 +40,7 @@ export default class BattleHUD {
   clearMessage(){
     this.msgBox.setVisible(false);
     this.messageText.setVisible(false);
+    this.msgCursor.setVisible(false);
   }
   // Types each message out character by character, holds it, then plays
   // the next. onDone fires after the message finishes its hold.
@@ -47,6 +54,7 @@ export default class BattleHUD {
     this._showing=true;
     this._showBox();
     this.messageText.setText("");
+    this.msgCursor.setVisible(false);
     let i=0;
     this.scene.time.addEvent({
       delay:28,
@@ -55,7 +63,9 @@ export default class BattleHUD {
         i++;
         this.messageText.setText(item.text.slice(0,i));
         if(i>=item.text.length){
+          this.msgCursor.setVisible(true);
           this.scene.time.delayedCall(850,()=>{
+            this.msgCursor.setVisible(false);
             if(item.onDone) item.onDone();
             this._nextMessage();
           });

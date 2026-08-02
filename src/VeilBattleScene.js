@@ -7,11 +7,12 @@ export default class VeilBattleScene extends Phaser.Scene{
   constructor(){ super('VeilBattleScene'); }
   preload(){
     this.load.audio('battle_music','./prismcharge.mp3');
+    this.load.image('dialogFrame','./assets/ui/dialog_frame.png');
   }
   create(){
     this.cameras.main.setBackgroundColor('#070611');
     this.add.text(400,120,'VEIL FRACTURE',{fontSize:'40px',color:'#FFE8A0'}).setOrigin(.5);
-    this.add.text(400,180,'Battle Presentation v2 - Package 02',
+    this.add.text(400,180,'Battle Presentation v2 - Package 03',
       {fontSize:'20px',color:'#D6C8F2'}).setOrigin(.5);
     this.add.text(400,220,'Tap to replay the turn sequence',
       {fontSize:'14px',color:'#8a7ab0'}).setOrigin(.5);
