@@ -45,7 +45,7 @@ export default class VeilBattleScene extends Phaser.Scene {
       color: '#D6C8F2'
     }).setOrigin(0.5);
 
-    this.hintText = this.add.text(width / 2, 220, 'Tap to replay the turn sequence', {
+    this.hintText = this.add.text(width / 2, 220, 'Tap to run the next round', {
       fontSize: '14px',
       color: '#8A7AB0'
     }).setOrigin(0.5);
@@ -81,8 +81,8 @@ export default class VeilBattleScene extends Phaser.Scene {
       this.scale.off('resize', this.layoutSceneText, this);
     });
 
-    this.controller.startPlayerTurn();
-    this.input.on('pointerdown', () => this.controller.startPlayerTurn());
+    this.controller.startNextRound();
+    this.input.on('pointerdown', () => this.controller.startNextRound());
   }
 
   layoutSceneText(gameSize) {
