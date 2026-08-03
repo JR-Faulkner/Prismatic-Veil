@@ -1,0 +1,76 @@
+// Prismel battle pose view — pose library v1.
+// Canonical sequence: Idle → Step → Gather → Release → Recover → Idle.
+// Each pose maps to a LOCKED PNG in assets/poses/; any pose whose PNG
+// is not present falls back to the locked full-body Prismel art, so the
+// system runs before the pose set is uploaded and upgrades itself when
+// the files land. Do not regenerate the character.
+export const POSE_TEXTURES = {
+  idle: 'Pose01_Idle_LOCKED',
+  step: 'Pose02_StepForward_LOCKED',
+  gather: 'Pose03_Gather_LOCKED',
+  release: 'Pose04_PrismaticRelease_LOCKED',
+  recover: 'Pose05_Recover_LOCKED'
+};
+
+export default class HeroPoseView {
+  constructor(scene) {
+    this.scene = scene;
+  }
+
+  create() {
+    this.poseTex = {};
+    for (const [pose, tex] of Object.entries(POSE_TEXTURES)) {
+      this.poseTex[pose] = this.scene.textures.exists(tex) ? tex : 'prismelLocked';
+    }
+
+    this.sprite = this.scene.add.image(0, 0, this.poseTex.idle).setOrigin(0.5, 1);
+    this.currentPose = 'idle';
+    this.layout();
+
+    this.scene.scale.on('resize', this.layout, this);
+    this.scene.events.once('shutdown', () => {
+      this.scene.scale.off('resize', this.layout, this);
+    });
+  }
+
+  layout() {
+    const width = this.scene.scale.width;
+    const height = this.scene.scale.height;
+    const compact = width < 560;
+
+    const targetH = height * (compact ? 0.24 : 0.32);
+    const src = this.sprite.texture.getSourceImage();
+    this.sprite.setScale(src && src.height ? targetH / src.height : 1);
+
+    this.baseX = Math.round(width * (compact ? 0.26 : 0.24));
+    this.baseY = Math.round(height - (compact ? 158 : 156));
+    if (this.currentPose !== 'step' && this.currentPose !== 'release') {
+      this.sprite.setPosition(this.baseX, this.baseY);
+    }
+  }
+
+  setPose(pose) {
+    if (!this.poseTex[pose]) return;
+    this.currentPose = pose;
+    this.sprite.setTexture(this.poseTex[pose]);
+    this.layout();
+
+    const t = this.scene.tweens;
+    switch (pose) {
+      case 'step':
+        t.add({ targets: this.sprite, x: this.baseX + 26, duration: 220, ease: 'Quad.Out' });
+        break;
+      case 'gather':
+        t.add({ targets: this.sprite, scaleX: this.sprite.scaleX * 1.04, scaleY: this.sprite.scaleY * 1.04, duration: 260, yoyo: true, ease: 'Sine.easeInOut' });
+        break;
+      case 'release':
+        t.add({ targets: this.sprite, x: this.baseX + 44, duration: 120, ease: 'Back.Out' });
+        break;
+      case 'recover':
+        t.add({ targets: this.sprite, x: this.baseX, duration: 300, ease: 'Quad.InOut' });
+        break;
+      default:
+        this.sprite.setPosition(this.baseX, this.baseY);
+    }
+  }
+}
