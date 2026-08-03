@@ -12,6 +12,17 @@ export const POSE_TEXTURES = {
   recover: 'Pose05_Recover_LOCKED'
 };
 
+// The hero stands on the left and must face right, toward the enemy.
+// The pose art has mixed orientations — Release already fires its beam
+// to the right, the others look left — so flipping is per pose.
+const POSE_FLIP = {
+  idle: true,
+  step: true,
+  gather: true,
+  release: false,
+  recover: true
+};
+
 export default class HeroPoseView {
   constructor(scene) {
     this.scene = scene;
@@ -24,6 +35,7 @@ export default class HeroPoseView {
     }
 
     this.sprite = this.scene.add.image(0, 0, this.poseTex.idle).setOrigin(0.5, 1);
+    this.sprite.setFlipX(POSE_FLIP.idle);
     this.currentPose = 'idle';
     this.layout();
 
@@ -53,6 +65,7 @@ export default class HeroPoseView {
     if (!this.poseTex[pose]) return;
     this.currentPose = pose;
     this.sprite.setTexture(this.poseTex[pose]);
+    this.sprite.setFlipX(POSE_FLIP[pose]);
     this.layout();
 
     const t = this.scene.tweens;

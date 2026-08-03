@@ -45,6 +45,7 @@ export default class BattleController {
         enemy.hp = Math.max(0, enemy.hp - hero.attack.damage);
         this.hud.updateEnemyHP(enemy.hp, enemy.maxHp);
         if (this.scene.floatDamage) this.scene.floatDamage(hero.attack.damage, 'enemy');
+        if (this.scene.enemyView) this.scene.enemyView.hit();
         this.fracture.close();
         if (poses) {
           poses.setPose('recover');
@@ -52,6 +53,7 @@ export default class BattleController {
         }
 
         if (enemy.hp <= 0) {
+          if (this.scene.enemyView) this.scene.enemyView.die();
           this.hud.queueMessage(`${enemy.name} shatters! The veil clears...`, () => {
             this.resetBattle();
           });
@@ -73,6 +75,7 @@ export default class BattleController {
     this.hud.setTurn(this.config.text.enemyTurn);
 
     this.hud.queueMessage(`${enemy.name} uses ${enemy.attack.name}!`, () => {
+      if (this.scene.enemyView) this.scene.enemyView.attack();
       this.fracture.open();
     });
 
@@ -98,6 +101,7 @@ export default class BattleController {
     enemy.hp = enemy.maxHp;
     this.hud.refreshFromConfig();
     this.hud.setTurn(this.config.text.playerTurn);
+    if (this.scene.enemyView) this.scene.enemyView.reset();
     this.phase = 'player';
     this.running = false;
   }
