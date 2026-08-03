@@ -3,6 +3,7 @@ import BattleController from './BattleController.js';
 import Timeline from './Timeline.js';
 import VeilFracture from './VeilFracture.js';
 import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js';
+import EnemyWraithView from './EnemyWraithView.js';
 import { BATTLE_CONFIG } from './BattleConfig.js';
 
 function cloneConfig(source) {
@@ -60,6 +61,9 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     this.heroPoses = new HeroPoseView(this);
     this.heroPoses.create();
+
+    this.enemyView = new EnemyWraithView(this);
+    this.enemyView.create();
 
     this.timeline = new Timeline(this);
     this.fracture = new VeilFracture(this);
