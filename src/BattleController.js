@@ -190,7 +190,7 @@ export default class BattleController {
         this.hud.updateHP(hero.hp, hero.maxHp);
         if (this.scene.floatDamage) this.scene.floatDamage(hit.damage, 'hero', hit.crit);
         if (this.scene.battleCam) this.scene.battleCam.hitShake(hit.crit);
-        if (this.scene.hitStop) this.scene.hitStop(hit.crit ? POSE_TIMING.hitStop * 2 : POSE_TIMING.hitStop);
+          if (this.scene.hitStop) this.scene.hitStop(hit.crit ? POSE_TIMING.hitStop * 2 : POSE_TIMING.hitStop);
         this.emit(AUDIO_EVENTS.impact);
         this.fracture.close();
       });

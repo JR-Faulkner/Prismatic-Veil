@@ -1,13 +1,13 @@
-import BattleHUD from './BattleHUD.js?v=13';
-import BattleController from './BattleController.js?v=13';
-import Timeline from './Timeline.js?v=13';
-import VeilFracture from './VeilFracture.js?v=13';
-import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js?v=13';
-import EnemyWraithView from './EnemyWraithView.js?v=13';
-import BattleCamera from './BattleCamera.js?v=13';
-import BattleFX from './BattleFX.js?v=13';
-import { AUDIO_EVENTS } from './BattleController.js?v=13';
-import { BATTLE_CONFIG } from './BattleConfig.js?v=13';
+import BattleHUD from './BattleHUD.js?v=14';
+import BattleController from './BattleController.js?v=14';
+import Timeline from './Timeline.js?v=14';
+import VeilFracture from './VeilFracture.js?v=14';
+import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js?v=14';
+import EnemyWraithView from './EnemyWraithView.js?v=14';
+import BattleCamera from './BattleCamera.js?v=14';
+import BattleFX from './BattleFX.js?v=14';
+import { AUDIO_EVENTS } from './BattleController.js?v=14';
+import { BATTLE_CONFIG } from './BattleConfig.js?v=14';
 
 function cloneConfig(source) {
   return {

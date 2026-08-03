@@ -30,6 +30,15 @@ export default class BattleHUD {
       color: '#FFE68A'
     }).setOrigin(0.5, 0);
 
+    // Physical HP / Veil bars. Each bar is: dark track, a slow "ghost"
+    // layer that lags behind so you see how much was just taken, then
+    // the live fill on top.
+    this.bars = {
+      heroHp: this._makeBar(0xff5a6e),
+      heroVeil: this._makeBar(0x67c8ff),
+      enemyHp: this._makeBar(0xc477ff)
+    };
+
     this.msgBox = this.scene.add.nineslice(
       0,
       0,
@@ -76,8 +85,11 @@ export default class BattleHUD {
       ease: 'Sine.easeInOut'
     });
 
+    const barParts = Object.values(this.bars)
+      .flatMap(b => [b.track, b.ghost, b.fill]);
     const plateParts = [this.speakerPlate, this.speakerPortrait, this.speakerName].filter(Boolean);
     this.container.add([
+      ...barParts,
       this.hpText,
       this.veilText,
       this.enemyText,
@@ -95,6 +107,61 @@ export default class BattleHUD {
     this.scene.events.once('shutdown', () => {
       this.scene.scale.off('resize', this.layout, this);
     });
+  }
+
+  _makeBar(color) {
+    const track = this.scene.add.rectangle(0, 0, 10, 8, 0x1b1430, 0.92)
+      .setOrigin(0, 0.5).setStrokeStyle(1, 0xffd56a, 0.55);
+    const ghost = this.scene.add.rectangle(0, 0, 10, 6, 0xfff0a8, 0.75).setOrigin(0, 0.5);
+    const fill = this.scene.add.rectangle(0, 0, 10, 6, color, 1).setOrigin(0, 0.5);
+    return { track, ghost, fill, color, ratio: 1, ghostRatio: 1 };
+  }
+
+  _layoutBar(bar, x, y, w, h, rightAligned) {
+    const bx = rightAligned ? x - w : x;
+    bar.w = w;
+    bar.x = bx;
+    bar.track.setPosition(bx, y).setSize(w, h);
+    bar.ghost.setPosition(bx + 1, y).setSize(Math.max(0, (w - 2) * bar.ghostRatio), h - 2);
+    bar.fill.setPosition(bx + 1, y).setSize(Math.max(0, (w - 2) * bar.ratio), h - 2);
+  }
+
+  // Fill snaps to the new value quickly; the ghost drains behind it so
+  // the hit reads. Fill also shifts toward red as it empties.
+  _setBar(bar, ratio, instant) {
+    ratio = Math.max(0, Math.min(1, ratio));
+    const inner = Math.max(0, (bar.w || 10) - 2);
+    const dropping = ratio < bar.ratio;
+    bar.ratio = ratio;
+
+    if (instant) {
+      bar.ghostRatio = ratio;
+      bar.fill.width = inner * ratio;
+      bar.ghost.width = inner * ratio;
+      return;
+    }
+
+    this.scene.tweens.killTweensOf(bar.fill);
+    this.scene.tweens.add({
+      targets: bar.fill,
+      width: inner * ratio,
+      duration: 260,
+      ease: 'Quad.Out'
+    });
+
+    this.scene.tweens.killTweensOf(bar.ghost);
+    this.scene.tweens.add({
+      targets: bar.ghost,
+      width: inner * ratio,
+      duration: 620,
+      delay: dropping ? 220 : 0,
+      ease: 'Quad.InOut',
+      onComplete: () => { bar.ghostRatio = ratio; }
+    });
+
+    if (bar.color === 0xff5a6e) {
+      bar.fill.setFillStyle(ratio > 0.5 ? 0x71ff88 : ratio > 0.25 ? 0xffd56a : 0xff5a6e);
+    }
   }
 
   refreshFromConfig(instant) {
@@ -163,18 +230,27 @@ export default class BattleHUD {
     // and the dialog text fits phone portrait widths
     const compact = width < 560;
     this.hpText.setFontSize(compact ? 13 : 20);
-    this.veilText.setFontSize(compact ? 11 : 16);
     this.enemyText.setFontSize(compact ? 13 : 20);
     this.turnText.setFontSize(compact ? 12 : 18);
     this.messageText.setFontSize(compact ? 17 : 24);
     this.msgCursor.setDisplaySize(compact ? 18 : 24, compact ? 18 : 24);
 
-    // On compact screens the turn indicator gets its own row so the
-    // three top labels never collide.
+    // Top HUD rows: name+HP text, then the bars beneath, with the turn
+    // indicator on its own row so nothing collides on narrow screens.
+    const barW = compact ? Math.min(132, width * 0.34) : 210;
+    const barH = compact ? 7 : 9;
+    const hpBarY = margin + (compact ? 26 : 42);
+    const veilBarY = hpBarY + (compact ? 12 : 16);
+
     this.hpText.setPosition(margin, margin);
-    this.veilText.setPosition(margin, compact ? margin + 20 : margin + 30);
     this.enemyText.setPosition(width - margin, margin);
-    this.turnText.setPosition(width / 2, compact ? margin + 24 : margin);
+    this.veilText.setFontSize(compact ? 9 : 13)
+      .setPosition(margin + barW * 0.82 + 8, veilBarY - (compact ? 5 : 7));
+    this.turnText.setPosition(width / 2, compact ? veilBarY + 12 : margin);
+
+    this._layoutBar(this.bars.heroHp, margin, hpBarY, barW, barH, false);
+    this._layoutBar(this.bars.heroVeil, margin, veilBarY, barW * 0.82, barH - 2, false);
+    this._layoutBar(this.bars.enemyHp, width - margin, hpBarY, barW, barH, true);
 
     this.msgBox.setPosition(width / 2, dialogY);
     this.msgBox.setSize(dialogWidth, dialogHeight);
@@ -237,12 +313,14 @@ export default class BattleHUD {
     this.config.hero.hp = cur;
     this._tickTo('hp', cur, instant, v =>
       this.hpText.setText(`${this.config.hero.name.toUpperCase()}  HP ${v}/${max}`));
+    this._setBar(this.bars.heroHp, max ? cur / max : 0, instant);
     if (dropped && !instant) this._flash(this.hpText, '#FF7A7A');
   }
 
   updateVeil(percent) {
     this.config.hero.veil = percent;
     this.veilText.setText(`VEIL ${percent}%`);
+    this._setBar(this.bars.heroVeil, percent / 100, true);
   }
 
   updateEnemyHP(cur, max, instant) {
@@ -250,6 +328,7 @@ export default class BattleHUD {
     this.config.enemy.hp = cur;
     this._tickTo('ehp', cur, instant, v =>
       this.enemyText.setText(`${this.config.enemy.name.toUpperCase()}  HP ${v}/${max}`));
+    this._setBar(this.bars.enemyHp, max ? cur / max : 0, instant);
     if (dropped && !instant) this._flash(this.enemyText, '#FFDF6E');
   }
 
