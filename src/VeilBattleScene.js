@@ -1,10 +1,13 @@
-import BattleHUD from './BattleHUD.js?v=11';
-import BattleController from './BattleController.js?v=11';
-import Timeline from './Timeline.js?v=11';
-import VeilFracture from './VeilFracture.js?v=11';
-import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js?v=11';
-import EnemyWraithView from './EnemyWraithView.js?v=11';
-import { BATTLE_CONFIG } from './BattleConfig.js?v=11';
+import BattleHUD from './BattleHUD.js?v=12';
+import BattleController from './BattleController.js?v=12';
+import Timeline from './Timeline.js?v=12';
+import VeilFracture from './VeilFracture.js?v=12';
+import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js?v=12';
+import EnemyWraithView from './EnemyWraithView.js?v=12';
+import BattleCamera from './BattleCamera.js?v=12';
+import BattleFX from './BattleFX.js?v=12';
+import { AUDIO_EVENTS } from './BattleController.js?v=12';
+import { BATTLE_CONFIG } from './BattleConfig.js?v=12';
 
 function cloneConfig(source) {
   return {
@@ -48,7 +51,7 @@ export default class VeilBattleScene extends Phaser.Scene {
       color: '#FFE8A0'
     }).setOrigin(0.5);
 
-    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v2 - Package 04', {
+    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v3 - Game Feel', {
       color: '#D6C8F2'
     }).setOrigin(0.5);
 
@@ -66,6 +69,10 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     this.enemyView = new EnemyWraithView(this);
     this.enemyView.create();
+
+    this.battleCam = new BattleCamera(this);
+    this.battleFx = new BattleFX(this);
+    this.battleCam.introPush();
 
     this.timeline = new Timeline(this);
     this.fracture = new VeilFracture(this);
@@ -89,6 +96,19 @@ export default class VeilBattleScene extends Phaser.Scene {
       release: this.sound.add('sfx_release', { volume: 0.95 })
     };
 
+    // v3 audio hook events. Events without an asset yet are simply
+    // unmapped — drop a sound in here when one exists.
+    const AUDIO_MAP = {
+      [AUDIO_EVENTS.step]: null,
+      [AUDIO_EVENTS.gather]: 'gather',
+      [AUDIO_EVENTS.release]: 'release',
+      [AUDIO_EVENTS.impact]: null,
+      [AUDIO_EVENTS.recover]: null
+    };
+    Object.entries(AUDIO_MAP).forEach(([event, key]) => {
+      this.events.on(event, () => { if (key) this.playSfx(key); });
+    });
+
     if (this.sound.locked) {
       this.sound.once('unlocked', () => {
         if (!this.battleMusic.isPlaying) this.battleMusic.play();
@@ -111,22 +131,51 @@ export default class VeilBattleScene extends Phaser.Scene {
     if (s && !this.sound.locked) s.play();
   }
 
+  // v3 hit stop: freeze the scene clock and tweens for a beat so impacts
+  // land. Restored on a real-time timer, which the frozen clock can't
+  // delay.
+  hitStop(ms = 80) {
+    if (this._hitStopped) return;
+    this._hitStopped = true;
+    this.tweens.timeScale = 0.0001;
+    this.time.timeScale = 0.0001;
+    window.setTimeout(() => {
+      this.tweens.timeScale = 1;
+      this.time.timeScale = 1;
+      this._hitStopped = false;
+    }, ms);
+  }
+
+  // v3 damage numbers: pop in, arc up, fade — coloured by who took it.
   floatDamage(amount, side) {
     const width = this.scale.width;
     const height = this.scale.height;
-    const x = width * (side === 'hero' ? 0.28 : 0.72);
-    const text = this.add.text(x, height * 0.42, String(amount), {
-      fontSize: Math.round(Math.max(30, width * 0.05)) + 'px',
+    const hurtHero = side === 'hero';
+    const x = width * (hurtHero ? 0.28 : 0.72);
+    const text = this.add.text(x, height * 0.44, String(amount), {
+      fontSize: Math.round(Math.max(34, width * 0.062)) + 'px',
       fontStyle: 'bold',
-      color: '#FFDF6E',
-      stroke: '#5F1329',
-      strokeThickness: 6
-    }).setOrigin(0.5);
+      color: hurtHero ? '#FF8A8A' : '#FFDF6E',
+      stroke: '#3B0A1C',
+      strokeThickness: 7
+    }).setOrigin(0.5).setDepth(60).setScale(0.4);
+
     this.tweens.add({
       targets: text,
-      y: text.y - 64,
+      scaleX: 1.18,
+      scaleY: 1.18,
+      duration: 150,
+      ease: 'Back.Out',
+      yoyo: true,
+      hold: 40
+    });
+    this.tweens.add({
+      targets: text,
+      x: x + (hurtHero ? -22 : 22),
+      y: text.y - 74,
       alpha: 0,
       duration: 950,
+      delay: 140,
       ease: 'Quad.Out',
       onComplete: () => text.destroy()
     });

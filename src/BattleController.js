@@ -1,3 +1,26 @@
+// Battle Presentation v3 — pose timing spec:
+//   Idle -> Step 220 -> Gather 450 -> Hold 120 -> Release 160
+//        -> Hit Stop 80 -> Recover 260 -> Idle
+export const POSE_TIMING = Object.freeze({
+  step: 220,
+  gather: 450,
+  hold: 120,
+  release: 160,
+  hitStop: 80,
+  recover: 260
+});
+
+// Audio hook events. The scene maps these to whatever SFX exist; any
+// event without an asset is simply ignored, so new sounds drop in
+// without touching the controller.
+export const AUDIO_EVENTS = Object.freeze({
+  step: 'PLAY_STEP',
+  gather: 'PLAY_GATHER',
+  release: 'PLAY_RELEASE',
+  impact: 'PLAY_IMPACT',
+  recover: 'PLAY_RECOVER'
+});
+
 export default class BattleController {
   constructor(scene, timeline, fracture, hud, battleConfig) {
     this.scene = scene;
@@ -12,6 +35,10 @@ export default class BattleController {
     this.phase = 'player';
   }
 
+  emit(event) {
+    this.scene.events.emit(event);
+  }
+
   startNextRound() {
     if (this.running) return;
     if (this.phase === 'player') {
@@ -23,50 +50,95 @@ export default class BattleController {
 
   runPlayerRound() {
     const hero = this.config.hero;
-    const enemy = this.config.enemy;
-    const poses = this.scene.heroPoses;
 
     this.running = true;
     this.hud.setTurn(this.config.text.playerTurn);
-
-    // Pose library v1 canonical sequence:
-    // Idle → Step → Gather → Release → Recover → Idle
-    if (poses) poses.setPose('step');
     this.hud.queueMessage(`${hero.name} uses ${hero.attack.name}!`, () => {
-      if (poses) poses.setPose('gather');
-      if (this.scene.playSfx) this.scene.playSfx('gather');
+      this.playAttackCinematic();
     });
-    this.hud.queueMessage(hero.attack.flavor, () => {
+  }
+
+  // The attack plays as one tight cinematic on the spec's timings while
+  // the dialogue runs alongside it.
+  playAttackCinematic() {
+    const hero = this.config.hero;
+    const enemy = this.config.enemy;
+    const poses = this.scene.heroPoses;
+    const fx = this.scene.battleFx;
+    const cam = this.scene.battleCam;
+    const t = this.scene.time;
+    let at = 0;
+
+    // Step
+    if (poses) poses.setPose('step');
+    this.emit(AUDIO_EVENTS.step);
+    at += POSE_TIMING.step;
+
+    // Gather
+    t.delayedCall(at, () => {
+      if (poses) poses.setPose('gather');
+      if (fx) fx.gather(POSE_TIMING.gather);
+      if (cam) cam.gatherPush();
+      this.emit(AUDIO_EVENTS.gather);
+      this.hud.queueMessage(hero.attack.flavor);
+    });
+    at += POSE_TIMING.gather + POSE_TIMING.hold;
+
+    // Release
+    t.delayedCall(at, () => {
       if (poses) poses.setPose('release');
-      if (this.scene.playSfx) this.scene.playSfx('release');
+      if (fx) fx.beam(POSE_TIMING.release);
+      if (cam) cam.releaseSnap();
+      this.emit(AUDIO_EVENTS.release);
       this.fracture.open();
     });
-    this.hud.queueMessage(
-      `${enemy.name} is hit for ${hero.attack.damage} damage!`,
-      () => {
-        enemy.hp = Math.max(0, enemy.hp - hero.attack.damage);
-        this.hud.updateEnemyHP(enemy.hp, enemy.maxHp);
-        if (this.scene.floatDamage) this.scene.floatDamage(hero.attack.damage, 'enemy');
-        if (this.scene.enemyView) this.scene.enemyView.hit();
-        this.fracture.close();
-        if (poses) {
-          poses.setPose('recover');
-          this.scene.time.delayedCall(420, () => poses.setPose('idle'));
-        }
+    at += POSE_TIMING.release;
 
-        if (enemy.hp <= 0) {
-          if (this.scene.enemyView) this.scene.enemyView.die();
-          this.hud.queueMessage(`${enemy.name} shatters! The veil clears...`, () => {
-            this.resetBattle();
-          });
-          return;
-        }
+    // Impact + hit stop
+    t.delayedCall(at, () => {
+      enemy.hp = Math.max(0, enemy.hp - hero.attack.damage);
+      this.hud.updateEnemyHP(enemy.hp, enemy.maxHp);
+      if (fx) fx.impact();
+      if (cam) cam.hitShake();
+      if (this.scene.enemyView) this.scene.enemyView.hit();
+      if (this.scene.floatDamage) this.scene.floatDamage(hero.attack.damage, 'enemy');
+      if (this.scene.hitStop) this.scene.hitStop(POSE_TIMING.hitStop);
+      this.emit(AUDIO_EVENTS.impact);
+    });
+    at += POSE_TIMING.hitStop;
 
-        this.hud.setTurn(this.config.text.enemyTurn);
-        this.phase = 'enemy';
-        this.running = false;
+    // Recover
+    t.delayedCall(at, () => {
+      if (poses) poses.setPose('recover');
+      if (cam) cam.recoverEase();
+      this.fracture.close();
+      this.emit(AUDIO_EVENTS.recover);
+    });
+    at += POSE_TIMING.recover;
+
+    // Idle, then resolve the round
+    t.delayedCall(at, () => {
+      if (poses) poses.setPose('idle');
+      this.resolvePlayerRound();
+    });
+  }
+
+  resolvePlayerRound() {
+    const enemy = this.config.enemy;
+
+    this.hud.queueMessage(`${enemy.name} is hit for ${this.config.hero.attack.damage} damage!`, () => {
+      if (enemy.hp <= 0) {
+        if (this.scene.enemyView) this.scene.enemyView.die();
+        this.hud.queueMessage(`${enemy.name} shatters! The veil clears...`, () => {
+          this.resetBattle();
+        });
+        return;
       }
-    );
+
+      this.hud.setTurn(this.config.text.enemyTurn);
+      this.phase = 'enemy';
+      this.running = false;
+    });
   }
 
   runEnemyRound() {
@@ -79,20 +151,24 @@ export default class BattleController {
     this.hud.queueMessage(`${enemy.name} uses ${enemy.attack.name}!`, () => {
       if (this.scene.enemyView) this.scene.enemyView.attack();
       this.fracture.open();
-    });
+      this.emit(AUDIO_EVENTS.release);
 
-    this.hud.queueMessage(
-      `${hero.name} suffers ${enemy.attack.damage} damage!`,
-      () => {
-        this.fracture.close();
+      this.scene.time.delayedCall(180, () => {
         hero.hp = Math.max(0, hero.hp - enemy.attack.damage);
         this.hud.updateHP(hero.hp, hero.maxHp);
         if (this.scene.floatDamage) this.scene.floatDamage(enemy.attack.damage, 'hero');
-        this.hud.setTurn(this.config.text.playerTurn);
-        this.phase = 'player';
-        this.running = false;
-      }
-    );
+        if (this.scene.battleCam) this.scene.battleCam.hitShake();
+        if (this.scene.hitStop) this.scene.hitStop(POSE_TIMING.hitStop);
+        this.emit(AUDIO_EVENTS.impact);
+        this.fracture.close();
+      });
+    });
+
+    this.hud.queueMessage(`${hero.name} suffers ${enemy.attack.damage} damage!`, () => {
+      this.hud.setTurn(this.config.text.playerTurn);
+      this.phase = 'player';
+      this.running = false;
+    });
   }
 
   resetBattle() {
@@ -101,9 +177,10 @@ export default class BattleController {
     hero.hp = hero.maxHp;
     hero.veil = 100;
     enemy.hp = enemy.maxHp;
-    this.hud.refreshFromConfig();
+    this.hud.refreshFromConfig(true);
     this.hud.setTurn(this.config.text.playerTurn);
     if (this.scene.enemyView) this.scene.enemyView.reset();
+    if (this.scene.battleCam) this.scene.battleCam.reset();
     this.phase = 'player';
     this.running = false;
   }

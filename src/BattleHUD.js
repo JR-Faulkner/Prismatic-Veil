@@ -83,10 +83,56 @@ export default class BattleHUD {
     });
   }
 
-  refreshFromConfig() {
-    this.updateHP(this.config.hero.hp, this.config.hero.maxHp);
+  refreshFromConfig(instant) {
+    this.updateHP(this.config.hero.hp, this.config.hero.maxHp, instant);
     this.updateVeil(this.config.hero.veil);
-    this.updateEnemyHP(this.config.enemy.hp, this.config.enemy.maxHp);
+    this.updateEnemyHP(this.config.enemy.hp, this.config.enemy.maxHp, instant);
+  }
+
+  // v3 HUD polish: counters ease toward their new value instead of
+  // snapping, and the label flashes on change.
+  _tickTo(key, target, instant, render) {
+    this._shown = this._shown || {};
+    if (instant || this._shown[key] === undefined) {
+      this._shown[key] = target;
+      render(target);
+      return;
+    }
+    const state = { v: this._shown[key] };
+    if (this._counterTweens && this._counterTweens[key]) {
+      this._counterTweens[key].stop();
+    }
+    this._counterTweens = this._counterTweens || {};
+    this._counterTweens[key] = this.scene.tweens.add({
+      targets: state,
+      v: target,
+      duration: 420,
+      ease: 'Quad.Out',
+      onUpdate: () => {
+        this._shown[key] = state.v;
+        render(Math.round(state.v));
+      },
+      onComplete: () => {
+        this._shown[key] = target;
+        render(target);
+      }
+    });
+  }
+
+  _flash(label, color) {
+    this.scene.tweens.killTweensOf(label);
+    label.setScale(1);
+    this.scene.tweens.add({
+      targets: label,
+      scaleX: 1.12,
+      scaleY: 1.12,
+      duration: 130,
+      yoyo: true,
+      ease: 'Quad.Out'
+    });
+    const original = label.style.color;
+    label.setColor(color);
+    this.scene.time.delayedCall(260, () => label.setColor(original));
   }
 
   layout() {
@@ -133,11 +179,33 @@ export default class BattleHUD {
 
   setTurn(text) {
     this.turnText.setText(text);
+    // v3: turn glow pulse so the handover reads at a glance
+    this.scene.tweens.killTweensOf(this.turnText);
+    this.turnText.setAlpha(1).setScale(1);
+    this.scene.tweens.add({
+      targets: this.turnText,
+      scaleX: 1.16,
+      scaleY: 1.16,
+      duration: 180,
+      yoyo: true,
+      ease: 'Back.Out'
+    });
+    this.scene.tweens.add({
+      targets: this.turnText,
+      alpha: 0.55,
+      duration: 520,
+      yoyo: true,
+      repeat: 1,
+      ease: 'Sine.easeInOut'
+    });
   }
 
-  updateHP(cur, max) {
+  updateHP(cur, max, instant) {
+    const dropped = this.config.hero.hp > cur;
     this.config.hero.hp = cur;
-    this.hpText.setText(`${this.config.hero.name.toUpperCase()}  HP ${cur}/${max}`);
+    this._tickTo('hp', cur, instant, v =>
+      this.hpText.setText(`${this.config.hero.name.toUpperCase()}  HP ${v}/${max}`));
+    if (dropped && !instant) this._flash(this.hpText, '#FF7A7A');
   }
 
   updateVeil(percent) {
@@ -145,9 +213,12 @@ export default class BattleHUD {
     this.veilText.setText(`VEIL ${percent}%`);
   }
 
-  updateEnemyHP(cur, max) {
+  updateEnemyHP(cur, max, instant) {
+    const dropped = this.config.enemy.hp > cur;
     this.config.enemy.hp = cur;
-    this.enemyText.setText(`${this.config.enemy.name.toUpperCase()}  HP ${cur}/${max}`);
+    this._tickTo('ehp', cur, instant, v =>
+      this.enemyText.setText(`${this.config.enemy.name.toUpperCase()}  HP ${v}/${max}`));
+    if (dropped && !instant) this._flash(this.enemyText, '#FFDF6E');
   }
 
   _showBox() {
