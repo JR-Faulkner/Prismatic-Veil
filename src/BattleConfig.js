@@ -49,8 +49,8 @@ export const HEROES = Object.freeze({
       recover: 'Kineza05_Recover_LOCKED'
     }),
     posePath: './assets/poses/kineza/',
-    // Her masters are framed wider and taller than Prismel's, and the
-    // strike carries a long dust trail, so she needs pulling back.
+    // His masters are framed wider and taller than Prismel's, and the
+    // strike carries a long dust trail, so he needs pulling back.
     scaleMul: 0.78,
     // Authored facing right, per the animation standard. No flipping.
     flip: Object.freeze({
