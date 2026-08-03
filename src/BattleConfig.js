@@ -46,8 +46,7 @@ export const HEROES = Object.freeze({
       step: 'Kineza02_Step_LOCKED',
       gather: 'Kineza03_Coil_LOCKED',
       release: 'Kineza04_Strike_LOCKED',
-      // Recover art is still outstanding — falls back to the idle master.
-      recover: 'Kineza01_Idle_LOCKED'
+      recover: 'Kineza05_Recover_LOCKED'
     }),
     posePath: './assets/poses/kineza/',
     // Her masters are framed wider and taller than Prismel's, and the
