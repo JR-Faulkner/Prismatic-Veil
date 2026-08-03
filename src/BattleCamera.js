@@ -9,12 +9,12 @@ export default class BattleCamera {
 
   // Battle entrance: the stage sweeps right to left across the field and
   // settles on the hero, who is already facing right toward the enemy.
-  introSweep(duration = 900) {
+  introSweep(duration = 520) {
     const s = this.scene.scale;
     this.cam.setZoom(this.baseZoom * 1.12);
     this.cam.centerOn(s.width * 0.86, s.height * 0.56);
-    this.cam.pan(s.width / 2, s.height / 2, duration, 'Sine.easeInOut', true);
-    this.cam.zoomTo(this.baseZoom, duration, 'Sine.easeInOut', true);
+    this.cam.pan(s.width / 2, s.height / 2, duration, 'Quad.easeOut', true);
+    this.cam.zoomTo(this.baseZoom, duration, 'Quad.easeOut', true);
   }
 
   // Centre of the action: midway between the fighters, at their height.
@@ -40,8 +40,8 @@ export default class BattleCamera {
 
   pullOut(duration) {
     const s = this.scene.scale;
-    this.cam.pan(s.width / 2, s.height / 2, duration, 'Expo.Out', true);
-    this.cam.zoomTo(this.baseZoom, duration, 'Expo.Out', true);
+    this.cam.pan(s.width / 2, s.height / 2, duration, 'Expo.easeOut', true);
+    this.cam.zoomTo(this.baseZoom, duration, 'Expo.easeOut', true);
   }
 
   gatherPush() {
@@ -49,7 +49,7 @@ export default class BattleCamera {
   }
 
   releaseSnap() {
-    this.pushIn(1.55, 170, 'Back.Out');
+    this.pushIn(1.55, 170, 'Back.easeOut');
   }
 
   hitShake(strong) {

@@ -68,7 +68,7 @@ export default class BattleFX {
         scaleX: 0.4,
         scaleY: 0.4,
         duration: duration + 120,
-        ease: 'Quad.In'
+        ease: 'Quad.easeIn'
       });
     }
   }
@@ -98,7 +98,7 @@ export default class BattleFX {
       targets: g,
       alpha: 0,
       duration: duration + 220,
-      ease: 'Quad.Out',
+      ease: 'Quad.easeOut',
       onComplete: () => g.destroy()
     });
 
@@ -129,7 +129,7 @@ export default class BattleFX {
         scaleX: 0.25,
         scaleY: 0.25,
         duration: 620 + (i % 5) * 60,
-        ease: 'Quad.Out',
+        ease: 'Quad.easeOut',
         onComplete: () => frag.destroy()
       });
     }
@@ -141,7 +141,7 @@ export default class BattleFX {
       radius: 70,
       alpha: 0,
       duration: 460,
-      ease: 'Expo.Out',
+      ease: 'Expo.easeOut',
       onComplete: () => ring.destroy()
     });
 
@@ -191,10 +191,10 @@ export default class BattleFX {
     }).setOrigin(0.5).setDepth(62).setScale(0.5));
 
     this.scene.tweens.add({
-      targets: label, scaleX: 1.15, scaleY: 1.15, duration: 180, ease: 'Back.Out'
+      targets: label, scaleX: 1.15, scaleY: 1.15, duration: 180, ease: 'Back.easeOut'
     });
     this.scene.tweens.add({
-      targets: label, y: label.y - 42, alpha: 0, duration: 1000, delay: 260, ease: 'Quad.Out',
+      targets: label, y: label.y - 42, alpha: 0, duration: 1000, delay: 260, ease: 'Quad.easeOut',
       onComplete: () => label.destroy()
     });
 
@@ -203,7 +203,7 @@ export default class BattleFX {
         .setStrokeStyle(3, 0xffd56a, 0.85).setDepth(47));
       this.scene.tweens.add({
         targets: ring, radius: 92 + i * 16, alpha: 0,
-        duration: 520 + i * 130, delay: i * 90, ease: 'Expo.Out',
+        duration: 520 + i * 130, delay: i * 90, ease: 'Expo.easeOut',
         onComplete: () => ring.destroy()
       });
     }

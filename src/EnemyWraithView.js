@@ -86,15 +86,22 @@ export default class EnemyWraithView {
     });
   }
 
-  // Fades up once the sweep has travelled past it.
-  introFade(delay = 380, duration = 520) {
-    this.container.setAlpha(0);
+  // Mirrors the hero: enters from the far left travelling right.
+  introSlide(duration = 520) {
+    this.layout();
+    const from = this.baseX - this.scene.scale.width * 0.75;
+    this.container.setX(from).setAlpha(0);
+    this.scene.tweens.add({
+      targets: this.container,
+      x: this.baseX,
+      duration,
+      ease: 'Quad.easeOut'
+    });
     this.scene.tweens.add({
       targets: this.container,
       alpha: 1,
-      delay,
-      duration,
-      ease: 'Quad.Out'
+      duration: duration * 0.4,
+      ease: 'Quad.easeOut'
     });
   }
 
@@ -124,7 +131,7 @@ export default class EnemyWraithView {
       scaleX: this.container.scaleX * 1.03,
       duration: 180,
       yoyo: true,
-      ease: 'Back.Out',
+      ease: 'Back.easeOut',
       onComplete: () => {
         this.container.setX(this.baseX);
         this.setPose('idle', 120);
@@ -142,7 +149,7 @@ export default class EnemyWraithView {
       scaleY: this.container.scaleY * 0.72,
       angle: 10,
       duration: 720,
-      ease: 'Quad.In'
+      ease: 'Quad.easeIn'
     });
   }
 

@@ -1,13 +1,13 @@
-import BattleHUD from './BattleHUD.js?v=20';
-import BattleController from './BattleController.js?v=20';
-import Timeline from './Timeline.js?v=20';
-import VeilFracture from './VeilFracture.js?v=20';
-import HeroPoseView from './HeroPoseView.js?v=20';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=20';
-import BattleCamera from './BattleCamera.js?v=20';
-import BattleFX from './BattleFX.js?v=20';
-import { AUDIO_EVENTS } from './BattleController.js?v=20';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=20';
+import BattleHUD from './BattleHUD.js?v=21';
+import BattleController from './BattleController.js?v=21';
+import Timeline from './Timeline.js?v=21';
+import VeilFracture from './VeilFracture.js?v=21';
+import HeroPoseView from './HeroPoseView.js?v=21';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=21';
+import BattleCamera from './BattleCamera.js?v=21';
+import BattleFX from './BattleFX.js?v=21';
+import { AUDIO_EVENTS } from './BattleController.js?v=21';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=21';
 
 function cloneConfig(source, heroKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -97,10 +97,10 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.battleCam = new BattleCamera(this);
     this.battleFx = new BattleFX(this);
     // Battle entrance sweep, then the first round begins.
-    const INTRO_MS = 900;
+    const INTRO_MS = 520;
     this.battleCam.introSweep(INTRO_MS);
     this.heroPoses.introSlide(INTRO_MS);
-    this.enemyView.introFade();
+    this.enemyView.introSlide(INTRO_MS);
 
     this.timeline = new Timeline(this);
     this.fracture = new VeilFracture(this);
@@ -163,7 +163,7 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.cameras.main.ignore(this.uiLayer);
     this.scale.on('resize', size => this.uiCam.setSize(size.width, size.height));
 
-    this.time.delayedCall(INTRO_MS + 120, () => this.controller.startNextRound());
+    this.time.delayedCall(INTRO_MS + 80, () => this.controller.startNextRound());
     this.input.on('pointerdown', () => this.controller.startNextRound());
   }
 
@@ -248,7 +248,7 @@ export default class VeilBattleScene extends Phaser.Scene {
       scaleX: 1.18,
       scaleY: 1.18,
       duration: 150,
-      ease: 'Back.Out',
+      ease: 'Back.easeOut',
       yoyo: true,
       hold: 40
     });
@@ -259,7 +259,7 @@ export default class VeilBattleScene extends Phaser.Scene {
       alpha: 0,
       duration: 950,
       delay: 140,
-      ease: 'Quad.Out',
+      ease: 'Quad.easeOut',
       onComplete: () => text.destroy()
     });
   }

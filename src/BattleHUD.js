@@ -146,7 +146,7 @@ export default class BattleHUD {
       targets: bar.fill,
       width: inner * ratio,
       duration: 260,
-      ease: 'Quad.Out'
+      ease: 'Quad.easeOut'
     });
 
     this.scene.tweens.killTweensOf(bar.ghost);
@@ -155,7 +155,7 @@ export default class BattleHUD {
       width: inner * ratio,
       duration: 620,
       delay: dropping ? 220 : 0,
-      ease: 'Quad.InOut',
+      ease: 'Quad.easeInOut',
       onComplete: () => { bar.ghostRatio = ratio; }
     });
 
@@ -188,7 +188,7 @@ export default class BattleHUD {
       targets: state,
       v: target,
       duration: 420,
-      ease: 'Quad.Out',
+      ease: 'Quad.easeOut',
       onUpdate: () => {
         this._shown[key] = state.v;
         render(Math.round(state.v));
@@ -209,7 +209,7 @@ export default class BattleHUD {
       scaleY: 1.12,
       duration: 130,
       yoyo: true,
-      ease: 'Quad.Out'
+      ease: 'Quad.easeOut'
     });
     const original = label.style.color;
     label.setColor(color);
@@ -296,7 +296,7 @@ export default class BattleHUD {
       scaleY: 1.16,
       duration: 180,
       yoyo: true,
-      ease: 'Back.Out'
+      ease: 'Back.easeOut'
     });
     this.scene.tweens.add({
       targets: this.turnText,
@@ -378,7 +378,7 @@ export default class BattleHUD {
     parts.forEach(p => {
       this.scene.tweens.killTweensOf(p);
       p.setAlpha(0);
-      this.scene.tweens.add({ targets: p, alpha: 1, duration: 160, ease: 'Quad.Out' });
+      this.scene.tweens.add({ targets: p, alpha: 1, duration: 160, ease: 'Quad.easeOut' });
     });
   }
 
