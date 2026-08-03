@@ -1,13 +1,13 @@
-import BattleHUD from './BattleHUD.js?v=15';
-import BattleController from './BattleController.js?v=15';
-import Timeline from './Timeline.js?v=15';
-import VeilFracture from './VeilFracture.js?v=15';
-import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js?v=15';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=15';
-import BattleCamera from './BattleCamera.js?v=15';
-import BattleFX from './BattleFX.js?v=15';
-import { AUDIO_EVENTS } from './BattleController.js?v=15';
-import { BATTLE_CONFIG } from './BattleConfig.js?v=15';
+import BattleHUD from './BattleHUD.js?v=16';
+import BattleController from './BattleController.js?v=16';
+import Timeline from './Timeline.js?v=16';
+import VeilFracture from './VeilFracture.js?v=16';
+import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js?v=16';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=16';
+import BattleCamera from './BattleCamera.js?v=16';
+import BattleFX from './BattleFX.js?v=16';
+import { AUDIO_EVENTS } from './BattleController.js?v=16';
+import { BATTLE_CONFIG } from './BattleConfig.js?v=16';
 
 function cloneConfig(source) {
   return {
@@ -56,6 +56,11 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor('#070611');
 
+    // Two render layers so the camera can push in on the action without
+    // dragging the interface with it: the world zooms, the UI never does.
+    this.world = this.add.container(0, 0);
+    this.uiLayer = this.add.container(0, 0).setDepth(1000);
+
     this.titleText = this.add.text(0, 0, 'VEIL FRACTURE', {
       color: '#FFE8A0'
     }).setOrigin(0.5);
@@ -68,10 +73,12 @@ export default class VeilBattleScene extends Phaser.Scene {
       color: '#8A7AB0'
     }).setOrigin(0.5);
 
+    this.uiLayer.add([this.titleText, this.subtitleText, this.hintText]);
     this.layoutSceneText();
 
     this.hud = new BattleHUD(this, this.battleConfig);
     this.hud.create();
+    this.uiLayer.add(this.hud.container);
 
     this.heroPoses = new HeroPoseView(this);
     this.heroPoses.create();
@@ -136,8 +143,20 @@ export default class VeilBattleScene extends Phaser.Scene {
       this.scale.off('resize', this.layoutSceneText, this);
     });
 
+    this.uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height);
+    this.uiCam.setBackgroundColor('rgba(0,0,0,0)');
+    this.uiCam.ignore(this.world);
+    this.cameras.main.ignore(this.uiLayer);
+    this.scale.on('resize', size => this.uiCam.setSize(size.width, size.height));
+
     this.controller.startNextRound();
     this.input.on('pointerdown', () => this.controller.startNextRound());
+  }
+
+  // Battlefield visuals register here so the UI camera ignores them.
+  worldAdd(obj) {
+    if (this.world && obj) this.world.add(obj);
+    return obj;
   }
 
   playSfx(name) {
@@ -174,6 +193,7 @@ export default class VeilBattleScene extends Phaser.Scene {
       stroke: '#3B0A1C',
       strokeThickness: 7
     }).setOrigin(0.5).setDepth(60).setScale(0.4);
+    this.worldAdd(text);
 
     this.tweens.add({
       targets: text,

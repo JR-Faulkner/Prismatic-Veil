@@ -41,6 +41,7 @@ export default class HeroPoseView {
     this.ghost = this.scene.add.image(0, 0, this.poseTex.idle)
       .setOrigin(0.5, 1).setAlpha(0);
     this.currentPose = 'idle';
+    if (this.scene.worldAdd) this.scene.worldAdd([this.ghost, this.sprite]);
     this.layout();
 
     this.scene.scale.on('resize', this.layout, this);
@@ -54,7 +55,7 @@ export default class HeroPoseView {
     const height = this.scene.scale.height;
     const compact = width < 560;
 
-    const targetH = height * (compact ? 0.24 : 0.32);
+    const targetH = height * (compact ? 0.31 : 0.38);
     const fit = img => {
       const src = img.texture.getSourceImage();
       img.setScale(src && src.height ? targetH / src.height : 1);

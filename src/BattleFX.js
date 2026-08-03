@@ -9,6 +9,12 @@ export default class BattleFX {
     this.shards = [];
   }
 
+  // FX are battlefield visuals — they must zoom with the world camera.
+  _w(obj) {
+    if (this.scene.worldAdd) this.scene.worldAdd(obj);
+    return obj;
+  }
+
   // Where the hero's crystal sits, derived from the pose view so it
   // tracks the portrait/landscape layouts.
   castPoint() {
@@ -34,7 +40,7 @@ export default class BattleFX {
     const p = this.castPoint();
     this.clearGather();
 
-    this.glow = this.scene.add.circle(p.x, p.y, 6, 0xdff0ff, 0.85).setDepth(40);
+    this.glow = this._w(this.scene.add.circle(p.x, p.y, 6, 0xdff0ff, 0.85).setDepth(40));
     this.scene.tweens.add({
       targets: this.glow,
       radius: 20,
@@ -46,13 +52,13 @@ export default class BattleFX {
     for (let i = 0; i < 7; i++) {
       const angle = (i / 7) * Math.PI * 2;
       const dist = 46 + (i % 3) * 10;
-      const shard = this.scene.add.star(
+      const shard = this._w(this.scene.add.star(
         p.x + Math.cos(angle) * dist,
         p.y + Math.sin(angle) * dist,
         4, 2.5, 8,
         PRISM[i % PRISM.length],
         0.9
-      ).setDepth(41);
+      ).setDepth(41));
       this.shards.push(shard);
       this.scene.tweens.add({
         targets: shard,
@@ -77,7 +83,7 @@ export default class BattleFX {
   beam(duration = 160) {
     const a = this.castPoint();
     const b = this.targetPoint();
-    const g = this.scene.add.graphics().setDepth(45);
+    const g = this._w(this.scene.add.graphics().setDepth(45));
 
     PRISM.forEach((color, i) => {
       const off = (i - 3) * 3;
@@ -113,7 +119,7 @@ export default class BattleFX {
 
     for (let i = 0; i < 14; i++) {
       const angle = (i / 14) * Math.PI * 2 + 0.2;
-      const frag = this.scene.add.star(p.x, p.y, 4, 3, 9, PRISM[i % PRISM.length], 0.95).setDepth(46);
+      const frag = this._w(this.scene.add.star(p.x, p.y, 4, 3, 9, PRISM[i % PRISM.length], 0.95).setDepth(46));
       this.scene.tweens.add({
         targets: frag,
         x: p.x + Math.cos(angle) * (60 + (i % 4) * 18),
@@ -128,8 +134,8 @@ export default class BattleFX {
       });
     }
 
-    const ring = this.scene.add.circle(p.x, p.y, 8, 0xffffff, 0)
-      .setStrokeStyle(3, 0xdff0ff, 0.9).setDepth(45);
+    const ring = this._w(this.scene.add.circle(p.x, p.y, 8, 0xffffff, 0)
+      .setStrokeStyle(3, 0xdff0ff, 0.9).setDepth(45));
     this.scene.tweens.add({
       targets: ring,
       radius: 70,
@@ -146,7 +152,7 @@ export default class BattleFX {
   showTargetCursor() {
     if (this.cursor) return;
     const p = this.targetPoint();
-    const g = this.scene.add.graphics().setDepth(38);
+    const g = this._w(this.scene.add.graphics().setDepth(38));
     g.lineStyle(2, 0xffd56a, 0.9);
     [0, 90, 180, 270].forEach(deg => {
       const r = Phaser.Math.DegToRad(deg);
@@ -176,13 +182,13 @@ export default class BattleFX {
   // v4: critical hit flourish — gold burst plus a CRITICAL! callout.
   critical() {
     const p = this.targetPoint();
-    const label = this.scene.add.text(p.x, p.y - 74, 'CRITICAL!', {
+    const label = this._w(this.scene.add.text(p.x, p.y - 74, 'CRITICAL!', {
       fontSize: Math.round(Math.max(22, this.scene.scale.width * 0.045)) + 'px',
       fontStyle: 'bold',
       color: '#FFF3B0',
       stroke: '#7A3A00',
       strokeThickness: 6
-    }).setOrigin(0.5).setDepth(62).setScale(0.5);
+    }).setOrigin(0.5).setDepth(62).setScale(0.5));
 
     this.scene.tweens.add({
       targets: label, scaleX: 1.15, scaleY: 1.15, duration: 180, ease: 'Back.Out'
@@ -193,8 +199,8 @@ export default class BattleFX {
     });
 
     for (let i = 0; i < 3; i++) {
-      const ring = this.scene.add.circle(p.x, p.y, 10, 0xffffff, 0)
-        .setStrokeStyle(3, 0xffd56a, 0.85).setDepth(47);
+      const ring = this._w(this.scene.add.circle(p.x, p.y, 10, 0xffffff, 0)
+        .setStrokeStyle(3, 0xffd56a, 0.85).setDepth(47));
       this.scene.tweens.add({
         targets: ring, radius: 92 + i * 16, alpha: 0,
         duration: 520 + i * 130, delay: i * 90, ease: 'Expo.Out',
@@ -207,11 +213,11 @@ export default class BattleFX {
   victoryStinger() {
     const w = this.scene.scale.width, h = this.scene.scale.height;
     for (let i = 0; i < 22; i++) {
-      const m = this.scene.add.star(
+      const m = this._w(this.scene.add.star(
         Phaser.Math.Between(w * 0.1, w * 0.9),
         Phaser.Math.Between(h * 0.55, h * 0.8),
         4, 3, 10, PRISM[i % PRISM.length], 0.9
-      ).setDepth(58);
+      ).setDepth(58));
       this.scene.tweens.add({
         targets: m,
         y: m.y - Phaser.Math.Between(180, 340),
@@ -228,13 +234,13 @@ export default class BattleFX {
 
   sparkles(p) {
     for (let i = 0; i < 9; i++) {
-      const sp = this.scene.add.circle(
+      const sp = this._w(this.scene.add.circle(
         p.x + Phaser.Math.Between(-46, 46),
         p.y + Phaser.Math.Between(-34, 34),
         Phaser.Math.FloatBetween(1.6, 3.2),
         PRISM[i % PRISM.length],
         0.9
-      ).setDepth(44);
+      ).setDepth(44));
       this.scene.tweens.add({
         targets: sp,
         y: sp.y - Phaser.Math.Between(26, 58),

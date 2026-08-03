@@ -21,6 +21,7 @@ export default class EnemyWraithView {
       .setAlpha(0);
 
     this.container.add([this.ghost, this.sprite]);
+    if (this.scene.worldAdd) this.scene.worldAdd(this.container);
 
     this.scene.tweens.add({
       targets: this.container,
@@ -47,7 +48,7 @@ export default class EnemyWraithView {
     this.baseY = Math.round(height - (compact ? 210 : 180));
     this.container.setPosition(this.baseX, this.baseY);
 
-    const targetHeight = compact ? Math.min(225, height * 0.32) : Math.min(310, height * 0.48);
+    const targetHeight = compact ? Math.min(300, height * 0.42) : Math.min(380, height * 0.56);
     this.sprite.setDisplaySize(targetHeight, targetHeight);
     this.ghost.setDisplaySize(targetHeight, targetHeight);
   }
