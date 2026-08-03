@@ -1,19 +1,20 @@
-import BattleHUD from './BattleHUD.js?v=16';
-import BattleController from './BattleController.js?v=16';
-import Timeline from './Timeline.js?v=16';
-import VeilFracture from './VeilFracture.js?v=16';
-import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js?v=16';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=16';
-import BattleCamera from './BattleCamera.js?v=16';
-import BattleFX from './BattleFX.js?v=16';
-import { AUDIO_EVENTS } from './BattleController.js?v=16';
-import { BATTLE_CONFIG } from './BattleConfig.js?v=16';
+import BattleHUD from './BattleHUD.js?v=17';
+import BattleController from './BattleController.js?v=17';
+import Timeline from './Timeline.js?v=17';
+import VeilFracture from './VeilFracture.js?v=17';
+import HeroPoseView from './HeroPoseView.js?v=17';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=17';
+import BattleCamera from './BattleCamera.js?v=17';
+import BattleFX from './BattleFX.js?v=17';
+import { AUDIO_EVENTS } from './BattleController.js?v=17';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=17';
 
-function cloneConfig(source) {
+function cloneConfig(source, heroKey) {
+  const hero = HEROES[heroKey] || source.hero;
   return {
     hero: {
-      ...source.hero,
-      attack: { ...source.hero.attack }
+      ...hero,
+      attack: { ...hero.attack }
     },
     enemy: {
       ...source.enemy,
@@ -41,10 +42,16 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.load.image('prismelLocked', './assets/prismel_locked.png');
     this.load.image('speakerPlate', './assets/ui/speaker_plate.png');
     this.load.image('portrait_prismel', './assets/ui/portrait_prismel.png');
-    // Pose library v1 — these load when the approved pose PNGs are
-    // uploaded; until then each missing pose falls back to prismelLocked.
-    Object.values(POSE_TEXTURES).forEach(tex => {
-      this.load.image(tex, `./assets/poses/${tex}.png`);
+    this.load.image('portrait_kineza', './assets/ui/portrait_kineza.png');
+    // Every hero's pose set. A pose whose PNG is absent falls back to the
+    // locked Prismel art at runtime.
+    Object.values(HEROES).forEach(hero => {
+      const seen = new Set();
+      Object.values(hero.poses).forEach(tex => {
+        if (seen.has(tex)) return;
+        seen.add(tex);
+        this.load.image(tex, `${hero.posePath}${tex}.png`);
+      });
     });
     Object.values(WRAITH_TEXTURES).forEach(tex => {
       this.load.image(tex, `./assets/enemy/veil_wraith/${tex}.png`);
@@ -52,7 +59,8 @@ export default class VeilBattleScene extends Phaser.Scene {
   }
 
   create() {
-    this.battleConfig = cloneConfig(BATTLE_CONFIG);
+    this.activeHero = this.registry.get('heroKey') || HERO_ORDER[0];
+    this.battleConfig = cloneConfig(BATTLE_CONFIG, this.activeHero);
 
     this.cameras.main.setBackgroundColor('#070611');
 
@@ -80,7 +88,7 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.hud.create();
     this.uiLayer.add(this.hud.container);
 
-    this.heroPoses = new HeroPoseView(this);
+    this.heroPoses = new HeroPoseView(this, this.battleConfig.hero);
     this.heroPoses.create();
 
     this.enemyView = new EnemyWraithView(this);
@@ -143,6 +151,8 @@ export default class VeilBattleScene extends Phaser.Scene {
       this.scale.off('resize', this.layoutSceneText, this);
     });
 
+    this.buildHeroSwitch();
+
     this.uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height);
     this.uiCam.setBackgroundColor('rgba(0,0,0,0)');
     this.uiCam.ignore(this.world);
@@ -151,6 +161,40 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     this.controller.startNextRound();
     this.input.on('pointerdown', () => this.controller.startNextRound());
+  }
+
+  // Tap to cycle the active hero and restart the battle with them.
+  buildHeroSwitch() {
+    const label = this.add.text(0, 0, '', {
+      fontSize: '13px',
+      fontStyle: 'bold',
+      color: '#FFE8A0',
+      backgroundColor: '#1a1033',
+      padding: { x: 10, y: 5 }
+    }).setOrigin(1, 0).setDepth(1200).setInteractive({ useHandCursor: true });
+
+    const next = () => HERO_ORDER[(HERO_ORDER.indexOf(this.activeHero) + 1) % HERO_ORDER.length];
+    const render = () => label.setText(`▸ ${HEROES[next()].name}`);
+    render();
+
+    label.on('pointerdown', e => {
+      if (e && e.event) e.event.stopPropagation();
+      this.registry.set('heroKey', next());
+      this.scene.restart();
+    });
+
+    this.heroSwitch = label;
+    this.uiLayer.add(label);
+    this.layoutHeroSwitch();
+    this.scale.on('resize', this.layoutHeroSwitch, this);
+  }
+
+  layoutHeroSwitch() {
+    if (!this.heroSwitch) return;
+    const w = this.scale.width;
+    const compact = w < 560;
+    this.heroSwitch.setFontSize(compact ? 11 : 13)
+      .setPosition(w - (compact ? 12 : 18), compact ? 176 : 250);
   }
 
   // Battlefield visuals register here so the UI camera ignores them.
