@@ -52,7 +52,8 @@ export default class HeroPoseView {
     // One scale for the whole pose set, derived from the idle frame.
     // Fitting each pose to the same screen height would blow up crouched
     // or wide poses, which are legitimately shorter than the idle.
-    const targetH = height * (compact ? 0.31 : 0.38);
+    // Foreground: the hero is nearest the camera.
+    const targetH = height * (compact ? 0.38 : 0.44);
     const refTex = this.scene.textures.get(this.poseTex.idle);
     const refImg = refTex && refTex.getSourceImage();
     const mul = this.hero && this.hero.scaleMul ? this.hero.scaleMul : 1;
@@ -60,9 +61,9 @@ export default class HeroPoseView {
     this.sprite.setScale(scale);
     if (this.ghost) this.ghost.setScale(scale);
 
-    this.baseX = Math.round(width * (compact ? 0.26 : 0.24));
+    this.baseX = Math.round(width * (compact ? 0.24 : 0.22));
     // leaves a clear band above the dialog box for the speaker plate
-    this.baseY = Math.round(height - (compact ? 206 : 176));
+    this.baseY = Math.round(height - (compact ? 190 : 166));
     if (this.currentPose !== 'step' && this.currentPose !== 'release') {
       this.sprite.setPosition(this.baseX, this.baseY);
     }
