@@ -1,13 +1,13 @@
-import BattleHUD from './BattleHUD.js?v=19';
-import BattleController from './BattleController.js?v=19';
-import Timeline from './Timeline.js?v=19';
-import VeilFracture from './VeilFracture.js?v=19';
-import HeroPoseView from './HeroPoseView.js?v=19';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=19';
-import BattleCamera from './BattleCamera.js?v=19';
-import BattleFX from './BattleFX.js?v=19';
-import { AUDIO_EVENTS } from './BattleController.js?v=19';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=19';
+import BattleHUD from './BattleHUD.js?v=20';
+import BattleController from './BattleController.js?v=20';
+import Timeline from './Timeline.js?v=20';
+import VeilFracture from './VeilFracture.js?v=20';
+import HeroPoseView from './HeroPoseView.js?v=20';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=20';
+import BattleCamera from './BattleCamera.js?v=20';
+import BattleFX from './BattleFX.js?v=20';
+import { AUDIO_EVENTS } from './BattleController.js?v=20';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=20';
 
 function cloneConfig(source, heroKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -96,7 +96,11 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     this.battleCam = new BattleCamera(this);
     this.battleFx = new BattleFX(this);
-    this.battleCam.introPush();
+    // Battle entrance sweep, then the first round begins.
+    const INTRO_MS = 900;
+    this.battleCam.introSweep(INTRO_MS);
+    this.heroPoses.introSlide(INTRO_MS);
+    this.enemyView.introFade();
 
     this.timeline = new Timeline(this);
     this.fracture = new VeilFracture(this);
@@ -159,7 +163,7 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.cameras.main.ignore(this.uiLayer);
     this.scale.on('resize', size => this.uiCam.setSize(size.width, size.height));
 
-    this.controller.startNextRound();
+    this.time.delayedCall(INTRO_MS + 120, () => this.controller.startNextRound());
     this.input.on('pointerdown', () => this.controller.startNextRound());
   }
 
