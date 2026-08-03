@@ -2,6 +2,7 @@ import BattleHUD from './BattleHUD.js';
 import BattleController from './BattleController.js';
 import Timeline from './Timeline.js';
 import VeilFracture from './VeilFracture.js';
+import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js';
 import { BATTLE_CONFIG } from './BattleConfig.js';
 
 function cloneConfig(source) {
@@ -27,6 +28,12 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.load.audio('battle_music', './prismcharge.mp3');
     this.load.image('dialogFrame', './assets/ui/dialog_frame_9slice.png');
     this.load.image('continueCrystal', './assets/ui/continue_crystal.png');
+    this.load.image('prismelLocked', './assets/prismel_locked.png');
+    // Pose library v1 — these load when the approved pose PNGs are
+    // uploaded; until then each missing pose falls back to prismelLocked.
+    Object.values(POSE_TEXTURES).forEach(tex => {
+      this.load.image(tex, `./assets/poses/${tex}.png`);
+    });
   }
 
   create() {
@@ -50,6 +57,9 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     this.hud = new BattleHUD(this, this.battleConfig);
     this.hud.create();
+
+    this.heroPoses = new HeroPoseView(this);
+    this.heroPoses.create();
 
     this.timeline = new Timeline(this);
     this.fracture = new VeilFracture(this);
@@ -81,6 +91,27 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     this.controller.startNextRound();
     this.input.on('pointerdown', () => this.controller.startNextRound());
+  }
+
+  floatDamage(amount, side) {
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const x = width * (side === 'hero' ? 0.28 : 0.72);
+    const text = this.add.text(x, height * 0.42, String(amount), {
+      fontSize: Math.round(Math.max(30, width * 0.05)) + 'px',
+      fontStyle: 'bold',
+      color: '#FFDF6E',
+      stroke: '#5F1329',
+      strokeThickness: 6
+    }).setOrigin(0.5);
+    this.tweens.add({
+      targets: text,
+      y: text.y - 64,
+      alpha: 0,
+      duration: 950,
+      ease: 'Quad.Out',
+      onComplete: () => text.destroy()
+    });
   }
 
   layoutSceneText() {
