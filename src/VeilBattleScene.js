@@ -1,10 +1,10 @@
-import BattleHUD from './BattleHUD.js?v=10';
-import BattleController from './BattleController.js?v=10';
-import Timeline from './Timeline.js?v=10';
-import VeilFracture from './VeilFracture.js?v=10';
-import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js?v=10';
-import EnemyWraithView from './EnemyWraithView.js?v=10';
-import { BATTLE_CONFIG } from './BattleConfig.js?v=10';
+import BattleHUD from './BattleHUD.js?v=11';
+import BattleController from './BattleController.js?v=11';
+import Timeline from './Timeline.js?v=11';
+import VeilFracture from './VeilFracture.js?v=11';
+import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js?v=11';
+import EnemyWraithView from './EnemyWraithView.js?v=11';
+import { BATTLE_CONFIG } from './BattleConfig.js?v=11';
 
 function cloneConfig(source) {
   return {
@@ -27,6 +27,8 @@ export default class VeilBattleScene extends Phaser.Scene {
 
   preload() {
     this.load.audio('battle_music', './prismcharge.mp3');
+    this.load.audio('sfx_gather', './assets/sfx/sfx_gather.mp3');
+    this.load.audio('sfx_release', './assets/sfx/sfx_release.mp3');
     this.load.image('dialogFrame', './assets/ui/dialog_frame_9slice.png');
     this.load.image('continueCrystal', './assets/ui/continue_crystal.png');
     this.load.image('prismelLocked', './assets/prismel_locked.png');
@@ -80,6 +82,13 @@ export default class VeilBattleScene extends Phaser.Scene {
       volume: 0.6
     });
 
+    // Battle SFX chopped from the Suno gather tracks. Kept above the
+    // music bed in level so they read over the loop.
+    this.sfx = {
+      gather: this.sound.add('sfx_gather', { volume: 0.85 }),
+      release: this.sound.add('sfx_release', { volume: 0.95 })
+    };
+
     if (this.sound.locked) {
       this.sound.once('unlocked', () => {
         if (!this.battleMusic.isPlaying) this.battleMusic.play();
@@ -95,6 +104,11 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     this.controller.startNextRound();
     this.input.on('pointerdown', () => this.controller.startNextRound());
+  }
+
+  playSfx(name) {
+    const s = this.sfx && this.sfx[name];
+    if (s && !this.sound.locked) s.play();
   }
 
   floatDamage(amount, side) {
