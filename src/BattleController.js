@@ -34,9 +34,11 @@ export default class BattleController {
     if (poses) poses.setPose('step');
     this.hud.queueMessage(`${hero.name} uses ${hero.attack.name}!`, () => {
       if (poses) poses.setPose('gather');
+      if (this.scene.playSfx) this.scene.playSfx('gather');
     });
     this.hud.queueMessage(hero.attack.flavor, () => {
       if (poses) poses.setPose('release');
+      if (this.scene.playSfx) this.scene.playSfx('release');
       this.fracture.open();
     });
     this.hud.queueMessage(
