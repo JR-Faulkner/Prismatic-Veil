@@ -36,6 +36,10 @@ export default class HeroPoseView {
 
     this.sprite = this.scene.add.image(0, 0, this.poseTex.idle).setOrigin(0.5, 1);
     this.sprite.setFlipX(POSE_FLIP.idle);
+    // v4: ghost layer holds the outgoing pose so swaps crossfade
+    // instead of hard-cutting.
+    this.ghost = this.scene.add.image(0, 0, this.poseTex.idle)
+      .setOrigin(0.5, 1).setAlpha(0);
     this.currentPose = 'idle';
     this.layout();
 
@@ -51,18 +55,49 @@ export default class HeroPoseView {
     const compact = width < 560;
 
     const targetH = height * (compact ? 0.24 : 0.32);
-    const src = this.sprite.texture.getSourceImage();
-    this.sprite.setScale(src && src.height ? targetH / src.height : 1);
+    const fit = img => {
+      const src = img.texture.getSourceImage();
+      img.setScale(src && src.height ? targetH / src.height : 1);
+    };
+    fit(this.sprite);
+    if (this.ghost) fit(this.ghost);
 
     this.baseX = Math.round(width * (compact ? 0.26 : 0.24));
-    this.baseY = Math.round(height - (compact ? 158 : 156));
+    // leaves a clear band above the dialog box for the speaker plate
+    this.baseY = Math.round(height - (compact ? 206 : 176));
     if (this.currentPose !== 'step' && this.currentPose !== 'release') {
       this.sprite.setPosition(this.baseX, this.baseY);
     }
+    if (this.ghost) this.ghost.setPosition(this.sprite.x, this.sprite.y);
   }
 
-  setPose(pose) {
+  setPose(pose, blendMs = 110) {
     if (!this.poseTex[pose]) return;
+
+    // v4 pose blending: park the outgoing frame on the ghost layer and
+    // ease the two past each other.
+    if (this.ghost && this.sprite.texture.key !== this.poseTex[pose]) {
+      this.scene.tweens.killTweensOf(this.ghost);
+      this.ghost.setTexture(this.sprite.texture.key)
+        .setFlipX(this.sprite.flipX)
+        .setPosition(this.sprite.x, this.sprite.y)
+        .setScale(this.sprite.scaleX, this.sprite.scaleY)
+        .setAlpha(0.85);
+      this.scene.tweens.add({
+        targets: this.ghost,
+        alpha: 0,
+        duration: blendMs,
+        ease: 'Sine.easeOut'
+      });
+      this.sprite.setAlpha(0.15);
+      this.scene.tweens.add({
+        targets: this.sprite,
+        alpha: 1,
+        duration: blendMs,
+        ease: 'Sine.easeIn'
+      });
+    }
+
     this.currentPose = pose;
     this.sprite.setTexture(this.poseTex[pose]);
     this.sprite.setFlipX(POSE_FLIP[pose]);

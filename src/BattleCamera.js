@@ -37,8 +37,8 @@ export default class BattleCamera {
     });
   }
 
-  hitShake() {
-    this.cam.shake(75, 0.006);
+  hitShake(strong) {
+    this.cam.shake(strong ? 140 : 75, strong ? 0.012 : 0.006);
   }
 
   recoverEase() {

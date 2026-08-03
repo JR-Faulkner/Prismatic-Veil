@@ -142,6 +142,90 @@ export default class BattleFX {
     this.scene.time.delayedCall(160, () => this.sparkles(p));
   }
 
+  // v4: target reticle over the enemy while the player's round is live.
+  showTargetCursor() {
+    if (this.cursor) return;
+    const p = this.targetPoint();
+    const g = this.scene.add.graphics().setDepth(38);
+    g.lineStyle(2, 0xffd56a, 0.9);
+    [0, 90, 180, 270].forEach(deg => {
+      const r = Phaser.Math.DegToRad(deg);
+      const ix = Math.cos(r) * 30, iy = Math.sin(r) * 30;
+      const ox = Math.cos(r) * 46, oy = Math.sin(r) * 46;
+      g.beginPath(); g.moveTo(ix, iy); g.lineTo(ox, oy); g.strokePath();
+    });
+    g.lineStyle(1, 0xffd56a, 0.45);
+    g.strokeCircle(0, 0, 38);
+    g.setPosition(p.x, p.y);
+    this.cursor = g;
+    this.scene.tweens.add({
+      targets: g, angle: 90, duration: 3800, repeat: -1, ease: 'Linear'
+    });
+    this.scene.tweens.add({
+      targets: g, alpha: 0.45, duration: 780, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+    });
+  }
+
+  hideTargetCursor() {
+    if (!this.cursor) return;
+    this.scene.tweens.killTweensOf(this.cursor);
+    this.cursor.destroy();
+    this.cursor = null;
+  }
+
+  // v4: critical hit flourish — gold burst plus a CRITICAL! callout.
+  critical() {
+    const p = this.targetPoint();
+    const label = this.scene.add.text(p.x, p.y - 74, 'CRITICAL!', {
+      fontSize: Math.round(Math.max(22, this.scene.scale.width * 0.045)) + 'px',
+      fontStyle: 'bold',
+      color: '#FFF3B0',
+      stroke: '#7A3A00',
+      strokeThickness: 6
+    }).setOrigin(0.5).setDepth(62).setScale(0.5);
+
+    this.scene.tweens.add({
+      targets: label, scaleX: 1.15, scaleY: 1.15, duration: 180, ease: 'Back.Out'
+    });
+    this.scene.tweens.add({
+      targets: label, y: label.y - 42, alpha: 0, duration: 1000, delay: 260, ease: 'Quad.Out',
+      onComplete: () => label.destroy()
+    });
+
+    for (let i = 0; i < 3; i++) {
+      const ring = this.scene.add.circle(p.x, p.y, 10, 0xffffff, 0)
+        .setStrokeStyle(3, 0xffd56a, 0.85).setDepth(47);
+      this.scene.tweens.add({
+        targets: ring, radius: 92 + i * 16, alpha: 0,
+        duration: 520 + i * 130, delay: i * 90, ease: 'Expo.Out',
+        onComplete: () => ring.destroy()
+      });
+    }
+  }
+
+  // v4: victory stinger — prismatic motes rise as the veil clears.
+  victoryStinger() {
+    const w = this.scene.scale.width, h = this.scene.scale.height;
+    for (let i = 0; i < 22; i++) {
+      const m = this.scene.add.star(
+        Phaser.Math.Between(w * 0.1, w * 0.9),
+        Phaser.Math.Between(h * 0.55, h * 0.8),
+        4, 3, 10, PRISM[i % PRISM.length], 0.9
+      ).setDepth(58);
+      this.scene.tweens.add({
+        targets: m,
+        y: m.y - Phaser.Math.Between(180, 340),
+        angle: 180,
+        alpha: 0,
+        duration: 1400 + i * 40,
+        delay: i * 45,
+        ease: 'Sine.easeOut',
+        onComplete: () => m.destroy()
+      });
+    }
+    this.scene.cameras.main.flash(320, 255, 240, 190);
+  }
+
   sparkles(p) {
     for (let i = 0; i < 9; i++) {
       const sp = this.scene.add.circle(

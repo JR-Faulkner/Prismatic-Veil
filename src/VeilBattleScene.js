@@ -1,13 +1,13 @@
-import BattleHUD from './BattleHUD.js?v=12';
-import BattleController from './BattleController.js?v=12';
-import Timeline from './Timeline.js?v=12';
-import VeilFracture from './VeilFracture.js?v=12';
-import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js?v=12';
-import EnemyWraithView from './EnemyWraithView.js?v=12';
-import BattleCamera from './BattleCamera.js?v=12';
-import BattleFX from './BattleFX.js?v=12';
-import { AUDIO_EVENTS } from './BattleController.js?v=12';
-import { BATTLE_CONFIG } from './BattleConfig.js?v=12';
+import BattleHUD from './BattleHUD.js?v=13';
+import BattleController from './BattleController.js?v=13';
+import Timeline from './Timeline.js?v=13';
+import VeilFracture from './VeilFracture.js?v=13';
+import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js?v=13';
+import EnemyWraithView from './EnemyWraithView.js?v=13';
+import BattleCamera from './BattleCamera.js?v=13';
+import BattleFX from './BattleFX.js?v=13';
+import { AUDIO_EVENTS } from './BattleController.js?v=13';
+import { BATTLE_CONFIG } from './BattleConfig.js?v=13';
 
 function cloneConfig(source) {
   return {
@@ -35,6 +35,8 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.load.image('dialogFrame', './assets/ui/dialog_frame_9slice.png');
     this.load.image('continueCrystal', './assets/ui/continue_crystal.png');
     this.load.image('prismelLocked', './assets/prismel_locked.png');
+    this.load.image('speakerPlate', './assets/ui/speaker_plate.png');
+    this.load.image('portrait_prismel', './assets/ui/portrait_prismel.png');
     // Pose library v1 — these load when the approved pose PNGs are
     // uploaded; until then each missing pose falls back to prismelLocked.
     Object.values(POSE_TEXTURES).forEach(tex => {
@@ -51,7 +53,7 @@ export default class VeilBattleScene extends Phaser.Scene {
       color: '#FFE8A0'
     }).setOrigin(0.5);
 
-    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v3 - Game Feel', {
+    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v4', {
       color: '#D6C8F2'
     }).setOrigin(0.5);
 
@@ -103,7 +105,8 @@ export default class VeilBattleScene extends Phaser.Scene {
       [AUDIO_EVENTS.gather]: 'gather',
       [AUDIO_EVENTS.release]: 'release',
       [AUDIO_EVENTS.impact]: null,
-      [AUDIO_EVENTS.recover]: null
+      [AUDIO_EVENTS.recover]: null,
+      [AUDIO_EVENTS.victory]: null
     };
     Object.entries(AUDIO_MAP).forEach(([event, key]) => {
       this.events.on(event, () => { if (key) this.playSfx(key); });
@@ -147,15 +150,16 @@ export default class VeilBattleScene extends Phaser.Scene {
   }
 
   // v3 damage numbers: pop in, arc up, fade — coloured by who took it.
-  floatDamage(amount, side) {
+  floatDamage(amount, side, crit) {
     const width = this.scale.width;
     const height = this.scale.height;
     const hurtHero = side === 'hero';
     const x = width * (hurtHero ? 0.28 : 0.72);
+    const scale = crit ? 1.5 : 1;
     const text = this.add.text(x, height * 0.44, String(amount), {
-      fontSize: Math.round(Math.max(34, width * 0.062)) + 'px',
+      fontSize: Math.round(Math.max(34, width * 0.062) * scale) + 'px',
       fontStyle: 'bold',
-      color: hurtHero ? '#FF8A8A' : '#FFDF6E',
+      color: crit ? '#FFF3B0' : (hurtHero ? '#FF8A8A' : '#FFDF6E'),
       stroke: '#3B0A1C',
       strokeThickness: 7
     }).setOrigin(0.5).setDepth(60).setScale(0.4);

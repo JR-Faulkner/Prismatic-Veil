@@ -61,7 +61,7 @@ export default class EnemyWraithView {
     const height = this.scene.scale.height;
     const compact = width < 560;
     this.baseX = Math.round(width * (compact ? 0.74 : 0.76));
-    this.baseY = Math.round(height - (compact ? 168 : 166));
+    this.baseY = Math.round(height - (compact ? 216 : 186));
     this.container.setPosition(this.baseX, this.baseY);
     this.container.setScale((compact ? 0.24 : 0.32) * height / 250);
   }
