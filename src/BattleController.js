@@ -209,6 +209,9 @@ export default class BattleController {
   resetBattle() {
     const hero = this.config.hero;
     if (this.scene.battleFx) this.scene.battleFx.hideTargetCursor();
+    // Drop the stale victory line so the board reads as a fresh battle
+    // rather than "shatters!" over a fully healed Wraith.
+    this.hud.clearMessage();
     const enemy = this.config.enemy;
     hero.hp = hero.maxHp;
     hero.veil = 100;
