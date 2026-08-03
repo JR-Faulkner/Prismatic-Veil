@@ -7,16 +7,14 @@ export default class BattleCamera {
     this.baseZoom = 1;
   }
 
-  introPush() {
-    this.cam.setZoom(1);
-    this.scene.tweens.add({
-      targets: this.cam,
-      zoom: 1.08,
-      duration: 250,
-      ease: 'Quad.Out',
-      yoyo: true,
-      hold: 60
-    });
+  // Battle entrance: the stage sweeps right to left across the field and
+  // settles on the hero, who is already facing right toward the enemy.
+  introSweep(duration = 900) {
+    const s = this.scene.scale;
+    this.cam.setZoom(this.baseZoom * 1.12);
+    this.cam.centerOn(s.width * 0.86, s.height * 0.56);
+    this.cam.pan(s.width / 2, s.height / 2, duration, 'Sine.easeInOut', true);
+    this.cam.zoomTo(this.baseZoom, duration, 'Sine.easeInOut', true);
   }
 
   // Centre of the action: midway between the fighters, at their height.

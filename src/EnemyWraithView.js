@@ -86,6 +86,18 @@ export default class EnemyWraithView {
     });
   }
 
+  // Fades up once the sweep has travelled past it.
+  introFade(delay = 380, duration = 520) {
+    this.container.setAlpha(0);
+    this.scene.tweens.add({
+      targets: this.container,
+      alpha: 1,
+      delay,
+      duration,
+      ease: 'Quad.Out'
+    });
+  }
+
   hit() {
     this.setPose('hit', 70);
 

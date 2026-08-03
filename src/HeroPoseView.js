@@ -70,6 +70,26 @@ export default class HeroPoseView {
     if (this.ghost) this.ghost.setPosition(this.sprite.x, this.sprite.y);
   }
 
+  // Slide in from the right as the stage sweeps, settling into position.
+  introSlide(duration = 900) {
+    this.layout();
+    const from = this.baseX + this.scene.scale.width * 0.34;
+    this.sprite.setPosition(from, this.baseY).setAlpha(0);
+    if (this.ghost) this.ghost.setAlpha(0);
+    this.scene.tweens.add({
+      targets: this.sprite,
+      x: this.baseX,
+      duration,
+      ease: 'Sine.easeOut'
+    });
+    this.scene.tweens.add({
+      targets: this.sprite,
+      alpha: 1,
+      duration: duration * 0.45,
+      ease: 'Quad.Out'
+    });
+  }
+
   setPose(pose, blendMs = 110) {
     if (!this.poseTex[pose]) return;
 
