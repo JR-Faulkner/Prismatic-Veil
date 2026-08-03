@@ -1,13 +1,13 @@
-import BattleHUD from './BattleHUD.js?v=14';
-import BattleController from './BattleController.js?v=14';
-import Timeline from './Timeline.js?v=14';
-import VeilFracture from './VeilFracture.js?v=14';
-import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js?v=14';
-import EnemyWraithView from './EnemyWraithView.js?v=14';
-import BattleCamera from './BattleCamera.js?v=14';
-import BattleFX from './BattleFX.js?v=14';
-import { AUDIO_EVENTS } from './BattleController.js?v=14';
-import { BATTLE_CONFIG } from './BattleConfig.js?v=14';
+import BattleHUD from './BattleHUD.js?v=15';
+import BattleController from './BattleController.js?v=15';
+import Timeline from './Timeline.js?v=15';
+import VeilFracture from './VeilFracture.js?v=15';
+import HeroPoseView, { POSE_TEXTURES } from './HeroPoseView.js?v=15';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=15';
+import BattleCamera from './BattleCamera.js?v=15';
+import BattleFX from './BattleFX.js?v=15';
+import { AUDIO_EVENTS } from './BattleController.js?v=15';
+import { BATTLE_CONFIG } from './BattleConfig.js?v=15';
 
 function cloneConfig(source) {
   return {
@@ -32,6 +32,10 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.load.audio('battle_music', './prismcharge.mp3');
     this.load.audio('sfx_gather', './assets/sfx/sfx_gather.mp3');
     this.load.audio('sfx_release', './assets/sfx/sfx_release.mp3');
+    this.load.audio('sfx_step', './assets/sfx/sfx_step.mp3');
+    this.load.audio('sfx_impact', './assets/sfx/sfx_impact.mp3');
+    this.load.audio('sfx_recover', './assets/sfx/sfx_recover.mp3');
+    this.load.audio('sfx_victory', './assets/sfx/sfx_victory.mp3');
     this.load.image('dialogFrame', './assets/ui/dialog_frame_9slice.png');
     this.load.image('continueCrystal', './assets/ui/continue_crystal.png');
     this.load.image('prismelLocked', './assets/prismel_locked.png');
@@ -41,6 +45,9 @@ export default class VeilBattleScene extends Phaser.Scene {
     // uploaded; until then each missing pose falls back to prismelLocked.
     Object.values(POSE_TEXTURES).forEach(tex => {
       this.load.image(tex, `./assets/poses/${tex}.png`);
+    });
+    Object.values(WRAITH_TEXTURES).forEach(tex => {
+      this.load.image(tex, `./assets/enemy/veil_wraith/${tex}.png`);
     });
   }
 
@@ -53,7 +60,7 @@ export default class VeilBattleScene extends Phaser.Scene {
       color: '#FFE8A0'
     }).setOrigin(0.5);
 
-    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v4', {
+    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v5', {
       color: '#D6C8F2'
     }).setOrigin(0.5);
 
@@ -94,19 +101,23 @@ export default class VeilBattleScene extends Phaser.Scene {
     // Battle SFX chopped from the Suno gather tracks. Kept above the
     // music bed in level so they read over the loop.
     this.sfx = {
+      step: this.sound.add('sfx_step', { volume: 0.62 }),
       gather: this.sound.add('sfx_gather', { volume: 0.85 }),
-      release: this.sound.add('sfx_release', { volume: 0.95 })
+      release: this.sound.add('sfx_release', { volume: 0.95 }),
+      impact: this.sound.add('sfx_impact', { volume: 1.0 }),
+      recover: this.sound.add('sfx_recover', { volume: 0.72 }),
+      victory: this.sound.add('sfx_victory', { volume: 0.92 })
     };
 
     // v3 audio hook events. Events without an asset yet are simply
     // unmapped — drop a sound in here when one exists.
     const AUDIO_MAP = {
-      [AUDIO_EVENTS.step]: null,
+      [AUDIO_EVENTS.step]: 'step',
       [AUDIO_EVENTS.gather]: 'gather',
       [AUDIO_EVENTS.release]: 'release',
-      [AUDIO_EVENTS.impact]: null,
-      [AUDIO_EVENTS.recover]: null,
-      [AUDIO_EVENTS.victory]: null
+      [AUDIO_EVENTS.impact]: 'impact',
+      [AUDIO_EVENTS.recover]: 'recover',
+      [AUDIO_EVENTS.victory]: 'victory'
     };
     Object.entries(AUDIO_MAP).forEach(([event, key]) => {
       this.events.on(event, () => { if (key) this.playSfx(key); });
