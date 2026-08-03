@@ -43,6 +43,18 @@ export default class BattleHUD {
       24
     ).setVisible(false);
 
+    // v4 speaker plate: portrait + name tag riding above the dialog box
+    this.speakerPlate = this.scene.textures.exists('speakerPlate')
+      ? this.scene.add.image(0, 0, 'speakerPlate').setVisible(false)
+      : null;
+    this.speakerName = this.scene.add.text(0, 0, '', {
+      fontSize: '15px',
+      fontStyle: 'bold',
+      color: '#FFE8A0'
+    }).setOrigin(0, 0.5).setVisible(false);
+    this.speakerPortrait = this.scene.add.image(0, 0, 'portrait_prismel')
+      .setVisible(false);
+
     this.messageText = this.scene.add.text(0, 0, '', {
       fontSize: '24px',
       color: '#F8E7B0',
@@ -64,12 +76,14 @@ export default class BattleHUD {
       ease: 'Sine.easeInOut'
     });
 
+    const plateParts = [this.speakerPlate, this.speakerPortrait, this.speakerName].filter(Boolean);
     this.container.add([
       this.hpText,
       this.veilText,
       this.enemyText,
       this.turnText,
       this.msgBox,
+      ...plateParts,
       this.messageText,
       this.msgCursor
     ]);
@@ -175,6 +189,24 @@ export default class BattleHUD {
       width / 2 + dialogWidth / 2 - 34,
       dialogY + dialogHeight / 2 - 26
     );
+
+    // Speaker plate rides above the dialog box, laid out left-to-right
+    // from the box edge so the portrait never clips off screen.
+    const dialogLeft = width / 2 - dialogWidth / 2;
+    const plateY = dialogY - dialogHeight / 2 - (compact ? 16 : 20);
+    const plateScale = compact ? 0.74 : 1;
+    const portraitSize = compact ? 40 : 54;
+
+    const portraitX = dialogLeft + portraitSize / 2 + 6;
+    this.speakerPortrait
+      .setDisplaySize(portraitSize, portraitSize)
+      .setPosition(portraitX, plateY);
+
+    const plateW = (this.speakerPlate ? this.speakerPlate.width : 260) * plateScale;
+    const plateX = portraitX + portraitSize / 2 + 6 + plateW / 2;
+    if (this.speakerPlate) this.speakerPlate.setPosition(plateX, plateY).setScale(plateScale);
+    this.speakerName.setFontSize(compact ? 12 : 15)
+      .setPosition(plateX - plateW / 2 + (compact ? 26 : 34), plateY);
   }
 
   setTurn(text) {
@@ -238,11 +270,37 @@ export default class BattleHUD {
     this.msgBox.setVisible(false);
     this.messageText.setVisible(false);
     this.msgCursor.setVisible(false);
+    if (this.speakerPlate) this.speakerPlate.setVisible(false);
+    this.speakerName.setVisible(false);
+    this.speakerPortrait.setVisible(false);
   }
 
-  queueMessage(text, onDone) {
-    this._queue.push({ text, onDone });
+  // speaker: { name, portrait } — omit for narration (plate hides)
+  queueMessage(text, onDone, speaker) {
+    this._queue.push({ text, onDone, speaker });
     if (!this._showing) this._nextMessage();
+  }
+
+  _setSpeaker(speaker) {
+    const show = !!(speaker && speaker.name);
+    const hasPortrait = show && speaker.portrait &&
+      this.scene.textures.exists(speaker.portrait);
+
+    if (this.speakerPlate) this.speakerPlate.setVisible(show);
+    this.speakerName.setVisible(show);
+    this.speakerPortrait.setVisible(!!hasPortrait);
+
+    if (!show) return;
+    this.speakerName.setText(speaker.name);
+    if (hasPortrait) this.speakerPortrait.setTexture(speaker.portrait);
+
+    const parts = [this.speakerPlate, this.speakerName, hasPortrait ? this.speakerPortrait : null]
+      .filter(Boolean);
+    parts.forEach(p => {
+      this.scene.tweens.killTweensOf(p);
+      p.setAlpha(0);
+      this.scene.tweens.add({ targets: p, alpha: 1, duration: 160, ease: 'Quad.Out' });
+    });
   }
 
   _nextMessage() {
@@ -255,6 +313,7 @@ export default class BattleHUD {
 
     this._showing = true;
     this._showBox();
+    this._setSpeaker(item.speaker);
     this.messageText.setText('');
     this.msgCursor.setVisible(false);
 

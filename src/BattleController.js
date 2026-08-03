@@ -18,7 +18,8 @@ export const AUDIO_EVENTS = Object.freeze({
   gather: 'PLAY_GATHER',
   release: 'PLAY_RELEASE',
   impact: 'PLAY_IMPACT',
-  recover: 'PLAY_RECOVER'
+  recover: 'PLAY_RECOVER',
+  victory: 'PLAY_VICTORY'
 });
 
 export default class BattleController {
@@ -39,6 +40,20 @@ export default class BattleController {
     this.scene.events.emit(event);
   }
 
+  speakerFor(who) {
+    return { name: who.name, portrait: who.portrait };
+  }
+
+  // v4 crit feedback: roll once per attack, returned with the damage.
+  rollAttack(attacker) {
+    const atk = attacker.attack;
+    const crit = Math.random() < (atk.critChance || 0);
+    const damage = crit
+      ? Math.round(atk.damage * (atk.critMultiplier || 2))
+      : atk.damage;
+    return { crit, damage };
+  }
+
   startNextRound() {
     if (this.running) return;
     if (this.phase === 'player') {
@@ -52,10 +67,14 @@ export default class BattleController {
     const hero = this.config.hero;
 
     this.running = true;
+    this.pendingHit = this.rollAttack(hero);
     this.hud.setTurn(this.config.text.playerTurn);
-    this.hud.queueMessage(`${hero.name} uses ${hero.attack.name}!`, () => {
-      this.playAttackCinematic();
-    });
+    if (this.scene.battleFx) this.scene.battleFx.showTargetCursor();
+    this.hud.queueMessage(
+      `${hero.name} uses ${hero.attack.name}!`,
+      () => this.playAttackCinematic(),
+      this.speakerFor(hero)
+    );
   }
 
   // The attack plays as one tight cinematic on the spec's timings while
@@ -96,13 +115,18 @@ export default class BattleController {
 
     // Impact + hit stop
     t.delayedCall(at, () => {
-      enemy.hp = Math.max(0, enemy.hp - hero.attack.damage);
+      const hit = this.pendingHit || { crit: false, damage: hero.attack.damage };
+      enemy.hp = Math.max(0, enemy.hp - hit.damage);
       this.hud.updateEnemyHP(enemy.hp, enemy.maxHp);
-      if (fx) fx.impact();
-      if (cam) cam.hitShake();
+      if (fx) {
+        fx.hideTargetCursor();
+        fx.impact();
+        if (hit.crit) fx.critical();
+      }
+      if (cam) cam.hitShake(hit.crit);
       if (this.scene.enemyView) this.scene.enemyView.hit();
-      if (this.scene.floatDamage) this.scene.floatDamage(hero.attack.damage, 'enemy');
-      if (this.scene.hitStop) this.scene.hitStop(POSE_TIMING.hitStop);
+      if (this.scene.floatDamage) this.scene.floatDamage(hit.damage, 'enemy', hit.crit);
+      if (this.scene.hitStop) this.scene.hitStop(hit.crit ? POSE_TIMING.hitStop * 2 : POSE_TIMING.hitStop);
       this.emit(AUDIO_EVENTS.impact);
     });
     at += POSE_TIMING.hitStop;
@@ -125,10 +149,16 @@ export default class BattleController {
 
   resolvePlayerRound() {
     const enemy = this.config.enemy;
+    const hit = this.pendingHit || { crit: false, damage: this.config.hero.attack.damage };
+    const line = hit.crit
+      ? `A critical strike! ${enemy.name} is hit for ${hit.damage} damage!`
+      : `${enemy.name} is hit for ${hit.damage} damage!`;
 
-    this.hud.queueMessage(`${enemy.name} is hit for ${this.config.hero.attack.damage} damage!`, () => {
+    this.hud.queueMessage(line, () => {
       if (enemy.hp <= 0) {
         if (this.scene.enemyView) this.scene.enemyView.die();
+        if (this.scene.battleFx) this.scene.battleFx.victoryStinger();
+        this.emit(AUDIO_EVENTS.victory);
         this.hud.queueMessage(`${enemy.name} shatters! The veil clears...`, () => {
           this.resetBattle();
         });
@@ -144,9 +174,11 @@ export default class BattleController {
   runEnemyRound() {
     const hero = this.config.hero;
     const enemy = this.config.enemy;
+    const hit = this.rollAttack(enemy);
 
     this.running = true;
     this.hud.setTurn(this.config.text.enemyTurn);
+    if (this.scene.battleFx) this.scene.battleFx.hideTargetCursor();
 
     this.hud.queueMessage(`${enemy.name} uses ${enemy.attack.name}!`, () => {
       if (this.scene.enemyView) this.scene.enemyView.attack();
@@ -154,17 +186,20 @@ export default class BattleController {
       this.emit(AUDIO_EVENTS.release);
 
       this.scene.time.delayedCall(180, () => {
-        hero.hp = Math.max(0, hero.hp - enemy.attack.damage);
+        hero.hp = Math.max(0, hero.hp - hit.damage);
         this.hud.updateHP(hero.hp, hero.maxHp);
-        if (this.scene.floatDamage) this.scene.floatDamage(enemy.attack.damage, 'hero');
-        if (this.scene.battleCam) this.scene.battleCam.hitShake();
-        if (this.scene.hitStop) this.scene.hitStop(POSE_TIMING.hitStop);
+        if (this.scene.floatDamage) this.scene.floatDamage(hit.damage, 'hero', hit.crit);
+        if (this.scene.battleCam) this.scene.battleCam.hitShake(hit.crit);
+        if (this.scene.hitStop) this.scene.hitStop(hit.crit ? POSE_TIMING.hitStop * 2 : POSE_TIMING.hitStop);
         this.emit(AUDIO_EVENTS.impact);
         this.fracture.close();
       });
-    });
+    }, this.speakerFor(enemy));
 
-    this.hud.queueMessage(`${hero.name} suffers ${enemy.attack.damage} damage!`, () => {
+    const line = hit.crit
+      ? `A critical strike! ${hero.name} suffers ${hit.damage} damage!`
+      : `${hero.name} suffers ${hit.damage} damage!`;
+    this.hud.queueMessage(line, () => {
       this.hud.setTurn(this.config.text.playerTurn);
       this.phase = 'player';
       this.running = false;
@@ -173,6 +208,7 @@ export default class BattleController {
 
   resetBattle() {
     const hero = this.config.hero;
+    if (this.scene.battleFx) this.scene.battleFx.hideTargetCursor();
     const enemy = this.config.enemy;
     hero.hp = hero.maxHp;
     hero.veil = 100;
