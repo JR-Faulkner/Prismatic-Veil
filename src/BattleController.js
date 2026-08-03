@@ -181,7 +181,7 @@ export default class BattleController {
     if (this.scene.battleFx) this.scene.battleFx.hideTargetCursor();
 
     this.hud.queueMessage(`${enemy.name} uses ${enemy.attack.name}!`, () => {
-      if (this.scene.battleCam) this.scene.battleCam.pushIn(1.5, 200, 'Back.Out');
+      if (this.scene.battleCam) this.scene.battleCam.pushIn(1.5, 200, 'Back.easeOut');
       if (this.scene.enemyView) this.scene.enemyView.attack();
       this.fracture.open();
       this.emit(AUDIO_EVENTS.release);

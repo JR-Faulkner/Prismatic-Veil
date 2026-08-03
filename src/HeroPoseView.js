@@ -70,23 +70,23 @@ export default class HeroPoseView {
     if (this.ghost) this.ghost.setPosition(this.sprite.x, this.sprite.y);
   }
 
-  // Slide in from the right as the stage sweeps, settling into position.
-  introSlide(duration = 900) {
+  // Slide in from the far right as the stage sweeps, settling into place.
+  introSlide(duration = 520) {
     this.layout();
-    const from = this.baseX + this.scene.scale.width * 0.34;
+    const from = this.baseX + this.scene.scale.width * 0.75;
     this.sprite.setPosition(from, this.baseY).setAlpha(0);
     if (this.ghost) this.ghost.setAlpha(0);
     this.scene.tweens.add({
       targets: this.sprite,
       x: this.baseX,
       duration,
-      ease: 'Sine.easeOut'
+      ease: 'Quad.easeOut'
     });
     this.scene.tweens.add({
       targets: this.sprite,
       alpha: 1,
-      duration: duration * 0.45,
-      ease: 'Quad.Out'
+      duration: duration * 0.4,
+      ease: 'Quad.easeOut'
     });
   }
 
@@ -125,16 +125,16 @@ export default class HeroPoseView {
     const t = this.scene.tweens;
     switch (pose) {
       case 'step':
-        t.add({ targets: this.sprite, x: this.baseX + 26, duration: 220, ease: 'Quad.Out' });
+        t.add({ targets: this.sprite, x: this.baseX + 26, duration: 220, ease: 'Quad.easeOut' });
         break;
       case 'gather':
         t.add({ targets: this.sprite, scaleX: this.sprite.scaleX * 1.04, scaleY: this.sprite.scaleY * 1.04, duration: 260, yoyo: true, ease: 'Sine.easeInOut' });
         break;
       case 'release':
-        t.add({ targets: this.sprite, x: this.baseX + 44, duration: 120, ease: 'Back.Out' });
+        t.add({ targets: this.sprite, x: this.baseX + 44, duration: 120, ease: 'Back.easeOut' });
         break;
       case 'recover':
-        t.add({ targets: this.sprite, x: this.baseX, duration: 300, ease: 'Quad.InOut' });
+        t.add({ targets: this.sprite, x: this.baseX, duration: 300, ease: 'Quad.easeInOut' });
         break;
       default:
         this.sprite.setPosition(this.baseX, this.baseY);
