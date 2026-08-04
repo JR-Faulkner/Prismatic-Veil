@@ -1,14 +1,14 @@
-import BattleHUD from './BattleHUD.js?v=22';
-import BattleController from './BattleController.js?v=22';
-import Timeline from './Timeline.js?v=22';
-import VeilFracture from './VeilFracture.js?v=22';
-import HeroPoseView from './HeroPoseView.js?v=22';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=22';
-import BattleCamera from './BattleCamera.js?v=22';
-import BattleFX from './BattleFX.js?v=22';
-import BattleAtmosphere from './BattleAtmosphere.js?v=22';
-import { AUDIO_EVENTS } from './BattleController.js?v=22';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=22';
+import BattleHUD from './BattleHUD.js?v=23';
+import BattleController from './BattleController.js?v=23';
+import Timeline from './Timeline.js?v=23';
+import VeilFracture from './VeilFracture.js?v=23';
+import HeroPoseView from './HeroPoseView.js?v=23';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=23';
+import BattleCamera from './BattleCamera.js?v=23';
+import BattleFX from './BattleFX.js?v=23';
+import BattleAtmosphere from './BattleAtmosphere.js?v=23';
+import { AUDIO_EVENTS } from './BattleController.js?v=23';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=23';
 
 function cloneConfig(source, heroKey) {
   const hero = HEROES[heroKey] || source.hero;
