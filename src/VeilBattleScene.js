@@ -1,16 +1,16 @@
-import BattleHUD from './BattleHUD.js?v=24';
-import BattleController from './BattleController.js?v=24';
-import Timeline from './Timeline.js?v=24';
-import VeilFracture from './VeilFracture.js?v=24';
-import HeroPoseView from './HeroPoseView.js?v=24';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=24';
-import BattleCamera from './BattleCamera.js?v=24';
-import BattleFX from './BattleFX.js?v=24';
-import BattleAtmosphere from './BattleAtmosphere.js?v=24';
-import HudFrame from './HudFrame.js?v=24';
-import UiAudio from './UiAudio.js?v=24';
-import { AUDIO_EVENTS } from './BattleController.js?v=24';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=24';
+import BattleHUD from './BattleHUD.js?v=25';
+import BattleController from './BattleController.js?v=25';
+import Timeline from './Timeline.js?v=25';
+import VeilFracture from './VeilFracture.js?v=25';
+import HeroPoseView from './HeroPoseView.js?v=25';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=25';
+import BattleCamera from './BattleCamera.js?v=25';
+import BattleFX from './BattleFX.js?v=25';
+import BattleAtmosphere from './BattleAtmosphere.js?v=25';
+import HudFrame from './HudFrame.js?v=25';
+import UiAudio from './UiAudio.js?v=25';
+import { AUDIO_EVENTS } from './BattleController.js?v=25';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=25';
 
 function cloneConfig(source, heroKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -86,7 +86,7 @@ export default class VeilBattleScene extends Phaser.Scene {
       color: '#FFE8A0'
     }).setOrigin(0.5);
 
-    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v7 · HUD', {
+    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v8 · Battlefield', {
       color: '#D6C8F2'
     }).setOrigin(0.5);
 
@@ -194,7 +194,11 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.cameras.main.ignore(this.uiLayer);
     this.scale.on('resize', size => this.uiCam.setSize(size.width, size.height));
 
-    this.time.delayedCall(INTRO_MS + 80, () => this.controller.startNextRound());
+    this.time.delayedCall(INTRO_MS + 80, () => {
+      this.battleCam.markHome();
+      this.battleCam.startIdleBreath();
+      this.controller.startNextRound();
+    });
     this.input.on('pointerdown', () => this.controller.startNextRound());
   }
 
@@ -231,6 +235,42 @@ export default class VeilBattleScene extends Phaser.Scene {
     const compact = w < 560;
     this.heroSwitch.setFontSize(compact ? 11 : 13)
       .setPosition(w - (compact ? 12 : 18), compact ? 176 : 250);
+  }
+
+  // Package 08 lighting: an ability briefly tints the scene. Prismel
+  // throws cool refracted highlights, Kineza warm pressure flashes.
+  abilityLight(kind) {
+    if (!this._lightWash) {
+      this._lightWash = this.add.rectangle(0, 0, 10, 10, 0xffffff, 0)
+        .setOrigin(0, 0).setDepth(80);
+      this.worldAdd(this._lightWash);
+    }
+    const w = this.scale.width, h = this.scale.height;
+    this._lightWash.setSize(w * 2, h * 2).setPosition(-w / 2, -h / 2);
+
+    const hero = this.battleConfig.hero;
+    const cool = hero.id !== 'kineza';
+    const color = kind === 'impact'
+      ? (cool ? 0xdff0ff : 0xffe6b0)
+      : (cool ? 0x9fd8ff : 0xb6ff9f);
+    const peak = kind === 'impact' ? 0.20 : 0.10;
+
+    this.tweens.killTweensOf(this._lightWash);
+    this._lightWash.setFillStyle(color, 1).setAlpha(0);
+    this.tweens.add({
+      targets: this._lightWash,
+      alpha: peak,
+      duration: kind === 'impact' ? 70 : 260,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        this.tweens.add({
+          targets: this._lightWash,
+          alpha: 0,
+          duration: kind === 'impact' ? 300 : 380,
+          ease: 'Quad.easeOut'
+        });
+      }
+    });
   }
 
   // Battlefield visuals register here so the UI camera ignores them.

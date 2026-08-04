@@ -90,6 +90,9 @@ export default class BattleController {
 
     // Step
     if (poses) poses.setPose('step');
+    if (this.scene.atmosphere && poses && poses.sprite) {
+      this.scene.atmosphere.compressionRipple(poses.sprite.x, poses.sprite.y, hero.accent);
+    }
     this.emit(AUDIO_EVENTS.step);
     at += POSE_TIMING.step;
 
@@ -99,6 +102,7 @@ export default class BattleController {
       if (fx) fx.gather(POSE_TIMING.gather);
       if (cam) cam.gatherPush();
       if (this.scene.hudFrame) this.scene.hudFrame.gatherPulse(POSE_TIMING.gather);
+      if (this.scene.abilityLight) this.scene.abilityLight('gather');
       this.emit(AUDIO_EVENTS.gather);
       this.hud.queueMessage(hero.attack.flavor);
     });
@@ -125,6 +129,11 @@ export default class BattleController {
         if (hit.crit) fx.critical();
       }
       if (hit.crit && this.scene.hudFrame) this.scene.hudFrame.critFlare();
+      if (this.scene.abilityLight) this.scene.abilityLight('impact');
+      if (this.scene.atmosphere && this.scene.enemyView) {
+        const c = this.scene.enemyView.container;
+        this.scene.atmosphere.compressionRipple(c.x, c.y, hero.accent);
+      }
       if (cam) cam.hitShake(hit.crit);
       if (this.scene.enemyView) this.scene.enemyView.hit();
       if (this.scene.floatDamage) this.scene.floatDamage(hit.damage, 'enemy', hit.crit);
@@ -162,6 +171,7 @@ export default class BattleController {
         if (this.scene.battleFx) this.scene.battleFx.victoryStinger();
         if (this.scene.hudFrame) this.scene.hudFrame.victoryBloom();
         if (this.scene.uiAudio) this.scene.uiAudio.victory();
+        if (this.scene.battleCam) this.scene.battleCam.victoryPullOut();
         this.emit(AUDIO_EVENTS.victory);
         this.hud.queueMessage(`${enemy.name} shatters! The veil clears...`, () => {
           this.resetBattle();
@@ -228,7 +238,10 @@ export default class BattleController {
     this.hud.refreshFromConfig(true);
     this.hud.setTurn(this.config.text.playerTurn);
     if (this.scene.enemyView) this.scene.enemyView.reset();
-    if (this.scene.battleCam) this.scene.battleCam.reset();
+    if (this.scene.battleCam) {
+      this.scene.battleCam.reset();
+      this.scene.battleCam.markHome();
+    }
     this.phase = 'player';
     this.running = false;
   }

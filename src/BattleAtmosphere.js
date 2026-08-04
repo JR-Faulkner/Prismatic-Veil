@@ -12,16 +12,51 @@ export default class BattleAtmosphere {
 
   create() {
     this.backdrop = this.w(this.scene.add.graphics().setDepth(-100));
+    this.bands = this.w(this.scene.add.graphics().setDepth(-90));
+    this.fog = this.w(this.scene.add.graphics().setDepth(-30));
     this.floor = this.w(this.scene.add.graphics().setDepth(-40));
     this.foreground = this.w(this.scene.add.graphics().setDepth(90));
 
+    // Package 08: layers drift at different rates against the camera, so
+    // the field has depth rather than sliding as one flat plate.
+    this.parallax = [
+      { obj: this.bands, factor: -0.16 },
+      { obj: this.fog, factor: -0.07 },
+      { obj: this.floor, factor: 0.05 },
+      { obj: this.foreground, factor: 0.22 }
+    ];
+    this.parallax.forEach(l => { l.homeX = 0; });
+    this.scene.events.on('update', this.updateParallax, this);
+
+    this.buildFog();
     this.buildMotes();
     this.layout();
 
     this.scene.scale.on('resize', this.layout, this);
     this.scene.events.once('shutdown', () => {
       this.scene.scale.off('resize', this.layout, this);
+      this.scene.events.off('update', this.updateParallax, this);
     });
+  }
+
+  // Offset each layer against the camera's travel from centre.
+  updateParallax() {
+    if (!this.parallax) return;
+    const cam = this.scene.cameras.main;
+    const cx = cam.scrollX + cam.width / 2 - this.scene.scale.width / 2;
+    const cy = cam.scrollY + cam.height / 2 - this.scene.scale.height / 2;
+    this.parallax.forEach(l => {
+      l.obj.x = cx * l.factor;
+      l.obj.y = cy * l.factor * 0.6;
+    });
+  }
+
+  buildFog() {
+    this.fogBanks = [];
+    for (let i = 0; i < 3; i++) {
+      const e = this.w(this.scene.add.ellipse(0, 0, 10, 10, 0x6a4fa8, 0.05).setDepth(-30));
+      this.fogBanks.push(e);
+    }
   }
 
   layout() {
@@ -32,11 +67,30 @@ export default class BattleAtmosphere {
     this.backdrop.fillGradientStyle(0x17102d, 0x0b0a18, 0x070611, 0x070611, 1);
     this.backdrop.fillRect(0, 0, w, h);
 
-    // Distant Veil bands and light shafts.
+    // Distant Veil bands and light shafts, on their own parallax layer.
+    this.bands.clear();
     for (let i = 0; i < 5; i++) {
       const x = w * (0.08 + i * 0.22);
-      this.backdrop.fillStyle(i % 2 ? 0x5e39a6 : 0x276c85, 0.055);
-      this.backdrop.fillTriangle(x, 0, x + w * 0.18, 0, x + w * 0.04, h * 0.72);
+      this.bands.fillStyle(i % 2 ? 0x5e39a6 : 0x276c85, 0.055);
+      this.bands.fillTriangle(x, 0, x + w * 0.18, 0, x + w * 0.04, h * 0.72);
+    }
+
+    // Slow fog banks drifting across the midground.
+    if (this.fogBanks) {
+      this.fogBanks.forEach((e, i) => {
+        this.scene.tweens.killTweensOf(e);
+        e.setSize(w * (0.7 + i * 0.2), h * (0.10 + i * 0.03));
+        e.setPosition(w * (0.1 + i * 0.3), h * (0.5 + i * 0.07));
+        e.setAlpha(0.05 + i * 0.012);
+        this.scene.tweens.add({
+          targets: e,
+          x: e.x + w * 0.26,
+          duration: 14000 + i * 4200,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut'
+        });
+      });
     }
 
     this.floor.clear();
@@ -107,6 +161,21 @@ export default class BattleAtmosphere {
         onComplete: () => p.destroy()
       });
     }
+  }
+
+  // Ground compression ripple beneath a combatant.
+  compressionRipple(x, y, tint) {
+    const ring = this.w(this.scene.add.ellipse(x, y, 30, 9, 0x000000, 0)
+      .setStrokeStyle(2, tint || 0xb586ff, 0.5).setDepth(-20));
+    this.scene.tweens.add({
+      targets: ring,
+      scaleX: 5.5,
+      scaleY: 2.4,
+      alpha: 0,
+      duration: 620,
+      ease: 'Expo.easeOut',
+      onComplete: () => ring.destroy()
+    });
   }
 
   impact(heroId) {

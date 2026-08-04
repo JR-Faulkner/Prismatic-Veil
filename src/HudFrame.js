@@ -21,7 +21,13 @@ export default class HudFrame {
       this.scene.uiLayer.add([this.wash, this.border, this.corners]);
     }
 
+    // Low-HP vignette, drawn inside the border.
+    this.vignette = this.scene.add.graphics().setDepth(1098).setAlpha(0);
+    if (this.scene.uiLayer) this.scene.uiLayer.add(this.vignette);
+    this.vignetteLevel = 0;
+
     this.layout();
+    this.startIdleShimmer();
     this.scene.scale.on('resize', this.layout, this);
     this.scene.events.once('shutdown', () => {
       this.scene.scale.off('resize', this.layout, this);
@@ -68,6 +74,59 @@ export default class HudFrame {
     corner(w - inset, inset, -1, 1);
     corner(inset, h - inset, 1, -1);
     corner(w - inset, h - inset, -1, -1);
+  }
+
+  // Package 08: the border is never fully static.
+  startIdleShimmer() {
+    this.scene.tweens.add({
+      targets: this.border,
+      alpha: 0.72,
+      duration: 3400,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+  }
+
+  // Danger vignette: creeps in below 25% and clears when the hero recovers.
+  setLowHp(ratio) {
+    const target = ratio > 0.25 || ratio <= 0 ? 0 : (0.25 - ratio) / 0.25;
+    if (Math.abs(target - this.vignetteLevel) < 0.02) return;
+    this.vignetteLevel = target;
+    this._drawVignette();
+    this.scene.tweens.killTweensOf(this.vignette);
+    this.scene.tweens.add({
+      targets: this.vignette,
+      alpha: target,
+      duration: 420,
+      ease: 'Quad.easeOut'
+    });
+    if (target > 0) {
+      this.scene.tweens.add({
+        targets: this.vignette,
+        alpha: target * 0.55,
+        duration: 900,
+        delay: 420,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+    }
+  }
+
+  _drawVignette() {
+    const w = this.scene.scale.width;
+    const h = this.scene.scale.height;
+    const g = this.vignette;
+    g.clear();
+    const band = Math.max(28, Math.min(w, h) * 0.16);
+    for (let i = 0; i < 7; i++) {
+      const t = i / 7;
+      const a = 0.16 * (1 - t);
+      const inset = band * t;
+      g.lineStyle(band / 5, 0xff2f4a, a);
+      g.strokeRect(inset, inset, w - inset * 2, h - inset * 2);
+    }
   }
 
   // Recolour when the active hero changes.
