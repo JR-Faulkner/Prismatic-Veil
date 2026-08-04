@@ -415,6 +415,8 @@ export default class BattleHUD {
     if (changed && this.scene.uiAudio) {
       this.scene.uiAudio.turnStart(text === this.config.text.playerTurn);
     }
+    // Package 08: the banner fractures apart and reforms on handover.
+    if (changed) this._fractureTurnBanner();
     // v3: turn glow pulse so the handover reads at a glance
     this.scene.tweens.killTweensOf(this.turnText);
     this.turnText.setAlpha(1).setScale(1);
@@ -436,6 +438,25 @@ export default class BattleHUD {
     });
   }
 
+  // Two ghost copies of the label split apart and fade as it changes.
+  _fractureTurnBanner() {
+    const t = this.turnText;
+    [[-1, -6], [1, 6]].forEach(([dir, dx]) => {
+      const shard = this.scene.add.text(t.x, t.y, t.text, t.style)
+        .setOrigin(0.5, 0).setDepth(1050).setAlpha(0.7);
+      if (this.container) this.container.add(shard);
+      this.scene.tweens.add({
+        targets: shard,
+        x: t.x + dx * 3,
+        y: t.y + dir * 5,
+        alpha: 0,
+        duration: 320,
+        ease: 'Quad.easeOut',
+        onComplete: () => shard.destroy()
+      });
+    });
+  }
+
   updateHP(cur, max, instant) {
     const dropped = this.config.hero.hp > cur;
     this.config.hero.hp = cur;
@@ -443,6 +464,7 @@ export default class BattleHUD {
       this.hpText.setText(`${this.config.hero.name.toUpperCase()}  HP ${v}/${max}`));
     this._setBar(this.bars.heroHp, max ? cur / max : 0, instant);
     if (!instant && this.scene.uiAudio) this.scene.uiAudio.lowHp(max ? cur / max : 0);
+    if (this.scene.hudFrame) this.scene.hudFrame.setLowHp(max ? cur / max : 0);
     if (dropped && !instant) this._flash(this.hpText, '#FF7A7A');
   }
 

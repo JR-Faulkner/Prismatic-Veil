@@ -52,6 +52,40 @@ export default class BattleCamera {
     this.pushIn(1.55, 170, 'Back.easeOut');
   }
 
+  // Package 08: the camera is never quite still — a 1-2px drift keeps
+  // the frame alive between beats.
+  startIdleBreath() {
+    if (this._breath) return;
+    const cam = this.cam;
+    this._breathState = { t: 0 };
+    this._breath = this.scene.tweens.add({
+      targets: this._breathState,
+      t: Math.PI * 2,
+      duration: 7200,
+      repeat: -1,
+      ease: 'Linear',
+      onUpdate: () => {
+        // only breathe at rest, so it never fights a pan or zoom
+        if (Math.abs(cam.zoom - this.baseZoom) > 0.01) return;
+        this._breathOffX = Math.sin(this._breathState.t) * 1.6;
+        this._breathOffY = Math.cos(this._breathState.t * 0.7) * 1.1;
+        cam.setScroll(this._homeX + this._breathOffX, this._homeY + this._breathOffY);
+      }
+    });
+  }
+
+  markHome() {
+    this._homeX = this.cam.scrollX;
+    this._homeY = this.cam.scrollY;
+  }
+
+  // Victory: drift back and let the frame settle.
+  victoryPullOut(duration = 1400) {
+    const s = this.scene.scale;
+    this.cam.pan(s.width / 2, s.height / 2, duration, 'Sine.easeInOut', true);
+    this.cam.zoomTo(this.baseZoom * 0.94, duration, 'Sine.easeInOut', true);
+  }
+
   hitShake(strong) {
     this.cam.shake(strong ? 140 : 75, strong ? 0.012 : 0.006);
   }
