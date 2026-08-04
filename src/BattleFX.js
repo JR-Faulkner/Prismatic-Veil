@@ -37,6 +37,8 @@ export default class BattleFX {
 
   // Charge-up: a growing core with shards spiralling inward.
   gather(duration = 450) {
+    const heroId = this.scene.battleConfig && this.scene.battleConfig.hero.id;
+    if (heroId === 'kineza') return this.gatherKineza(duration);
     const p = this.castPoint();
     this.clearGather();
 
@@ -81,6 +83,8 @@ export default class BattleFX {
 
   // Prismatic beam from the crystal to the enemy, layered rainbow lines.
   beam(duration = 160) {
+    const heroId = this.scene.battleConfig && this.scene.battleConfig.hero.id;
+    if (heroId === 'kineza') return this.strikeKineza(duration);
     const a = this.castPoint();
     const b = this.targetPoint();
     const g = this._w(this.scene.add.graphics().setDepth(45));
@@ -115,6 +119,8 @@ export default class BattleFX {
 
   // Impact: diamond fragments burst out, then lingering sparkles drift.
   impact() {
+    const heroId = this.scene.battleConfig && this.scene.battleConfig.hero.id;
+    if (heroId === 'kineza') return this.impactKineza();
     const p = this.targetPoint();
 
     for (let i = 0; i < 14; i++) {
@@ -146,6 +152,99 @@ export default class BattleFX {
     });
 
     this.scene.time.delayedCall(160, () => this.sparkles(p));
+  }
+
+
+  gatherKineza(duration = 450) {
+    const hero = this.scene.heroPoses && this.scene.heroPoses.sprite;
+    if (!hero) return;
+    this.clearGather();
+    const y = hero.y - hero.displayHeight * 0.43;
+    this.glow = this._w(this.scene.add.circle(hero.x + hero.displayWidth * 0.18, y, 5, 0x68ff8c, 0.18).setDepth(40));
+    this.scene.tweens.add({
+      targets: this.glow,
+      radius: 27,
+      alpha: 0.52,
+      duration,
+      ease: 'Sine.easeInOut'
+    });
+    for (let i = 0; i < 5; i++) {
+      const ring = this._w(this.scene.add.ellipse(
+        hero.x + hero.displayWidth * 0.18,
+        y + i * 4,
+        26 + i * 12,
+        10 + i * 4,
+        0x68ff8c,
+        0
+      ).setStrokeStyle(2, 0x68ff8c, 0.42).setDepth(39));
+      this.shards.push(ring);
+      this.scene.tweens.add({
+        targets: ring,
+        scaleX: 0.35,
+        scaleY: 0.65,
+        angle: 70 + i * 24,
+        alpha: 0.85,
+        duration: duration + i * 55,
+        ease: 'Quad.easeIn'
+      });
+    }
+    if (this.scene.atmosphere) this.scene.atmosphere.gather('kineza');
+  }
+
+  strikeKineza(duration = 160) {
+    const hero = this.scene.heroPoses && this.scene.heroPoses.sprite;
+    const b = this.targetPoint();
+    if (!hero) return;
+    const a = {
+      x: hero.x + hero.displayWidth * 0.31,
+      y: hero.y - hero.displayHeight * 0.48
+    };
+    const trail = this._w(this.scene.add.graphics().setDepth(45));
+    trail.lineStyle(11, 0x65ff87, 0.20);
+    trail.beginPath(); trail.moveTo(a.x - 55, a.y + 12); trail.lineTo(b.x, b.y); trail.strokePath();
+    trail.lineStyle(3, 0xd8ffe1, 0.86);
+    trail.beginPath(); trail.moveTo(a.x - 18, a.y); trail.lineTo(b.x, b.y); trail.strokePath();
+    this.scene.tweens.add({
+      targets: trail,
+      alpha: 0,
+      duration: duration + 170,
+      ease: 'Quad.easeOut',
+      onComplete: () => trail.destroy()
+    });
+    this.clearGather();
+  }
+
+  impactKineza() {
+    const p = this.targetPoint();
+    const ring = this._w(this.scene.add.ellipse(p.x, p.y, 14, 44, 0x68ff8c, 0)
+      .setStrokeStyle(5, 0x68ff8c, 0.72).setDepth(46));
+    this.scene.tweens.add({
+      targets: ring,
+      scaleX: 7,
+      scaleY: 2.2,
+      alpha: 0,
+      duration: 360,
+      ease: 'Expo.easeOut',
+      onComplete: () => ring.destroy()
+    });
+    for (let i = 0; i < 12; i++) {
+      const streak = this._w(this.scene.add.rectangle(
+        p.x, p.y,
+        Phaser.Math.Between(22, 58), 2,
+        i % 3 === 0 ? 0xd8ffe1 : 0x68ff8c,
+        0.7
+      ).setDepth(45).setAngle(Phaser.Math.Between(-65, 65)));
+      this.scene.tweens.add({
+        targets: streak,
+        x: p.x + Phaser.Math.Between(-110, 110),
+        y: p.y + Phaser.Math.Between(-70, 70),
+        alpha: 0,
+        duration: Phaser.Math.Between(250, 450),
+        ease: 'Quad.easeOut',
+        onComplete: () => streak.destroy()
+      });
+    }
+    if (this.scene.atmosphere) this.scene.atmosphere.impact('kineza');
   }
 
   // v4: target reticle over the enemy while the player's round is live.
