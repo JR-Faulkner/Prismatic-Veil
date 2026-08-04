@@ -1,81 +1,125 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) when working in this repository.
 
-## Running the Game Locally
+Read `README.md` first — it is the source of truth for what the project currently is. This file covers the working practices and the traps.
 
-There is no build step — the game is pure static HTML/JS. Because of browser audio and CORS restrictions, you must serve files over HTTP rather than opening `index.html` directly:
+## What is active
+
+The live work is the **stage battle**: `battle-v2.html` plus `src/*.js` (ES modules) and `assets/`.
+
+The wave-survival game in `index.html` is a **legacy prototype**. It still runs and is preserved deliberately, but it is not the current direction. Do not assume a change to `index.html` affects the battle, or vice versa — they share only `phaser.min.js` and the repo root.
+
+## Running locally
+
+No build step, no package.json, no tests, no linter. Serve over HTTP — opening the file directly breaks ES module imports and audio:
 
 ```bash
 python3 -m http.server 8000
-# then open http://localhost:8000
+# battle:   http://localhost:8000/battle-v2.html
+# survival: http://localhost:8000/
 ```
 
-Any static file server works (`npx serve .`, `php -S localhost:8000`, etc.).
+**Live:** `https://jr-faulkner.github.io/Prismatic-Veil/battle-v2.html`
 
-**Live site:** `https://jr-faulkner.github.io/Prismatic-Veil/`
-Use cache-busting query params when testing deployed changes: `?v=<tagname>`
-
-There are no automated tests, no linter config, and no package.json.
-
-## Required: Run Check Before Every Commit
-
-**Always run this before `git commit`:**
+## Required: run the check before every commit
 
 ```bash
 bash pv-check.sh
 ```
 
-It must pass cleanly before pushing. It catches:
-- JS syntax errors in the inline `<script>` block
-- Duplicate top-level `const` declarations (data tables defined twice — a common merge artifact)
-- Unresolved merge conflict markers left in the file
+It must pass before pushing. It catches JS syntax errors in `index.html`'s inline script, duplicate top-level data-table declarations, and unresolved merge markers. A pre-commit hook runs it, but call it manually after resolving conflicts, since those happen outside `git commit`.
 
-The pre-commit git hook runs this automatically, but call it manually too after resolving merge conflicts since those happen outside of `git commit`.
+Also syntax-check the battle modules, which `pv-check.sh` does not cover:
 
-## Codebase Architecture
-
-### Single-file design
-All active game code lives **inline in `index.html`** (≈2,600 lines). The files `game.js` and `extracted.js` are older archived versions and are **not loaded or used** — do not edit them expecting changes to appear in the game.
-
-`phaser.min.js` is the bundled Phaser 3 engine (do not modify).
-
-### Scene flow
+```bash
+for f in src/*.js; do node --check "$f" || break; done
 ```
-TitleScene → CharacterSelectScene → BattleScene → GameOverScene → (back to CharacterSelect)
+
+---
+
+## Battle architecture (`battle-v2.html` + `src/`)
+
+Scene root is `VeilBattleScene`. See the README file map for what each module does.
+
+### Two render layers, two cameras
+
+This is the single most important structural fact:
+
+- `scene.world` — combatants, FX, damage numbers, atmosphere. The **main camera** renders and zooms this.
+- `scene.uiLayer` — HUD, dialogue, frame, titles. A **second camera** (`scene.uiCam`) renders it and never moves.
+
+Attacks push the camera to 1.55×. Without the split, the HUD would scale off screen.
+
+**Any new battlefield visual must go through `scene.worldAdd(obj)`. Any new HUD element goes on `uiLayer`.** Miss this and the object renders on both cameras — doubled and unzoomed.
+
+### Data-driven roster
+
+`src/BattleConfig.js` holds heroes and the enemy. A character is config, not code:
+
 ```
-All four scenes are Phaser.Scene subclasses registered in the config at the bottom of `index.html`. Scene transitions use `this.scene.start('SceneName')`.
+name, hp, maxHp, portrait
+poses      { idle, step, gather, release, recover }  texture keys
+posePath   directory those textures load from
+flip       per-pose horizontal flip (legacy sets only)
+scaleMul   per-hero size correction for differently framed art
+accent     bar fill and frame colour
+accentAlt  secondary accent, glints and etching
+frameStyle 'diamond' | 'forged'
+damageStyle 'refraction' | 'slam'
+attack     { name, damage, flavor, critChance, critMultiplier }
+```
 
-### Global state
-`gameState` is a plain JS object defined at module scope and shared across all scenes. It holds: `selectedCharacter`, `titleMusic`, `musicEnabled/sfxEnabled`, and run-persistent stats (`level`, `score`, `killCount`, `gameTime`). Per-run combat state (HP, EXP, weapons) is reset inside `BattleScene.init()` as local `this.*` properties.
+Adding a hero means adding an entry plus their pose PNGs. New frame or damage styles are a small switch case each.
 
-### Key data tables (all at top of script, before classes)
-- `CHARACTER_DATA` — base stats per hero (speed, damage, attack range, projectile speed)
-- `CHARACTER_ANIM_SETS` / `CHARACTER_ANIM_RATES` — per-hero animation frame lists and framerates
-- `CHARACTER_SPRITE_TUNING` / `CHARACTER_BODY_TUNING` — per-hero scale and physics body offsets
-- `HERO_UI_THEMES` — per-hero HUD colors and label strings
-- `WEAPON_DEFS` — weapon definitions for the survival system
-- `COLORS` — shared color palette as Phaser hex integers
+### Round flow
 
-### Audio architecture
-Two parallel audio systems:
-1. **Phaser sound** — `prism-of-elders.mp3` loaded as `'title_music'`, managed via `gameState.titleMusic`. Plays through Title + CharacterSelect, fades/stops on battle start.
-2. **`SoundFX` class** (`sfx` singleton) — all SFX are synthesized at runtime using the Web Audio API. No audio files for SFX. Methods like `sfx.attackKineza()`, `sfx.levelUp()`, `sfx.gem()` compose oscillator/noise layers directly.
+`BattleController` runs one full side per tap, alternating. The enemy acts **only** on its own round — never auto-chain the two. `POSE_TIMING` holds the canonical beat lengths; `AUDIO_EVENTS` are emitted as scene events and mapped to per-hero sound banks in the scene.
 
-### Sprite sheets
-Each hero has two sprite sheet variants in the repo root:
-- `*_spritesheet.png` — original/experimental sheets
-- `*_stable_spritesheet.png` — **the active version** referenced in `SPRITE_PATHS`
+---
 
-Frame layout: 48×72px per frame, 14 frames per sheet (672×72px strip) — frames 0–3 idle, 4–9 walk, 10–13 attack.
+## Traps that have already bitten
 
-### BattleScene internals
-`BattleScene` is the bulk of the code. Key systems:
-- **Weapon system** — `this.weapons` object keyed by weapon ID; each weapon fires on its own timer via `this.time.addEvent`. Weapon upgrades applied from relic cards mutate entries here.
-- **Hero FX** — `this.heroFx` holds per-character visual effect containers (Prismel's crystal, Auryi's orb, Kineza's glow fists). Updated every frame in `updateHeroEffects()`.
-- **Spawn/pacing** — `this.spawnInterval` decreases over time; enemy pack types escalate at 60/120/180 second phase boundaries via `this.time.delayedCall`.
-- **Physics** — Phaser Arcade Physics for player, enemies, projectiles, and XP gems. All physics groups guarded with `body`-existence checks before velocity/position writes.
-- **Level-up cards** — `showRelicCards()` pauses Arcade Physics world and presents 3 drawn cards; card `apply()` functions mutate `this.weapons`, `this.passives`, or player stat multipliers then call `tryEvolutions()`.
+Every one of these reached the repo and had to be fixed. Do not repeat them.
 
-### Deployment
-The repo root **is** the GitHub Pages deployment — all assets must stay at the root level. The flat layout is intentional.
+**Phaser ease names.** Use `Quad.easeOut`, `Sine.easeInOut`, `Back.easeOut`. The short forms — `Quad.Out`, `Sine.Out`, `Expo.Out` — do **not** exist in this build. Tweens accept an unknown name silently and fall back to linear, so a whole game's worth of easing can quietly do nothing; camera `pan`/`zoomTo` throw outright. Thirty invalid names were found in one sweep.
+
+**`scene.restart()` reuses the scene instance but destroys its game objects.** Anything cached on `this` across a restart becomes a dead reference. Clear cached object references at the top of `create()`. The hero switch calls `restart()`, so this path is exercised constantly.
+
+**Crossfading two stacked sprites.** Only the **top** layer changes alpha; the bottom stays fully opaque as a backing plate. Fading both leaves a window where the subject is see-through — and hit stop freezes tweens, so that window can sit on screen for hundreds of milliseconds.
+
+**Killing tweens mid-transition.** `killTweensOf` must run *before* creating the tweens for the new state, never after.
+
+**One AudioContext per page.** Browsers cap live contexts at a handful. Anything constructed per scene-restart must share, not open its own.
+
+**Pose scaling.** One scale factor per hero, derived from the idle frame. Fitting every pose to the same screen height blows up crouched or wide poses — they are legitimately shorter.
+
+---
+
+## Standards
+
+- **Zero CDN.** Phaser stays bundled at the repo root; everything loads from relative paths.
+- **Portrait phone first.** Verify at 390×844 before anything else.
+- **Play one full round per hero before shipping.** Three separate bugs reached the repo that a single playthrough would have caught.
+- **Art:** PNG with a real alpha channel. Never JPEG, never a painted-on checkerboard or white matte. Heroes authored facing **right**, enemies facing **left**.
+- **Battle wording is fixed:** `<name> uses <attack>!` then `<target> is hit for <n> damage!` (player) or `<target> suffers <n> damage!` (enemy).
+- The turn indicator shows **turn state only**. Attack callouts go through the dialogue queue.
+- Bump the `?v=` on `src/*.js` imports for notable deploys — cache-busting the HTML alone leaves browsers on stale modules.
+
+---
+
+## Legacy survival prototype (`index.html`)
+
+Kept for reference. All of its code is inline in `index.html` (≈2,600 lines); `game.js` and `extracted.js` are older archived copies and are **not loaded**.
+
+- Scene flow: `TitleScene → CharacterSelectScene → BattleScene → GameOverScene`
+- `gameState` at module scope holds `selectedCharacter`, `titleMusic`, audio toggles and run stats
+- Data tables at the top of the script: `CHARACTER_DATA`, `CHARACTER_ANIM_SETS`/`RATES`, `CHARACTER_SPRITE_TUNING`/`BODY_TUNING`, `HERO_UI_THEMES`, `WEAPON_DEFS`, `COLORS`
+- Audio: `prism-of-elders.mp3` as title music, plus a `SoundFX` singleton synthesising all SFX via Web Audio
+- Sprites: `*_stable_spritesheet.png` are the active sheets — 48×72 per frame, 14 frames (672×72), frames 0–3 idle, 4–9 walk, 10–13 attack
+
+Note that its `BattleScene` class name collides with the battle project's scene, which is why the new one is `VeilBattleScene`.
+
+## Deployment
+
+The repo root **is** the GitHub Pages deployment — all assets must stay at root level. The flat layout is intentional.
