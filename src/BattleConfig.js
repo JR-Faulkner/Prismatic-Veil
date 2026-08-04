@@ -11,6 +11,11 @@ export const HEROES = Object.freeze({
     maxHp: 100,
     veil: 100,
     portrait: 'portrait_prismel',
+    // HUD identity: bar fill, frame accents, damage-number styling.
+    accent: 0x67c8ff,
+    accentAlt: 0xc477ff,
+    frameStyle: 'diamond',
+    damageStyle: 'refraction',
     poses: Object.freeze({
       idle: 'Pose01_Idle_LOCKED',
       step: 'Pose02_StepForward_LOCKED',
@@ -41,6 +46,10 @@ export const HEROES = Object.freeze({
     maxHp: 115,
     veil: 100,
     portrait: 'portrait_kineza',
+    accent: 0x68ff8c,
+    accentAlt: 0xd8ffe1,
+    frameStyle: 'forged',
+    damageStyle: 'slam',
     poses: Object.freeze({
       idle: 'Kineza01_Idle_LOCKED',
       step: 'Kineza02_Step_LOCKED',

@@ -33,10 +33,11 @@ export default class BattleHUD {
     // Physical HP / Veil bars. Each bar is: dark track, a slow "ghost"
     // layer that lags behind so you see how much was just taken, then
     // the live fill on top.
+    const hero = this.config.hero;
     this.bars = {
-      heroHp: this._makeBar(0xff5a6e),
-      heroVeil: this._makeBar(0x67c8ff),
-      enemyHp: this._makeBar(0xc477ff)
+      heroHp: Object.assign(this._makeBar(0x71ff88, { accent: hero.accent }), { isHeroHp: true }),
+      heroVeil: this._makeBar(hero.accent || 0x67c8ff, { accent: hero.accentAlt }),
+      enemyHp: this._makeBar(0xa855f7, { accent: 0xc477ff, corrupted: true })
     };
 
     this.msgBox = this.scene.add.nineslice(
@@ -63,6 +64,8 @@ export default class BattleHUD {
     }).setOrigin(0, 0.5).setVisible(false);
     this.speakerPortrait = this.scene.add.image(0, 0, 'portrait_prismel')
       .setVisible(false);
+    // Package 07: hero-specific portrait frame drawn around the crop.
+    this.portraitFrame = this.scene.add.graphics().setVisible(false);
 
     this.messageText = this.scene.add.text(0, 0, '', {
       fontSize: '24px',
@@ -85,9 +88,8 @@ export default class BattleHUD {
       ease: 'Sine.easeInOut'
     });
 
-    const barParts = Object.values(this.bars)
-      .flatMap(b => [b.track, b.ghost, b.fill]);
-    const plateParts = [this.speakerPlate, this.speakerPortrait, this.speakerName].filter(Boolean);
+    const barParts = Object.values(this.bars).map(b => b.g);
+    const plateParts = [this.speakerPlate, this.portraitFrame, this.speakerPortrait, this.speakerName].filter(Boolean);
     this.container.add([
       ...barParts,
       this.hpText,
@@ -109,58 +111,134 @@ export default class BattleHUD {
     });
   }
 
-  _makeBar(color) {
-    const track = this.scene.add.rectangle(0, 0, 10, 8, 0x1b1430, 0.92)
-      .setOrigin(0, 0.5).setStrokeStyle(1, 0xffd56a, 0.55);
-    const ghost = this.scene.add.rectangle(0, 0, 10, 6, 0xfff0a8, 0.75).setOrigin(0, 0.5);
-    const fill = this.scene.add.rectangle(0, 0, 10, 6, color, 1).setOrigin(0, 0.5);
-    return { track, ghost, fill, color, ratio: 1, ghostRatio: 1 };
+  // Package 07 crystal bar: a faceted shell drawn as graphics, with a
+  // chip-damage ghost behind the live fill and hairline fractures that
+  // appear as the bar runs low.
+  _makeBar(color, opts) {
+    const o = opts || {};
+    return {
+      g: this.scene.add.graphics(),
+      color,
+      accent: o.accent || color,
+      corrupted: !!o.corrupted,
+      ratio: 1,
+      ghostRatio: 1,
+      flash: 0,
+      w: 10, h: 8, x: 0, y: 0
+    };
+  }
+
+  // Faceted outline: a rectangle with angled crystal ends.
+  _barPath(g, x, y, w, h, inset) {
+    const k = Math.min(h * 0.5, 6) - (inset || 0) * 0.4;
+    g.beginPath();
+    g.moveTo(x + k, y - h / 2);
+    g.lineTo(x + w - k, y - h / 2);
+    g.lineTo(x + w, y);
+    g.lineTo(x + w - k, y + h / 2);
+    g.lineTo(x + k, y + h / 2);
+    g.lineTo(x, y);
+    g.closePath();
+  }
+
+  _drawBar(bar) {
+    const { g, x, y, w, h } = bar;
+    g.clear();
+    // hero HP shifts green -> amber -> red as it empties
+    if (bar.isHeroHp) {
+      bar.color = bar.ratio > 0.5 ? 0x71ff88 : bar.ratio > 0.25 ? 0xffd56a : 0xff5a6e;
+    }
+
+    // shell
+    g.fillStyle(0x140f26, 0.92);
+    this._barPath(g, x, y, w, h, 0);
+    g.fillPath();
+
+    const inner = Math.max(0, w - 4);
+    const drawFill = (ratio, color, alpha) => {
+      const fw = inner * Math.max(0, Math.min(1, ratio));
+      if (fw <= 1) return;
+      g.fillStyle(color, alpha);
+      this._barPath(g, x + 2, y, fw, h - 4, 1);
+      g.fillPath();
+    };
+
+    // chip-damage ghost sits behind the live fill
+    drawFill(bar.ghostRatio, bar.corrupted ? 0xff9de0 : 0xfff0a8, 0.55);
+    drawFill(bar.ratio, bar.color, 1);
+
+    // healing / damage flash
+    if (bar.flash > 0.01) drawFill(bar.ratio, 0xffffff, bar.flash * 0.55);
+
+    // hairline fractures once the bar is low
+    if (bar.ratio > 0 && bar.ratio < 0.25) {
+      const n = 3;
+      g.lineStyle(1, 0xffd9d9, 0.5);
+      for (let i = 0; i < n; i++) {
+        const fx = x + 6 + (inner * bar.ratio) * ((i + 0.5) / n);
+        g.beginPath();
+        g.moveTo(fx, y - h / 2 + 1);
+        g.lineTo(fx + (i % 2 ? 3 : -3), y);
+        g.lineTo(fx, y + h / 2 - 1);
+        g.strokePath();
+      }
+    }
+
+    // faceted rim, corrupted styling for the Veil Wraith
+    g.lineStyle(1, bar.corrupted ? 0xc477ff : bar.accent, bar.corrupted ? 0.85 : 0.7);
+    this._barPath(g, x, y, w, h, 0);
+    g.strokePath();
   }
 
   _layoutBar(bar, x, y, w, h, rightAligned) {
-    const bx = rightAligned ? x - w : x;
+    bar.x = rightAligned ? x - w : x;
+    bar.y = y;
     bar.w = w;
-    bar.x = bx;
-    bar.track.setPosition(bx, y).setSize(w, h);
-    bar.ghost.setPosition(bx + 1, y).setSize(Math.max(0, (w - 2) * bar.ghostRatio), h - 2);
-    bar.fill.setPosition(bx + 1, y).setSize(Math.max(0, (w - 2) * bar.ratio), h - 2);
+    bar.h = h;
+    this._drawBar(bar);
   }
 
   // Fill snaps to the new value quickly; the ghost drains behind it so
   // the hit reads. Fill also shifts toward red as it empties.
   _setBar(bar, ratio, instant) {
     ratio = Math.max(0, Math.min(1, ratio));
-    const inner = Math.max(0, (bar.w || 10) - 2);
+    const healing = ratio > bar.ratio;
     const dropping = ratio < bar.ratio;
-    bar.ratio = ratio;
 
     if (instant) {
+      bar.ratio = ratio;
       bar.ghostRatio = ratio;
-      bar.fill.width = inner * ratio;
-      bar.ghost.width = inner * ratio;
+      this._drawBar(bar);
       return;
     }
 
-    this.scene.tweens.killTweensOf(bar.fill);
+    this.scene.tweens.killTweensOf(bar);
     this.scene.tweens.add({
-      targets: bar.fill,
-      width: inner * ratio,
+      targets: bar,
+      ratio,
       duration: 260,
-      ease: 'Quad.easeOut'
+      ease: 'Quad.easeOut',
+      onUpdate: () => this._drawBar(bar)
     });
-
-    this.scene.tweens.killTweensOf(bar.ghost);
     this.scene.tweens.add({
-      targets: bar.ghost,
-      width: inner * ratio,
+      targets: bar,
+      ghostRatio: ratio,
       duration: 620,
       delay: dropping ? 220 : 0,
       ease: 'Quad.easeInOut',
-      onComplete: () => { bar.ghostRatio = ratio; }
+      onUpdate: () => this._drawBar(bar)
     });
 
-    if (bar.color === 0xff5a6e) {
-      bar.fill.setFillStyle(ratio > 0.5 ? 0x71ff88 : ratio > 0.25 ? 0xffd56a : 0xff5a6e);
+    // healing glow
+    if (healing) {
+      bar.flash = 1;
+      this.scene.tweens.add({
+        targets: bar,
+        flash: 0,
+        duration: 520,
+        ease: 'Quad.easeOut',
+        onUpdate: () => this._drawBar(bar)
+      });
     }
   }
 
@@ -277,6 +355,7 @@ export default class BattleHUD {
     this.speakerPortrait
       .setDisplaySize(portraitSize, portraitSize)
       .setPosition(portraitX, plateY);
+    this._drawPortraitFrame(portraitX, plateY, portraitSize);
 
     const plateW = (this.speakerPlate ? this.speakerPlate.width : 260) * plateScale;
     const plateX = portraitX + portraitSize / 2 + 6 + plateW / 2;
@@ -285,8 +364,57 @@ export default class BattleHUD {
       .setPosition(plateX - plateW / 2 + (compact ? 26 : 34), plateY);
   }
 
+  // Prismel: diamond geometry with a rainbow glint.
+  // Kineza: forged angular plate with etched momentum lines.
+  _drawPortraitFrame(cx, cy, size) {
+    const g = this.portraitFrame;
+    if (!g) return;
+    const hero = this._frameHero || this.config.hero;
+    const r = size * 0.62;
+    g.clear();
+
+    if (hero.frameStyle === 'forged') {
+      g.lineStyle(2, hero.accent || 0x68ff8c, 0.9);
+      g.strokeRect(cx - r * 0.78, cy - r * 0.78, r * 1.56, r * 1.56);
+      g.lineStyle(1, hero.accentAlt || 0xd8ffe1, 0.5);
+      for (let i = 0; i < 3; i++) {
+        const oy = cy - r * 0.4 + i * r * 0.4;
+        g.beginPath();
+        g.moveTo(cx - r * 0.95, oy);
+        g.lineTo(cx - r * 0.8, oy);
+        g.strokePath();
+        g.beginPath();
+        g.moveTo(cx + r * 0.8, oy);
+        g.lineTo(cx + r * 0.95, oy);
+        g.strokePath();
+      }
+    } else {
+      g.lineStyle(2, hero.accent || 0x67c8ff, 0.9);
+      g.beginPath();
+      g.moveTo(cx, cy - r);
+      g.lineTo(cx + r, cy);
+      g.lineTo(cx, cy + r);
+      g.lineTo(cx - r, cy);
+      g.closePath();
+      g.strokePath();
+      // rainbow glint along the upper-right facet
+      const GL = [0xff6b6b, 0xffef7d, 0x71ff88, 0x67c8ff, 0xc477ff];
+      GL.forEach((c, i) => {
+        g.lineStyle(1, c, 0.55);
+        g.beginPath();
+        g.moveTo(cx + r * (0.16 + i * 0.10), cy - r * (0.78 - i * 0.10));
+        g.lineTo(cx + r * (0.30 + i * 0.10), cy - r * (0.62 - i * 0.10));
+        g.strokePath();
+      });
+    }
+  }
+
   setTurn(text) {
+    const changed = this.turnText.text !== text;
     this.turnText.setText(text);
+    if (changed && this.scene.uiAudio) {
+      this.scene.uiAudio.turnStart(text === this.config.text.playerTurn);
+    }
     // v3: turn glow pulse so the handover reads at a glance
     this.scene.tweens.killTweensOf(this.turnText);
     this.turnText.setAlpha(1).setScale(1);
@@ -314,6 +442,7 @@ export default class BattleHUD {
     this._tickTo('hp', cur, instant, v =>
       this.hpText.setText(`${this.config.hero.name.toUpperCase()}  HP ${v}/${max}`));
     this._setBar(this.bars.heroHp, max ? cur / max : 0, instant);
+    if (!instant && this.scene.uiAudio) this.scene.uiAudio.lowHp(max ? cur / max : 0);
     if (dropped && !instant) this._flash(this.hpText, '#FF7A7A');
   }
 
@@ -349,6 +478,7 @@ export default class BattleHUD {
     this.msgBox.setVisible(false);
     this.messageText.setVisible(false);
     this.msgCursor.setVisible(false);
+    if (this.portraitFrame) this.portraitFrame.setVisible(false);
     if (this.speakerPlate) this.speakerPlate.setVisible(false);
     this.speakerName.setVisible(false);
     this.speakerPortrait.setVisible(false);
@@ -368,6 +498,11 @@ export default class BattleHUD {
     if (this.speakerPlate) this.speakerPlate.setVisible(show);
     this.speakerName.setVisible(show);
     this.speakerPortrait.setVisible(!!hasPortrait);
+    if (this.portraitFrame) {
+      this._frameHero = (speaker && speaker.hero) || this.config.hero;
+      this.portraitFrame.setVisible(!!hasPortrait);
+      if (hasPortrait) this.layout();
+    }
 
     if (!show) return;
     this.speakerName.setText(speaker.name);

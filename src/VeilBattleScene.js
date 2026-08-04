@@ -1,14 +1,16 @@
-import BattleHUD from './BattleHUD.js?v=23';
-import BattleController from './BattleController.js?v=23';
-import Timeline from './Timeline.js?v=23';
-import VeilFracture from './VeilFracture.js?v=23';
-import HeroPoseView from './HeroPoseView.js?v=23';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=23';
-import BattleCamera from './BattleCamera.js?v=23';
-import BattleFX from './BattleFX.js?v=23';
-import BattleAtmosphere from './BattleAtmosphere.js?v=23';
-import { AUDIO_EVENTS } from './BattleController.js?v=23';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=23';
+import BattleHUD from './BattleHUD.js?v=24';
+import BattleController from './BattleController.js?v=24';
+import Timeline from './Timeline.js?v=24';
+import VeilFracture from './VeilFracture.js?v=24';
+import HeroPoseView from './HeroPoseView.js?v=24';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=24';
+import BattleCamera from './BattleCamera.js?v=24';
+import BattleFX from './BattleFX.js?v=24';
+import BattleAtmosphere from './BattleAtmosphere.js?v=24';
+import HudFrame from './HudFrame.js?v=24';
+import UiAudio from './UiAudio.js?v=24';
+import { AUDIO_EVENTS } from './BattleController.js?v=24';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=24';
 
 function cloneConfig(source, heroKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -84,7 +86,7 @@ export default class VeilBattleScene extends Phaser.Scene {
       color: '#FFE8A0'
     }).setOrigin(0.5);
 
-    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v6 · Beautification', {
+    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v7 · HUD', {
       color: '#D6C8F2'
     }).setOrigin(0.5);
 
@@ -98,6 +100,12 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.hud = new BattleHUD(this, this.battleConfig);
     this.hud.create();
     this.uiLayer.add(this.hud.container);
+
+    this.hudFrame = new HudFrame(this);
+    this.hudFrame.create(this.battleConfig.hero);
+
+    // Synthesised UI cues — no assets required.
+    this.uiAudio = new UiAudio(this);
 
     this.heroPoses = new HeroPoseView(this, this.battleConfig.hero);
     this.heroPoses.create();
@@ -206,6 +214,7 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     label.on('pointerdown', e => {
       if (e && e.event) e.event.stopPropagation();
+      if (this.uiAudio) this.uiAudio.confirm();
       this.registry.set('heroKey', next());
       this.scene.restart();
     });
@@ -273,25 +282,52 @@ export default class VeilBattleScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(60).setScale(0.4);
     this.worldAdd(text);
 
-    this.tweens.add({
-      targets: text,
-      scaleX: 1.18,
-      scaleY: 1.18,
-      duration: 150,
-      ease: 'Back.easeOut',
-      yoyo: true,
-      hold: 40
-    });
-    this.tweens.add({
-      targets: text,
-      x: x + (hurtHero ? -22 : 22),
-      y: text.y - 74,
-      alpha: 0,
-      duration: 950,
-      delay: 140,
-      ease: 'Quad.easeOut',
-      onComplete: () => text.destroy()
-    });
+    // Package 07: the attacker's style drives how the number behaves.
+    const style = hurtHero ? 'refraction' : (this.battleConfig.hero.damageStyle || 'refraction');
+
+    if (style === 'slam') {
+      // Kineza: drives down hard, then rebounds.
+      text.setScale(1.9).setY(text.y - 30);
+      this.tweens.add({
+        targets: text, scaleX: 1, scaleY: 1, y: text.y + 30,
+        duration: 130, ease: 'Quad.easeIn',
+        onComplete: () => {
+          this.tweens.add({
+            targets: text, y: text.y - 26, duration: 180, yoyo: true, ease: 'Back.easeOut'
+          });
+        }
+      });
+      this.tweens.add({
+        targets: text, alpha: 0, duration: 620, delay: 430, ease: 'Quad.easeIn',
+        onComplete: () => text.destroy()
+      });
+    } else {
+      // Prismel: pops, then refracts apart as it fades.
+      this.tweens.add({
+        targets: text, scaleX: 1.18, scaleY: 1.18,
+        duration: 150, ease: 'Back.easeOut', yoyo: true, hold: 40
+      });
+      const ghostA = this.add.text(x, text.y, String(amount), text.style).setOrigin(0.5).setDepth(59).setScale(0.4);
+      const ghostB = this.add.text(x, text.y, String(amount), text.style).setOrigin(0.5).setDepth(59).setScale(0.4);
+      ghostA.setColor('#8fd8ff'); ghostB.setColor('#ffa8e6');
+      this.worldAdd(ghostA); this.worldAdd(ghostB);
+      [[ghostA, -7], [ghostB, 7]].forEach(([gt, dx]) => {
+        this.tweens.add({
+          targets: gt, x: gt.x + dx, y: text.y - 74, alpha: 0, scaleX: 1.1, scaleY: 1.1,
+          duration: 950, delay: 140, ease: 'Quad.easeOut', onComplete: () => gt.destroy()
+        });
+      });
+      this.tweens.add({
+        targets: text,
+        x: x + (hurtHero ? -22 : 22),
+        y: text.y - 74,
+        alpha: 0,
+        duration: 950,
+        delay: 140,
+        ease: 'Quad.easeOut',
+        onComplete: () => text.destroy()
+      });
+    }
   }
 
   layoutSceneText() {
