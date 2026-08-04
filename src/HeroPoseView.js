@@ -120,6 +120,11 @@ export default class HeroPoseView {
   setPose(pose, blendMs = 110) {
     if (!this.poseTex[pose]) return;
 
+    // Clear the previous pose's motion and idle tweens FIRST. Doing this
+    // after the crossfade below would kill the alpha restore it creates
+    // and strand the sprite at 0.15 opacity for the rest of the battle.
+    this.scene.tweens.killTweensOf(this.sprite);
+
     // pose blending: park the outgoing frame on the ghost layer and ease
     // the two past each other.
     if (this.ghost && this.sprite.texture.key !== this.poseTex[pose]) {
@@ -140,11 +145,11 @@ export default class HeroPoseView {
         targets: this.sprite,
         alpha: 1,
         duration: blendMs,
-        ease: 'Sine.easeIn'
+        ease: 'Sine.easeIn',
+        onComplete: () => this.sprite.setAlpha(1)
       });
     }
 
-    this.scene.tweens.killTweensOf(this.sprite);
     this.currentPose = pose;
     this.sprite.setTexture(this.poseTex[pose]);
     this.sprite.setFlipX(!!this.flip[pose]);
