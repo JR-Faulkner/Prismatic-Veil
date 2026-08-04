@@ -1,13 +1,14 @@
-import BattleHUD from './BattleHUD.js?v=21';
-import BattleController from './BattleController.js?v=21';
-import Timeline from './Timeline.js?v=21';
-import VeilFracture from './VeilFracture.js?v=21';
-import HeroPoseView from './HeroPoseView.js?v=21';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=21';
-import BattleCamera from './BattleCamera.js?v=21';
-import BattleFX from './BattleFX.js?v=21';
-import { AUDIO_EVENTS } from './BattleController.js?v=21';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=21';
+import BattleHUD from './BattleHUD.js?v=22';
+import BattleController from './BattleController.js?v=22';
+import Timeline from './Timeline.js?v=22';
+import VeilFracture from './VeilFracture.js?v=22';
+import HeroPoseView from './HeroPoseView.js?v=22';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=22';
+import BattleCamera from './BattleCamera.js?v=22';
+import BattleFX from './BattleFX.js?v=22';
+import BattleAtmosphere from './BattleAtmosphere.js?v=22';
+import { AUDIO_EVENTS } from './BattleController.js?v=22';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=22';
 
 function cloneConfig(source, heroKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -37,6 +38,13 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.load.audio('sfx_impact', './assets/sfx/sfx_impact.mp3');
     this.load.audio('sfx_recover', './assets/sfx/sfx_recover.mp3');
     this.load.audio('sfx_victory', './assets/sfx/sfx_victory.mp3');
+    this.load.audio('kineza_step', './assets/sfx/kineza/kineza_step.mp3');
+    this.load.audio('kineza_coil', './assets/sfx/kineza/kineza_coil.mp3');
+    this.load.audio('kineza_strike', './assets/sfx/kineza/kineza_strike.mp3');
+    this.load.audio('kineza_impact', './assets/sfx/kineza/kineza_impact.mp3');
+    this.load.audio('kineza_recover', './assets/sfx/kineza/kineza_recover.mp3');
+    this.load.audio('kineza_idle_pulse', './assets/sfx/kineza/kineza_idle_pulse.mp3');
+    this.load.audio('kineza_debris', './assets/sfx/kineza/kineza_debris.mp3');
     this.load.image('dialogFrame', './assets/ui/dialog_frame_9slice.png');
     this.load.image('continueCrystal', './assets/ui/continue_crystal.png');
     this.load.image('prismelLocked', './assets/prismel_locked.png');
@@ -69,11 +77,14 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.world = this.add.container(0, 0);
     this.uiLayer = this.add.container(0, 0).setDepth(1000);
 
+    this.atmosphere = new BattleAtmosphere(this);
+    this.atmosphere.create();
+
     this.titleText = this.add.text(0, 0, 'VEIL FRACTURE', {
       color: '#FFE8A0'
     }).setOrigin(0.5);
 
-    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v5', {
+    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v6 · Beautification', {
       color: '#D6C8F2'
     }).setOrigin(0.5);
 
@@ -120,12 +131,24 @@ export default class VeilBattleScene extends Phaser.Scene {
     // Battle SFX chopped from the Suno gather tracks. Kept above the
     // music bed in level so they read over the loop.
     this.sfx = {
-      step: this.sound.add('sfx_step', { volume: 0.62 }),
-      gather: this.sound.add('sfx_gather', { volume: 0.85 }),
-      release: this.sound.add('sfx_release', { volume: 0.95 }),
-      impact: this.sound.add('sfx_impact', { volume: 1.0 }),
-      recover: this.sound.add('sfx_recover', { volume: 0.72 }),
-      victory: this.sound.add('sfx_victory', { volume: 0.92 })
+      prismel: {
+        step: this.sound.add('sfx_step', { volume: 0.62 }),
+        gather: this.sound.add('sfx_gather', { volume: 0.85 }),
+        release: this.sound.add('sfx_release', { volume: 0.95 }),
+        impact: this.sound.add('sfx_impact', { volume: 1.0 }),
+        recover: this.sound.add('sfx_recover', { volume: 0.72 }),
+        victory: this.sound.add('sfx_victory', { volume: 0.92 })
+      },
+      kineza: {
+        step: this.sound.add('kineza_step', { volume: 0.68 }),
+        gather: this.sound.add('kineza_coil', { volume: 0.88 }),
+        release: this.sound.add('kineza_strike', { volume: 0.95 }),
+        impact: this.sound.add('kineza_impact', { volume: 1.0 }),
+        recover: this.sound.add('kineza_recover', { volume: 0.7 }),
+        victory: this.sound.add('sfx_victory', { volume: 0.88 }),
+        idle: this.sound.add('kineza_idle_pulse', { volume: 0.22 }),
+        debris: this.sound.add('kineza_debris', { volume: 0.62 })
+      }
     };
 
     // v3 audio hook events. Events without an asset yet are simply
@@ -208,8 +231,15 @@ export default class VeilBattleScene extends Phaser.Scene {
   }
 
   playSfx(name) {
-    const s = this.sfx && this.sfx[name];
-    if (s && !this.sound.locked) s.play();
+    const heroId = this.battleConfig && this.battleConfig.hero.id || 'prismel';
+    const bank = this.sfx && this.sfx[heroId];
+    const s = bank && bank[name];
+    if (s && !this.sound.locked) {
+      s.play();
+      if (heroId === 'kineza' && name === 'impact' && bank.debris) {
+        this.time.delayedCall(36, () => bank.debris.play());
+      }
+    }
   }
 
   // v3 hit stop: freeze the scene clock and tweens for a beat so impacts

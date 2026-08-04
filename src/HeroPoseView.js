@@ -15,6 +15,7 @@ export default class HeroPoseView {
     this.scene.scale.on('resize', this.layout, this);
     this.scene.events.once('shutdown', () => {
       this.scene.scale.off('resize', this.layout, this);
+      if (this._idleCue) { this._idleCue.remove(false); this._idleCue = null; }
     });
   }
 
@@ -90,6 +91,32 @@ export default class HeroPoseView {
     });
   }
 
+  // Subtle idle signature: a slow breath on the sprite, plus a soft
+  // recurring cue for heroes that ship one (Kineza's kinetic pulse).
+  // Package 06 called this but never defined it.
+  startIdleSignature() {
+    this.scene.tweens.add({
+      targets: this.sprite,
+      scaleX: this.sprite.scaleX * 1.012,
+      scaleY: this.sprite.scaleY * 1.022,
+      duration: 1700,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+
+    if (this._idleCue) { this._idleCue.remove(false); this._idleCue = null; }
+    const bank = this.scene.sfx && this.hero && this.scene.sfx[this.hero.id];
+    if (!bank || !bank.idle) return;
+    this._idleCue = this.scene.time.addEvent({
+      delay: 5400,
+      loop: true,
+      callback: () => {
+        if (this.currentPose === 'idle' && !this.scene.sound.locked) bank.idle.play();
+      }
+    });
+  }
+
   setPose(pose, blendMs = 110) {
     if (!this.poseTex[pose]) return;
 
@@ -117,6 +144,7 @@ export default class HeroPoseView {
       });
     }
 
+    this.scene.tweens.killTweensOf(this.sprite);
     this.currentPose = pose;
     this.sprite.setTexture(this.poseTex[pose]);
     this.sprite.setFlipX(!!this.flip[pose]);
@@ -138,6 +166,7 @@ export default class HeroPoseView {
         break;
       default:
         this.sprite.setPosition(this.baseX, this.baseY);
+        this.startIdleSignature();
     }
   }
 }
