@@ -129,24 +129,26 @@ export default class HeroPoseView {
     // the two past each other.
     if (this.ghost && this.sprite.texture.key !== this.poseTex[pose]) {
       this.scene.tweens.killTweensOf(this.ghost);
+      // The ghost sits *behind* the sprite, so it stays fully opaque and
+      // the incoming pose fades in over it. Fading both at once — as this
+      // originally did — leaves neither layer solid, and any pause mid
+      // blend (hit stop freezes tweens) shows the background straight
+      // through the character.
       this.ghost.setTexture(this.sprite.texture.key)
         .setFlipX(this.sprite.flipX)
         .setPosition(this.sprite.x, this.sprite.y)
         .setScale(this.sprite.scaleX, this.sprite.scaleY)
-        .setAlpha(0.85);
-      this.scene.tweens.add({
-        targets: this.ghost,
-        alpha: 0,
-        duration: blendMs,
-        ease: 'Sine.easeOut'
-      });
-      this.sprite.setAlpha(0.15);
+        .setAlpha(1);
+      this.sprite.setAlpha(0);
       this.scene.tweens.add({
         targets: this.sprite,
         alpha: 1,
         duration: blendMs,
-        ease: 'Sine.easeIn',
-        onComplete: () => this.sprite.setAlpha(1)
+        ease: 'Sine.easeInOut',
+        onComplete: () => {
+          this.sprite.setAlpha(1);
+          this.ghost.setAlpha(0);
+        }
       });
     }
 
