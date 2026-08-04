@@ -1,16 +1,16 @@
-import BattleHUD from './BattleHUD.js?v=25';
-import BattleController from './BattleController.js?v=25';
-import Timeline from './Timeline.js?v=25';
-import VeilFracture from './VeilFracture.js?v=25';
-import HeroPoseView from './HeroPoseView.js?v=25';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=25';
-import BattleCamera from './BattleCamera.js?v=25';
-import BattleFX from './BattleFX.js?v=25';
-import BattleAtmosphere from './BattleAtmosphere.js?v=25';
-import HudFrame from './HudFrame.js?v=25';
-import UiAudio from './UiAudio.js?v=25';
-import { AUDIO_EVENTS } from './BattleController.js?v=25';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=25';
+import BattleHUD from './BattleHUD.js?v=26';
+import BattleController from './BattleController.js?v=26';
+import Timeline from './Timeline.js?v=26';
+import VeilFracture from './VeilFracture.js?v=26';
+import HeroPoseView from './HeroPoseView.js?v=26';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=26';
+import BattleCamera from './BattleCamera.js?v=26';
+import BattleFX from './BattleFX.js?v=26';
+import BattleAtmosphere from './BattleAtmosphere.js?v=26';
+import HudFrame from './HudFrame.js?v=26';
+import UiAudio from './UiAudio.js?v=26';
+import { AUDIO_EVENTS } from './BattleController.js?v=26';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=26';
 
 function cloneConfig(source, heroKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -69,6 +69,12 @@ export default class VeilBattleScene extends Phaser.Scene {
   }
 
   create() {
+    // scene.restart() reuses this instance but destroys every game
+    // object, so any cached object reference must be dropped here or it
+    // will point at a destroyed node on the next battle.
+    this._lightWash = null;
+    this._hitStopped = false;
+
     this.activeHero = this.registry.get('heroKey') || HERO_ORDER[0];
     this.battleConfig = cloneConfig(BATTLE_CONFIG, this.activeHero);
 
@@ -240,7 +246,7 @@ export default class VeilBattleScene extends Phaser.Scene {
   // Package 08 lighting: an ability briefly tints the scene. Prismel
   // throws cool refracted highlights, Kineza warm pressure flashes.
   abilityLight(kind) {
-    if (!this._lightWash) {
+    if (!this._lightWash || !this._lightWash.scene) {
       this._lightWash = this.add.rectangle(0, 0, 10, 10, 0xffffff, 0)
         .setOrigin(0, 0).setDepth(80);
       this.worldAdd(this._lightWash);

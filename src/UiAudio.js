@@ -3,24 +3,27 @@
 // and victory cues but ships no audio assets, so these are synthesised
 // at runtime with the Web Audio API — the same approach the survival
 // game uses for its SFX. No files to load, nothing to cache-bust.
+// One context for the page. Every scene.restart() builds a new UiAudio,
+// and browsers cap live AudioContexts at a handful, so they must share.
+let sharedCtx = null;
+
 export default class UiAudio {
   constructor(scene) {
     this.scene = scene;
-    this.ctx = null;
     this.volume = 0.5;
     this._lowHpArmed = true;
   }
 
   _ac() {
-    if (this.ctx) return this.ctx;
+    if (sharedCtx) return sharedCtx;
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
     try {
-      this.ctx = new AC();
+      sharedCtx = new AC();
     } catch (err) {
       return null;
     }
-    return this.ctx;
+    return sharedCtx;
   }
 
   // freq: start pitch, slide: optional end pitch
