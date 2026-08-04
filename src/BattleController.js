@@ -98,6 +98,7 @@ export default class BattleController {
       if (poses) poses.setPose('gather');
       if (fx) fx.gather(POSE_TIMING.gather);
       if (cam) cam.gatherPush();
+      if (this.scene.hudFrame) this.scene.hudFrame.gatherPulse(POSE_TIMING.gather);
       this.emit(AUDIO_EVENTS.gather);
       this.hud.queueMessage(hero.attack.flavor);
     });
@@ -119,10 +120,11 @@ export default class BattleController {
       enemy.hp = Math.max(0, enemy.hp - hit.damage);
       this.hud.updateEnemyHP(enemy.hp, enemy.maxHp);
       if (fx) {
-        fx.hideTargetCursor();
+        fx.fractureTargetCursor();
         fx.impact();
         if (hit.crit) fx.critical();
       }
+      if (hit.crit && this.scene.hudFrame) this.scene.hudFrame.critFlare();
       if (cam) cam.hitShake(hit.crit);
       if (this.scene.enemyView) this.scene.enemyView.hit();
       if (this.scene.floatDamage) this.scene.floatDamage(hit.damage, 'enemy', hit.crit);
@@ -158,6 +160,8 @@ export default class BattleController {
       if (enemy.hp <= 0) {
         if (this.scene.enemyView) this.scene.enemyView.die();
         if (this.scene.battleFx) this.scene.battleFx.victoryStinger();
+        if (this.scene.hudFrame) this.scene.hudFrame.victoryBloom();
+        if (this.scene.uiAudio) this.scene.uiAudio.victory();
         this.emit(AUDIO_EVENTS.victory);
         this.hud.queueMessage(`${enemy.name} shatters! The veil clears...`, () => {
           this.resetBattle();
@@ -191,6 +195,7 @@ export default class BattleController {
         this.hud.updateHP(hero.hp, hero.maxHp);
         if (this.scene.floatDamage) this.scene.floatDamage(hit.damage, 'hero', hit.crit);
         if (this.scene.battleCam) this.scene.battleCam.hitShake(hit.crit);
+        if (hit.crit && this.scene.hudFrame) this.scene.hudFrame.critFlare();
           if (this.scene.hitStop) this.scene.hitStop(hit.crit ? POSE_TIMING.hitStop * 2 : POSE_TIMING.hitStop);
         this.emit(AUDIO_EVENTS.impact);
         this.fracture.close();
