@@ -1,18 +1,19 @@
-import BattleHUD from './BattleHUD.js?v=31';
-import BattleController from './BattleController.js?v=31';
-import Timeline from './Timeline.js?v=31';
-import VeilFracture from './VeilFracture.js?v=31';
-import HeroPoseView from './HeroPoseView.js?v=31';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=31';
-import BattleCamera from './BattleCamera.js?v=31';
-import BattleFX from './BattleFX.js?v=31';
-import BattleAtmosphere from './BattleAtmosphere.js?v=31';
-import HudFrame from './HudFrame.js?v=31';
-import CommandConsole from './CommandConsole.js?v=31';
-import TargetReticle from './TargetReticle.js?v=31';
-import UiAudio from './UiAudio.js?v=31';
-import { AUDIO_EVENTS } from './BattleController.js?v=31';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=31';
+import BattleHUD from './BattleHUD.js?v=32';
+import BattleController from './BattleController.js?v=32';
+import Timeline from './Timeline.js?v=32';
+import VeilFracture from './VeilFracture.js?v=32';
+import HeroPoseView from './HeroPoseView.js?v=32';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=32';
+import BattleCamera from './BattleCamera.js?v=32';
+import BattleFX from './BattleFX.js?v=32';
+import BattleFeel from './BattleFeel.js?v=32';
+import BattleAtmosphere from './BattleAtmosphere.js?v=32';
+import HudFrame from './HudFrame.js?v=32';
+import CommandConsole from './CommandConsole.js?v=32';
+import TargetReticle from './TargetReticle.js?v=32';
+import UiAudio from './UiAudio.js?v=32';
+import { AUDIO_EVENTS } from './BattleController.js?v=32';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=32';
 
 function cloneConfig(source, heroKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -77,9 +78,10 @@ export default class VeilBattleScene extends Phaser.Scene {
   // relative path off the repo root — no CDN.
   loadUiKit() {
     const kit = key => this.load.image(`kit_${key}`, `./assets/ui/kit/${key}.png`);
+    // v32's TargetReticle draws its rig procedurally — no baked reticle
+    // textures needed any more.
     ['console_plate', 'cursor_idle', 'cursor_active',
-     'frame_corner', 'frame_rail', 'frame_rail_centre',
-     'reticle_seeking', 'reticle_locked', 'reticle_confirmed'].forEach(kit);
+     'frame_corner', 'frame_rail', 'frame_rail_centre'].forEach(kit);
     ['fracture', 'resonance', 'barrier', 'returnpath'].forEach(g => {
       ['idle', 'on', 'off'].forEach(state => kit(`glyph_${g}_${state}`));
     });
@@ -104,6 +106,9 @@ export default class VeilBattleScene extends Phaser.Scene {
     // will point at a destroyed node on the next battle.
     this._lightWash = null;
     this._hitStopped = false;
+    this._hitStopUntil = 0;
+    if (this._hitStopTimer) window.clearTimeout(this._hitStopTimer);
+    this._hitStopTimer = null;
 
     // The Sound Manager is NOT one of the objects a restart destroys —
     // the previous battle's music and SFX instances survive it. Without
@@ -156,6 +161,7 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     this.battleCam = new BattleCamera(this);
     this.battleFx = new BattleFX(this);
+    this.battleFeel = new BattleFeel(this);
 
     // Alpha v1.0 interaction layer. The console is UI (never zooms); the
     // reticle is a battlefield visual and registers through worldAdd().
@@ -365,15 +371,29 @@ export default class VeilBattleScene extends Phaser.Scene {
   // land. Restored on a real-time timer, which the frozen clock can't
   // delay.
   hitStop(ms = 80) {
-    if (this._hitStopped) return;
-    this._hitStopped = true;
-    this.tweens.timeScale = 0.0001;
-    this.time.timeScale = 0.0001;
-    window.setTimeout(() => {
+    const now = performance.now();
+    this._hitStopUntil = Math.max(this._hitStopUntil || 0, now + ms);
+
+    if (!this._hitStopped) {
+      this._hitStopped = true;
+      this.tweens.timeScale = 0.0001;
+      this.time.timeScale = 0.0001;
+    }
+
+    if (this._hitStopTimer) window.clearTimeout(this._hitStopTimer);
+    const resumeWhenDue = () => {
+      const remaining = (this._hitStopUntil || 0) - performance.now();
+      if (remaining > 1) {
+        this._hitStopTimer = window.setTimeout(resumeWhenDue, remaining);
+        return;
+      }
       this.tweens.timeScale = 1;
       this.time.timeScale = 1;
       this._hitStopped = false;
-    }, ms);
+      this._hitStopUntil = 0;
+      this._hitStopTimer = null;
+    };
+    this._hitStopTimer = window.setTimeout(resumeWhenDue, ms);
   }
 
   // A restart can destroy this object through Phaser's own display-list

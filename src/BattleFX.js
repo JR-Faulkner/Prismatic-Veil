@@ -83,8 +83,9 @@ export default class BattleFX {
 
   // Prismatic beam from the crystal to the enemy, layered rainbow lines.
   beam(duration = 160) {
+    if (this.scene.battleFeel) this.scene.battleFeel.release();
     const heroId = this.scene.battleConfig && this.scene.battleConfig.hero.id;
-    if (heroId === 'kineza') return this.strikeKineza(duration);
+    if (heroId === 'kineza') return this.strikeKineza(duration, true);
     const a = this.castPoint();
     const b = this.targetPoint();
     const g = this._w(this.scene.add.graphics().setDepth(45));
@@ -119,8 +120,9 @@ export default class BattleFX {
 
   // Impact: diamond fragments burst out, then lingering sparkles drift.
   impact() {
+    if (this.scene.battleFeel) this.scene.battleFeel.impact({ critical: false });
     const heroId = this.scene.battleConfig && this.scene.battleConfig.hero.id;
-    if (heroId === 'kineza') return this.impactKineza();
+    if (heroId === 'kineza') return this.impactKineza(true);
     const p = this.targetPoint();
 
     for (let i = 0; i < 14; i++) {
@@ -191,7 +193,8 @@ export default class BattleFX {
     if (this.scene.atmosphere) this.scene.atmosphere.gather('kineza');
   }
 
-  strikeKineza(duration = 160) {
+  strikeKineza(duration = 160, alreadySignalled = false) {
+    if (!alreadySignalled && this.scene.battleFeel) this.scene.battleFeel.release();
     const hero = this.scene.heroPoses && this.scene.heroPoses.sprite;
     const b = this.targetPoint();
     if (!hero) return;
@@ -214,7 +217,8 @@ export default class BattleFX {
     this.clearGather();
   }
 
-  impactKineza() {
+  impactKineza(alreadySignalled = false) {
+    if (!alreadySignalled && this.scene.battleFeel) this.scene.battleFeel.impact({ critical: false });
     const p = this.targetPoint();
     const ring = this._w(this.scene.add.ellipse(p.x, p.y, 14, 44, 0x68ff8c, 0)
       .setStrokeStyle(5, 0x68ff8c, 0.72).setDepth(46));
@@ -257,20 +261,26 @@ export default class BattleFX {
   // quick accent, not a second headline fighting the number for
   // attention — smaller, and gone well before the numeral's own fade.
   critical() {
+    if (this.scene.battleFeel) this.scene.battleFeel.impact({ critical: true });
     const p = this.targetPoint();
-    const label = this._w(this.scene.add.text(p.x, p.y - 70, 'CRITICAL!', {
-      fontSize: Math.round(Math.max(14, this.scene.scale.width * 0.028)) + 'px',
+    // v32's reticle is a hollow ring, not a fixed-size baked image, so a
+    // constant offset here can land back on the Wraith's face depending
+    // on the reticle's actual radius at this viewport — scale off it.
+    const reticle = this.scene.reticle;
+    const clearance = reticle && reticle.radius ? reticle.radius * 1.15 : 70;
+    const label = this._w(this.scene.add.text(p.x, p.y - clearance, 'CRIT', {
+      fontSize: Math.round(Math.max(11, this.scene.scale.width * 0.021)) + 'px',
       fontStyle: 'bold',
       color: '#FFF3B0',
       stroke: '#7A3A00',
-      strokeThickness: 4
+      strokeThickness: 3
     }).setOrigin(0.5).setDepth(62).setScale(0.5));
 
     this.scene.tweens.add({
-      targets: label, scaleX: 1.1, scaleY: 1.1, duration: 140, ease: 'Back.easeOut'
+      targets: label, scaleX: 0.92, scaleY: 0.92, duration: 105, ease: 'Back.easeOut'
     });
     this.scene.tweens.add({
-      targets: label, y: label.y - 24, alpha: 0, duration: 420, delay: 120, ease: 'Quad.easeOut',
+      targets: label, y: label.y - 18, alpha: 0, duration: 260, delay: 70, ease: 'Quad.easeOut',
       onComplete: () => label.destroy()
     });
 

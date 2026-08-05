@@ -119,18 +119,34 @@ export default class EnemyWraithView {
   }
 
   hit() {
-    this.setPose('hit', 70);
+    this.setPose('hit', 58);
 
+    // One readable compression-and-recoil beat replaces the old four-cycle
+    // vibration. The silhouette now absorbs the hit, snaps away, and settles.
+    const landscape = this.scene.scale.width > this.scene.scale.height;
+    const shove = landscape ? 18 : 15;
     this.scene.tweens.add({
       targets: this.container,
-      x: this.baseX + 16,
-      duration: 58,
-      yoyo: true,
-      repeat: 3,
-      ease: 'Sine.easeInOut',
+      x: this.baseX + shove,
+      angle: 2.2,
+      scaleX: 0.94,
+      scaleY: 1.055,
+      duration: 62,
+      ease: 'Quad.easeOut',
       onComplete: () => {
-        this.container.setX(this.baseX);
-        if (this.sprite.visible) this.setPose('idle', 120);
+        this.scene.tweens.add({
+          targets: this.container,
+          x: this.baseX,
+          angle: 0,
+          scaleX: 1,
+          scaleY: 1,
+          duration: 155,
+          ease: 'Back.easeOut',
+          onComplete: () => {
+            this.container.setPosition(this.baseX, this.container.y).setAngle(0).setScale(1);
+            if (this.sprite.visible) this.setPose('idle', 95);
+          }
+        });
       }
     });
   }

@@ -1,64 +1,31 @@
-// Battle Presentation Alpha v1.0 — Veil targeting.
+// The Prismatic Veil — v32 hollow-center Veil targeting rig.
 //
-// Replaces the drawn crosshair with the kit's interaction reticle set,
-// run as three separate states rather than one baked animation:
-//
-//   seeking   — drifts in wide and loose, hunting
-//   locked    — snaps to the target, holds
-//   confirmed — flares as the attack releases, then shatters
-//
-// The reticle is a battlefield visual, so it registers through
-// scene.worldAdd() and zooms with the main camera. The kit's design note
-// asks that it "frame the target without covering it", so it sits behind
-// the FX depth band and scales off the enemy's own footprint.
-
-const STATE_TEX = {
-  seeking: 'kit_reticle_seeking',
-  locked: 'kit_reticle_locked',
-  confirmed: 'kit_reticle_confirmed'
-};
+// Same public API as the v31 reticle: seek, lock, confirm, shatter, hide.
+// The baked center gem is intentionally removed. Four separated brackets
+// frame the enemy while the eye line and face remain completely unobstructed.
 
 export default class TargetReticle {
   constructor(scene) {
     this.scene = scene;
-    this.image = null;
+    this.graphics = null;
     this.state = null;
+    this.radius = 64;
   }
 
   _targetPoint() {
     const enemy = this.scene.enemyView;
-    if (!enemy || !enemy.sprite) {
-      return { x: this.scene.scale.width * 0.75, y: this.scene.scale.height * 0.6, r: 90 };
+    if (!enemy || !enemy.sprite || !enemy.container) {
+      return { x: this.scene.scale.width * 0.75, y: this.scene.scale.height * 0.6, r: 68 };
     }
-    // The Wraith's sprite is bottom-anchored inside its container, so the
-    // body centre is half a sprite up from the container origin.
     const c = enemy.container;
     const s = enemy.sprite;
     const h = s.displayHeight * Math.abs(c.scaleY || 1);
-    // Radius is set off the sprite so the rings clear the silhouette —
-    // the kit asks that the reticle frame the target, not cover it.
-    // ...and capped so a wide reticle never runs off a 390px screen.
-    const room = this.scene.scale.width * 0.42 - 10;
-    // The centre gem sits at true vertical mid-sprite, which is the
-    // Wraith's eye line — the sprite carries an extra spike above its
-    // head, so dead-center of the bounding box isn't dead-center of the
-    // body. Dropping the anchor moves the gem onto the chest instead.
+    const room = this.scene.scale.width * 0.42 - 12;
     return {
       x: c.x,
-      y: c.y - h * 0.40,
-      // v1 read as a second enemy silhouette on mobile — keep the ring
-      // just outside the body and cap it before it dominates the frame.
-      r: Math.max(48, Math.min(h * 0.44, room / 0.78))
+      y: c.y - h * 0.43,
+      r: Math.max(48, Math.min(h * 0.40, room / 0.82))
     };
-  }
-
-  _ensure() {
-    if (this.image && this.image.scene) return this.image;
-    // Behind the Wraith (its container sits at depth 18). In front, the
-    // reticle's centre gem lands squarely on the Wraith's chest.
-    this.image = this.scene.add.image(0, 0, STATE_TEX.seeking).setDepth(16);
-    this.scene.worldAdd(this.image);
-    return this.image;
   }
 
   _accent() {
@@ -66,143 +33,206 @@ export default class TargetReticle {
     return (hero && hero.accent) || 0xffd56a;
   }
 
-  // step 4a — reticle seeks
+  _ensure() {
+    if (this.graphics && this.graphics.scene) return this.graphics;
+    this.graphics = this.scene.add.graphics().setDepth(16);
+    this.scene.worldAdd(this.graphics);
+    return this.graphics;
+  }
+
+  _diamond(g, x, y, size, alpha) {
+    g.lineStyle(2, this._accent(), alpha);
+    g.beginPath();
+    g.moveTo(x, y - size);
+    g.lineTo(x + size, y);
+    g.lineTo(x, y + size);
+    g.lineTo(x - size, y);
+    g.closePath();
+    g.strokePath();
+  }
+
+  _corner(g, sx, sy, r, len, alpha) {
+    const x = sx * r;
+    const y = sy * r;
+    g.lineStyle(3, this._accent(), alpha);
+    g.beginPath();
+    g.moveTo(x - sx * len, y);
+    g.lineTo(x, y);
+    g.lineTo(x, y - sy * len);
+    g.strokePath();
+  }
+
+  _draw(state, r) {
+    const g = this._ensure();
+    g.clear();
+    this.radius = r;
+
+    const seeking = state === 'seeking';
+    const confirmed = state === 'confirmed';
+    const alpha = seeking ? 0.54 : (confirmed ? 0.95 : 0.76);
+    const len = r * (seeking ? 0.22 : 0.29);
+    const edge = r * (seeking ? 0.68 : 0.61);
+
+    [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([sx, sy]) => {
+      this._corner(g, sx, sy, edge, len, alpha);
+    });
+
+    // Cardinal anchor diamonds sit outside the body, never in its center.
+    const d = Math.max(3, r * 0.055);
+    this._diamond(g, 0, -r * 0.78, d, alpha * 0.9);
+    this._diamond(g, r * 0.78, 0, d, alpha * 0.9);
+    this._diamond(g, 0, r * 0.78, d, alpha * 0.9);
+    this._diamond(g, -r * 0.78, 0, d, alpha * 0.9);
+
+    // Broken arc segments communicate analysis without becoming a modern
+    // crosshair. The middle stays empty by design.
+    g.lineStyle(seeking ? 1 : 2, this._accent(), alpha * 0.52);
+    for (let i = 0; i < 8; i++) {
+      const a0 = i * Math.PI / 4 + 0.08;
+      const a1 = a0 + (seeking ? 0.18 : 0.28);
+      g.beginPath();
+      g.arc(0, 0, r * 0.52, a0, a1, false);
+      g.strokePath();
+    }
+
+    if (confirmed) {
+      g.lineStyle(2, 0xffffff, 0.66);
+      for (let i = 0; i < 4; i++) {
+        const a = Math.PI / 4 + i * Math.PI / 2;
+        const x0 = Math.cos(a) * r * 0.82;
+        const y0 = Math.sin(a) * r * 0.82;
+        const x1 = Math.cos(a) * r * 1.02;
+        const y1 = Math.sin(a) * r * 1.02;
+        g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.strokePath();
+      }
+    }
+  }
+
   seek() {
     const p = this._targetPoint();
-    const img = this._ensure();
+    const g = this._ensure();
     this.state = 'seeking';
-
-    this.scene.tweens.killTweensOf(img);
-    img.setTexture(STATE_TEX.seeking)
-      .setTint(this._accent())
-      .setDisplaySize(p.r * 2.0, p.r * 2.0)
-      .setPosition(p.x + p.r * 0.42, p.y - p.r * 0.24)
-      .setAlpha(0)
-      .setAngle(-22);
+    this.scene.tweens.killTweensOf(g);
+    this._draw('seeking', p.r);
+    g.setPosition(p.x + p.r * 0.34, p.y - p.r * 0.18)
+      .setScale(1.20).setAlpha(0).setAngle(-18);
 
     this.scene.tweens.add({
-      targets: img,
-      alpha: 0.60,
+      targets: g,
       x: p.x,
       y: p.y,
+      alpha: 0.78,
       angle: 0,
-      displayWidth: p.r * 1.58,
-      displayHeight: p.r * 1.58,
-      duration: 320,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 300,
       ease: 'Quad.easeOut'
     });
-    // a slow drift while it hunts, killed the moment it locks
     this._drift = this.scene.tweens.add({
-      targets: img,
+      targets: g,
       angle: 360,
-      duration: 11000,
-      delay: 340,
+      duration: 13000,
+      delay: 320,
       repeat: -1,
       ease: 'Linear'
     });
     if (this.scene.uiAudio) this.scene.uiAudio.hover();
   }
 
-  // step 4b — lock
   lock(onDone) {
     const p = this._targetPoint();
-    const img = this._ensure();
+    const g = this._ensure();
     this.state = 'locked';
-
-    this.scene.tweens.killTweensOf(img);
+    this.scene.tweens.killTweensOf(g);
     if (this._drift) { this._drift.stop(); this._drift = null; }
-    img.setTexture(STATE_TEX.locked).setAngle(0)
-      .setDisplaySize(p.r * 1.86, p.r * 1.86)
-      .setPosition(p.x, p.y)
-      .setAlpha(0.58);
+    this._draw('locked', p.r);
+    g.setPosition(p.x, p.y).setAngle(0).setScale(1.18).setAlpha(0.9);
 
     this.scene.tweens.add({
-      targets: img,
-      displayWidth: p.r * 1.48,
-      displayHeight: p.r * 1.48,
-      alpha: 0.68,
-      duration: 170,
+      targets: g,
+      scaleX: 1,
+      scaleY: 1,
+      alpha: 0.74,
+      duration: 155,
       ease: 'Back.easeOut',
       onComplete: () => {
         this._pulse = this.scene.tweens.add({
-          targets: img,
-          alpha: 0.46,
-          duration: 820,
+          targets: g,
+          alpha: 0.50,
+          duration: 920,
           yoyo: true,
           repeat: -1,
           ease: 'Sine.easeInOut'
         });
+        if (this.scene.battleFeel) this.scene.battleFeel.lock();
         if (onDone) onDone();
       }
     });
     if (this.scene.uiAudio) this.scene.uiAudio.cursor();
   }
 
-  // step 5 — the attack releases through the lock
   confirm() {
-    if (!this.image || !this.image.scene) return;
-    const img = this.image;
+    if (!this.graphics || !this.graphics.scene) return;
     const p = this._targetPoint();
+    const g = this.graphics;
     this.state = 'confirmed';
-
-    this.scene.tweens.killTweensOf(img);
+    this.scene.tweens.killTweensOf(g);
     if (this._pulse) { this._pulse.stop(); this._pulse = null; }
-    img.setTexture(STATE_TEX.confirmed).setAlpha(0.95)
-      .setDisplaySize(p.r * 1.48, p.r * 1.48);
+    this._draw('confirmed', p.r);
+    g.setPosition(p.x, p.y).setAlpha(1).setScale(1);
     this.scene.tweens.add({
-      targets: img,
-      displayWidth: p.r * 1.68,
-      displayHeight: p.r * 1.68,
-      duration: 130,
+      targets: g,
+      scaleX: 1.12,
+      scaleY: 1.12,
+      duration: 108,
       yoyo: true,
       ease: 'Quad.easeOut'
     });
   }
 
-  // The reticle breaks apart on impact rather than blinking out.
   shatter() {
-    if (!this.image || !this.image.scene) return;
-    const img = this.image;
-    this.image = null;
+    if (!this.graphics || !this.graphics.scene) return;
+    const g = this.graphics;
+    this.graphics = null;
     this.state = null;
-    this.scene.tweens.killTweensOf(img);
+    this.scene.tweens.killTweensOf(g);
     if (this._pulse) { this._pulse.stop(); this._pulse = null; }
     if (this._drift) { this._drift.stop(); this._drift = null; }
 
     const accent = this._accent();
     for (let i = 0; i < 4; i++) {
-      const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
-      const shard = this.scene.add.rectangle(img.x, img.y, 20, 2, accent, 0.82)
-        .setDepth(39).setAngle(Phaser.Math.RadToDeg(a));
+      const a = Math.PI / 4 + i * Math.PI / 2;
+      const shard = this.scene.add.rectangle(g.x, g.y, 22, 2, accent, 0.82)
+        .setDepth(39).setAngle(a * 180 / Math.PI);
       this.scene.worldAdd(shard);
       this.scene.tweens.add({
         targets: shard,
-        x: img.x + Math.cos(a) * 58,
-        y: img.y + Math.sin(a) * 58,
+        x: g.x + Math.cos(a) * 62,
+        y: g.y + Math.sin(a) * 62,
         alpha: 0,
-        duration: 380,
+        duration: 330,
         ease: 'Quad.easeOut',
         onComplete: () => shard.destroy()
       });
     }
     this.scene.tweens.add({
-      targets: img,
-      displayWidth: img.displayWidth * 1.5,
-      displayHeight: img.displayHeight * 1.5,
+      targets: g,
+      scaleX: 1.28,
+      scaleY: 1.28,
       alpha: 0,
-      duration: 260,
+      duration: 220,
       ease: 'Quad.easeOut',
-      onComplete: () => img.destroy()
+      onComplete: () => g.destroy()
     });
   }
 
   hide() {
-    if (!this.image || !this.image.scene) return;
-    this.scene.tweens.killTweensOf(this.image);
+    if (!this.graphics || !this.graphics.scene) return;
+    this.scene.tweens.killTweensOf(this.graphics);
     if (this._pulse) { this._pulse.stop(); this._pulse = null; }
     if (this._drift) { this._drift.stop(); this._drift = null; }
-    this.image.destroy();
-    this.image = null;
+    this.graphics.destroy();
+    this.graphics = null;
     this.state = null;
   }
 }

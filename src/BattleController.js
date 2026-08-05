@@ -1,4 +1,4 @@
-import BattleFeedback from './BattleFeedback.js?v=31';
+import BattleFeedback from './BattleFeedback.js?v=32';
 
 // Battle Presentation v3 — pose timing spec:
 //   Idle -> Step 220 -> Gather 450 -> Hold 120 -> Release 160
@@ -169,6 +169,13 @@ export default class BattleController {
       enemy.hp = Math.max(0, enemy.hp - hit.damage);
       this.hud.updateEnemyHP(enemy.hp, enemy.maxHp);   // 6, 7
       if (this.scene.reticle) this.scene.reticle.shatter();
+      // v32: fx.impact()/fx.critical() already call battleFeel, which
+      // owns hit stop and camera shake now — a separate cam.hitShake()
+      // or scene.hitStop() call here would fire a second time on top of
+      // it. hitStop's deadline-extension logic wouldn't even error on
+      // that, it would just quietly stretch the freeze back out to the
+      // old POSE_TIMING.hitStop length and defeat the whole point of
+      // the pass. Let battleFeel be the only thing that touches either.
       if (fx) {
         fx.impact();
         if (hit.crit) fx.critical();
@@ -179,14 +186,12 @@ export default class BattleController {
         const c = this.scene.enemyView.container;
         this.scene.atmosphere.compressionRipple(c.x, c.y, hero.accent);
       }
-      if (cam) cam.hitShake(hit.crit);
       if (this.scene.enemyView) this.scene.enemyView.hit();
       if (this.scene.battleFeedback) {
         this.scene.battleFeedback.showDamage(hit.damage, 'enemy', hit.crit, hero.damageStyle);
       } else if (this.scene.floatDamage) {
         this.scene.floatDamage(hit.damage, 'enemy', hit.crit);
       }
-      if (this.scene.hitStop) this.scene.hitStop(hit.crit ? POSE_TIMING.hitStop * 2 : POSE_TIMING.hitStop);
       this.emit(AUDIO_EVENTS.impact);
     });
     at += POSE_TIMING.hitStop;
@@ -262,9 +267,13 @@ export default class BattleController {
         } else if (this.scene.floatDamage) {
           this.scene.floatDamage(hit.damage, 'hero', hit.crit);
         }
-        if (this.scene.battleCam) this.scene.battleCam.hitShake(hit.crit);
+        // v32: routed through the same battleFeel.impact() the player's
+        // own attacks use, rather than the old battleCam.hitShake() +
+        // POSE_TIMING.hitStop pairing. Both sides land with the same
+        // weight now instead of the enemy's hits staying on the old,
+        // heavier feel while the hero's got tuned down.
+        if (this.scene.battleFeel) this.scene.battleFeel.impact({ critical: hit.crit });
         if (hit.crit && this.scene.hudFrame) this.scene.hudFrame.critFlare();
-          if (this.scene.hitStop) this.scene.hitStop(hit.crit ? POSE_TIMING.hitStop * 2 : POSE_TIMING.hitStop);
         this.emit(AUDIO_EVENTS.impact);
         this.fracture.close();
         this.scene.time.delayedCall(260, () => {

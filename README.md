@@ -4,7 +4,7 @@ A family JRPG built with Phaser 3 — no build tools, no bundler, no CDN. Everyt
 
 **▶ Play the battle: https://jr-faulkner.github.io/Prismatic-Veil/battle-v2.html**
 
-> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=31`
+> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=32`
 
 ---
 
@@ -111,10 +111,12 @@ Each combatant carries a framed portrait beside their conduit, running the kit's
 ### Interaction layer — `src/CommandConsole.js`, `src/TargetReticle.js`, `src/KitFrame.js`
 The player's round runs through a tactical command console rather than a bare tap. It opens on their turn, shows one Veil glyph per command with a selection cursor, and hands the choice back. Glyph states are the kit's own language — dormant, synchronized, disconnected, the last marked with broken-circuit corners rather than plain low opacity. Every tap target clears 44px even at 390px wide. In landscape the console is its own bottom dock rather than sharing the portrait dialogue's clearance.
 
-Selecting a command sends the target reticle through seeking → locked → confirmed → shatter, sized and capped off the Wraith's own sprite and drawn behind it so it frames the target instead of reading as a second silhouette. `KitFrame` assembles a frame of any size from one corner slice and a stretchable rail.
+Selecting a command sends the target reticle through seeking → locked → confirmed → shatter. The reticle is drawn procedurally — four corner brackets, cardinal anchor diamonds, broken arc segments — with a **hollow center**, not a baked image with a gem in the middle. Nothing sits over the Wraith's face at any state, at any viewport. `KitFrame` assembles a frame of any size from one corner slice and a stretchable rail.
 
-### Combat feedback — `src/BattleFeedback.js`
+### Combat feedback — `src/BattleFeedback.js`, `src/BattleFeel.js`
 Sheet 05's custom numerals, sliced to real alpha and loaded like every other asset — relative paths from `preload()`, no embedded base64. Ten tintable white masks for normal damage, coloured by the attacker's accent; ten gold numerals plus a geometric burst for criticals. A hero's own `damageStyle` drives the number's motion whether they're dealing the hit or taking it, so a hurt Prismel still refracts and a hurt Kineza still slams. Falls back to the older drawn numbers if the digit textures are ever incomplete.
+
+`BattleFeel` centralises impact timing so both heroes — and both sides of the fight — land with the same weight: a 58ms hit stop on a normal hit, 92ms on a critical, plus a small camera impulse on lock/release/impact. A critical that follows a normal impact within the same beat escalates the existing freeze instead of stacking a second one. It's the *only* thing that touches hit stop or camera shake now — `BattleController` no longer calls either directly, since a second call on top of `BattleFeel`'s would just stretch the freeze back out and quietly undo the tuning.
 
 ### Audio — `src/UiAudio.js`, `assets/sfx/`
 Six battle hooks (`PLAY_STEP` / `GATHER` / `RELEASE` / `IMPACT` / `RECOVER` / `VICTORY`) emitted as scene events and mapped to **per-hero sound banks**. Prismel's set is crystalline; Kineza's seven clips are kinetic, with a debris accent 36ms behind his impact. UI cues (turn start, low HP, victory, confirm) are **synthesised at runtime** with the Web Audio API — no files, nothing to cache-bust. `Veilbreak.mp3` loops as the shared battle theme, trimmed to an 80s loop with matched boundary levels so the hard restart doesn't click.
@@ -151,6 +153,7 @@ src/                        all battle code, ES modules
   TargetReticle.js          seeking / locked / confirmed targeting
   KitFrame.js               modular frame from corner + rail pieces
   BattleFeedback.js         Sheet 05 damage numerals, gold criticals
+  BattleFeel.js             hit stop, camera impulse — the sole owner of both
   HudFrame.js               Veil border, crystal corners, vignette, flares
   BattleFX.js               per-hero attack FX, crit flourish, victory
   BattleAtmosphere.js       parallax layers, fog, floor, motes, ripples

@@ -168,16 +168,16 @@ export default class HeroPoseView {
     const t = this.scene.tweens;
     switch (pose) {
       case 'step':
-        t.add({ targets: this.sprite, x: this.baseX + 26, duration: 220, ease: 'Quad.easeOut' });
+        t.add({ targets: this.sprite, x: this.baseX + 24, duration: 175, ease: 'Quad.easeOut' });
         break;
       case 'gather':
-        t.add({ targets: this.sprite, scaleX: this.sprite.scaleX * 1.04, scaleY: this.sprite.scaleY * 1.04, duration: 260, yoyo: true, ease: 'Sine.easeInOut' });
+        t.add({ targets: this.sprite, scaleX: this.sprite.scaleX * 1.04, scaleY: this.sprite.scaleY * 1.04, duration: 310, yoyo: true, ease: 'Sine.easeInOut' });
         break;
       case 'release':
-        t.add({ targets: this.sprite, x: this.baseX + 44, duration: 120, ease: 'Back.easeOut' });
+        t.add({ targets: this.sprite, x: this.baseX + 46, duration: 96, ease: 'Back.easeOut' });
         break;
       case 'recover':
-        t.add({ targets: this.sprite, x: this.baseX, duration: 300, ease: 'Quad.easeInOut' });
+        t.add({ targets: this.sprite, x: this.baseX, duration: 240, ease: 'Quad.easeInOut', onComplete: () => { if (this.scene.battleFeel) this.scene.battleFeel.recover(); } });
         break;
       default:
         this.sprite.setPosition(this.baseX, this.baseY);

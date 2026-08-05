@@ -13,7 +13,7 @@
 // Nothing here gates a gameplay rule. A disconnected glyph is a slot
 // that has no move bound to it yet; selecting one only narrates.
 
-import KitFrame from './KitFrame.js?v=31';
+import KitFrame from './KitFrame.js?v=32';
 
 const PLATE_TEX = 'kit_console_plate';
 
@@ -329,6 +329,10 @@ export default class CommandConsole {
 
     this._locked = true;
     if (this.scene.uiAudio) this.scene.uiAudio.confirm();
+    // v32: BattleFeel's own confirm impulse. The console stays open on
+    // this glyph another 260ms before handing off to the reticle's
+    // seek() (below), so this never lands on the same beat as that one.
+    if (this.scene.battleFeel) this.scene.battleFeel.commandConfirmed();
 
     // synchronize: the chosen glyph lights, the rest dim away
     const m = this._metrics();

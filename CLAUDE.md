@@ -77,11 +77,13 @@ Adding a hero means adding an entry plus their pose PNGs. New frame or damage st
 
 ### Round flow
 
-`BattleController` runs one full side at a time, alternating. The enemy acts **only** on its own round — never auto-chain the two. `POSE_TIMING` holds the canonical beat lengths; `AUDIO_EVENTS` are emitted as scene events and mapped to per-hero sound banks in the scene.
+`BattleController` runs one full side at a time, alternating. The enemy acts **only** on its own round — never auto-chain the two. `POSE_TIMING` holds the canonical beat lengths (scheduling, unchanged since v31); `AUDIO_EVENTS` are emitted as scene events and mapped to per-hero sound banks in the scene.
 
 The player's round is driven by the command console, not a bare tap, and follows the Alpha v1.0 flow: portrait synchronizes → console opens → glyph selected → reticle seeks and locks → cinematic → feedback → HP chip → hand over. The enemy's round still advances on a tap.
 
 The Veil conduit dips on a command and recharges by the next round. **It gates nothing** — it is a readout, not a resource. Making it a real cost is a later mechanic.
+
+**`BattleFeel` (`src/BattleFeel.js`) is the sole owner of hit stop and camera shake — both directions, both heroes.** It centralizes what used to be scattered `battleCam.hitShake()` / `scene.hitStop()` calls so a normal hit and a critical always land with the same tuned weight (58ms / 92ms hit stop) regardless of which hero or which side is hitting. `scene.hitStop()` supports deadline extension — calling it again while already stopped pushes the deadline out rather than starting a second freeze — specifically so a critical that follows a normal impact within the same beat (`fx.impact()` then `fx.critical()`, back to back, same frame) escalates the existing freeze instead of stacking a muddy second one. **Nothing else may call `hitShake()` or `hitStop()` directly** — a second call on top of `BattleFeel`'s doesn't error, it just silently stretches the freeze back out to whatever the old caller asked for and undoes the tuning. This bit once already: a DAI package added `BattleFeel` and wired it into `BattleFX`, but `BattleController` — not included in that package — still had its own `cam.hitShake(hit.crit)` and `scene.hitStop(...)` calls sitting right next to the new ones.
 
 ---
 
@@ -113,7 +115,9 @@ Every one of these reached the repo and had to be fixed. Do not repeat them.
 
 **A deferred tween's `onComplete` can destroy an object twice.** `scene.restart()` tears down the display list, but the tween manager survives it and keeps ticking. A fade-out queued a moment before a hero switch can have its `onComplete` fire against an object Phaser's own restart sweep is *simultaneously* destroying — two independent paths racing for the same object, neither aware of the other. Checking `obj.scene` first does not reliably win that race. Wrap the destroy call itself in try/catch (`BattleFeedback._destroy`, `VeilBattleScene._destroyIfAlive`) rather than trying to prove the object is still alive beforehand.
 
-**A sprite's bounding-box centre is not its visual centre.** The Wraith's art carries a gem spike above its head, so true vertical mid-height of the sprite lands on its eye line, not its chest — the target reticle's centre gem sat right over its face until the anchor was dropped to 40% up from the feet instead of 50%. Don't assume `displayHeight * 0.5` is "the middle of the character."
+**A sprite's bounding-box centre is not its visual centre.** The Wraith's art carries a gem spike above its head, so true vertical mid-height of the sprite lands on its eye line, not its chest — the target reticle's centre gem sat right over its face until the anchor was dropped to 40% up from the feet instead of 50%. Don't assume `displayHeight * 0.5` is "the middle of the character." (v32 sidesteps this whole class of bug for the reticle specifically — see below.)
+
+**A fixed pixel offset tied to another element's size breaks when that element's size changes.** v32 replaced the reticle's baked center gem with a hollow procedural rig (four corner brackets, no center at all) specifically so nothing could ever sit on the Wraith's face again. But `BattleFX.critical()`'s `CRIT` label still positioned itself at a hard-coded `p.y - 70`, sized for the *old* reticle's larger radius — against the new, smaller hollow rig, that fixed offset landed the label back on the eyes through a completely different code path than the one that had just been fixed. The label now reads `reticle.radius` at draw time instead of assuming a constant. Any two elements meant to stay clear of each other need to reference each other's actual current size, not a number tuned for whatever the other one used to be.
 
 **`scene.sound` is not one of the objects a restart destroys.** Switching heroes calls `scene.restart()`, and `create()` runs `this.sound.add('battle_music', ...)` again — but the previous instance was never stopped, so two loops layer on top of each other. Call `this.sound.stopAll(); this.sound.removeAll();` at the top of `create()`, same as the other restart-survivor caches.
 
