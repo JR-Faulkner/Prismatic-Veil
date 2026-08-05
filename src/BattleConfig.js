@@ -3,6 +3,14 @@
 //
 // Facing standard: hero art should be authored facing RIGHT (toward the
 // enemy). `flip` is only for legacy sets that were authored inconsistently.
+//
+// Alpha v1.0 additions:
+//   frameColourway  which portrait frame family the HUD draws
+//   commands        the tactical console's glyph row. Exactly one entry
+//                   is bound to the hero's attack; the rest are slots
+//                   with nothing behind them yet, and say so when
+//                   selected. No command consumes or gates a resource —
+//                   that stays a later mechanic.
 export const HEROES = Object.freeze({
   prismel: Object.freeze({
     id: 'prismel',
@@ -36,7 +44,13 @@ export const HEROES = Object.freeze({
       flavor: 'Crystal energy gathers...',
       critChance: 0.25,
       critMultiplier: 2
-    })
+    }),
+    frameColourway: 'blue',
+    commands: Object.freeze([
+      Object.freeze({ glyph: 'fracture', label: 'Release', kind: 'attack' }),
+      Object.freeze({ glyph: 'barrier', label: 'Barrier', locked: true }),
+      Object.freeze({ glyph: 'returnpath', label: 'Return', locked: true })
+    ])
   }),
 
   kineza: Object.freeze({
@@ -71,7 +85,13 @@ export const HEROES = Object.freeze({
       flavor: 'Kinetic force coils tight...',
       critChance: 0.22,
       critMultiplier: 2
-    })
+    }),
+    frameColourway: 'teal',
+    commands: Object.freeze([
+      Object.freeze({ glyph: 'resonance', label: 'Momentum', kind: 'attack' }),
+      Object.freeze({ glyph: 'barrier', label: 'Barrier', locked: true }),
+      Object.freeze({ glyph: 'returnpath', label: 'Return', locked: true })
+    ])
   })
 });
 
@@ -84,7 +104,9 @@ export const BATTLE_CONFIG = Object.freeze({
     name: 'Veil Wraith',
     hp: 30,
     maxHp: 30,
-    portrait: null,
+    portrait: 'portrait_wraith',
+    accent: 0xc477ff,
+    frameColourway: 'violet',
     attack: Object.freeze({
       name: 'Veil Lash',
       damage: 9,

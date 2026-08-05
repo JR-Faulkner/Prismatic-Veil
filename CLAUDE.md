@@ -68,13 +68,20 @@ accentAlt  secondary accent, glints and etching
 frameStyle 'diamond' | 'forged'
 damageStyle 'refraction' | 'slam'
 attack     { name, damage, flavor, critChance, critMultiplier }
+frameColourway  portrait frame family: 'blue' | 'teal' | 'violet'
+commands   console glyph row. Exactly one entry is bound to the attack;
+           the rest carry `locked: true` and only narrate when tapped.
 ```
 
 Adding a hero means adding an entry plus their pose PNGs. New frame or damage styles are a small switch case each.
 
 ### Round flow
 
-`BattleController` runs one full side per tap, alternating. The enemy acts **only** on its own round — never auto-chain the two. `POSE_TIMING` holds the canonical beat lengths; `AUDIO_EVENTS` are emitted as scene events and mapped to per-hero sound banks in the scene.
+`BattleController` runs one full side at a time, alternating. The enemy acts **only** on its own round — never auto-chain the two. `POSE_TIMING` holds the canonical beat lengths; `AUDIO_EVENTS` are emitted as scene events and mapped to per-hero sound banks in the scene.
+
+The player's round is driven by the command console, not a bare tap, and follows the Alpha v1.0 flow: portrait synchronizes → console opens → glyph selected → reticle seeks and locks → cinematic → feedback → HP chip → hand over. The enemy's round still advances on a tap.
+
+The Veil conduit dips on a command and recharges by the next round. **It gates nothing** — it is a readout, not a resource. Making it a real cost is a later mechanic.
 
 ---
 
@@ -94,6 +101,14 @@ Every one of these reached the repo and had to be fixed. Do not repeat them.
 
 **Pose scaling.** One scale factor per hero, derived from the idle frame. Fitting every pose to the same screen height blows up crouched or wide poses — they are legitimately shorter.
 
+**Authored UI sheets ship fake transparency.** Seven of the eight Alpha v1.0 sheets were RGB with the transparency checkerboard painted into the pixels — light on the frame sheets, dark on the feedback and targeting sheets. Always check the mode and alpha range before slicing, and key the background out (edge flood fill + trapped-pocket removal + graded alpha) rather than thresholding.
+
+**Painted panel art does not nine-slice.** Sheet 04A's command window carries a centred gem on its top and bottom edges; a nine-slice stretches that gem the whole width and a straight scale squashes the corners. Frames are built from `KitFrame` — one corner slice flipped four ways plus a stretchable rail.
+
+**Chained setters must return `this`.** `ActorPortrait.setSize()` returned undefined and `setSize(n).setPosition(x, y)` threw on boot. Anything meant to chain has to say so.
+
+**The target reticle goes *behind* the enemy.** Its centre gem lands on the Wraith's chest otherwise. Depth 16, under the enemy container's 18 — the kit's own note asks that it frame the target without covering it.
+
 ---
 
 ## Standards
@@ -104,6 +119,8 @@ Every one of these reached the repo and had to be fixed. Do not repeat them.
 - **Art:** PNG with a real alpha channel. Never JPEG, never a painted-on checkerboard or white matte. Heroes authored facing **right**, enemies facing **left**.
 - **Battle wording is fixed:** `<name> uses <attack>!` then `<target> is hit for <n> damage!` (player) or `<target> suffers <n> damage!` (enemy).
 - The turn indicator shows **turn state only**. Attack callouts go through the dialogue queue.
+- **No speaker portrait box.** Combat narration is a single compact line; the acting portrait lives in the HUD, not in the dialogue.
+- **Touch targets clear 44px** even when the glyph renders smaller — set an explicit hit area, don't rely on the sprite bounds.
 - Bump the `?v=` on `src/*.js` imports for notable deploys — cache-busting the HTML alone leaves browsers on stale modules.
 
 ---

@@ -22,6 +22,11 @@ export const AUDIO_EVENTS = Object.freeze({
   victory: 'PLAY_VICTORY'
 });
 
+// How far the Veil conduit dips when a command fires, and how much it
+// recovers by the next round. Nothing is gated on it — see the note on
+// BattleHUD.updateVeil.
+const VEIL_DRAW = 18;
+
 export default class BattleController {
   constructor(scene, timeline, fracture, hud, battleConfig) {
     this.scene = scene;
@@ -40,10 +45,6 @@ export default class BattleController {
     this.scene.events.emit(event);
   }
 
-  speakerFor(who) {
-    return { name: who.name, portrait: who.portrait };
-  }
-
   // v4 crit feedback: roll once per attack, returned with the damage.
   rollAttack(attacker) {
     const atk = attacker.attack;
@@ -57,23 +58,56 @@ export default class BattleController {
   startNextRound() {
     if (this.running) return;
     if (this.phase === 'player') {
-      this.runPlayerRound();
+      // The console is the player's input surface, so a stray tap only
+      // re-opens it if it somehow isn't up.
+      const console_ = this.scene.commandConsole;
+      if (!console_ || !console_.open) this.runPlayerRound();
     } else {
       this.runEnemyRound();
     }
   }
 
+  // Alpha v1.0 interaction flow:
+  //   1 actor portrait synchronizes   5 attack executes
+  //   2 command console appears       6 feedback appears
+  //   3 player selects a glyph        7 HP chip resolves
+  //   4 reticle seeks and locks       8 UI settles for the next turn
   runPlayerRound() {
-    const hero = this.config.hero;
+    this.hud.setTurn(this.config.text.playerTurn);
+    this.hud.setActiveActor('hero');                      // 1
+    if (this.scene.setHint) this.scene.setHint('Choose a command');
 
+    const console_ = this.scene.commandConsole;
+    if (!console_) return this.beginCommand(null);        // console-less fallback
+    console_.show(cmd => this.beginCommand(cmd));         // 2, 3
+  }
+
+  // A command that has nothing bound to it never reaches here — the
+  // console refuses it and stays open.
+  beginCommand(cmd) {
+    const hero = this.config.hero;
     this.running = true;
     this.pendingHit = this.rollAttack(hero);
-    this.hud.setTurn(this.config.text.playerTurn);
-    if (this.scene.battleFx) this.scene.battleFx.showTargetCursor();
+    this.pendingCommand = cmd;
+    if (this.scene.setHint) this.scene.setHint('');
+
+    const reticle = this.scene.reticle;
+    if (!reticle) {
+      this.announceAttack();
+      return;
+    }
+
+    reticle.seek();                                       // 4
+    this.scene.time.delayedCall(360, () => {
+      reticle.lock(() => this.announceAttack());
+    });
+  }
+
+  announceAttack() {
+    const hero = this.config.hero;
     this.hud.queueMessage(
       `${hero.name} uses ${hero.attack.name}!`,
-      () => this.playAttackCinematic(),
-      this.speakerFor(hero)
+      () => this.playAttackCinematic()                    // 5
     );
   }
 
@@ -104,6 +138,9 @@ export default class BattleController {
       if (this.scene.hudFrame) this.scene.hudFrame.gatherPulse(POSE_TIMING.gather);
       if (this.scene.abilityLight) this.scene.abilityLight('gather');
       this.emit(AUDIO_EVENTS.gather);
+      // Veil conduit dips as the command draws on it. Presentation only
+      // — no command is gated on having Veil left.
+      this.hud.updateVeil(Math.max(0, hero.veil - VEIL_DRAW));
       this.hud.queueMessage(hero.attack.flavor);
     });
     at += POSE_TIMING.gather + POSE_TIMING.hold;
@@ -113,6 +150,7 @@ export default class BattleController {
       if (poses) poses.setPose('release');
       if (fx) fx.beam(POSE_TIMING.release);
       if (cam) cam.releaseSnap();
+      if (this.scene.reticle) this.scene.reticle.confirm();
       this.emit(AUDIO_EVENTS.release);
       this.fracture.open();
     });
@@ -122,9 +160,9 @@ export default class BattleController {
     t.delayedCall(at, () => {
       const hit = this.pendingHit || { crit: false, damage: hero.attack.damage };
       enemy.hp = Math.max(0, enemy.hp - hit.damage);
-      this.hud.updateEnemyHP(enemy.hp, enemy.maxHp);
+      this.hud.updateEnemyHP(enemy.hp, enemy.maxHp);   // 6, 7
+      if (this.scene.reticle) this.scene.reticle.shatter();
       if (fx) {
-        fx.fractureTargetCursor();
         fx.impact();
         if (hit.crit) fx.critical();
       }
@@ -179,7 +217,11 @@ export default class BattleController {
         return;
       }
 
+      // 8 — the conduit recharges and the round hands over
+      this.hud.updateVeil(Math.min(100, this.config.hero.veil + VEIL_DRAW));
       this.hud.setTurn(this.config.text.enemyTurn);
+      this.hud.setActiveActor('enemy');
+      if (this.scene.setHint) this.scene.setHint('Tap to continue');
       this.phase = 'enemy';
       this.running = false;
     });
@@ -192,7 +234,8 @@ export default class BattleController {
 
     this.running = true;
     this.hud.setTurn(this.config.text.enemyTurn);
-    if (this.scene.battleFx) this.scene.battleFx.hideTargetCursor();
+    this.hud.setActiveActor('enemy');
+    if (this.scene.reticle) this.scene.reticle.hide();
 
     this.hud.queueMessage(`${enemy.name} uses ${enemy.attack.name}!`, () => {
       if (this.scene.battleCam) this.scene.battleCam.pushIn(1.5, 200, 'Back.easeOut');
@@ -213,21 +256,24 @@ export default class BattleController {
           if (this.scene.battleCam) this.scene.battleCam.pullOut(320);
         });
       });
-    }, this.speakerFor(enemy));
+    });
 
     const line = hit.crit
       ? `A critical strike! ${hero.name} suffers ${hit.damage} damage!`
       : `${hero.name} suffers ${hit.damage} damage!`;
     this.hud.queueMessage(line, () => {
-      this.hud.setTurn(this.config.text.playerTurn);
       this.phase = 'player';
       this.running = false;
+      // The console opening *is* the start of the player's round, so it
+      // comes up on its own rather than waiting for another tap.
+      this.runPlayerRound();
     });
   }
 
   resetBattle() {
     const hero = this.config.hero;
-    if (this.scene.battleFx) this.scene.battleFx.hideTargetCursor();
+    if (this.scene.reticle) this.scene.reticle.hide();
+    if (this.scene.commandConsole) this.scene.commandConsole.hide();
     // Drop the stale victory line so the board reads as a fresh battle
     // rather than "shatters!" over a fully healed Wraith.
     this.hud.clearMessage();
@@ -244,5 +290,6 @@ export default class BattleController {
     }
     this.phase = 'player';
     this.running = false;
+    this.runPlayerRound();
   }
 }

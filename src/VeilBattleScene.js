@@ -1,16 +1,18 @@
-import BattleHUD from './BattleHUD.js?v=26';
-import BattleController from './BattleController.js?v=26';
-import Timeline from './Timeline.js?v=26';
-import VeilFracture from './VeilFracture.js?v=26';
-import HeroPoseView from './HeroPoseView.js?v=26';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=26';
-import BattleCamera from './BattleCamera.js?v=26';
-import BattleFX from './BattleFX.js?v=26';
-import BattleAtmosphere from './BattleAtmosphere.js?v=26';
-import HudFrame from './HudFrame.js?v=26';
-import UiAudio from './UiAudio.js?v=26';
-import { AUDIO_EVENTS } from './BattleController.js?v=26';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=26';
+import BattleHUD from './BattleHUD.js?v=27';
+import BattleController from './BattleController.js?v=27';
+import Timeline from './Timeline.js?v=27';
+import VeilFracture from './VeilFracture.js?v=27';
+import HeroPoseView from './HeroPoseView.js?v=27';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=27';
+import BattleCamera from './BattleCamera.js?v=27';
+import BattleFX from './BattleFX.js?v=27';
+import BattleAtmosphere from './BattleAtmosphere.js?v=27';
+import HudFrame from './HudFrame.js?v=27';
+import CommandConsole from './CommandConsole.js?v=27';
+import TargetReticle from './TargetReticle.js?v=27';
+import UiAudio from './UiAudio.js?v=27';
+import { AUDIO_EVENTS } from './BattleController.js?v=27';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=27';
 
 function cloneConfig(source, heroKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -50,9 +52,10 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.load.image('dialogFrame', './assets/ui/dialog_frame_9slice.png');
     this.load.image('continueCrystal', './assets/ui/continue_crystal.png');
     this.load.image('prismelLocked', './assets/prismel_locked.png');
-    this.load.image('speakerPlate', './assets/ui/speaker_plate.png');
     this.load.image('portrait_prismel', './assets/ui/portrait_prismel.png');
     this.load.image('portrait_kineza', './assets/ui/portrait_kineza.png');
+    this.load.image('portrait_wraith', './assets/ui/portrait_wraith.png');
+    this.loadUiKit();
     // Every hero's pose set. A pose whose PNG is absent falls back to the
     // locked Prismel art at runtime.
     Object.values(HEROES).forEach(hero => {
@@ -66,6 +69,23 @@ export default class VeilBattleScene extends Phaser.Scene {
     Object.values(WRAITH_TEXTURES).forEach(tex => {
       this.load.image(tex, `./assets/enemy/veil_wraith/${tex}.png`);
     });
+  }
+
+  // Battle Presentation Alpha v1.0 UI kit, sliced out of the eight
+  // source sheets and keyed to real transparency. Everything is a
+  // relative path off the repo root — no CDN.
+  loadUiKit() {
+    const kit = key => this.load.image(`kit_${key}`, `./assets/ui/kit/${key}.png`);
+    ['console_plate', 'cursor_idle', 'cursor_active',
+     'frame_corner', 'frame_rail', 'frame_rail_centre',
+     'reticle_seeking', 'reticle_locked', 'reticle_confirmed'].forEach(kit);
+    ['fracture', 'resonance', 'barrier', 'returnpath'].forEach(g => {
+      ['idle', 'on', 'off'].forEach(state => kit(`glyph_${g}_${state}`));
+    });
+    ['blue', 'teal'].forEach(c => {
+      ['idle', 'active', 'hurt', 'down'].forEach(state => kit(`pframe_${c}_${state}`));
+    });
+    ['idle', 'active', 'hurt'].forEach(state => kit(`pframe_violet_${state}`));
   }
 
   create() {
@@ -92,11 +112,13 @@ export default class VeilBattleScene extends Phaser.Scene {
       color: '#FFE8A0'
     }).setOrigin(0.5);
 
-    this.subtitleText = this.add.text(0, 0, 'Battle Presentation v8 · Battlefield', {
+    this.subtitleText = this.add.text(0, 0, 'Battle Presentation Alpha v1.0', {
       color: '#D6C8F2'
     }).setOrigin(0.5);
 
-    this.hintText = this.add.text(0, 0, 'Tap to run the next round', {
+    // The hint tracks the round: the player commands through the console,
+    // the enemy's round still advances on a tap.
+    this.hintText = this.add.text(0, 0, '', {
       color: '#8A7AB0'
     }).setOrigin(0.5);
 
@@ -121,6 +143,13 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     this.battleCam = new BattleCamera(this);
     this.battleFx = new BattleFX(this);
+
+    // Alpha v1.0 interaction layer. The console is UI (never zooms); the
+    // reticle is a battlefield visual and registers through worldAdd().
+    this.commandConsole = new CommandConsole(this, this.battleConfig);
+    this.commandConsole.create();
+    this.reticle = new TargetReticle(this);
+
     // Battle entrance sweep, then the first round begins.
     const INTRO_MS = 520;
     this.battleCam.introSweep(INTRO_MS);
@@ -279,6 +308,17 @@ export default class VeilBattleScene extends Phaser.Scene {
     });
   }
 
+  setHint(text) {
+    if (!this.hintText) return;
+    if (this.hintText.text === text) return;
+    this.hintText.setText(text);
+    this.tweens.killTweensOf(this.hintText);
+    this.hintText.setAlpha(0);
+    this.tweens.add({
+      targets: this.hintText, alpha: 1, duration: 220, ease: 'Quad.easeOut'
+    });
+  }
+
   // Battlefield visuals register here so the UI camera ignores them.
   worldAdd(obj) {
     if (this.world && obj) this.world.add(obj);
@@ -378,10 +418,18 @@ export default class VeilBattleScene extends Phaser.Scene {
 
   layoutSceneText() {
     const width = this.scale.width;
+    const height = this.scale.height;
     const compact = width < 560;
+    // Landscape phones are only ~390px tall. The command console and the
+    // dialogue box both need that space, so the decorative title block
+    // stands down and only the round hint stays.
+    const short = height < 520;
 
-    this.titleText.setFontSize(compact ? 26 : 40).setPosition(width / 2, compact ? 96 : 120);
-    this.subtitleText.setFontSize(compact ? 13 : 20).setPosition(width / 2, compact ? 132 : 180);
-    this.hintText.setFontSize(compact ? 11 : 14).setPosition(width / 2, compact ? 156 : 220);
+    this.titleText.setVisible(!short)
+      .setFontSize(compact ? 26 : 40).setPosition(width / 2, compact ? 96 : 120);
+    this.subtitleText.setVisible(!short)
+      .setFontSize(compact ? 13 : 20).setPosition(width / 2, compact ? 132 : 180);
+    this.hintText.setFontSize(compact ? 11 : 14)
+      .setPosition(width / 2, short ? 84 : (compact ? 156 : 220));
   }
 }

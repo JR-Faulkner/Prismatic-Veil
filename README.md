@@ -4,7 +4,7 @@ A family JRPG built with Phaser 3 — no build tools, no bundler, no CDN. Everyt
 
 **▶ Play the battle: https://jr-faulkner.github.io/Prismatic-Veil/battle-v2.html**
 
-> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=26`
+> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=27`
 
 ---
 
@@ -27,9 +27,16 @@ Rounds alternate one full side at a time. The enemy acts **only** on its own rou
 ```
 Battle opens with a right-to-left stage sweep
   ↓
-PLAYER ROUND   (tap to run)
-  Idle → Step 220ms → Gather 450ms → Hold 120ms
+PLAYER ROUND
+  1 hero portrait synchronizes
+  2 tactical command console opens
+  3 player taps a Veil glyph
+  4 reticle seeks → locks
+  5 Idle → Step 220ms → Gather 450ms → Hold 120ms
        → Release 160ms → Hit Stop 80ms → Recover 260ms → Idle
+  6 damage number + CRITICAL! callout
+  7 HP chip resolves, Veil conduit recharges
+  8 round hands over
   ↓
 ENEMY ROUND    (tap to run)
   Wraith lunges, hero takes damage
@@ -45,6 +52,7 @@ repeat until the Wraith shatters → victory → battle resets
 | Criticals | 25% Prismel, 22% Kineza, 15% enemy — double damage, `CRITICAL!` callout, doubled hit stop, harder shake |
 | Hit stop | 80ms scene freeze on impact, 160ms on a critical |
 | Hero switch | Button on the right cycles the active hero and restarts the battle |
+| Commands | One glyph per hero is bound to their attack. The rest are slots with nothing behind them yet — selecting one narrates and leaves the console open |
 
 ### Roster
 
@@ -95,8 +103,15 @@ Authored **facing right throughout**, per the animation standard — no flipping
 
 ## Systems
 
-### HUD — `src/BattleHUD.js`, `src/HudFrame.js`
-Faceted crystal HP bars with angled end caps, chip-damage ghosts trailing the live fill, healing flash, and hairline fractures below 25%. Hero accent colours drive the fill; the Wraith uses corrupted violet styling. Typed dialogue in a nine-slice frame with a blinking continue crystal, a speaker plate with hero-specific portrait frames (Prismel diamond + rainbow glint, Kineza forged plate + momentum lines), and a Veil border with crystal corners that pulses on gather, flares gold on criticals and blooms on victory. A danger vignette creeps in below 25% HP.
+### HUD — `src/BattleHUD.js`, `src/HudFrame.js`, `src/ActorPortrait.js`
+Faceted crystal HP and Veil conduits with angled end caps, chip-damage ghosts trailing the live fill, a recharge wavefront distinct from the healing flash, and hairline fractures below 25%. Hero accent colours drive the fill; the Wraith uses corrupted violet styling.
+
+Each combatant carries a framed portrait beside their conduit, running the kit's four states — idle, active (their round), hurt below 25%, down at zero — and flinching when they take a hit. Dialogue is compact narration in a nine-slice frame with a blinking continue crystal and **no speaker portrait box**; the portrait lives in the HUD instead. A Veil border with crystal corners pulses on gather, flares gold on criticals and blooms on victory, and a danger vignette creeps in below 25% HP.
+
+### Interaction layer — `src/CommandConsole.js`, `src/TargetReticle.js`, `src/KitFrame.js`
+The player's round runs through a tactical command console rather than a bare tap. It opens on their turn, shows one Veil glyph per command with a selection cursor, and hands the choice back. Glyph states are the kit's own language — dormant, synchronized, disconnected — and every tap target clears 44px even at 390px wide.
+
+Selecting a command sends the target reticle through seeking → locked → confirmed → shatter, sized off the Wraith's own sprite and drawn behind it so it frames the target instead of covering it. `KitFrame` assembles a frame of any size from one corner slice and a stretchable rail.
 
 ### Audio — `src/UiAudio.js`, `assets/sfx/`
 Six battle hooks (`PLAY_STEP` / `GATHER` / `RELEASE` / `IMPACT` / `RECOVER` / `VICTORY`) emitted as scene events and mapped to **per-hero sound banks**. Prismel's set is crystalline; Kineza's seven clips are kinetic, with a debris accent 36ms behind his impact. UI cues (turn start, low HP, victory, confirm) are **synthesised at runtime** with the Web Audio API — no files, nothing to cache-bust. `prismcharge.mp3` loops as the battle theme.
@@ -127,9 +142,13 @@ src/                        all battle code, ES modules
   BattleConfig.js           hero roster + enemy: stats, poses, accents, attacks
   HeroPoseView.js           hero pose set, crossfade, idle signature
   EnemyWraithView.js        Veil Wraith poses and reactions
-  BattleHUD.js              HP bars, dialogue, speaker plate, portrait frames
+  BattleHUD.js              HP + Veil conduits, dialogue, actor portraits
+  ActorPortrait.js          framed portrait: idle / active / hurt / down
+  CommandConsole.js         tactical command console, Veil command glyphs
+  TargetReticle.js          seeking / locked / confirmed targeting
+  KitFrame.js               modular frame from corner + rail pieces
   HudFrame.js               Veil border, crystal corners, vignette, flares
-  BattleFX.js               per-hero attack FX, target reticle, crit, victory
+  BattleFX.js               per-hero attack FX, crit flourish, victory
   BattleAtmosphere.js       parallax layers, fog, floor, motes, ripples
   BattleCamera.js           entrance sweep, pushes, shake, breath, pull-out
   UiAudio.js                synthesised UI cues (Web Audio)
@@ -140,8 +159,9 @@ assets/
   poses/                    Prismel's five locked poses
   poses/kineza/             Kineza's five locked poses
   enemy/veil_wraith/        Wraith Idle / Attack / Hit / Shatter
-  ui/                       dialog frame, speaker plate, continue crystal,
-                            hero portrait crops
+  ui/                       dialog frame, continue crystal, portrait crops
+  ui/kit/                   Battle Presentation Alpha v1.0 UI kit, sliced
+                            and keyed from the eight source sheets
   sfx/                      Prismel + shared battle SFX
   sfx/kineza/               Kineza's seven kinetic clips
   prismel_locked.png        locked full-body reference art
@@ -186,6 +206,8 @@ Learned the hard way across the packages so far:
 - **`scene.restart()` reuses the scene instance but destroys its game objects.** Clear cached object references at the top of `create()`.
 - **Crossfading two stacked sprites:** only the top layer changes alpha. Fading both leaves a window where the subject is see-through.
 - The turn indicator shows **turn state only**. Attack callouts go through the dialogue queue.
+- **Authored UI sheets arrive with the checkerboard painted into the pixels.** Seven of the Alpha v1.0 sheets had no alpha channel at all. Key them before use — never ship a sheet with a matte baked in.
+- **Painted panel art does not nine-slice.** If the top edge carries a centred ornament, a nine-slice smears it the full width. Build frames from corner + rail pieces instead.
 
 ---
 

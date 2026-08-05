@@ -1,3 +1,5 @@
+import ActorPortrait from './ActorPortrait.js?v=27';
+
 export default class BattleHUD {
   constructor(scene, battleConfig) {
     this.scene = scene;
@@ -10,10 +12,17 @@ export default class BattleHUD {
   create() {
     this.container = this.scene.add.container(0, 0);
 
+    // Name and HP value are separate labels, left- and right-aligned to
+    // the ends of the conduit below them. One combined string overflows
+    // its half of a 390px screen and collides with the enemy's.
     this.hpText = this.scene.add.text(0, 0, '', {
       fontSize: '20px',
       color: '#F8E7B0'
     });
+    this.hpValue = this.scene.add.text(0, 0, '', {
+      fontSize: '20px',
+      color: '#F8E7B0'
+    }).setOrigin(1, 0);
 
     this.veilText = this.scene.add.text(0, 0, '', {
       fontSize: '16px',
@@ -24,21 +33,50 @@ export default class BattleHUD {
       fontSize: '20px',
       color: '#F4B5C2'
     }).setOrigin(1, 0);
+    this.enemyValue = this.scene.add.text(0, 0, '', {
+      fontSize: '20px',
+      color: '#F4B5C2'
+    });
 
     this.turnText = this.scene.add.text(0, 0, this.config.text.playerTurn, {
       fontSize: '18px',
       color: '#FFE68A'
     }).setOrigin(0.5, 0);
 
-    // Physical HP / Veil bars. Each bar is: dark track, a slow "ghost"
-    // layer that lags behind so you see how much was just taken, then
-    // the live fill on top.
+    // Physical HP / Veil conduits. Each bar is: dark track, a slow
+    // "ghost" layer that lags behind so you see how much was just taken,
+    // then the live fill on top.
+    //
+    // Alpha v1.0 asks for HP and Veil conduits with chip and recharge
+    // states. Sheet 02's bars are fixed-length paintings that cannot
+    // stretch to an arbitrary fill, so the kit's language — gold caps,
+    // faceted gem terminator, chip trail — is reproduced procedurally
+    // instead. That also keeps the fill colour driven by hero accent.
     const hero = this.config.hero;
     this.bars = {
       heroHp: Object.assign(this._makeBar(0x71ff88, { accent: hero.accent }), { isHeroHp: true }),
-      heroVeil: this._makeBar(hero.accent || 0x67c8ff, { accent: hero.accentAlt }),
+      heroVeil: Object.assign(
+        this._makeBar(hero.accent || 0x67c8ff, { accent: hero.accentAlt }),
+        { isVeil: true }
+      ),
       enemyHp: this._makeBar(0xa855f7, { accent: 0xc477ff, corrupted: true })
     };
+
+    // Portrait state frames. The brief drops the speaker portrait box
+    // from the dialogue, so the portrait lives here permanently instead
+    // — one per combatant, beside their conduit.
+    this.heroPortrait = new ActorPortrait(this.scene, {
+      colourway: hero.frameColourway || 'blue',
+      portrait: hero.portrait,
+      accent: hero.accent
+    });
+    this.enemyPortrait = new ActorPortrait(this.scene, {
+      colourway: this.config.enemy.frameColourway || 'violet',
+      portrait: this.config.enemy.portrait,
+      accent: this.config.enemy.accent || 0xc477ff
+    });
+    this.heroPortrait.create();
+    this.enemyPortrait.create();
 
     this.msgBox = this.scene.add.nineslice(
       0,
@@ -52,20 +90,6 @@ export default class BattleHUD {
       24,
       24
     ).setVisible(false);
-
-    // v4 speaker plate: portrait + name tag riding above the dialog box
-    this.speakerPlate = this.scene.textures.exists('speakerPlate')
-      ? this.scene.add.image(0, 0, 'speakerPlate').setVisible(false)
-      : null;
-    this.speakerName = this.scene.add.text(0, 0, '', {
-      fontSize: '15px',
-      fontStyle: 'bold',
-      color: '#FFE8A0'
-    }).setOrigin(0, 0.5).setVisible(false);
-    this.speakerPortrait = this.scene.add.image(0, 0, 'portrait_prismel')
-      .setVisible(false);
-    // Package 07: hero-specific portrait frame drawn around the crop.
-    this.portraitFrame = this.scene.add.graphics().setVisible(false);
 
     this.messageText = this.scene.add.text(0, 0, '', {
       fontSize: '24px',
@@ -89,15 +113,17 @@ export default class BattleHUD {
     });
 
     const barParts = Object.values(this.bars).map(b => b.g);
-    const plateParts = [this.speakerPlate, this.portraitFrame, this.speakerPortrait, this.speakerName].filter(Boolean);
     this.container.add([
       ...barParts,
+      this.heroPortrait.container,
+      this.enemyPortrait.container,
       this.hpText,
+      this.hpValue,
       this.veilText,
       this.enemyText,
+      this.enemyValue,
       this.turnText,
       this.msgBox,
-      ...plateParts,
       this.messageText,
       this.msgCursor
     ]);
@@ -124,6 +150,7 @@ export default class BattleHUD {
       ratio: 1,
       ghostRatio: 1,
       flash: 0,
+      recharge: 0,
       w: 10, h: 8, x: 0, y: 0
     };
   }
@@ -169,6 +196,18 @@ export default class BattleHUD {
 
     // healing / damage flash
     if (bar.flash > 0.01) drawFill(bar.ratio, 0xffffff, bar.flash * 0.55);
+
+    // Veil recharge reads differently from HP healing: instead of a
+    // white wash over the whole fill, a bright wavefront travels along
+    // the conduit to the new level.
+    if (bar.isVeil && bar.recharge > 0.01) {
+      const fw = inner * bar.ratio;
+      const head = Math.max(4, Math.min(18, w * 0.14));
+      const hx = x + 2 + Math.max(0, fw - head) * bar.recharge;
+      g.fillStyle(0xffffff, 0.75 * Math.min(1, bar.recharge * 2));
+      this._barPath(g, hx, y, head, h - 4, 1);
+      g.fillPath();
+    }
 
     // hairline fractures once the bar is low
     if (bar.ratio > 0 && bar.ratio < 0.25) {
@@ -244,7 +283,7 @@ export default class BattleHUD {
 
   refreshFromConfig(instant) {
     this.updateHP(this.config.hero.hp, this.config.hero.maxHp, instant);
-    this.updateVeil(this.config.hero.veil);
+    this.updateVeil(this.config.hero.veil, 'instant');
     this.updateEnemyHP(this.config.enemy.hp, this.config.enemy.maxHp, instant);
   }
 
@@ -307,28 +346,47 @@ export default class BattleHUD {
     // Compact fonts on narrow screens so the top HUD row doesn't collide
     // and the dialog text fits phone portrait widths
     const compact = width < 560;
-    this.hpText.setFontSize(compact ? 13 : 20);
-    this.enemyText.setFontSize(compact ? 13 : 20);
+    this.hpText.setFontSize(compact ? 12 : 20);
+    this.hpValue.setFontSize(compact ? 12 : 20);
+    this.enemyText.setFontSize(compact ? 12 : 20);
+    this.enemyValue.setFontSize(compact ? 10 : 15);
     this.turnText.setFontSize(compact ? 12 : 18);
     this.messageText.setFontSize(compact ? 17 : 24);
     this.msgCursor.setDisplaySize(compact ? 18 : 24, compact ? 18 : 24);
 
-    // Top HUD rows: name+HP text, then the bars beneath, with the turn
-    // indicator on its own row so nothing collides on narrow screens.
-    const barW = compact ? Math.min(132, width * 0.34) : 210;
+    // Top HUD rows: a framed actor portrait on each side, name+HP text
+    // beside it, then the conduits beneath. The turn indicator sits on
+    // its own row so nothing collides on narrow screens.
+    const portraitSize = compact ? 44 : 62;
+    const gutter = compact ? 6 : 9;
+    const textLeft = margin + portraitSize + gutter;
+    const barW = compact
+      ? Math.min(118, width * 0.30)
+      : 200;
     const barH = compact ? 7 : 9;
-    const hpBarY = margin + (compact ? 26 : 42);
+    const hpBarY = margin + (compact ? 24 : 38);
     const veilBarY = hpBarY + (compact ? 12 : 16);
 
-    this.hpText.setPosition(margin, margin);
-    this.enemyText.setPosition(width - margin, margin);
-    this.veilText.setFontSize(compact ? 9 : 13)
-      .setPosition(margin + barW * 0.82 + 8, veilBarY - (compact ? 5 : 7));
-    this.turnText.setPosition(width / 2, compact ? veilBarY + 12 : margin);
+    this.heroPortrait.setSize(portraitSize)
+      .setPosition(margin + portraitSize / 2, margin + portraitSize / 2 + 2);
+    this.enemyPortrait.setSize(portraitSize)
+      .setPosition(width - margin - portraitSize / 2, margin + portraitSize / 2 + 2);
 
-    this._layoutBar(this.bars.heroHp, margin, hpBarY, barW, barH, false);
-    this._layoutBar(this.bars.heroVeil, margin, veilBarY, barW * 0.82, barH - 2, false);
-    this._layoutBar(this.bars.enemyHp, width - margin, hpBarY, barW, barH, true);
+    this.hpText.setPosition(textLeft, margin);
+    this.hpValue.setPosition(textLeft + barW, margin);
+    // "VEIL WRAITH 30/30" does not fit one 118px row on a 390px screen,
+    // and the enemy has no Veil conduit, so its HP value drops to the
+    // free row where the hero's conduit sits.
+    this.enemyText.setPosition(width - textLeft, margin);
+    this.enemyValue.setOrigin(1, 0)
+      .setPosition(width - textLeft, veilBarY - (compact ? 5 : 7));
+    this.veilText.setFontSize(compact ? 9 : 13)
+      .setPosition(textLeft + barW * 0.82 + 8, veilBarY - (compact ? 5 : 7));
+    this.turnText.setPosition(width / 2, compact ? veilBarY + 14 : margin);
+
+    this._layoutBar(this.bars.heroHp, textLeft, hpBarY, barW, barH, false);
+    this._layoutBar(this.bars.heroVeil, textLeft, veilBarY, barW * 0.82, barH - 2, false);
+    this._layoutBar(this.bars.enemyHp, width - textLeft, hpBarY, barW, barH, true);
 
     this.msgBox.setPosition(width / 2, dialogY);
     this.msgBox.setSize(dialogWidth, dialogHeight);
@@ -343,69 +401,25 @@ export default class BattleHUD {
       width / 2 + dialogWidth / 2 - 34,
       dialogY + dialogHeight / 2 - 26
     );
-
-    // Speaker plate rides above the dialog box, laid out left-to-right
-    // from the box edge so the portrait never clips off screen.
-    const dialogLeft = width / 2 - dialogWidth / 2;
-    const plateY = dialogY - dialogHeight / 2 - (compact ? 16 : 20);
-    const plateScale = compact ? 0.74 : 1;
-    const portraitSize = compact ? 40 : 54;
-
-    const portraitX = dialogLeft + portraitSize / 2 + 6;
-    this.speakerPortrait
-      .setDisplaySize(portraitSize, portraitSize)
-      .setPosition(portraitX, plateY);
-    this._drawPortraitFrame(portraitX, plateY, portraitSize);
-
-    const plateW = (this.speakerPlate ? this.speakerPlate.width : 260) * plateScale;
-    const plateX = portraitX + portraitSize / 2 + 6 + plateW / 2;
-    if (this.speakerPlate) this.speakerPlate.setPosition(plateX, plateY).setScale(plateScale);
-    this.speakerName.setFontSize(compact ? 12 : 15)
-      .setPosition(plateX - plateW / 2 + (compact ? 26 : 34), plateY);
   }
 
-  // Prismel: diamond geometry with a rainbow glint.
-  // Kineza: forged angular plate with etched momentum lines.
-  _drawPortraitFrame(cx, cy, size) {
-    const g = this.portraitFrame;
-    if (!g) return;
-    const hero = this._frameHero || this.config.hero;
-    const r = size * 0.62;
-    g.clear();
+  // Alpha v1.0 interaction flow, step 1: the acting portrait
+  // synchronizes and the other drops back to idle.
+  setActiveActor(who) {
+    if (!this.heroPortrait) return;
+    const heroRatio = this.config.hero.maxHp
+      ? this.config.hero.hp / this.config.hero.maxHp : 1;
+    const enemyRatio = this.config.enemy.maxHp
+      ? this.config.enemy.hp / this.config.enemy.maxHp : 1;
 
-    if (hero.frameStyle === 'forged') {
-      g.lineStyle(2, hero.accent || 0x68ff8c, 0.9);
-      g.strokeRect(cx - r * 0.78, cy - r * 0.78, r * 1.56, r * 1.56);
-      g.lineStyle(1, hero.accentAlt || 0xd8ffe1, 0.5);
-      for (let i = 0; i < 3; i++) {
-        const oy = cy - r * 0.4 + i * r * 0.4;
-        g.beginPath();
-        g.moveTo(cx - r * 0.95, oy);
-        g.lineTo(cx - r * 0.8, oy);
-        g.strokePath();
-        g.beginPath();
-        g.moveTo(cx + r * 0.8, oy);
-        g.lineTo(cx + r * 0.95, oy);
-        g.strokePath();
-      }
+    if (who === 'hero') {
+      this.heroPortrait.setState('active');
+      this.enemyPortrait.setIdleFromActive('idle');
+      this.enemyPortrait.setHealth(enemyRatio);
     } else {
-      g.lineStyle(2, hero.accent || 0x67c8ff, 0.9);
-      g.beginPath();
-      g.moveTo(cx, cy - r);
-      g.lineTo(cx + r, cy);
-      g.lineTo(cx, cy + r);
-      g.lineTo(cx - r, cy);
-      g.closePath();
-      g.strokePath();
-      // rainbow glint along the upper-right facet
-      const GL = [0xff6b6b, 0xffef7d, 0x71ff88, 0x67c8ff, 0xc477ff];
-      GL.forEach((c, i) => {
-        g.lineStyle(1, c, 0.55);
-        g.beginPath();
-        g.moveTo(cx + r * (0.16 + i * 0.10), cy - r * (0.78 - i * 0.10));
-        g.lineTo(cx + r * (0.30 + i * 0.10), cy - r * (0.62 - i * 0.10));
-        g.strokePath();
-      });
+      this.enemyPortrait.setState('active');
+      this.heroPortrait.setIdleFromActive('idle');
+      this.heroPortrait.setHealth(heroRatio);
     }
   }
 
@@ -460,27 +474,67 @@ export default class BattleHUD {
   updateHP(cur, max, instant) {
     const dropped = this.config.hero.hp > cur;
     this.config.hero.hp = cur;
+    this.hpText.setText(this.config.hero.name.toUpperCase());
     this._tickTo('hp', cur, instant, v =>
-      this.hpText.setText(`${this.config.hero.name.toUpperCase()}  HP ${v}/${max}`));
-    this._setBar(this.bars.heroHp, max ? cur / max : 0, instant);
-    if (!instant && this.scene.uiAudio) this.scene.uiAudio.lowHp(max ? cur / max : 0);
-    if (this.scene.hudFrame) this.scene.hudFrame.setLowHp(max ? cur / max : 0);
-    if (dropped && !instant) this._flash(this.hpText, '#FF7A7A');
+      this.hpValue.setText(`${v}/${max}`));
+    const ratio = max ? cur / max : 0;
+    this._setBar(this.bars.heroHp, ratio, instant);
+    if (!instant && this.scene.uiAudio) this.scene.uiAudio.lowHp(ratio);
+    if (this.scene.hudFrame) this.scene.hudFrame.setLowHp(ratio);
+    if (dropped && !instant) {
+      this._flash(this.hpValue, '#FF7A7A');
+      this.heroPortrait.flinch();
+    }
+    this.heroPortrait.setHealth(ratio);
   }
 
-  updateVeil(percent) {
+  // The Veil conduit is a readout, not a cost — nothing in the battle is
+  // gated on it. It dips when a command fires and recharges before the
+  // next round so the conduit has visible chip and recharge states, as
+  // the kit asks. Making it an actual resource is a later mechanic.
+  updateVeil(percent, mode) {
+    const bar = this.bars.heroVeil;
+    const previous = this.config.hero.veil;
     this.config.hero.veil = percent;
-    this.veilText.setText(`VEIL ${percent}%`);
-    this._setBar(this.bars.heroVeil, percent / 100, true);
+    this._tickTo('veil', percent, mode === 'instant', v =>
+      this.veilText.setText(`VEIL ${v}%`));
+
+    if (mode === 'instant') {
+      this._setBar(bar, percent / 100, true);
+      bar.recharge = 0;
+      return;
+    }
+
+    this._setBar(bar, percent / 100);
+
+    if (percent > previous) {
+      // recharge wavefront runs the length of the conduit
+      this.scene.tweens.killTweensOf(bar, 'recharge');
+      bar.recharge = 0;
+      this.scene.tweens.add({
+        targets: bar,
+        recharge: 1,
+        duration: 620,
+        ease: 'Sine.easeInOut',
+        onUpdate: () => this._drawBar(bar),
+        onComplete: () => { bar.recharge = 0; this._drawBar(bar); }
+      });
+    }
   }
 
   updateEnemyHP(cur, max, instant) {
     const dropped = this.config.enemy.hp > cur;
     this.config.enemy.hp = cur;
+    this.enemyText.setText(this.config.enemy.name.toUpperCase());
     this._tickTo('ehp', cur, instant, v =>
-      this.enemyText.setText(`${this.config.enemy.name.toUpperCase()}  HP ${v}/${max}`));
-    this._setBar(this.bars.enemyHp, max ? cur / max : 0, instant);
-    if (dropped && !instant) this._flash(this.enemyText, '#FFDF6E');
+      this.enemyValue.setText(`${v}/${max}`));
+    const ratio = max ? cur / max : 0;
+    this._setBar(this.bars.enemyHp, ratio, instant);
+    if (dropped && !instant) {
+      this._flash(this.enemyValue, '#FFDF6E');
+      this.enemyPortrait.flinch();
+    }
+    this.enemyPortrait.setHealth(ratio);
   }
 
   _showBox() {
@@ -500,43 +554,14 @@ export default class BattleHUD {
     this.msgBox.setVisible(false);
     this.messageText.setVisible(false);
     this.msgCursor.setVisible(false);
-    if (this.portraitFrame) this.portraitFrame.setVisible(false);
-    if (this.speakerPlate) this.speakerPlate.setVisible(false);
-    this.speakerName.setVisible(false);
-    this.speakerPortrait.setVisible(false);
   }
 
-  // speaker: { name, portrait } — omit for narration (plate hides)
-  queueMessage(text, onDone, speaker) {
-    this._queue.push({ text, onDone, speaker });
+  // Alpha v1.0 keeps compact combat narration with no speaker portrait
+  // box — the acting portrait now lives in the HUD instead, so the
+  // dialogue is a single line of text and nothing else.
+  queueMessage(text, onDone) {
+    this._queue.push({ text, onDone });
     if (!this._showing) this._nextMessage();
-  }
-
-  _setSpeaker(speaker) {
-    const show = !!(speaker && speaker.name);
-    const hasPortrait = show && speaker.portrait &&
-      this.scene.textures.exists(speaker.portrait);
-
-    if (this.speakerPlate) this.speakerPlate.setVisible(show);
-    this.speakerName.setVisible(show);
-    this.speakerPortrait.setVisible(!!hasPortrait);
-    if (this.portraitFrame) {
-      this._frameHero = (speaker && speaker.hero) || this.config.hero;
-      this.portraitFrame.setVisible(!!hasPortrait);
-      if (hasPortrait) this.layout();
-    }
-
-    if (!show) return;
-    this.speakerName.setText(speaker.name);
-    if (hasPortrait) this.speakerPortrait.setTexture(speaker.portrait);
-
-    const parts = [this.speakerPlate, this.speakerName, hasPortrait ? this.speakerPortrait : null]
-      .filter(Boolean);
-    parts.forEach(p => {
-      this.scene.tweens.killTweensOf(p);
-      p.setAlpha(0);
-      this.scene.tweens.add({ targets: p, alpha: 1, duration: 160, ease: 'Quad.easeOut' });
-    });
   }
 
   _nextMessage() {
@@ -549,7 +574,6 @@ export default class BattleHUD {
 
     this._showing = true;
     this._showBox();
-    this._setSpeaker(item.speaker);
     this.messageText.setText('');
     this.msgCursor.setVisible(false);
 

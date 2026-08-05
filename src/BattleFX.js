@@ -247,77 +247,9 @@ export default class BattleFX {
     if (this.scene.atmosphere) this.scene.atmosphere.impact('kineza');
   }
 
-  // v4: target reticle over the enemy while the player's round is live.
-  showTargetCursor() {
-    if (this.cursor) return;
-    const p = this.targetPoint();
-    const accent = (this.scene.battleConfig && this.scene.battleConfig.hero.accent) || 0xffd56a;
-    const g = this._w(this.scene.add.graphics().setDepth(38));
-
-    // Package 07: a floating Veil glyph rather than a plain crosshair —
-    // an outer diamond, an inner counter-rotating diamond, tick arms.
-    g.lineStyle(2, accent, 0.9);
-    g.beginPath();
-    g.moveTo(0, -42); g.lineTo(34, 0); g.lineTo(0, 42); g.lineTo(-34, 0);
-    g.closePath(); g.strokePath();
-
-    g.lineStyle(1, accent, 0.5);
-    g.beginPath();
-    g.moveTo(0, -22); g.lineTo(18, 0); g.lineTo(0, 22); g.lineTo(-18, 0);
-    g.closePath(); g.strokePath();
-
-    g.lineStyle(2, accent, 0.75);
-    [[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy]) => {
-      g.beginPath();
-      g.moveTo(dx * 46, dy * 52);
-      g.lineTo(dx * 58, dy * 64);
-      g.strokePath();
-    });
-
-    g.setPosition(p.x, p.y);
-    this.cursor = g;
-    this.scene.tweens.add({
-      targets: g, angle: 360, duration: 9000, repeat: -1, ease: 'Linear'
-    });
-    this.scene.tweens.add({
-      targets: g, alpha: 0.45, scaleX: 1.06, scaleY: 1.06,
-      duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
-    });
-  }
-
-  // The glyph shatters outward instead of simply vanishing.
-  fractureTargetCursor() {
-    if (!this.cursor) return;
-    const g = this.cursor;
-    this.cursor = null;
-    this.scene.tweens.killTweensOf(g);
-    const accent = (this.scene.battleConfig && this.scene.battleConfig.hero.accent) || 0xffd56a;
-    for (let i = 0; i < 4; i++) {
-      const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
-      const shard = this._w(this.scene.add.rectangle(g.x, g.y, 24, 2, accent, 0.85).setDepth(39)
-        .setAngle(Phaser.Math.RadToDeg(a)));
-      this.scene.tweens.add({
-        targets: shard,
-        x: g.x + Math.cos(a) * 70,
-        y: g.y + Math.sin(a) * 70,
-        alpha: 0,
-        duration: 380,
-        ease: 'Quad.easeOut',
-        onComplete: () => shard.destroy()
-      });
-    }
-    this.scene.tweens.add({
-      targets: g, scaleX: 1.5, scaleY: 1.5, alpha: 0, duration: 260,
-      ease: 'Quad.easeOut', onComplete: () => g.destroy()
-    });
-  }
-
-  hideTargetCursor() {
-    if (!this.cursor) return;
-    this.scene.tweens.killTweensOf(this.cursor);
-    this.cursor.destroy();
-    this.cursor = null;
-  }
+  // The drawn target crosshair that lived here through v4-v8 is now
+  // src/TargetReticle.js, built from the Alpha v1.0 targeting kit with
+  // seeking / locked / confirmed as separate states.
 
   // v4: critical hit flourish — gold burst plus a CRITICAL! callout.
   critical() {
