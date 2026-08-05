@@ -1,23 +1,23 @@
-import BattleHUD from './BattleHUD.js?v=33';
-import BattleController from './BattleController.js?v=33';
-import Timeline from './Timeline.js?v=33';
-import VeilFracture from './VeilFracture.js?v=33';
-import HeroPoseView from './HeroPoseView.js?v=33';
-import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=33';
-import { HUSHLING_TEXTURES } from './EnemyHushlingView.js?v=33';
-import { createEnemyView } from './EnemyViewFactory.js?v=33';
-import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=33';
-import { selectEnemy } from './EnemyCatalog.js?v=33';
-import BattleCamera from './BattleCamera.js?v=33';
-import BattleFX from './BattleFX.js?v=33';
-import BattleFeel from './BattleFeel.js?v=33';
-import BattleAtmosphere from './BattleAtmosphere.js?v=33';
-import HudFrame from './HudFrame.js?v=33';
-import CommandConsole from './CommandConsole.js?v=33';
-import TargetReticle from './TargetReticle.js?v=33';
-import UiAudio from './UiAudio.js?v=33';
-import { AUDIO_EVENTS } from './BattleController.js?v=33';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=33';
+import BattleHUD from './BattleHUD.js?v=34';
+import BattleController from './BattleController.js?v=34';
+import Timeline from './Timeline.js?v=34';
+import VeilFracture from './VeilFracture.js?v=34';
+import HeroPoseView from './HeroPoseView.js?v=34';
+import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=34';
+import { HUSHLING_TEXTURES } from './EnemyHushlingView.js?v=34';
+import { createEnemyView } from './EnemyViewFactory.js?v=34';
+import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=34';
+import { selectEnemy } from './EnemyCatalog.js?v=34';
+import BattleCamera from './BattleCamera.js?v=34';
+import BattleFX from './BattleFX.js?v=34';
+import BattleFeel from './BattleFeel.js?v=34';
+import BattleAtmosphere from './BattleAtmosphere.js?v=34';
+import HudFrame from './HudFrame.js?v=34';
+import CommandConsole from './CommandConsole.js?v=34';
+import TargetReticle from './TargetReticle.js?v=34';
+import UiAudio from './UiAudio.js?v=34';
+import { AUDIO_EVENTS } from './BattleController.js?v=34';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=34';
 
 function cloneConfig(source, heroKey, search) {
   const hero = HEROES[heroKey] || source.hero;
@@ -61,8 +61,8 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.load.image('prismelLocked', './assets/prismel_locked.png');
     this.load.image('portrait_prismel', './assets/ui/portrait_prismel.png');
     this.load.image('portrait_kineza', './assets/ui/portrait_kineza.png');
-    this.load.image('portrait_wraith', './assets/ui/portrait_wraith.png');
-    this.load.image('portrait_hushling', './assets/ui/portrait_hushling.png');
+    this.load.image('portrait_wraith', './assets/ui/portrait_wraith_v34.png');
+    this.load.image('portrait_hushling', './assets/ui/portrait_hushling_v34.png');
     this.loadUiKit();
     this.loadFeedbackDigits();
     // Every hero's pose set. A pose whose PNG is absent falls back to the

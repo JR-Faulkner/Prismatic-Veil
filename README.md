@@ -4,7 +4,7 @@ A family JRPG built with Phaser 3 — no build tools, no bundler, no CDN. Everyt
 
 **▶ Play the battle: https://jr-faulkner.github.io/Prismatic-Veil/battle-v2.html**
 
-> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=33`
+> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=34`
 
 ---
 
@@ -134,7 +134,9 @@ Gradient backdrop, distant Veil light bands, drifting fog banks, an elliptical f
 ### Enemy — `src/EnemyCatalog.js`, `src/EnemyViewFactory.js`, `src/EnemyWraithView.js`, `src/EnemyHushlingView.js`
 Two enemies now, each texture-driven with the same four-pose language — Idle, Attack, Hit, Shatter — behind a common interface (`container`, `sprite`, `layout/setPose/introSlide/hit/attack/die/reset`), so `BattleController`, `BattleFX` and `TargetReticle` never need to know which one they're fighting. `EnemyCatalog.selectEnemy()` reads the `?enemy=` query param once at battle start; `EnemyViewFactory.createEnemyView()` picks the matching view class.
 
-The **Veil Wraith** hovers, recoils with an eye flare when struck, lunges on its own round, shatters on death and reforms on reset. The **Hushling** is wider and heavier — a slow idle weight shift instead of a hover, a short hard lunge, a single compression-recoil-settle beat on hit (the same one-beat language v32 established for the Wraith, not a multi-cycle jiggle), and a downward collapse on defeat. Its four poses are deliberately simple pixel-built prototype art, not full-detail production pieces — a later art pass can replace them without touching the factory, catalog, audio director, or controller wiring.
+The **Veil Wraith** floats and drifts, recoils with a single compression-and-recoil beat when struck, lunges on its own round, and unravels into a fading silhouette on death. The **Hushling** is wider and heavier — a slow idle weight shift instead of a hover, a short hard lunge, a bigger shove and slower settle on hit, and a downward collapse on defeat. Both share a one-beat hit reaction, not a multi-cycle jiggle — a second enemy has to match the standard the first one was already corrected to, not just have *a* reaction.
+
+As of v34 both run full-fidelity painted art (1000×1500px source, matching the approved concept designs) instead of the earlier pixel-built prototypes — a low-alpha, additively-blended aura layer breathes behind each sprite for a soft ambient glow, and pose transitions crossfade through a ghost layer using the same fully-opaque-backing pattern already proven on the hero's own pose view (see the trap below). Source art is authored tall and narrow rather than square, so `layout()` derives display width from the sprite's own aspect ratio instead of forcing a square box.
 
 ### Enemy audio — `src/EnemyAudioDirector.js`
 Each enemy has its own five-cue bank (idle, release, impact, hurt, defeat) resolved **only** through that bank — there is no fallback to the active hero's sound bank. A missing cue is silence, never a borrowed Prismel or Kineza clip. `BattleController` emits enemy-specific event names (`PLAY_ENEMY_RELEASE` / `_IMPACT` / `_HURT` / `_DEFEAT`) distinct from the hero's own `PLAY_RELEASE` / `PLAY_IMPACT`, so the two audio paths can never cross.
@@ -176,8 +178,8 @@ src/                        all battle code, ES modules
 assets/
   poses/                    Prismel's five locked poses
   poses/kineza/             Kineza's five locked poses
-  enemy/veil_wraith/        Wraith Idle / Attack / Hit / Shatter
-  enemy/hushling/           Hushling Idle / Attack / Hit / Shatter
+  enemy/veil_wraith/        Wraith Idle / Attack / Hit / Shatter (v34 full-fidelity art)
+  enemy/hushling/           Hushling Idle / Attack / Hit / Shatter (v34 full-fidelity art)
   sfx/enemy/wraith/         Wraith idle / release / impact / hurt / defeat
   sfx/enemy/hushling/       Hushling idle / release / impact / hurt / defeat
   ui/                       dialog frame, continue crystal, portrait crops

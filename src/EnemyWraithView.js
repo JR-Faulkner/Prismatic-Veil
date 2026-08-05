@@ -1,8 +1,13 @@
+// v34 — full-fidelity Wraith art, matching the approved concept design.
+// The Wraith reads as a floating, drifting silhouette that fractures and
+// unravels rather than a grounded fighter — a low-alpha ADD-blended aura
+// layer breathes behind the sprite, and idle motion is a slow drifting
+// sway rather than a plain vertical bob.
 export const WRAITH_TEXTURES = Object.freeze({
-  idle: 'VeilWraith_Idle_LOCKED',
-  attack: 'VeilWraith_Attack_LOCKED',
-  hit: 'VeilWraith_Hit_LOCKED',
-  shatter: 'VeilWraith_Shatter_LOCKED'
+  idle: 'VeilWraith_v34_Idle',
+  attack: 'VeilWraith_v34_Attack',
+  hit: 'VeilWraith_v34_Hit',
+  shatter: 'VeilWraith_v34_Shatter'
 });
 
 export default class EnemyWraithView {
@@ -10,29 +15,32 @@ export default class EnemyWraithView {
     this.scene = scene;
     this.pose = 'idle';
     this._transitioning = false;
+    this._idleTweens = [];
   }
 
   create() {
     this.container = this.scene.add.container(0, 0).setDepth(18);
 
-    this.sprite = this.scene.add.image(0, 0, WRAITH_TEXTURES.idle).setOrigin(0.5, 1);
+    // Aura sits behind everything: a low-alpha, additively-blended copy
+    // of the current pose that gives the silhouette a soft glow without
+    // needing a second art pass.
+    this.aura = this.scene.add.image(0, 0, WRAITH_TEXTURES.idle)
+      .setOrigin(0.5, 1).setAlpha(0.16).setBlendMode('ADD');
+    // Ghost holds the outgoing pose at full opacity during a crossfade —
+    // see setPose(). Fading both layers at once (rather than parking the
+    // outgoing frame solid underneath) is the trap already hit once on
+    // the hero's own pose view: a hit stop freezing the tween mid-blend
+    // leaves the background showing straight through the character.
     this.ghost = this.scene.add.image(0, 0, WRAITH_TEXTURES.idle)
-      .setOrigin(0.5, 1)
-      .setAlpha(0);
+      .setOrigin(0.5, 1).setAlpha(0);
+    this.sprite = this.scene.add.image(0, 0, WRAITH_TEXTURES.idle).setOrigin(0.5, 1);
 
-    this.container.add([this.ghost, this.sprite]);
+    this.container.add([this.aura, this.ghost, this.sprite]);
     if (this.scene.worldAdd) this.scene.worldAdd(this.container);
 
-    this.scene.tweens.add({
-      targets: this.container,
-      y: '-=8',
-      duration: 1400,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut'
-    });
-
     this.layout();
+    this.startIdle();
+
     this.scene.scale.on('resize', this.layout, this);
     this.scene.events.once('shutdown', () => {
       this.scene.scale.off('resize', this.layout, this);
@@ -46,53 +54,82 @@ export default class EnemyWraithView {
     const compact = width < 560 || height < 520;
 
     if (landscape) {
-      // Landscape phones are ~390px tall with a top HUD row and a
-      // bottom console/narration dock eating most of that height, so
-      // the Wraith is sized off the short dimension, not the v1 formula
-      // tuned for a tall portrait canvas — that one put its top edge
-      // above y=0.
-      this.baseX = Math.round(width * 0.72);
-      this.baseY = Math.round(height * 0.86);
-      const targetHeight = Math.min(190, height * 0.50);
-      this.sprite.setDisplaySize(targetHeight, targetHeight);
-      this.ghost.setDisplaySize(targetHeight, targetHeight);
+      this.baseX = Math.round(width * 0.73);
+      this.baseY = Math.round(height * 0.88);
     } else {
-      // Background: further right and higher up the ground plane, which
-      // reads as distance, and smaller to match.
       this.baseX = Math.round(width * (compact ? 0.78 : 0.79));
-      this.baseY = Math.round(height - (compact ? 330 : 300));
-      const targetHeight = compact ? Math.min(215, height * 0.28) : Math.min(280, height * 0.38);
-      this.sprite.setDisplaySize(targetHeight, targetHeight);
-      this.ghost.setDisplaySize(targetHeight, targetHeight);
+      this.baseY = Math.round(height - (compact ? 310 : 286));
     }
+    const targetHeight = landscape
+      ? Math.min(220, height * 0.58)
+      : Math.min(compact ? 250 : 310, height * (compact ? 0.31 : 0.39));
+
+    // The v34 art is tall and narrow, not square like the old locked
+    // sprites — forcing a square display box would squash it. Derive
+    // the width from the source image's own aspect ratio instead.
+    const ratio = this.sprite.width / this.sprite.height;
+    const targetWidth = targetHeight * ratio;
+    this.sprite.setDisplaySize(targetWidth, targetHeight);
+    this.ghost.setDisplaySize(targetWidth, targetHeight);
+    this.aura.setDisplaySize(targetWidth * 1.04, targetHeight * 1.04);
+
     this.container.setPosition(this.baseX, this.baseY);
+  }
+
+  startIdle() {
+    this.stopIdle();
+    this._idleTweens = [
+      this.scene.tweens.add({
+        targets: this.container,
+        y: this.baseY - 9,
+        angle: 0.65,
+        duration: 1650,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      }),
+      this.scene.tweens.add({
+        targets: this.aura,
+        alpha: { from: 0.10, to: 0.25 },
+        duration: 920,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      })
+    ];
+  }
+
+  stopIdle() {
+    this._idleTweens.forEach(t => t && t.stop());
+    this._idleTweens = [];
+    this.scene.tweens.killTweensOf([this.container, this.aura]);
   }
 
   setPose(name, duration = 110) {
     const texture = WRAITH_TEXTURES[name] || WRAITH_TEXTURES.idle;
+    this.aura.setTexture(texture);
+
     if (this.pose === name || this._transitioning) {
       this.sprite.setTexture(texture);
       this.pose = name;
       return;
     }
 
+    this.scene.tweens.killTweensOf(this.sprite);
     this._transitioning = true;
-    this.ghost.setTexture(this.sprite.texture.key).setAlpha(0.62);
+    this.ghost.setTexture(this.sprite.texture.key)
+      .setDisplaySize(this.sprite.displayWidth, this.sprite.displayHeight)
+      .setAlpha(1);
     this.sprite.setTexture(texture).setAlpha(0);
-
-    this.scene.tweens.add({
-      targets: this.ghost,
-      alpha: 0,
-      duration,
-      ease: 'Sine.easeOut'
-    });
 
     this.scene.tweens.add({
       targets: this.sprite,
       alpha: 1,
       duration,
-      ease: 'Sine.easeIn',
+      ease: 'Sine.easeInOut',
       onComplete: () => {
+        this.sprite.setAlpha(1);
+        this.ghost.setAlpha(0);
         this.pose = name;
         this._transitioning = false;
       }
@@ -102,49 +139,43 @@ export default class EnemyWraithView {
   // Mirrors the hero: enters from the far left travelling right.
   introSlide(duration = 520) {
     this.layout();
-    const from = this.baseX - this.scene.scale.width * 0.75;
-    this.container.setX(from).setAlpha(0);
+    this.container.setX(this.baseX - this.scene.scale.width * 0.72).setAlpha(0);
     this.scene.tweens.add({
       targets: this.container,
       x: this.baseX,
-      duration,
-      ease: 'Quad.easeOut'
-    });
-    this.scene.tweens.add({
-      targets: this.container,
       alpha: 1,
-      duration: duration * 0.4,
+      duration,
       ease: 'Quad.easeOut'
     });
   }
 
   hit() {
+    this.stopIdle();
     this.setPose('hit', 58);
 
-    // One readable compression-and-recoil beat replaces the old four-cycle
-    // vibration. The silhouette now absorbs the hit, snaps away, and settles.
-    const landscape = this.scene.scale.width > this.scene.scale.height;
-    const shove = landscape ? 18 : 15;
+    // One compression-and-recoil beat, not repeated vibration.
     this.scene.tweens.add({
       targets: this.container,
-      x: this.baseX + shove,
-      angle: 2.2,
-      scaleX: 0.94,
-      scaleY: 1.055,
+      x: this.baseX + 18,
+      angle: 3.2,
+      scaleX: 0.93,
+      scaleY: 1.06,
       duration: 62,
       ease: 'Quad.easeOut',
       onComplete: () => {
         this.scene.tweens.add({
           targets: this.container,
           x: this.baseX,
+          y: this.baseY,
           angle: 0,
           scaleX: 1,
           scaleY: 1,
-          duration: 155,
+          duration: 160,
           ease: 'Back.easeOut',
           onComplete: () => {
-            this.container.setPosition(this.baseX, this.container.y).setAngle(0).setScale(1);
-            if (this.sprite.visible) this.setPose('idle', 95);
+            this.container.setPosition(this.baseX, this.baseY).setAngle(0).setScale(1);
+            this.setPose('idle', 95);
+            this.startIdle();
           }
         });
       }
@@ -152,52 +183,51 @@ export default class EnemyWraithView {
   }
 
   attack() {
+    this.stopIdle();
     this.setPose('attack', 100);
 
     this.scene.tweens.add({
       targets: this.container,
-      x: this.baseX - 46,
-      scaleX: this.container.scaleX * 1.03,
-      duration: 180,
+      x: this.baseX - 52,
+      y: this.baseY - 4,
+      scaleX: 1.045,
+      duration: 175,
       yoyo: true,
+      hold: 24,
       ease: 'Back.easeOut',
       onComplete: () => {
-        this.container.setX(this.baseX);
+        this.container.setPosition(this.baseX, this.baseY).setScale(1);
         this.setPose('idle', 120);
+        this.startIdle();
       }
     });
   }
 
   die() {
+    this.stopIdle();
     this.setPose('shatter', 90);
 
     this.scene.tweens.add({
       targets: this.container,
       alpha: 0,
-      scaleX: this.container.scaleX * 1.18,
+      y: this.baseY - 24,
+      scaleX: this.container.scaleX * 1.22,
       scaleY: this.container.scaleY * 0.72,
-      angle: 10,
-      duration: 720,
+      angle: 11,
+      duration: 760,
       ease: 'Quad.easeIn'
     });
   }
 
   reset() {
+    this.stopIdle();
     this.scene.tweens.killTweensOf(this.container);
     this.container.setAlpha(1).setAngle(0).setScale(1);
-    this.sprite.setVisible(true).setAlpha(1);
+    this.sprite.setVisible(true).setAlpha(1).setTexture(WRAITH_TEXTURES.idle);
     this.ghost.setAlpha(0);
+    this.aura.setTexture(WRAITH_TEXTURES.idle);
     this.pose = 'idle';
-    this.sprite.setTexture(WRAITH_TEXTURES.idle);
     this.layout();
-
-    this.scene.tweens.add({
-      targets: this.container,
-      y: '-=8',
-      duration: 1400,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut'
-    });
+    this.startIdle();
   }
 }
