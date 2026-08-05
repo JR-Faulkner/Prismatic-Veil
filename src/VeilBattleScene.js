@@ -1,18 +1,18 @@
-import BattleHUD from './BattleHUD.js?v=27';
-import BattleController from './BattleController.js?v=27';
-import Timeline from './Timeline.js?v=27';
-import VeilFracture from './VeilFracture.js?v=27';
-import HeroPoseView from './HeroPoseView.js?v=27';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=27';
-import BattleCamera from './BattleCamera.js?v=27';
-import BattleFX from './BattleFX.js?v=27';
-import BattleAtmosphere from './BattleAtmosphere.js?v=27';
-import HudFrame from './HudFrame.js?v=27';
-import CommandConsole from './CommandConsole.js?v=27';
-import TargetReticle from './TargetReticle.js?v=27';
-import UiAudio from './UiAudio.js?v=27';
-import { AUDIO_EVENTS } from './BattleController.js?v=27';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=27';
+import BattleHUD from './BattleHUD.js?v=28';
+import BattleController from './BattleController.js?v=28';
+import Timeline from './Timeline.js?v=28';
+import VeilFracture from './VeilFracture.js?v=28';
+import HeroPoseView from './HeroPoseView.js?v=28';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=28';
+import BattleCamera from './BattleCamera.js?v=28';
+import BattleFX from './BattleFX.js?v=28';
+import BattleAtmosphere from './BattleAtmosphere.js?v=28';
+import HudFrame from './HudFrame.js?v=28';
+import CommandConsole from './CommandConsole.js?v=28';
+import TargetReticle from './TargetReticle.js?v=28';
+import UiAudio from './UiAudio.js?v=28';
+import { AUDIO_EVENTS } from './BattleController.js?v=28';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=28';
 
 function cloneConfig(source, heroKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -94,6 +94,13 @@ export default class VeilBattleScene extends Phaser.Scene {
     // will point at a destroyed node on the next battle.
     this._lightWash = null;
     this._hitStopped = false;
+
+    // The Sound Manager is NOT one of the objects a restart destroys —
+    // the previous battle's music and SFX instances survive it. Without
+    // this, switching heroes layers a second battle_music loop over the
+    // first and neither one ever stops.
+    this.sound.stopAll();
+    this.sound.removeAll();
 
     this.activeHero = this.registry.get('heroKey') || HERO_ORDER[0];
     this.battleConfig = cloneConfig(BATTLE_CONFIG, this.activeHero);
