@@ -77,15 +77,19 @@ Adding a hero means adding an entry plus their pose PNGs. New frame or damage st
 
 ### Enemy roster (`src/EnemyCatalog.js`, `src/EnemyViewFactory.js`)
 
-The enemy side mirrors this. `selectEnemy(baseEnemy, search)` reads `?enemy=` off the URL once at battle start and returns either the base Wraith (from `BattleConfig.js`) or an overlay entry (`id`, `viewId`, `audioBank`, `name`, `hp`, `portrait`, `accent`, `frameColourway`, `attack`). `EnemyViewFactory.createEnemyView()` maps `viewId` to a view class. Every enemy view implements the same interface — `container`, `sprite`, `layout()`, `setPose()`, `introSlide()`, `hit()`, `attack()`, `die()`, `reset()` — so `BattleController`, `BattleFX`, `TargetReticle` and `BattleHUD` are written against that interface and never branch on which enemy is active. Adding an enemy means an `EnemyCatalog` entry, a view class with that interface, an `EnemyAudioDirector` bank, and the pose PNGs — no changes to the files that already work generically.
+The enemy side mirrors this. `selectEnemy(baseEnemy, search, override)` returns either the base Wraith (from `BattleConfig.js`) or an overlay entry (`id`, `viewId`, `audioBank`, `name`, `hp`, `portrait`, `accent`, `frameColourway`, `attack`). Resolution order: an explicit `override` beats the URL's `?enemy=`, which beats the default Wraith. `EnemyViewFactory.createEnemyView()` maps `viewId` to a view class. Every enemy view implements the same interface — `container`, `sprite`, `layout()`, `setPose()`, `introSlide()`, `hit()`, `attack()`, `die()`, `reset()` — so `BattleController`, `BattleFX`, `TargetReticle` and `BattleHUD` are written against that interface and never branch on which enemy is active. Adding an enemy means an `EnemyCatalog` entry pushed onto `ENEMY_ORDER`, a view class with that interface, an `EnemyAudioDirector` bank, and the pose PNGs — no changes to the files that already work generically.
 
 Enemy audio is a **separate, non-fallback system** (`src/EnemyAudioDirector.js`): `BattleController` emits `PLAY_ENEMY_RELEASE` / `_IMPACT` / `_HURT` / `_DEFEAT`, distinct from the hero's own `PLAY_RELEASE` / `PLAY_IMPACT`, specifically so the two can never resolve through the same map. A missing enemy cue is silence, not a borrowed hero clip — enforced by having no shared code path between them at all, not by a guard that could be skipped.
+
+**Enemy switch and the gauntlet.** `VeilBattleScene.buildEnemySwitch()` mirrors `buildHeroSwitch()` exactly — a button (stacked directly below the hero switch) that cycles `EnemyCatalog.nextEnemyId()` into `registry.set('enemyKey', ...)` and calls `scene.restart()`. Winning a round does the same thing automatically: `BattleController.resetBattle()` no longer heals and resets state in place — it computes the next enemy id, stashes it in the registry, and restarts the scene, letting the normal `create()` path rebuild everything (view, audio bank, camera) from scratch exactly as a manual switch would. `ENEMY_ORDER` loops back to the first entry after the last, so a gauntlet run never dead-ends. Both paths funnel through the same registry key and the same `override` parameter `selectEnemy()` already had for the hero-switch pattern — there is no separate "gauntlet mode," just another writer of `enemyKey`.
 
 ### Round flow
 
 `BattleController` runs one full side at a time, alternating. The enemy acts **only** on its own round — never auto-chain the two. `POSE_TIMING` holds the canonical beat lengths (scheduling); `AUDIO_EVENTS` are emitted as scene events and mapped to per-hero sound banks in the scene. The impact schedule step reads its length from `BattleFeel.getHitStopMs(critical)` (58/92ms) rather than the old fixed `POSE_TIMING.hitStop` — the schedule and the actual freeze duration are one source of truth as of v33.
 
 The player's round is driven by the command console, not a bare tap, and follows the Alpha v1.0 flow: portrait synchronizes → console opens → glyph selected → reticle seeks and locks → cinematic → feedback → HP chip → hand over. The enemy's round still advances on a tap.
+
+A defeated enemy doesn't just reset — `BattleController.resetBattle()` advances the gauntlet (see the enemy roster section above) and restarts the scene against the next enemy in `ENEMY_ORDER`, looping back to the first after the last.
 
 The Veil conduit dips on a command and recharges by the next round. **It gates nothing** — it is a readout, not a resource. Making it a real cost is a later mechanic.
 
@@ -99,7 +103,7 @@ Every one of these reached the repo and had to be fixed. Do not repeat them.
 
 **Phaser ease names.** Use `Quad.easeOut`, `Sine.easeInOut`, `Back.easeOut`. The short forms — `Quad.Out`, `Sine.Out`, `Expo.Out` — do **not** exist in this build. Tweens accept an unknown name silently and fall back to linear, so a whole game's worth of easing can quietly do nothing; camera `pan`/`zoomTo` throw outright. Thirty invalid names were found in one sweep.
 
-**`scene.restart()` reuses the scene instance but destroys its game objects.** Anything cached on `this` across a restart becomes a dead reference. Clear cached object references at the top of `create()`. The hero switch calls `restart()`, so this path is exercised constantly.
+**`scene.restart()` reuses the scene instance but destroys its game objects.** Anything cached on `this` across a restart becomes a dead reference. Clear cached object references at the top of `create()`. The hero switch, the enemy switch, and every gauntlet win all call `restart()`, so this path is exercised constantly.
 
 **Crossfading two stacked sprites.** Only the **top** layer changes alpha; the bottom stays fully opaque as a backing plate. Fading both leaves a window where the subject is see-through — and hit stop freezes tweens, so that window can sit on screen for hundreds of milliseconds.
 

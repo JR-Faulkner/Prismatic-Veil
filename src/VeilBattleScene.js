@@ -1,27 +1,27 @@
-import BattleHUD from './BattleHUD.js?v=34';
-import BattleController from './BattleController.js?v=34';
-import Timeline from './Timeline.js?v=34';
-import VeilFracture from './VeilFracture.js?v=34';
-import HeroPoseView from './HeroPoseView.js?v=34';
-import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=34';
-import { HUSHLING_TEXTURES } from './EnemyHushlingView.js?v=34';
-import { createEnemyView } from './EnemyViewFactory.js?v=34';
-import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=34';
-import { selectEnemy } from './EnemyCatalog.js?v=34';
-import BattleCamera from './BattleCamera.js?v=34';
-import BattleFX from './BattleFX.js?v=34';
-import BattleFeel from './BattleFeel.js?v=34';
-import BattleAtmosphere from './BattleAtmosphere.js?v=34';
-import HudFrame from './HudFrame.js?v=34';
-import CommandConsole from './CommandConsole.js?v=34';
-import TargetReticle from './TargetReticle.js?v=34';
-import UiAudio from './UiAudio.js?v=34';
-import { AUDIO_EVENTS } from './BattleController.js?v=34';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=34';
+import BattleHUD from './BattleHUD.js?v=35';
+import BattleController from './BattleController.js?v=35';
+import Timeline from './Timeline.js?v=35';
+import VeilFracture from './VeilFracture.js?v=35';
+import HeroPoseView from './HeroPoseView.js?v=35';
+import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=35';
+import { HUSHLING_TEXTURES } from './EnemyHushlingView.js?v=35';
+import { createEnemyView } from './EnemyViewFactory.js?v=35';
+import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=35';
+import { selectEnemy, ENEMY_ORDER, nextEnemyId } from './EnemyCatalog.js?v=35';
+import BattleCamera from './BattleCamera.js?v=35';
+import BattleFX from './BattleFX.js?v=35';
+import BattleFeel from './BattleFeel.js?v=35';
+import BattleAtmosphere from './BattleAtmosphere.js?v=35';
+import HudFrame from './HudFrame.js?v=35';
+import CommandConsole from './CommandConsole.js?v=35';
+import TargetReticle from './TargetReticle.js?v=35';
+import UiAudio from './UiAudio.js?v=35';
+import { AUDIO_EVENTS } from './BattleController.js?v=35';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=35';
 
-function cloneConfig(source, heroKey, search) {
+function cloneConfig(source, heroKey, search, enemyKey) {
   const hero = HEROES[heroKey] || source.hero;
-  const enemy = selectEnemy(source.enemy, search);
+  const enemy = selectEnemy(source.enemy, search, enemyKey);
   return {
     hero: {
       ...hero,
@@ -132,7 +132,8 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.battleConfig = cloneConfig(
       BATTLE_CONFIG,
       this.activeHero,
-      window.location.search
+      window.location.search,
+      this.registry.get('enemyKey')
     );
 
     this.cameras.main.setBackgroundColor('#070611');
@@ -275,6 +276,7 @@ export default class VeilBattleScene extends Phaser.Scene {
     });
 
     this.buildHeroSwitch();
+    this.buildEnemySwitch();
 
     this.uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height);
     this.uiCam.setBackgroundColor('rgba(0,0,0,0)');
@@ -334,6 +336,49 @@ export default class VeilBattleScene extends Phaser.Scene {
     const topClear = margin + portraitSize + (landscape ? 6 : 10);
     this.heroSwitch.setFontSize(compact ? 11 : 13)
       .setPosition(w - (compact ? 12 : 18), topClear);
+  }
+
+  // Tap to cycle the active enemy and restart the battle against them —
+  // the manual counterpart to the gauntlet's auto-advance-on-victory.
+  // Mirrors buildHeroSwitch() exactly, including the restart mechanism.
+  buildEnemySwitch() {
+    const label = this.add.text(0, 0, '', {
+      fontSize: '13px',
+      fontStyle: 'bold',
+      color: '#FFE8A0',
+      backgroundColor: '#1a1033',
+      padding: { x: 10, y: 5 }
+    }).setOrigin(1, 0).setDepth(1200).setInteractive({ useHandCursor: true });
+
+    const next = () => nextEnemyId(this.battleConfig.enemy.id);
+    // Preview the candidate's name through selectEnemy() itself rather
+    // than a second hardcoded name map — one source of truth for what
+    // each enemy id is called.
+    const render = () => label.setText(`▸ ${selectEnemy(BATTLE_CONFIG.enemy, '', next()).name}`);
+    render();
+
+    label.on('pointerdown', e => {
+      if (e && e.event) e.event.stopPropagation();
+      if (this.uiAudio) this.uiAudio.confirm();
+      this.registry.set('enemyKey', next());
+      this.scene.restart();
+    });
+
+    this.enemySwitch = label;
+    this.uiLayer.add(label);
+    this.layoutEnemySwitch();
+    this.scale.on('resize', this.layoutEnemySwitch, this);
+  }
+
+  // Stacked directly beneath the hero switch, using its actual rendered
+  // height for the gap rather than a guessed magic number. Relies on
+  // buildHeroSwitch()'s own resize listener (registered first) having
+  // already repositioned heroSwitch by the time this one runs.
+  layoutEnemySwitch() {
+    if (!this.enemySwitch || !this.heroSwitch) return;
+    const gap = 8;
+    this.enemySwitch.setFontSize(this.heroSwitch.style.fontSize)
+      .setPosition(this.heroSwitch.x, this.heroSwitch.y + this.heroSwitch.height + gap);
   }
 
   // Package 08 lighting: an ability briefly tints the scene. Prismel

@@ -1,5 +1,6 @@
-import BattleFeedback from './BattleFeedback.js?v=34';
-import { getHitStopMs } from './BattleFeel.js?v=34';
+import BattleFeedback from './BattleFeedback.js?v=35';
+import { getHitStopMs } from './BattleFeel.js?v=35';
+import { nextEnemyId } from './EnemyCatalog.js?v=35';
 
 // Battle Presentation v3 — pose timing spec:
 //   Idle -> Step 220 -> Gather 450 -> Hold 120 -> Release 160
@@ -302,26 +303,14 @@ export default class BattleController {
     });
   }
 
+  // Gauntlet: a win advances to the next enemy in ENEMY_ORDER (looping
+  // back to the first after the last) rather than rematching the one
+  // just beaten. A full scene.restart() — the same mechanism already
+  // proven for the hero switch — rebuilds the enemy view, audio bank
+  // and camera from scratch, so there's no in-place state to hand-reset
+  // here beyond stashing which enemy comes next.
   resetBattle() {
-    const hero = this.config.hero;
-    if (this.scene.reticle) this.scene.reticle.hide();
-    if (this.scene.commandConsole) this.scene.commandConsole.hide();
-    // Drop the stale victory line so the board reads as a fresh battle
-    // rather than "shatters!" over a fully healed Wraith.
-    this.hud.clearMessage();
-    const enemy = this.config.enemy;
-    hero.hp = hero.maxHp;
-    hero.veil = 100;
-    enemy.hp = enemy.maxHp;
-    this.hud.refreshFromConfig(true);
-    this.hud.setTurn(this.config.text.playerTurn);
-    if (this.scene.enemyView) this.scene.enemyView.reset();
-    if (this.scene.battleCam) {
-      this.scene.battleCam.reset();
-      this.scene.battleCam.markHome();
-    }
-    this.phase = 'player';
-    this.running = false;
-    this.runPlayerRound();
+    this.scene.registry.set('enemyKey', nextEnemyId(this.config.enemy.id));
+    this.scene.scene.restart();
   }
 }

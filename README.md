@@ -4,7 +4,7 @@ A family JRPG built with Phaser 3 — no build tools, no bundler, no CDN. Everyt
 
 **▶ Play the battle: https://jr-faulkner.github.io/Prismatic-Veil/battle-v2.html**
 
-> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=34`
+> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=35`
 
 ---
 
@@ -20,7 +20,9 @@ The current work is a **stage battle** in the Shining Force tradition: a hero on
 
 **Playable now:** Prismel or Kineza versus the Veil Wraith (default) or the Hushling — art-complete and audio-complete on both sides, portrait-phone first.
 
-> Pick the encounter with a query param: `battle-v2.html?enemy=wraith` or `battle-v2.html?enemy=hushling`. It's read once at battle start and survives a hero switch. There's no in-game toggle for it yet — this is the seam a future "choose your encounter" screen would hook into.
+> Pick the encounter with a query param: `battle-v2.html?enemy=wraith` or `battle-v2.html?enemy=hushling`. It's read once at battle start, and is overridden by an in-game enemy switch or a gauntlet win (see below) once either has fired.
+
+There's now an in-game **enemy switch** button, right below the hero switch, that cycles the active enemy and restarts the battle — the manual counterpart to the roster below. Beating an enemy also **auto-advances the gauntlet**: the next round starts against the next enemy in `ENEMY_ORDER`, looping back to the first after the last one falls, so a run never dead-ends as more enemies join the roster.
 
 ### Round flow
 
@@ -41,9 +43,10 @@ PLAYER ROUND
   8 round hands over
   ↓
 ENEMY ROUND    (tap to run)
-  Wraith lunges, hero takes damage
+  Enemy lunges, hero takes damage
   ↓
-repeat until the Wraith shatters → victory → battle resets
+repeat until the enemy shatters → victory → gauntlet advances to the
+next enemy in ENEMY_ORDER (loops to the first after the last) → restart
 ```
 
 ### Combat
@@ -54,6 +57,8 @@ repeat until the Wraith shatters → victory → battle resets
 | Criticals | 25% Prismel, 22% Kineza, 15% enemy — double damage, `CRITICAL!` callout, doubled hit stop, harder shake |
 | Hit stop | 80ms scene freeze on impact, 160ms on a critical |
 | Hero switch | Button on the right cycles the active hero and restarts the battle |
+| Enemy switch | Button below the hero switch cycles the active enemy and restarts the battle |
+| Gauntlet | Beating an enemy auto-advances to the next one in `ENEMY_ORDER`, looping back to the first after the last |
 | Commands | One glyph per hero is bound to their attack. The rest are slots with nothing behind them yet — selecting one narrates and leaves the console open |
 
 ### Roster
@@ -132,7 +137,7 @@ Right-to-left entrance sweep, gather push to 1.32×, release snap to 1.55×, hit
 Gradient backdrop, distant Veil light bands, drifting fog banks, an elliptical floor with perspective rings, ambient motes and foreground silhouettes — all on parallax layers that drift against the camera at different rates. Ground compression ripples spread beneath a fighter on footfalls and impacts. Abilities briefly tint the scene: cool refracted highlights for Prismel, warm kinetic flashes for Kineza.
 
 ### Enemy — `src/EnemyCatalog.js`, `src/EnemyViewFactory.js`, `src/EnemyWraithView.js`, `src/EnemyHushlingView.js`
-Two enemies now, each texture-driven with the same four-pose language — Idle, Attack, Hit, Shatter — behind a common interface (`container`, `sprite`, `layout/setPose/introSlide/hit/attack/die/reset`), so `BattleController`, `BattleFX` and `TargetReticle` never need to know which one they're fighting. `EnemyCatalog.selectEnemy()` reads the `?enemy=` query param once at battle start; `EnemyViewFactory.createEnemyView()` picks the matching view class.
+Two enemies now, each texture-driven with the same four-pose language — Idle, Attack, Hit, Shatter — behind a common interface (`container`, `sprite`, `layout/setPose/introSlide/hit/attack/die/reset`), so `BattleController`, `BattleFX` and `TargetReticle` never need to know which one they're fighting. `EnemyCatalog.selectEnemy(baseEnemy, search, override)` resolves the active enemy: an explicit `override` (from the in-game enemy switch or a gauntlet win, both delivered via the scene registry) beats the `?enemy=` query param, which beats the default Wraith. `EnemyCatalog.ENEMY_ORDER` and `nextEnemyId()` drive the gauntlet — `BattleController.resetBattle()` reads the current enemy's id, advances it, stashes the result in the registry, and does a full `scene.restart()`, the same mechanism already proven for the hero switch. `EnemyViewFactory.createEnemyView()` picks the matching view class.
 
 The **Veil Wraith** floats and drifts, recoils with a single compression-and-recoil beat when struck, lunges on its own round, and unravels into a fading silhouette on death. The **Hushling** is wider and heavier — a slow idle weight shift instead of a hover, a short hard lunge, a bigger shove and slower settle on hit, and a downward collapse on defeat. Both share a one-beat hit reaction, not a multi-cycle jiggle — a second enemy has to match the standard the first one was already corrected to, not just have *a* reaction.
 
@@ -151,11 +156,11 @@ phaser.min.js               bundled Phaser 3.70 (do not modify, no CDN)
 Veilbreak.mp3               battle theme (80s trimmed loop)
 
 src/                        all battle code, ES modules
-  VeilBattleScene.js        scene root: preload, layers, cameras, hero switch
+  VeilBattleScene.js        scene root: preload, layers, cameras, hero/enemy switch
   BattleController.js       round flow, pose timings, audio events, crits
   BattleConfig.js           hero roster + enemy: stats, poses, accents, attacks
   HeroPoseView.js           hero pose set, crossfade, idle signature
-  EnemyCatalog.js           enemy selection: base Wraith + ?enemy= overlay
+  EnemyCatalog.js           enemy selection + gauntlet order/advance
   EnemyViewFactory.js       picks the enemy view class by viewId
   EnemyWraithView.js        Veil Wraith poses and reactions
   EnemyHushlingView.js      Hushling poses and reactions
