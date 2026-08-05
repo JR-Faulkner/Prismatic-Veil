@@ -4,7 +4,7 @@ A family JRPG built with Phaser 3 — no build tools, no bundler, no CDN. Everyt
 
 **▶ Play the battle: https://jr-faulkner.github.io/Prismatic-Veil/battle-v2.html**
 
-> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=27`
+> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=29`
 
 ---
 
@@ -109,9 +109,12 @@ Faceted crystal HP and Veil conduits with angled end caps, chip-damage ghosts tr
 Each combatant carries a framed portrait beside their conduit, running the kit's four states — idle, active (their round), hurt below 25%, down at zero — and flinching when they take a hit. Dialogue is compact narration in a nine-slice frame with a blinking continue crystal and **no speaker portrait box**; the portrait lives in the HUD instead. A Veil border with crystal corners pulses on gather, flares gold on criticals and blooms on victory, and a danger vignette creeps in below 25% HP.
 
 ### Interaction layer — `src/CommandConsole.js`, `src/TargetReticle.js`, `src/KitFrame.js`
-The player's round runs through a tactical command console rather than a bare tap. It opens on their turn, shows one Veil glyph per command with a selection cursor, and hands the choice back. Glyph states are the kit's own language — dormant, synchronized, disconnected — and every tap target clears 44px even at 390px wide.
+The player's round runs through a tactical command console rather than a bare tap. It opens on their turn, shows one Veil glyph per command with a selection cursor, and hands the choice back. Glyph states are the kit's own language — dormant, synchronized, disconnected, the last marked with broken-circuit corners rather than plain low opacity. Every tap target clears 44px even at 390px wide. In landscape the console is its own bottom dock rather than sharing the portrait dialogue's clearance.
 
-Selecting a command sends the target reticle through seeking → locked → confirmed → shatter, sized off the Wraith's own sprite and drawn behind it so it frames the target instead of covering it. `KitFrame` assembles a frame of any size from one corner slice and a stretchable rail.
+Selecting a command sends the target reticle through seeking → locked → confirmed → shatter, sized and capped off the Wraith's own sprite and drawn behind it so it frames the target instead of reading as a second silhouette. `KitFrame` assembles a frame of any size from one corner slice and a stretchable rail.
+
+### Combat feedback — `src/BattleFeedback.js`
+Sheet 05's custom numerals, sliced to real alpha and loaded like every other asset — relative paths from `preload()`, no embedded base64. Ten tintable white masks for normal damage, coloured by the attacker's accent; ten gold numerals plus a geometric burst for criticals. A hero's own `damageStyle` drives the number's motion whether they're dealing the hit or taking it, so a hurt Prismel still refracts and a hurt Kineza still slams. Falls back to the older drawn numbers if the digit textures are ever incomplete.
 
 ### Audio — `src/UiAudio.js`, `assets/sfx/`
 Six battle hooks (`PLAY_STEP` / `GATHER` / `RELEASE` / `IMPACT` / `RECOVER` / `VICTORY`) emitted as scene events and mapped to **per-hero sound banks**. Prismel's set is crystalline; Kineza's seven clips are kinetic, with a debris accent 36ms behind his impact. UI cues (turn start, low HP, victory, confirm) are **synthesised at runtime** with the Web Audio API — no files, nothing to cache-bust. `prismcharge.mp3` loops as the battle theme.
@@ -147,6 +150,7 @@ src/                        all battle code, ES modules
   CommandConsole.js         tactical command console, Veil command glyphs
   TargetReticle.js          seeking / locked / confirmed targeting
   KitFrame.js               modular frame from corner + rail pieces
+  BattleFeedback.js         Sheet 05 damage numerals, gold criticals
   HudFrame.js               Veil border, crystal corners, vignette, flares
   BattleFX.js               per-hero attack FX, crit flourish, victory
   BattleAtmosphere.js       parallax layers, fog, floor, motes, ripples
@@ -162,6 +166,7 @@ assets/
   ui/                       dialog frame, continue crystal, portrait crops
   ui/kit/                   Battle Presentation Alpha v1.0 UI kit, sliced
                             and keyed from the eight source sheets
+  feedback_digits/          Sheet 05 numeral set: 10 white, 10 gold
   sfx/                      Prismel + shared battle SFX
   sfx/kineza/               Kineza's seven kinetic clips
   prismel_locked.png        locked full-body reference art

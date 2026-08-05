@@ -13,7 +13,7 @@
 // Nothing here gates a gameplay rule. A disconnected glyph is a slot
 // that has no move bound to it yet; selecting one only narrates.
 
-import KitFrame from './KitFrame.js?v=28';
+import KitFrame from './KitFrame.js?v=29';
 
 const PLATE_TEX = 'kit_console_plate';
 
@@ -79,7 +79,7 @@ export default class CommandConsole {
       const label = this.scene.add.text(0, 0, cmd.label, {
         fontSize: '12px',
         fontStyle: 'bold',
-        color: cmd.locked ? '#6E6892' : '#F8E7B0'
+        color: cmd.locked ? '#A79AC8' : '#F8E7B0'
       }).setOrigin(0.5, 0);
 
       icon.on('pointerdown', e => {
@@ -112,7 +112,10 @@ export default class CommandConsole {
   _metrics() {
     const w = this.scene.scale.width;
     const h = this.scene.scale.height;
-    const compact = w < 560;
+    const landscape = w > h;
+    // Landscape phones are short enough that "narrow" and "short" are the
+    // same problem — a wide landscape phone is still only ~390px tall.
+    const compact = w < 560 || h < 520;
     const n = Math.max(1, this.entries.length);
     // Glyph taps have to clear a 44px touch target even on the narrowest
     // phone, so the cell width sets the glyph size rather than the other
@@ -120,15 +123,19 @@ export default class CommandConsole {
     // The frame's corner pieces occupy the first ~30px of each end, and
     // the selection cursor sits outside the leftmost cell, so the row
     // has to start well inside the panel.
-    const padX = compact ? 32 : 40;
-    const panelW = Math.min(compact ? w - 28 : 460, w - 28);
+    // Landscape is a dedicated bottom dock — it no longer borrows the
+    // portrait dialogue's clearance or sits across the actors.
+    const padX = landscape ? 46 : (compact ? 32 : 40);
+    const panelW = landscape
+      ? Math.min(540, w - 72)
+      : Math.min(compact ? w - 28 : 460, w - 28);
     const cell = (panelW - padX * 2) / n;
-    const glyph = Math.max(38, Math.min(compact ? 46 : 58, cell - 10));
-    const cellR = glyph * 0.62;
+    const glyph = Math.max(38, Math.min(landscape ? 52 : (compact ? 46 : 58), cell - 10));
+    const cellR = glyph * (landscape ? 0.57 : 0.62);
     const rail = 13;
     const labelH = compact ? 14 : 16;
-    const panelH = rail * 2 + cellR * 2 + labelH + (compact ? 16 : 20);
-    return { w, h, compact, n, padX, panelW, cell, glyph, cellR, rail, labelH, panelH };
+    const panelH = rail * 2 + cellR * 2 + labelH + (landscape ? 10 : (compact ? 16 : 20));
+    return { w, h, landscape, compact, n, padX, panelW, cell, glyph, cellR, rail, labelH, panelH };
   }
 
   layout() {
@@ -136,11 +143,18 @@ export default class CommandConsole {
     const m = this._metrics();
     const panelH = m.panelH;
 
-    // Sits above the dialogue box, which owns the bottom of the screen.
-    const dialogH = Math.min(120, Math.max(96, m.h * 0.20));
-    const bottomClear = m.compact ? Math.max(18, Math.round(m.w * 0.03)) + 12
-                                  : Math.max(18, Math.round(m.w * 0.03));
-    const cy = m.h - dialogH - bottomClear - panelH / 2 - (m.compact ? 10 : 14);
+    // Portrait keeps the console above narration, matching BattleHUD's
+    // own dialogue metrics so the two never drift apart. Landscape gives
+    // the console the bottom dock instead — narration isn't visible
+    // while commands are being chosen there.
+    const margin = m.landscape
+      ? Math.max(12, Math.round(m.h * 0.035))
+      : Math.max(18, Math.round(m.w * 0.03));
+    const dialogH = m.compact ? 98 : 110;
+    const bottomClear = m.compact ? margin + 12 : margin;
+    const cy = m.landscape
+      ? m.h - panelH / 2 - margin
+      : m.h - dialogH - bottomClear - panelH / 2 - (m.compact ? 10 : 14);
     const top = cy - panelH / 2;
 
     this.frame.setRect(m.w / 2, cy, m.panelW, panelH);
@@ -164,11 +178,29 @@ export default class CommandConsole {
     this.cells.clear();
     this.entries.forEach((e, i) => {
       const x = left + m.cell * (i + 0.5);
-      this.cells.fillStyle(0x05040d, 0.85);
+      const locked = !!e.cmd.locked;
+      this.cells.fillStyle(locked ? 0x090717 : 0x05040d, locked ? 0.94 : 0.85);
       this.cells.fillRoundedRect(x - cellR, glyphY - cellR, cellR * 2, cellR * 2, 6);
-      this.cells.lineStyle(1, e.cmd.locked ? 0x3a3558 : (this.accent || 0x67c8ff),
-        e.cmd.locked ? 0.5 : 0.75);
+      this.cells.lineStyle(1, locked ? 0x8f7abf : (this.accent || 0x67c8ff),
+        locked ? 0.82 : 0.75);
       this.cells.strokeRoundedRect(x - cellR, glyphY - cellR, cellR * 2, cellR * 2, 6);
+
+      if (locked) {
+        // Broken-circuit corners read as "disconnected" without burying
+        // the glyph under low opacity or a generic red X.
+        const gap = Math.max(5, cellR * 0.22);
+        const edge = cellR - 5;
+        this.cells.lineStyle(2, 0xb09ce8, 0.88);
+        this.cells.beginPath();
+        this.cells.moveTo(x - edge, glyphY - edge + gap);
+        this.cells.lineTo(x - edge + gap, glyphY - edge);
+        this.cells.moveTo(x + edge - gap, glyphY + edge);
+        this.cells.lineTo(x + edge, glyphY + edge - gap);
+        this.cells.strokePath();
+        this.cells.fillStyle(0xd8ccff, 0.82);
+        this.cells.fillCircle(x - edge + gap, glyphY - edge, 1.5);
+        this.cells.fillCircle(x + edge - gap, glyphY + edge, 1.5);
+      }
     });
 
     this.entries.forEach((e, i) => {
@@ -183,6 +215,8 @@ export default class CommandConsole {
         e.icon.height + (pad * 2) / e.icon.scaleY
       ), Phaser.Geom.Rectangle.Contains);
       e.label.setFontSize(m.compact ? 10 : 12)
+        .setColor(e.cmd.locked ? '#A79AC8' : '#F8E7B0')
+        .setAlpha(e.cmd.locked ? 0.9 : 1)
         .setPosition(x, glyphY + cellR + 3);
       e.x = x;
       e.y = glyphY;
@@ -220,7 +254,7 @@ export default class CommandConsole {
       e.icon.setAlpha(0);
       this.scene.tweens.add({
         targets: e.icon,
-        alpha: e.cmd.locked ? 0.55 : 1,
+        alpha: e.cmd.locked ? 0.82 : 1,
         duration: 180,
         delay: 60 + i * 55,
         ease: 'Quad.easeOut'
@@ -249,7 +283,7 @@ export default class CommandConsole {
     this.entries.forEach(e => {
       const key = `kit_glyph_${e.cmd.glyph}`;
       e.icon.setTexture(`${key}_${e.cmd.locked ? 'off' : 'idle'}`);
-      e.icon.setAlpha(e.cmd.locked ? 0.55 : 1);
+      e.icon.setAlpha(e.cmd.locked ? 0.82 : 1);
       this.scene.tweens.killTweensOf(e.icon);
     });
     this.layout();

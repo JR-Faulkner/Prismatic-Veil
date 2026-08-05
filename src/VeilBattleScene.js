@@ -1,18 +1,18 @@
-import BattleHUD from './BattleHUD.js?v=28';
-import BattleController from './BattleController.js?v=28';
-import Timeline from './Timeline.js?v=28';
-import VeilFracture from './VeilFracture.js?v=28';
-import HeroPoseView from './HeroPoseView.js?v=28';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=28';
-import BattleCamera from './BattleCamera.js?v=28';
-import BattleFX from './BattleFX.js?v=28';
-import BattleAtmosphere from './BattleAtmosphere.js?v=28';
-import HudFrame from './HudFrame.js?v=28';
-import CommandConsole from './CommandConsole.js?v=28';
-import TargetReticle from './TargetReticle.js?v=28';
-import UiAudio from './UiAudio.js?v=28';
-import { AUDIO_EVENTS } from './BattleController.js?v=28';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=28';
+import BattleHUD from './BattleHUD.js?v=29';
+import BattleController from './BattleController.js?v=29';
+import Timeline from './Timeline.js?v=29';
+import VeilFracture from './VeilFracture.js?v=29';
+import HeroPoseView from './HeroPoseView.js?v=29';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=29';
+import BattleCamera from './BattleCamera.js?v=29';
+import BattleFX from './BattleFX.js?v=29';
+import BattleAtmosphere from './BattleAtmosphere.js?v=29';
+import HudFrame from './HudFrame.js?v=29';
+import CommandConsole from './CommandConsole.js?v=29';
+import TargetReticle from './TargetReticle.js?v=29';
+import UiAudio from './UiAudio.js?v=29';
+import { AUDIO_EVENTS } from './BattleController.js?v=29';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=29';
 
 function cloneConfig(source, heroKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -56,6 +56,7 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.load.image('portrait_kineza', './assets/ui/portrait_kineza.png');
     this.load.image('portrait_wraith', './assets/ui/portrait_wraith.png');
     this.loadUiKit();
+    this.loadFeedbackDigits();
     // Every hero's pose set. A pose whose PNG is absent falls back to the
     // locked Prismel art at runtime.
     Object.values(HEROES).forEach(hero => {
@@ -86,6 +87,15 @@ export default class VeilBattleScene extends Phaser.Scene {
       ['idle', 'active', 'hurt', 'down'].forEach(state => kit(`pframe_${c}_${state}`));
     });
     ['idle', 'active', 'hurt'].forEach(state => kit(`pframe_violet_${state}`));
+  }
+
+  // Sheet 05's combat-feedback numerals: ten tintable white masks, ten
+  // gold criticals. src/BattleFeedback.js reads them by these keys.
+  loadFeedbackDigits() {
+    for (let d = 0; d <= 9; d++) {
+      this.load.image(`digit_white_${d}`, `./assets/feedback_digits/white_${d}.png`);
+      this.load.image(`digit_gold_${d}`, `./assets/feedback_digits/gold_${d}.png`);
+    }
   }
 
   create() {
@@ -119,17 +129,13 @@ export default class VeilBattleScene extends Phaser.Scene {
       color: '#FFE8A0'
     }).setOrigin(0.5);
 
-    this.subtitleText = this.add.text(0, 0, 'Battle Presentation Alpha v1.0', {
-      color: '#D6C8F2'
-    }).setOrigin(0.5);
-
     // The hint tracks the round: the player commands through the console,
     // the enemy's round still advances on a tap.
     this.hintText = this.add.text(0, 0, '', {
       color: '#8A7AB0'
     }).setOrigin(0.5);
 
-    this.uiLayer.add([this.titleText, this.subtitleText, this.hintText]);
+    this.uiLayer.add([this.titleText, this.hintText]);
     this.layoutSceneText();
 
     this.hud = new BattleHUD(this, this.battleConfig);
@@ -359,6 +365,20 @@ export default class VeilBattleScene extends Phaser.Scene {
     }, ms);
   }
 
+  // A restart can destroy this object through Phaser's own display-list
+  // teardown at the same moment a fade-out tween's onComplete tries to
+  // destroy it too — two independent paths racing for the same object.
+  // The destroy call has to tolerate landing on one Phaser already tore
+  // down, since checking liveness first doesn't reliably win that race.
+  _destroyIfAlive(obj) {
+    if (!obj) return;
+    try {
+      obj.destroy();
+    } catch (err) {
+      // already destroyed by a scene restart racing this tween
+    }
+  }
+
   // v3 damage numbers: pop in, arc up, fade — coloured by who took it.
   floatDamage(amount, side, crit) {
     const width = this.scale.width;
@@ -392,7 +412,7 @@ export default class VeilBattleScene extends Phaser.Scene {
       });
       this.tweens.add({
         targets: text, alpha: 0, duration: 620, delay: 430, ease: 'Quad.easeIn',
-        onComplete: () => text.destroy()
+        onComplete: () => this._destroyIfAlive(text)
       });
     } else {
       // Prismel: pops, then refracts apart as it fades.
@@ -407,7 +427,7 @@ export default class VeilBattleScene extends Phaser.Scene {
       [[ghostA, -7], [ghostB, 7]].forEach(([gt, dx]) => {
         this.tweens.add({
           targets: gt, x: gt.x + dx, y: text.y - 74, alpha: 0, scaleX: 1.1, scaleY: 1.1,
-          duration: 950, delay: 140, ease: 'Quad.easeOut', onComplete: () => gt.destroy()
+          duration: 950, delay: 140, ease: 'Quad.easeOut', onComplete: () => this._destroyIfAlive(gt)
         });
       });
       this.tweens.add({
@@ -418,7 +438,7 @@ export default class VeilBattleScene extends Phaser.Scene {
         duration: 950,
         delay: 140,
         ease: 'Quad.easeOut',
-        onComplete: () => text.destroy()
+        onComplete: () => this._destroyIfAlive(text)
       });
     }
   }
@@ -434,9 +454,7 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     this.titleText.setVisible(!short)
       .setFontSize(compact ? 26 : 40).setPosition(width / 2, compact ? 96 : 120);
-    this.subtitleText.setVisible(!short)
-      .setFontSize(compact ? 13 : 20).setPosition(width / 2, compact ? 132 : 180);
     this.hintText.setFontSize(compact ? 11 : 14)
-      .setPosition(width / 2, short ? 84 : (compact ? 156 : 220));
+      .setPosition(width / 2, short ? 84 : (compact ? 134 : 172));
   }
 }

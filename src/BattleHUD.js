@@ -1,4 +1,4 @@
-import ActorPortrait from './ActorPortrait.js?v=28';
+import ActorPortrait from './ActorPortrait.js?v=29';
 
 export default class BattleHUD {
   constructor(scene, battleConfig) {
@@ -336,35 +336,44 @@ export default class BattleHUD {
   layout() {
     const width = this.scene.scale.width;
     const height = this.scene.scale.height;
-    const margin = Math.max(18, Math.round(width * 0.03));
-    const dialogWidth = Math.min(720, width - margin * 2);
-    const dialogHeight = Math.min(120, Math.max(96, height * 0.20));
+    const landscape = width > height;
+    // Landscape phones are only ~390px tall, so "narrow" and "short" are
+    // the same problem there — compact kicks in on height too.
+    const compact = width < 560 || height < 520;
+    const margin = landscape
+      ? Math.max(12, Math.round(height * 0.035))
+      : Math.max(18, Math.round(width * 0.03));
+
+    // Portrait keeps the narration compact; landscape becomes a real
+    // short dock instead of a portrait box squeezed sideways.
+    const dialogWidth = landscape
+      ? Math.min(560, width * 0.66)
+      : Math.min(720, width - margin * 2);
+    const dialogHeight = landscape ? 76 : (compact ? 98 : 110);
     // Extra bottom clearance on phones for the iOS home indicator
-    const bottomClear = width < 560 ? margin + 12 : margin;
+    const bottomClear = compact ? margin + 12 : margin;
     const dialogY = height - dialogHeight / 2 - bottomClear;
 
-    // Compact fonts on narrow screens so the top HUD row doesn't collide
-    // and the dialog text fits phone portrait widths
-    const compact = width < 560;
     this.hpText.setFontSize(compact ? 12 : 20);
     this.hpValue.setFontSize(compact ? 12 : 20);
     this.enemyText.setFontSize(compact ? 12 : 20);
     this.enemyValue.setFontSize(compact ? 10 : 15);
-    this.turnText.setFontSize(compact ? 12 : 18);
-    this.messageText.setFontSize(compact ? 17 : 24);
-    this.msgCursor.setDisplaySize(compact ? 18 : 24, compact ? 18 : 24);
+    this.turnText.setFontSize(landscape ? 13 : (compact ? 12 : 18));
+    this.messageText.setFontSize(landscape ? 16 : (compact ? 17 : 24));
+    const cursorSize = landscape ? 16 : (compact ? 18 : 24);
+    this.msgCursor.setDisplaySize(cursorSize, cursorSize);
 
     // Top HUD rows: a framed actor portrait on each side, name+HP text
-    // beside it, then the conduits beneath. The turn indicator sits on
-    // its own row so nothing collides on narrow screens.
-    const portraitSize = compact ? 44 : 62;
+    // beside it, then the conduits beneath. Landscape uses the compact
+    // metrics even on a wide screen so the battlefield keeps its room.
+    const portraitSize = landscape ? 42 : (compact ? 44 : 62);
     const gutter = compact ? 6 : 9;
     const textLeft = margin + portraitSize + gutter;
-    const barW = compact
-      ? Math.min(118, width * 0.30)
-      : 200;
-    const barH = compact ? 7 : 9;
-    const hpBarY = margin + (compact ? 24 : 38);
+    const barW = landscape
+      ? Math.min(170, width * 0.22)
+      : (compact ? Math.min(118, width * 0.30) : 200);
+    const barH = landscape ? 7 : (compact ? 7 : 9);
+    const hpBarY = margin + (landscape ? 24 : (compact ? 24 : 38));
     const veilBarY = hpBarY + (compact ? 12 : 16);
 
     this.heroPortrait.setSize(portraitSize)
@@ -382,7 +391,7 @@ export default class BattleHUD {
       .setPosition(width - textLeft, veilBarY - (compact ? 5 : 7));
     this.veilText.setFontSize(compact ? 9 : 13)
       .setPosition(textLeft + barW * 0.82 + 8, veilBarY - (compact ? 5 : 7));
-    this.turnText.setPosition(width / 2, compact ? veilBarY + 14 : margin);
+    this.turnText.setPosition(width / 2, landscape ? margin + 2 : (compact ? veilBarY + 14 : margin));
 
     this._layoutBar(this.bars.heroHp, textLeft, hpBarY, barW, barH, false);
     this._layoutBar(this.bars.heroVeil, textLeft, veilBarY, barW * 0.82, barH - 2, false);
@@ -391,15 +400,16 @@ export default class BattleHUD {
     this.msgBox.setPosition(width / 2, dialogY);
     this.msgBox.setSize(dialogWidth, dialogHeight);
 
+    const textInset = landscape ? 26 : 32;
     this.messageText.setPosition(
-      width / 2 - dialogWidth / 2 + 32,
+      width / 2 - dialogWidth / 2 + textInset,
       dialogY
     );
-    this.messageText.setWordWrapWidth(dialogWidth - 96, true);
+    this.messageText.setWordWrapWidth(dialogWidth - (landscape ? 74 : 96), true);
 
     this.msgCursor.setPosition(
-      width / 2 + dialogWidth / 2 - 34,
-      dialogY + dialogHeight / 2 - 26
+      width / 2 + dialogWidth / 2 - (landscape ? 26 : 34),
+      dialogY + dialogHeight / 2 - (landscape ? 18 : 26)
     );
   }
 

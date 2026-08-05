@@ -1,3 +1,5 @@
+import BattleFeedback from './BattleFeedback.js?v=29';
+
 // Battle Presentation v3 — pose timing spec:
 //   Idle -> Step 220 -> Gather 450 -> Hold 120 -> Release 160
 //        -> Hit Stop 80 -> Recover 260 -> Idle
@@ -35,6 +37,11 @@ export default class BattleController {
     this.hud = hud;
     this.config = battleConfig;
     this.running = false;
+
+    // Sheet 05's custom numerals, preloaded by the scene. A fresh
+    // BattleController is built on every restart, so this is too.
+    this.scene.battleFeedback = new BattleFeedback(this.scene);
+
     // Whose full round runs next. Rounds alternate; the enemy acts only
     // on its own round — no auto-chained sequence. Counter attacks and
     // interruption moves become their own mechanic later.
@@ -75,7 +82,7 @@ export default class BattleController {
   runPlayerRound() {
     this.hud.setTurn(this.config.text.playerTurn);
     this.hud.setActiveActor('hero');                      // 1
-    if (this.scene.setHint) this.scene.setHint('Choose a command');
+    if (this.scene.setHint) this.scene.setHint('Select a Veil command');
 
     const console_ = this.scene.commandConsole;
     if (!console_) return this.beginCommand(null);        // console-less fallback
@@ -174,7 +181,11 @@ export default class BattleController {
       }
       if (cam) cam.hitShake(hit.crit);
       if (this.scene.enemyView) this.scene.enemyView.hit();
-      if (this.scene.floatDamage) this.scene.floatDamage(hit.damage, 'enemy', hit.crit);
+      if (this.scene.battleFeedback) {
+        this.scene.battleFeedback.showDamage(hit.damage, 'enemy', hit.crit, hero.damageStyle);
+      } else if (this.scene.floatDamage) {
+        this.scene.floatDamage(hit.damage, 'enemy', hit.crit);
+      }
       if (this.scene.hitStop) this.scene.hitStop(hit.crit ? POSE_TIMING.hitStop * 2 : POSE_TIMING.hitStop);
       this.emit(AUDIO_EVENTS.impact);
     });
@@ -246,7 +257,11 @@ export default class BattleController {
       this.scene.time.delayedCall(180, () => {
         hero.hp = Math.max(0, hero.hp - hit.damage);
         this.hud.updateHP(hero.hp, hero.maxHp);
-        if (this.scene.floatDamage) this.scene.floatDamage(hit.damage, 'hero', hit.crit);
+        if (this.scene.battleFeedback) {
+          this.scene.battleFeedback.showDamage(hit.damage, 'hero', hit.crit, hero.damageStyle);
+        } else if (this.scene.floatDamage) {
+          this.scene.floatDamage(hit.damage, 'hero', hit.crit);
+        }
         if (this.scene.battleCam) this.scene.battleCam.hitShake(hit.crit);
         if (hit.crit && this.scene.hudFrame) this.scene.hudFrame.critFlare();
           if (this.scene.hitStop) this.scene.hitStop(hit.crit ? POSE_TIMING.hitStop * 2 : POSE_TIMING.hitStop);

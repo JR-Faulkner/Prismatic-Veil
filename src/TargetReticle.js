@@ -38,11 +38,13 @@ export default class TargetReticle {
     // Radius is set off the sprite so the rings clear the silhouette —
     // the kit asks that the reticle frame the target, not cover it.
     // ...and capped so a wide reticle never runs off a 390px screen.
-    const room = this.scene.scale.width * 0.5 - 10;
+    const room = this.scene.scale.width * 0.42 - 10;
     return {
       x: c.x,
       y: c.y - h * 0.5,
-      r: Math.max(64, Math.min(h * 0.58, room / 0.86))
+      // v1 read as a second enemy silhouette on mobile — keep the ring
+      // just outside the body and cap it before it dominates the frame.
+      r: Math.max(48, Math.min(h * 0.44, room / 0.78))
     };
   }
 
@@ -69,20 +71,20 @@ export default class TargetReticle {
     this.scene.tweens.killTweensOf(img);
     img.setTexture(STATE_TEX.seeking)
       .setTint(this._accent())
-      .setDisplaySize(p.r * 2.4, p.r * 2.4)
-      .setPosition(p.x + p.r * 0.5, p.y - p.r * 0.3)
+      .setDisplaySize(p.r * 2.0, p.r * 2.0)
+      .setPosition(p.x + p.r * 0.42, p.y - p.r * 0.24)
       .setAlpha(0)
       .setAngle(-22);
 
     this.scene.tweens.add({
       targets: img,
-      alpha: 0.8,
+      alpha: 0.60,
       x: p.x,
       y: p.y,
       angle: 0,
-      displayWidth: p.r * 1.9,
-      displayHeight: p.r * 1.9,
-      duration: 340,
+      displayWidth: p.r * 1.58,
+      displayHeight: p.r * 1.58,
+      duration: 320,
       ease: 'Quad.easeOut'
     });
     // a slow drift while it hunts, killed the moment it locks
@@ -106,22 +108,22 @@ export default class TargetReticle {
     this.scene.tweens.killTweensOf(img);
     if (this._drift) { this._drift.stop(); this._drift = null; }
     img.setTexture(STATE_TEX.locked).setAngle(0)
-      .setDisplaySize(p.r * 2.6, p.r * 2.6)
+      .setDisplaySize(p.r * 1.86, p.r * 1.86)
       .setPosition(p.x, p.y)
-      .setAlpha(0.75);
+      .setAlpha(0.58);
 
     this.scene.tweens.add({
       targets: img,
-      displayWidth: p.r * 1.72,
-      displayHeight: p.r * 1.72,
-      alpha: 0.85,
-      duration: 180,
+      displayWidth: p.r * 1.48,
+      displayHeight: p.r * 1.48,
+      alpha: 0.68,
+      duration: 170,
       ease: 'Back.easeOut',
       onComplete: () => {
         this._pulse = this.scene.tweens.add({
           targets: img,
-          alpha: 0.55,
-          duration: 760,
+          alpha: 0.46,
+          duration: 820,
           yoyo: true,
           repeat: -1,
           ease: 'Sine.easeInOut'
@@ -142,12 +144,12 @@ export default class TargetReticle {
     this.scene.tweens.killTweensOf(img);
     if (this._pulse) { this._pulse.stop(); this._pulse = null; }
     img.setTexture(STATE_TEX.confirmed).setAlpha(0.95)
-      .setDisplaySize(p.r * 1.72, p.r * 1.72);
+      .setDisplaySize(p.r * 1.48, p.r * 1.48);
     this.scene.tweens.add({
       targets: img,
-      displayWidth: p.r * 2.05,
-      displayHeight: p.r * 2.05,
-      duration: 140,
+      displayWidth: p.r * 1.68,
+      displayHeight: p.r * 1.68,
+      duration: 130,
       yoyo: true,
       ease: 'Quad.easeOut'
     });
@@ -166,13 +168,13 @@ export default class TargetReticle {
     const accent = this._accent();
     for (let i = 0; i < 4; i++) {
       const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
-      const shard = this.scene.add.rectangle(img.x, img.y, 26, 2, accent, 0.9)
+      const shard = this.scene.add.rectangle(img.x, img.y, 20, 2, accent, 0.82)
         .setDepth(39).setAngle(Phaser.Math.RadToDeg(a));
       this.scene.worldAdd(shard);
       this.scene.tweens.add({
         targets: shard,
-        x: img.x + Math.cos(a) * 78,
-        y: img.y + Math.sin(a) * 78,
+        x: img.x + Math.cos(a) * 58,
+        y: img.y + Math.sin(a) * 58,
         alpha: 0,
         duration: 380,
         ease: 'Quad.easeOut',
