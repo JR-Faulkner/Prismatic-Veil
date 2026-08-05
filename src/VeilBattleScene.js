@@ -1,30 +1,35 @@
-import BattleHUD from './BattleHUD.js?v=32';
-import BattleController from './BattleController.js?v=32';
-import Timeline from './Timeline.js?v=32';
-import VeilFracture from './VeilFracture.js?v=32';
-import HeroPoseView from './HeroPoseView.js?v=32';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=32';
-import BattleCamera from './BattleCamera.js?v=32';
-import BattleFX from './BattleFX.js?v=32';
-import BattleFeel from './BattleFeel.js?v=32';
-import BattleAtmosphere from './BattleAtmosphere.js?v=32';
-import HudFrame from './HudFrame.js?v=32';
-import CommandConsole from './CommandConsole.js?v=32';
-import TargetReticle from './TargetReticle.js?v=32';
-import UiAudio from './UiAudio.js?v=32';
-import { AUDIO_EVENTS } from './BattleController.js?v=32';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=32';
+import BattleHUD from './BattleHUD.js?v=33';
+import BattleController from './BattleController.js?v=33';
+import Timeline from './Timeline.js?v=33';
+import VeilFracture from './VeilFracture.js?v=33';
+import HeroPoseView from './HeroPoseView.js?v=33';
+import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=33';
+import { HUSHLING_TEXTURES } from './EnemyHushlingView.js?v=33';
+import { createEnemyView } from './EnemyViewFactory.js?v=33';
+import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=33';
+import { selectEnemy } from './EnemyCatalog.js?v=33';
+import BattleCamera from './BattleCamera.js?v=33';
+import BattleFX from './BattleFX.js?v=33';
+import BattleFeel from './BattleFeel.js?v=33';
+import BattleAtmosphere from './BattleAtmosphere.js?v=33';
+import HudFrame from './HudFrame.js?v=33';
+import CommandConsole from './CommandConsole.js?v=33';
+import TargetReticle from './TargetReticle.js?v=33';
+import UiAudio from './UiAudio.js?v=33';
+import { AUDIO_EVENTS } from './BattleController.js?v=33';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=33';
 
-function cloneConfig(source, heroKey) {
+function cloneConfig(source, heroKey, search) {
   const hero = HEROES[heroKey] || source.hero;
+  const enemy = selectEnemy(source.enemy, search);
   return {
     hero: {
       ...hero,
       attack: { ...hero.attack }
     },
     enemy: {
-      ...source.enemy,
-      attack: { ...source.enemy.attack }
+      ...enemy,
+      attack: { ...enemy.attack }
     },
     text: { ...source.text }
   };
@@ -37,6 +42,7 @@ export default class VeilBattleScene extends Phaser.Scene {
 
   preload() {
     this.load.audio('battle_music', './Veilbreak.mp3');
+    preloadEnemyAudio(this);
     this.load.audio('sfx_gather', './assets/sfx/sfx_gather.mp3');
     this.load.audio('sfx_release', './assets/sfx/sfx_release.mp3');
     this.load.audio('sfx_step', './assets/sfx/sfx_step.mp3');
@@ -56,6 +62,7 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.load.image('portrait_prismel', './assets/ui/portrait_prismel.png');
     this.load.image('portrait_kineza', './assets/ui/portrait_kineza.png');
     this.load.image('portrait_wraith', './assets/ui/portrait_wraith.png');
+    this.load.image('portrait_hushling', './assets/ui/portrait_hushling.png');
     this.loadUiKit();
     this.loadFeedbackDigits();
     // Every hero's pose set. A pose whose PNG is absent falls back to the
@@ -71,6 +78,9 @@ export default class VeilBattleScene extends Phaser.Scene {
     Object.values(WRAITH_TEXTURES).forEach(tex => {
       this.load.image(tex, `./assets/enemy/veil_wraith/${tex}.png`);
     });
+    Object.values(HUSHLING_TEXTURES).forEach(tex => {
+      this.load.image(tex, `./assets/enemy/hushling/${tex}.png`);
+    });
   }
 
   // Battle Presentation Alpha v1.0 UI kit, sliced out of the eight
@@ -79,7 +89,8 @@ export default class VeilBattleScene extends Phaser.Scene {
   loadUiKit() {
     const kit = key => this.load.image(`kit_${key}`, `./assets/ui/kit/${key}.png`);
     // v32's TargetReticle draws its rig procedurally — no baked reticle
-    // textures needed any more.
+    // textures needed any more. (The v33 delta was cut from a VeilBattleScene.js
+    // snapshot that predates this cleanup — see FAI_FEEDBACK.md.)
     ['console_plate', 'cursor_idle', 'cursor_active',
      'frame_corner', 'frame_rail', 'frame_rail_centre'].forEach(kit);
     ['fracture', 'resonance', 'barrier', 'returnpath'].forEach(g => {
@@ -118,7 +129,11 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.sound.removeAll();
 
     this.activeHero = this.registry.get('heroKey') || HERO_ORDER[0];
-    this.battleConfig = cloneConfig(BATTLE_CONFIG, this.activeHero);
+    this.battleConfig = cloneConfig(
+      BATTLE_CONFIG,
+      this.activeHero,
+      window.location.search
+    );
 
     this.cameras.main.setBackgroundColor('#070611');
 
@@ -153,10 +168,15 @@ export default class VeilBattleScene extends Phaser.Scene {
     // Synthesised UI cues — no assets required.
     this.uiAudio = new UiAudio(this);
 
+    // Enemy audio is resolved through an enemy-only bank. Missing enemy
+    // cues remain silent and never fall back to the active hero.
+    this.enemyAudio = new EnemyAudioDirector(this, this.battleConfig.enemy);
+    this.enemyAudio.create();
+
     this.heroPoses = new HeroPoseView(this, this.battleConfig.hero);
     this.heroPoses.create();
 
-    this.enemyView = new EnemyWraithView(this);
+    this.enemyView = createEnemyView(this, this.battleConfig.enemy);
     this.enemyView.create();
 
     this.battleCam = new BattleCamera(this);
@@ -227,6 +247,18 @@ export default class VeilBattleScene extends Phaser.Scene {
       this.events.on(event, () => { if (key) this.playSfx(key); });
     });
 
+    const ENEMY_AUDIO_MAP = {
+      [AUDIO_EVENTS.enemyRelease]: 'release',
+      [AUDIO_EVENTS.enemyImpact]: 'impact',
+      [AUDIO_EVENTS.enemyHurt]: 'hurt',
+      [AUDIO_EVENTS.enemyDefeat]: 'defeat'
+    };
+    Object.entries(ENEMY_AUDIO_MAP).forEach(([event, cue]) => {
+      this.events.on(event, () => {
+        if (this.enemyAudio) this.enemyAudio.play(cue);
+      });
+    });
+
     if (this.sound.locked) {
       this.sound.once('unlocked', () => {
         if (!this.battleMusic.isPlaying) this.battleMusic.play();
@@ -234,10 +266,12 @@ export default class VeilBattleScene extends Phaser.Scene {
     } else {
       this.battleMusic.play();
     }
+    if (this.enemyAudio) this.enemyAudio.startIdle();
 
     this.scale.on('resize', this.layoutSceneText, this);
     this.events.once('shutdown', () => {
       this.scale.off('resize', this.layoutSceneText, this);
+      if (this.enemyAudio) this.enemyAudio.destroy();
     });
 
     this.buildHeroSwitch();

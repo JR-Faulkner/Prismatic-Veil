@@ -4,7 +4,7 @@ A family JRPG built with Phaser 3 — no build tools, no bundler, no CDN. Everyt
 
 **▶ Play the battle: https://jr-faulkner.github.io/Prismatic-Veil/battle-v2.html**
 
-> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=32`
+> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=33`
 
 ---
 
@@ -18,7 +18,9 @@ The current work is a **stage battle** in the Shining Force tradition: a hero on
 
 ## Battle system status
 
-**Playable now:** Prismel or Kineza versus the Veil Wraith — art-complete and audio-complete on both sides, portrait-phone first.
+**Playable now:** Prismel or Kineza versus the Veil Wraith (default) or the Hushling — art-complete and audio-complete on both sides, portrait-phone first.
+
+> Pick the encounter with a query param: `battle-v2.html?enemy=wraith` or `battle-v2.html?enemy=hushling`. It's read once at battle start and survives a hero switch. There's no in-game toggle for it yet — this is the seam a future "choose your encounter" screen would hook into.
 
 ### Round flow
 
@@ -129,8 +131,13 @@ Right-to-left entrance sweep, gather push to 1.32×, release snap to 1.55×, hit
 ### Atmosphere — `src/BattleAtmosphere.js`
 Gradient backdrop, distant Veil light bands, drifting fog banks, an elliptical floor with perspective rings, ambient motes and foreground silhouettes — all on parallax layers that drift against the camera at different rates. Ground compression ripples spread beneath a fighter on footfalls and impacts. Abilities briefly tint the scene: cool refracted highlights for Prismel, warm kinetic flashes for Kineza.
 
-### Enemy — `src/EnemyWraithView.js`, `assets/enemy/veil_wraith/`
-The Veil Wraith is texture-driven with four crossfaded poses — Idle, Attack, Hit, Shatter. It hovers, recoils with an eye flare when struck, lunges on its own round, shatters on death and reforms on reset.
+### Enemy — `src/EnemyCatalog.js`, `src/EnemyViewFactory.js`, `src/EnemyWraithView.js`, `src/EnemyHushlingView.js`
+Two enemies now, each texture-driven with the same four-pose language — Idle, Attack, Hit, Shatter — behind a common interface (`container`, `sprite`, `layout/setPose/introSlide/hit/attack/die/reset`), so `BattleController`, `BattleFX` and `TargetReticle` never need to know which one they're fighting. `EnemyCatalog.selectEnemy()` reads the `?enemy=` query param once at battle start; `EnemyViewFactory.createEnemyView()` picks the matching view class.
+
+The **Veil Wraith** hovers, recoils with an eye flare when struck, lunges on its own round, shatters on death and reforms on reset. The **Hushling** is wider and heavier — a slow idle weight shift instead of a hover, a short hard lunge, a single compression-recoil-settle beat on hit (the same one-beat language v32 established for the Wraith, not a multi-cycle jiggle), and a downward collapse on defeat. Its four poses are deliberately simple pixel-built prototype art, not full-detail production pieces — a later art pass can replace them without touching the factory, catalog, audio director, or controller wiring.
+
+### Enemy audio — `src/EnemyAudioDirector.js`
+Each enemy has its own five-cue bank (idle, release, impact, hurt, defeat) resolved **only** through that bank — there is no fallback to the active hero's sound bank. A missing cue is silence, never a borrowed Prismel or Kineza clip. `BattleController` emits enemy-specific event names (`PLAY_ENEMY_RELEASE` / `_IMPACT` / `_HURT` / `_DEFEAT`) distinct from the hero's own `PLAY_RELEASE` / `PLAY_IMPACT`, so the two audio paths can never cross.
 
 ---
 
@@ -146,7 +153,11 @@ src/                        all battle code, ES modules
   BattleController.js       round flow, pose timings, audio events, crits
   BattleConfig.js           hero roster + enemy: stats, poses, accents, attacks
   HeroPoseView.js           hero pose set, crossfade, idle signature
+  EnemyCatalog.js           enemy selection: base Wraith + ?enemy= overlay
+  EnemyViewFactory.js       picks the enemy view class by viewId
   EnemyWraithView.js        Veil Wraith poses and reactions
+  EnemyHushlingView.js      Hushling poses and reactions
+  EnemyAudioDirector.js     per-enemy sound bank, no hero fallback
   BattleHUD.js              HP + Veil conduits, dialogue, actor portraits
   ActorPortrait.js          framed portrait: idle / active / hurt / down
   CommandConsole.js         tactical command console, Veil command glyphs
@@ -166,6 +177,9 @@ assets/
   poses/                    Prismel's five locked poses
   poses/kineza/             Kineza's five locked poses
   enemy/veil_wraith/        Wraith Idle / Attack / Hit / Shatter
+  enemy/hushling/           Hushling Idle / Attack / Hit / Shatter
+  sfx/enemy/wraith/         Wraith idle / release / impact / hurt / defeat
+  sfx/enemy/hushling/       Hushling idle / release / impact / hurt / defeat
   ui/                       dialog frame, continue crystal, portrait crops
   ui/kit/                   Battle Presentation Alpha v1.0 UI kit, sliced
                             and keyed from the eight source sheets

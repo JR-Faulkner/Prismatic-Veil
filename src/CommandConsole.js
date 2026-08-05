@@ -13,7 +13,7 @@
 // Nothing here gates a gameplay rule. A disconnected glyph is a slot
 // that has no move bound to it yet; selecting one only narrates.
 
-import KitFrame from './KitFrame.js?v=32';
+import KitFrame from './KitFrame.js?v=33';
 
 const PLATE_TEX = 'kit_console_plate';
 

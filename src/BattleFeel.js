@@ -1,4 +1,4 @@
-// The Prismatic Veil — v32 Battle Feel Director.
+// The Prismatic Veil — v33 Battle Feel Director.
 //
 // Centralizes impact timing so attack weight is consistent across heroes.
 // This module does not change battle rules, damage, turn order, or assets.
@@ -96,4 +96,9 @@ export default class BattleFeel {
       ease: 'Sine.easeOut'
     });
   }
+}
+
+
+export function getHitStopMs(critical = false) {
+  return critical ? BATTLE_FEEL.criticalHitStopMs : BATTLE_FEEL.normalHitStopMs;
 }

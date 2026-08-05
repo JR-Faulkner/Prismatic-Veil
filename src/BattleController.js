@@ -1,4 +1,5 @@
-import BattleFeedback from './BattleFeedback.js?v=32';
+import BattleFeedback from './BattleFeedback.js?v=33';
+import { getHitStopMs } from './BattleFeel.js?v=33';
 
 // Battle Presentation v3 — pose timing spec:
 //   Idle -> Step 220 -> Gather 450 -> Hold 120 -> Release 160
@@ -21,7 +22,11 @@ export const AUDIO_EVENTS = Object.freeze({
   release: 'PLAY_RELEASE',
   impact: 'PLAY_IMPACT',
   recover: 'PLAY_RECOVER',
-  victory: 'PLAY_VICTORY'
+  victory: 'PLAY_VICTORY',
+  enemyRelease: 'PLAY_ENEMY_RELEASE',
+  enemyImpact: 'PLAY_ENEMY_IMPACT',
+  enemyHurt: 'PLAY_ENEMY_HURT',
+  enemyDefeat: 'PLAY_ENEMY_DEFEAT'
 });
 
 // How far the Veil conduit dips when a command fires, and how much it
@@ -127,6 +132,7 @@ export default class BattleController {
     const fx = this.scene.battleFx;
     const cam = this.scene.battleCam;
     const t = this.scene.time;
+    const impactStopMs = getHitStopMs(!!(this.pendingHit && this.pendingHit.crit));
     let at = 0;
 
     // Step
@@ -193,8 +199,9 @@ export default class BattleController {
         this.scene.floatDamage(hit.damage, 'enemy', hit.crit);
       }
       this.emit(AUDIO_EVENTS.impact);
+      this.emit(AUDIO_EVENTS.enemyHurt);
     });
-    at += POSE_TIMING.hitStop;
+    at += impactStopMs;
 
     // Recover
     t.delayedCall(at, () => {
@@ -226,6 +233,7 @@ export default class BattleController {
         if (this.scene.hudFrame) this.scene.hudFrame.victoryBloom();
         if (this.scene.uiAudio) this.scene.uiAudio.victory();
         if (this.scene.battleCam) this.scene.battleCam.victoryPullOut();
+        this.emit(AUDIO_EVENTS.enemyDefeat);
         this.emit(AUDIO_EVENTS.victory);
         this.hud.queueMessage(`${enemy.name} shatters! The veil clears...`, () => {
           this.resetBattle();
@@ -257,7 +265,7 @@ export default class BattleController {
       if (this.scene.battleCam) this.scene.battleCam.pushIn(1.5, 200, 'Back.easeOut');
       if (this.scene.enemyView) this.scene.enemyView.attack();
       this.fracture.open();
-      this.emit(AUDIO_EVENTS.release);
+      this.emit(AUDIO_EVENTS.enemyRelease);
 
       this.scene.time.delayedCall(180, () => {
         hero.hp = Math.max(0, hero.hp - hit.damage);
@@ -274,7 +282,7 @@ export default class BattleController {
         // heavier feel while the hero's got tuned down.
         if (this.scene.battleFeel) this.scene.battleFeel.impact({ critical: hit.crit });
         if (hit.crit && this.scene.hudFrame) this.scene.hudFrame.critFlare();
-        this.emit(AUDIO_EVENTS.impact);
+        this.emit(AUDIO_EVENTS.enemyImpact);
         this.fracture.close();
         this.scene.time.delayedCall(260, () => {
           if (this.scene.battleCam) this.scene.battleCam.pullOut(320);
