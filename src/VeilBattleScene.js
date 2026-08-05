@@ -1,18 +1,18 @@
-import BattleHUD from './BattleHUD.js?v=29';
-import BattleController from './BattleController.js?v=29';
-import Timeline from './Timeline.js?v=29';
-import VeilFracture from './VeilFracture.js?v=29';
-import HeroPoseView from './HeroPoseView.js?v=29';
-import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=29';
-import BattleCamera from './BattleCamera.js?v=29';
-import BattleFX from './BattleFX.js?v=29';
-import BattleAtmosphere from './BattleAtmosphere.js?v=29';
-import HudFrame from './HudFrame.js?v=29';
-import CommandConsole from './CommandConsole.js?v=29';
-import TargetReticle from './TargetReticle.js?v=29';
-import UiAudio from './UiAudio.js?v=29';
-import { AUDIO_EVENTS } from './BattleController.js?v=29';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=29';
+import BattleHUD from './BattleHUD.js?v=31';
+import BattleController from './BattleController.js?v=31';
+import Timeline from './Timeline.js?v=31';
+import VeilFracture from './VeilFracture.js?v=31';
+import HeroPoseView from './HeroPoseView.js?v=31';
+import EnemyWraithView, { WRAITH_TEXTURES } from './EnemyWraithView.js?v=31';
+import BattleCamera from './BattleCamera.js?v=31';
+import BattleFX from './BattleFX.js?v=31';
+import BattleAtmosphere from './BattleAtmosphere.js?v=31';
+import HudFrame from './HudFrame.js?v=31';
+import CommandConsole from './CommandConsole.js?v=31';
+import TargetReticle from './TargetReticle.js?v=31';
+import UiAudio from './UiAudio.js?v=31';
+import { AUDIO_EVENTS } from './BattleController.js?v=31';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=31';
 
 function cloneConfig(source, heroKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -35,7 +35,7 @@ export default class VeilBattleScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.audio('battle_music', './prismcharge.mp3');
+    this.load.audio('battle_music', './Veilbreak.mp3');
     this.load.audio('sfx_gather', './assets/sfx/sfx_gather.mp3');
     this.load.audio('sfx_release', './assets/sfx/sfx_release.mp3');
     this.load.audio('sfx_step', './assets/sfx/sfx_step.mp3');
@@ -277,12 +277,23 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.scale.on('resize', this.layoutHeroSwitch, this);
   }
 
+  // Anchored off the same metrics BattleHUD uses for the enemy's
+  // portrait block, so it reads as part of the top HUD row instead of
+  // floating in the middle of the battlefield — which is where a fixed
+  // y=176/250 landed it in landscape, nowhere near any other UI.
   layoutHeroSwitch() {
     if (!this.heroSwitch) return;
     const w = this.scale.width;
-    const compact = w < 560;
+    const h = this.scale.height;
+    const landscape = w > h;
+    const compact = w < 560 || h < 520;
+    const margin = landscape
+      ? Math.max(12, Math.round(h * 0.035))
+      : Math.max(18, Math.round(w * 0.03));
+    const portraitSize = landscape ? 42 : (compact ? 44 : 62);
+    const topClear = margin + portraitSize + (landscape ? 6 : 10);
     this.heroSwitch.setFontSize(compact ? 11 : 13)
-      .setPosition(w - (compact ? 12 : 18), compact ? 176 : 250);
+      .setPosition(w - (compact ? 12 : 18), topClear);
   }
 
   // Package 08 lighting: an ability briefly tints the scene. Prismel

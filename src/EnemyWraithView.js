@@ -42,17 +42,30 @@ export default class EnemyWraithView {
   layout() {
     const width = this.scene.scale.width;
     const height = this.scene.scale.height;
-    const compact = width < 560;
+    const landscape = width > height;
+    const compact = width < 560 || height < 520;
 
-    // Background: further right and higher up the ground plane, which
-    // reads as distance, and smaller to match.
-    this.baseX = Math.round(width * (compact ? 0.78 : 0.79));
-    this.baseY = Math.round(height - (compact ? 330 : 300));
+    if (landscape) {
+      // Landscape phones are ~390px tall with a top HUD row and a
+      // bottom console/narration dock eating most of that height, so
+      // the Wraith is sized off the short dimension, not the v1 formula
+      // tuned for a tall portrait canvas — that one put its top edge
+      // above y=0.
+      this.baseX = Math.round(width * 0.72);
+      this.baseY = Math.round(height * 0.86);
+      const targetHeight = Math.min(190, height * 0.50);
+      this.sprite.setDisplaySize(targetHeight, targetHeight);
+      this.ghost.setDisplaySize(targetHeight, targetHeight);
+    } else {
+      // Background: further right and higher up the ground plane, which
+      // reads as distance, and smaller to match.
+      this.baseX = Math.round(width * (compact ? 0.78 : 0.79));
+      this.baseY = Math.round(height - (compact ? 330 : 300));
+      const targetHeight = compact ? Math.min(215, height * 0.28) : Math.min(280, height * 0.38);
+      this.sprite.setDisplaySize(targetHeight, targetHeight);
+      this.ghost.setDisplaySize(targetHeight, targetHeight);
+    }
     this.container.setPosition(this.baseX, this.baseY);
-
-    const targetHeight = compact ? Math.min(215, height * 0.28) : Math.min(280, height * 0.38);
-    this.sprite.setDisplaySize(targetHeight, targetHeight);
-    this.ghost.setDisplaySize(targetHeight, targetHeight);
   }
 
   setPose(name, duration = 110) {

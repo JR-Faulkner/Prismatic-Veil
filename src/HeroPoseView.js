@@ -48,13 +48,16 @@ export default class HeroPoseView {
   layout() {
     const width = this.scene.scale.width;
     const height = this.scene.scale.height;
-    const compact = width < 560;
+    const landscape = width > height;
+    const compact = width < 560 || height < 520;
 
     // One scale for the whole pose set, derived from the idle frame.
     // Fitting each pose to the same screen height would blow up crouched
     // or wide poses, which are legitimately shorter than the idle.
-    // Foreground: the hero is nearest the camera.
-    const targetH = height * (compact ? 0.38 : 0.44);
+    // Foreground: the hero is nearest the camera. Landscape spends more
+    // of its scarce height on the hero than portrait does, since there's
+    // no narration box beneath eating into the same band.
+    const targetH = landscape ? height * 0.54 : height * (compact ? 0.38 : 0.44);
     const refTex = this.scene.textures.get(this.poseTex.idle);
     const refImg = refTex && refTex.getSourceImage();
     const mul = this.hero && this.hero.scaleMul ? this.hero.scaleMul : 1;
@@ -62,9 +65,14 @@ export default class HeroPoseView {
     this.sprite.setScale(scale);
     if (this.ghost) this.ghost.setScale(scale);
 
-    this.baseX = Math.round(width * (compact ? 0.24 : 0.22));
-    // leaves a clear band above the dialog box for the speaker plate
-    this.baseY = Math.round(height - (compact ? 190 : 166));
+    // Landscape brings the fighters in from portrait's wide 0.22/0.79
+    // split, which left a dead void in the middle of a canvas this
+    // short and this wide.
+    this.baseX = Math.round(width * (landscape ? 0.30 : (compact ? 0.24 : 0.22)));
+    this.baseY = landscape
+      ? Math.round(height * 0.90)
+      // leaves a clear band above the dialog box for the speaker plate
+      : Math.round(height - (compact ? 190 : 166));
     if (this.currentPose !== 'step' && this.currentPose !== 'release') {
       this.sprite.setPosition(this.baseX, this.baseY);
     }

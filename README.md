@@ -4,7 +4,7 @@ A family JRPG built with Phaser 3 — no build tools, no bundler, no CDN. Everyt
 
 **▶ Play the battle: https://jr-faulkner.github.io/Prismatic-Veil/battle-v2.html**
 
-> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=29`
+> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=31`
 
 ---
 
@@ -117,7 +117,7 @@ Selecting a command sends the target reticle through seeking → locked → conf
 Sheet 05's custom numerals, sliced to real alpha and loaded like every other asset — relative paths from `preload()`, no embedded base64. Ten tintable white masks for normal damage, coloured by the attacker's accent; ten gold numerals plus a geometric burst for criticals. A hero's own `damageStyle` drives the number's motion whether they're dealing the hit or taking it, so a hurt Prismel still refracts and a hurt Kineza still slams. Falls back to the older drawn numbers if the digit textures are ever incomplete.
 
 ### Audio — `src/UiAudio.js`, `assets/sfx/`
-Six battle hooks (`PLAY_STEP` / `GATHER` / `RELEASE` / `IMPACT` / `RECOVER` / `VICTORY`) emitted as scene events and mapped to **per-hero sound banks**. Prismel's set is crystalline; Kineza's seven clips are kinetic, with a debris accent 36ms behind his impact. UI cues (turn start, low HP, victory, confirm) are **synthesised at runtime** with the Web Audio API — no files, nothing to cache-bust. `prismcharge.mp3` loops as the battle theme.
+Six battle hooks (`PLAY_STEP` / `GATHER` / `RELEASE` / `IMPACT` / `RECOVER` / `VICTORY`) emitted as scene events and mapped to **per-hero sound banks**. Prismel's set is crystalline; Kineza's seven clips are kinetic, with a debris accent 36ms behind his impact. UI cues (turn start, low HP, victory, confirm) are **synthesised at runtime** with the Web Audio API — no files, nothing to cache-bust. `Veilbreak.mp3` loops as the shared battle theme, trimmed to an 80s loop with matched boundary levels so the hard restart doesn't click.
 
 ### Camera — `src/BattleCamera.js`
 Right-to-left entrance sweep, gather push to 1.32×, release snap to 1.55×, hit shake, eased recover, slow victory pull-out, and a continuous 1–2px idle breath that suppresses itself whenever a pan or zoom is active.
@@ -137,7 +137,7 @@ The Veil Wraith is texture-driven with four crossfaded poses — Idle, Attack, H
 ```
 battle-v2.html              ← the live battle. Start here.
 phaser.min.js               bundled Phaser 3.70 (do not modify, no CDN)
-prismcharge.mp3             battle theme
+Veilbreak.mp3               battle theme (80s trimmed loop)
 
 src/                        all battle code, ES modules
   VeilBattleScene.js        scene root: preload, layers, cameras, hero switch

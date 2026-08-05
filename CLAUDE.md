@@ -109,7 +109,11 @@ Every one of these reached the repo and had to be fixed. Do not repeat them.
 
 **The target reticle goes *behind* the enemy.** Its centre gem lands on the Wraith's chest otherwise. Depth 16, under the enemy container's 18 — the kit's own note asks that it frame the target without covering it.
 
+**`compact = width < 560` alone is not a landscape check.** A landscape phone is ~390px tall, which that condition never catches (844px wide easily clears 560). `EnemyWraithView` and `HeroPoseView` both sized and positioned themselves off pre-landscape formulas this way — the Wraith's math put its sprite top 58px *above* y=0. Any layout function keyed on screen size needs its own `landscape = width > height` branch, not a reuse of the portrait/compact split.
+
 **A deferred tween's `onComplete` can destroy an object twice.** `scene.restart()` tears down the display list, but the tween manager survives it and keeps ticking. A fade-out queued a moment before a hero switch can have its `onComplete` fire against an object Phaser's own restart sweep is *simultaneously* destroying — two independent paths racing for the same object, neither aware of the other. Checking `obj.scene` first does not reliably win that race. Wrap the destroy call itself in try/catch (`BattleFeedback._destroy`, `VeilBattleScene._destroyIfAlive`) rather than trying to prove the object is still alive beforehand.
+
+**A sprite's bounding-box centre is not its visual centre.** The Wraith's art carries a gem spike above its head, so true vertical mid-height of the sprite lands on its eye line, not its chest — the target reticle's centre gem sat right over its face until the anchor was dropped to 40% up from the feet instead of 50%. Don't assume `displayHeight * 0.5` is "the middle of the character."
 
 **`scene.sound` is not one of the objects a restart destroys.** Switching heroes calls `scene.restart()`, and `create()` runs `this.sound.add('battle_music', ...)` again — but the previous instance was never stopped, so two loops layer on top of each other. Call `this.sound.stopAll(); this.sound.removeAll();` at the top of `create()`, same as the other restart-survivor caches.
 

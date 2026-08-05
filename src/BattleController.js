@@ -1,4 +1,4 @@
-import BattleFeedback from './BattleFeedback.js?v=29';
+import BattleFeedback from './BattleFeedback.js?v=31';
 
 // Battle Presentation v3 — pose timing spec:
 //   Idle -> Step 220 -> Gather 450 -> Hold 120 -> Release 160

@@ -39,9 +39,13 @@ export default class TargetReticle {
     // the kit asks that the reticle frame the target, not cover it.
     // ...and capped so a wide reticle never runs off a 390px screen.
     const room = this.scene.scale.width * 0.42 - 10;
+    // The centre gem sits at true vertical mid-sprite, which is the
+    // Wraith's eye line — the sprite carries an extra spike above its
+    // head, so dead-center of the bounding box isn't dead-center of the
+    // body. Dropping the anchor moves the gem onto the chest instead.
     return {
       x: c.x,
-      y: c.y - h * 0.5,
+      y: c.y - h * 0.40,
       // v1 read as a second enemy silhouette on mobile — keep the ring
       // just outside the body and cap it before it dominates the frame.
       r: Math.max(48, Math.min(h * 0.44, room / 0.78))

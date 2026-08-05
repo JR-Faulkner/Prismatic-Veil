@@ -252,21 +252,25 @@ export default class BattleFX {
   // seeking / locked / confirmed as separate states.
 
   // v4: critical hit flourish — gold burst plus a CRITICAL! callout.
+  // The gold numeral treatment (BattleFeedback) now carries the "this
+  // was critical" signal on its own, so this callout only needs to be a
+  // quick accent, not a second headline fighting the number for
+  // attention — smaller, and gone well before the numeral's own fade.
   critical() {
     const p = this.targetPoint();
-    const label = this._w(this.scene.add.text(p.x, p.y - 74, 'CRITICAL!', {
-      fontSize: Math.round(Math.max(22, this.scene.scale.width * 0.045)) + 'px',
+    const label = this._w(this.scene.add.text(p.x, p.y - 70, 'CRITICAL!', {
+      fontSize: Math.round(Math.max(14, this.scene.scale.width * 0.028)) + 'px',
       fontStyle: 'bold',
       color: '#FFF3B0',
       stroke: '#7A3A00',
-      strokeThickness: 6
+      strokeThickness: 4
     }).setOrigin(0.5).setDepth(62).setScale(0.5));
 
     this.scene.tweens.add({
-      targets: label, scaleX: 1.15, scaleY: 1.15, duration: 180, ease: 'Back.easeOut'
+      targets: label, scaleX: 1.1, scaleY: 1.1, duration: 140, ease: 'Back.easeOut'
     });
     this.scene.tweens.add({
-      targets: label, y: label.y - 42, alpha: 0, duration: 1000, delay: 260, ease: 'Quad.easeOut',
+      targets: label, y: label.y - 24, alpha: 0, duration: 420, delay: 120, ease: 'Quad.easeOut',
       onComplete: () => label.destroy()
     });
 
