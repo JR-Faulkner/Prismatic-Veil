@@ -1,6 +1,6 @@
-import BattleFeedback from './BattleFeedback.js?v=37';
-import { getHitStopMs } from './BattleFeel.js?v=37';
-import { nextEnemyId } from './EnemyCatalog.js?v=37';
+import BattleFeedback from './BattleFeedback.js?v=38';
+import { getHitStopMs } from './BattleFeel.js?v=38';
+import { nextEnemyId } from './EnemyCatalog.js?v=38';
 
 // Battle Presentation v3 — pose timing spec:
 //   Idle -> Step 220 -> Gather 450 -> Hold 120 -> Release 160
@@ -134,10 +134,18 @@ export default class BattleController {
     const enemy = this.config.enemy;
     const poses = this.scene.heroPoses;
     const fx = this.scene.battleFx;
+    const fxDirector = this.scene.battleFXDirector;
+    const feel = this.scene.battleFeel;
     const cam = this.scene.battleCam;
     const t = this.scene.time;
     const impactStopMs = getHitStopMs(!!(this.pendingHit && this.pendingHit.crit));
     const timing = { ...POSE_TIMING, ...(hero.attackTiming || {}) };
+    // v38A: a hero opted into BattleFXDirector's layered FX (charge/
+    // projectile/impact/residual) instead of BattleFX's own gather()/
+    // beam()/impact(). BattleFXDirector never touches camera or hit-stop
+    // — those calls stay explicit here, same as BattleFeel owns them
+    // everywhere else.
+    const useFXDirector = hero.fxVersion === 'v2' && !!fxDirector;
     let at = 0;
 
     // Step
@@ -151,7 +159,11 @@ export default class BattleController {
     // Gather
     t.delayedCall(at, () => {
       if (poses) poses.setPose('gather');
-      if (fx) fx.gather(timing.gather);
+      if (useFXDirector) {
+        fxDirector.playChargeFX(hero.id, fx.castPoint());
+      } else if (fx) {
+        fx.gather(timing.gather);
+      }
       if (cam) cam.gatherPush();
       if (this.scene.hudFrame) this.scene.hudFrame.gatherPulse(timing.gather);
       if (this.scene.abilityLight) this.scene.abilityLight('gather');
@@ -166,7 +178,12 @@ export default class BattleController {
     // Release
     t.delayedCall(at, () => {
       if (poses) poses.setPose('release');
-      if (fx) fx.beam(timing.release);
+      if (useFXDirector) {
+        if (feel) feel.release();
+        fxDirector.playProjectileFX(hero.id, fx.castPoint(), fx.targetPoint(), timing.release);
+      } else if (fx) {
+        fx.beam(timing.release);
+      }
       if (cam) cam.releaseSnap();
       if (this.scene.reticle) this.scene.reticle.confirm();
       this.emit(AUDIO_EVENTS.release);
@@ -187,10 +204,20 @@ export default class BattleController {
       // that, it would just quietly stretch the freeze back out to the
       // old POSE_TIMING.hitStop length and defeat the whole point of
       // the pass. Let battleFeel be the only thing that touches either.
-      if (fx) {
+      // BattleFXDirector follows the same rule — it never calls either,
+      // so the base impact({critical:false}) call stays explicit here
+      // for the v2 path exactly like fx.impact() already does it for
+      // Kineza, and the shared crit flourish (flourish + escalated
+      // hit-stop) still runs through fx.critical() for both heroes.
+      if (useFXDirector) {
+        if (feel) feel.impact({ critical: false });
+        const target = fx.targetPoint();
+        fxDirector.playImpactFX(hero.id, target);
+        if (this.scene.enemyView) fxDirector.playResidualFX(hero.id, this.scene.enemyView.container);
+      } else if (fx) {
         fx.impact();
-        if (hit.crit) fx.critical();
       }
+      if (hit.crit && fx) fx.critical();
       if (hit.crit && this.scene.hudFrame) this.scene.hudFrame.critFlare();
       if (this.scene.abilityLight) this.scene.abilityLight('impact');
       if (this.scene.atmosphere && this.scene.enemyView) {
@@ -220,6 +247,13 @@ export default class BattleController {
     // Idle, then resolve the round
     t.delayedCall(at, () => {
       if (poses) poses.setPose('idle');
+      // v38A: residual mist is tracked per-target specifically so it can
+      // be cleared here rather than left to fade on its own — matters if
+      // the enemy is defeated and the scene restarts before the tween
+      // finishes.
+      if (useFXDirector && this.scene.enemyView) {
+        fxDirector.clearResidualFX(this.scene.enemyView.container);
+      }
       this.resolvePlayerRound();
     });
   }

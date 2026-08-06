@@ -50,6 +50,11 @@ export const HEROES = Object.freeze({
     // back at the default pace, so both get more room before the next
     // pose cuts in.
     attackTiming: Object.freeze({ step: 340, hold: 220 }),
+    // v38A Battle Presence Pass: routes this hero's charge/projectile/
+    // impact FX through BattleFXDirector instead of BattleFX's own
+    // gather()/beam()/impact(). Kineza has no fxVersion and keeps his
+    // existing BattleFX-driven identity untouched.
+    fxVersion: 'v2',
     frameColourway: 'blue',
     commands: Object.freeze([
       Object.freeze({ glyph: 'fracture', label: 'Release', kind: 'attack' }),

@@ -4,7 +4,7 @@ A family JRPG built with Phaser 3 — no build tools, no bundler, no CDN. Everyt
 
 **▶ Play the battle: https://jr-faulkner.github.io/Prismatic-Veil/battle-v2.html**
 
-> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=37`
+> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=38`
 
 ---
 
@@ -133,13 +133,18 @@ Right-to-left entrance sweep, gather push to 1.32×, release snap to 1.55×, hit
 
 **Two-camera architecture:** the main camera renders and zooms `scene.world`; a second camera renders `scene.uiLayer` and never moves. Without this the HUD would scale off screen during an attack. **Any new battlefield visual must register via `scene.worldAdd()`; HUD elements go on `uiLayer`.**
 
-### Atmosphere — `src/BattleAtmosphere.js`
-Gradient backdrop, distant Veil light bands, drifting fog banks, an elliptical floor with perspective rings, ambient motes and foreground silhouettes — all on parallax layers that drift against the camera at different rates. Ground compression ripples spread beneath a fighter on footfalls and impacts. Abilities briefly tint the scene: cool refracted highlights for Prismel, warm kinetic flashes for Kineza.
+### Atmosphere — `src/BattleAtmosphere.js`, `src/AmbientBattlefieldDirector.js`
+Gradient backdrop, distant Veil light bands, drifting fog banks, an elliptical floor with perspective rings, ambient motes and foreground silhouettes — all on parallax layers that drift against the camera at different rates. Ground compression ripples spread beneath a fighter on footfalls and impacts. Abilities briefly tint the scene: cool refracted highlights for Prismel, warm kinetic flashes for Kineza. The combat platform (the floor) runs a zero parallax factor — it reads as the fixed stage the fighters stand on, not another drifting depth layer.
+
+`AmbientBattlefieldDirector` layers two more pieces on top, continuously, independent of the camera's own parallax: a handful of small crystal-shard silhouettes drifting at 0.35px/sec with a slow shimmer, and a low-opacity (15–20%) fracture-pulse wash breathing on a 4.8s cycle — both deliberately subtle, not another attention-grabbing effect competing with combat FX.
+
+### Battle Presence FX — `src/BattleFXDirector.js`
+Prismel's attack (`fxVersion: 'v2'` in `BattleConfig.js`) routes its charge/projectile/impact/residual visuals through this director instead of `BattleFX`'s own `gather()`/`beam()`/`impact()` — Kineza keeps his original BattleFX-driven identity untouched. Six small procedural layer concepts (particle, mist, ribbon, distortion, residual, environmental overlay) back a four-call public API (`playChargeFX`/`playProjectileFX`/`playImpactFX`/`playResidualFX`, plus `clearResidualFX`/`clearAll`). It never touches camera, hit-stop, damage, sequencing, or audio — those calls stay explicit in `BattleController`, the same way `BattleFeel` owns them everywhere else. Residual FX are tracked per-target so a round that ends early still cleans up completely before the next one starts.
 
 ### Enemy — `src/EnemyCatalog.js`, `src/EnemyViewFactory.js`, `src/EnemyWraithView.js`, `src/EnemyHushlingView.js`
 Two enemies now, each texture-driven with the same four-pose language — Idle, Attack, Hit, Shatter — behind a common interface (`container`, `sprite`, `layout/setPose/introSlide/hit/attack/die/reset`), so `BattleController`, `BattleFX` and `TargetReticle` never need to know which one they're fighting. `EnemyCatalog.selectEnemy(baseEnemy, search, override)` resolves the active enemy: an explicit `override` (from the in-game enemy switch or a gauntlet win, both delivered via the scene registry) beats the `?enemy=` query param, which beats the default Wraith. `EnemyCatalog.ENEMY_ORDER` and `nextEnemyId()` drive the gauntlet — `BattleController.resetBattle()` reads the current enemy's id, advances it, stashes the result in the registry, and does a full `scene.restart()`, the same mechanism already proven for the hero switch. `EnemyViewFactory.createEnemyView()` picks the matching view class.
 
-The **Veil Wraith** floats and drifts, recoils with a single compression-and-recoil beat when struck, lunges on its own round, and unravels into a fading silhouette on death. The **Hushling** is wider and heavier — a slow idle weight shift instead of a hover, a short hard lunge, a bigger shove and slower settle on hit, and a downward collapse on defeat. Both share a one-beat hit reaction, not a multi-cycle jiggle — a second enemy has to match the standard the first one was already corrected to, not just have *a* reaction.
+The **Veil Wraith** floats and drifts, recoils with a single compression-and-recoil beat when struck, lunges on its own round, and unravels into a fading silhouette on death — now with small shard fragments scattering outward as it dissolves, and a faint spectral flicker on the sprite itself (not just its aura) during idle. The **Hushling** is wider and heavier — a slow idle weight shift instead of a hover, a short hard lunge, a bigger shove and slower settle on hit (now with a light dust puff on impact), and a downward collapse on defeat. Both share a one-beat hit reaction, not a multi-cycle jiggle — a second enemy has to match the standard the first one was already corrected to, not just have *a* reaction.
 
 As of v34 both run full-fidelity painted art (1000×1500px source, matching the approved concept designs) instead of the earlier pixel-built prototypes — a low-alpha, additively-blended aura layer breathes behind each sprite for a soft ambient glow, and pose transitions crossfade through a ghost layer using the same fully-opaque-backing pattern already proven on the hero's own pose view (see the trap below). Source art is authored tall and narrow rather than square, so `layout()` derives display width from the sprite's own aspect ratio instead of forcing a square box.
 
@@ -173,8 +178,10 @@ src/                        all battle code, ES modules
   BattleFeedback.js         Sheet 05 damage numerals, gold criticals
   BattleFeel.js             hit stop, camera impulse — the sole owner of both
   HudFrame.js               Veil border, crystal corners, vignette, flares
-  BattleFX.js               per-hero attack FX, crit flourish, victory
+  BattleFX.js               Kineza's attack FX, crit flourish, victory
+  BattleFXDirector.js       Prismel V2's layered charge/projectile/impact FX
   BattleAtmosphere.js       parallax layers, fog, floor, motes, ripples
+  AmbientBattlefieldDirector.js  crystal-midground drift, ambient fracture pulse
   BattleCamera.js           entrance sweep, pushes, shake, breath, pull-out
   UiAudio.js                synthesised UI cues (Web Audio)
   Timeline.js               stepped playback helper

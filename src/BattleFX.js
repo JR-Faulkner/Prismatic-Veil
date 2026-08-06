@@ -35,44 +35,12 @@ export default class BattleFX {
     return { x: enemy.container.x, y: enemy.container.y - 40 * enemy.container.scaleY };
   }
 
-  // Charge-up: a growing core with shards spiralling inward.
+  // Kineza's charge-up: ground rings and a rising core glow. Prismel's
+  // charge now runs through BattleFXDirector.playChargeFX() instead (see
+  // BattleController — hero.fxVersion === 'v2' routes there), so this is
+  // Kineza-only; there's no other caller of gather()/beam()/impact().
   gather(duration = 450) {
-    const heroId = this.scene.battleConfig && this.scene.battleConfig.hero.id;
-    if (heroId === 'kineza') return this.gatherKineza(duration);
-    const p = this.castPoint();
-    this.clearGather();
-
-    this.glow = this._w(this.scene.add.circle(p.x, p.y, 6, 0xdff0ff, 0.85).setDepth(40));
-    this.scene.tweens.add({
-      targets: this.glow,
-      radius: 20,
-      alpha: 0.95,
-      duration,
-      ease: 'Sine.easeInOut'
-    });
-
-    for (let i = 0; i < 7; i++) {
-      const angle = (i / 7) * Math.PI * 2;
-      const dist = 46 + (i % 3) * 10;
-      const shard = this._w(this.scene.add.star(
-        p.x + Math.cos(angle) * dist,
-        p.y + Math.sin(angle) * dist,
-        4, 2.5, 8,
-        PRISM[i % PRISM.length],
-        0.9
-      ).setDepth(41));
-      this.shards.push(shard);
-      this.scene.tweens.add({
-        targets: shard,
-        x: p.x,
-        y: p.y,
-        angle: 180,
-        scaleX: 0.4,
-        scaleY: 0.4,
-        duration: duration + 120,
-        ease: 'Quad.easeIn'
-      });
-    }
+    this.gatherKineza(duration);
   }
 
   clearGather() {
@@ -81,79 +49,18 @@ export default class BattleFX {
     this.shards = [];
   }
 
-  // Prismatic beam from the crystal to the enemy, layered rainbow lines.
+  // Kineza's strike trail. Prismel's projectile now runs through
+  // BattleFXDirector.playProjectileFX() instead.
   beam(duration = 160) {
     if (this.scene.battleFeel) this.scene.battleFeel.release();
-    const heroId = this.scene.battleConfig && this.scene.battleConfig.hero.id;
-    if (heroId === 'kineza') return this.strikeKineza(duration, true);
-    const a = this.castPoint();
-    const b = this.targetPoint();
-    const g = this._w(this.scene.add.graphics().setDepth(45));
-
-    PRISM.forEach((color, i) => {
-      const off = (i - 3) * 3;
-      g.lineStyle(3, color, 0.85);
-      g.beginPath();
-      g.moveTo(a.x, a.y + off);
-      g.lineTo(b.x, b.y + off * 1.6);
-      g.strokePath();
-    });
-
-    this.scene.tweens.add({
-      targets: g,
-      alpha: 0,
-      duration: duration + 220,
-      ease: 'Quad.easeOut',
-      onComplete: () => g.destroy()
-    });
-
-    if (this.glow) {
-      this.scene.tweens.add({
-        targets: this.glow,
-        radius: 4,
-        alpha: 0,
-        duration,
-        onComplete: () => this.clearGather()
-      });
-    }
+    this.strikeKineza(duration, true);
   }
 
-  // Impact: diamond fragments burst out, then lingering sparkles drift.
+  // Kineza's ground-shock impact. Prismel's impact now runs through
+  // BattleFXDirector.playImpactFX() instead.
   impact() {
     if (this.scene.battleFeel) this.scene.battleFeel.impact({ critical: false });
-    const heroId = this.scene.battleConfig && this.scene.battleConfig.hero.id;
-    if (heroId === 'kineza') return this.impactKineza(true);
-    const p = this.targetPoint();
-
-    for (let i = 0; i < 14; i++) {
-      const angle = (i / 14) * Math.PI * 2 + 0.2;
-      const frag = this._w(this.scene.add.star(p.x, p.y, 4, 3, 9, PRISM[i % PRISM.length], 0.95).setDepth(46));
-      this.scene.tweens.add({
-        targets: frag,
-        x: p.x + Math.cos(angle) * (60 + (i % 4) * 18),
-        y: p.y + Math.sin(angle) * (46 + (i % 3) * 16),
-        angle: 220,
-        alpha: 0,
-        scaleX: 0.25,
-        scaleY: 0.25,
-        duration: 620 + (i % 5) * 60,
-        ease: 'Quad.easeOut',
-        onComplete: () => frag.destroy()
-      });
-    }
-
-    const ring = this._w(this.scene.add.circle(p.x, p.y, 8, 0xffffff, 0)
-      .setStrokeStyle(3, 0xdff0ff, 0.9).setDepth(45));
-    this.scene.tweens.add({
-      targets: ring,
-      radius: 70,
-      alpha: 0,
-      duration: 460,
-      ease: 'Expo.easeOut',
-      onComplete: () => ring.destroy()
-    });
-
-    this.scene.time.delayedCall(160, () => this.sparkles(p));
+    this.impactKineza(true);
   }
 
 
@@ -316,25 +223,5 @@ export default class BattleFX {
       });
     }
     this.scene.cameras.main.flash(320, 255, 240, 190);
-  }
-
-  sparkles(p) {
-    for (let i = 0; i < 9; i++) {
-      const sp = this._w(this.scene.add.circle(
-        p.x + Phaser.Math.Between(-46, 46),
-        p.y + Phaser.Math.Between(-34, 34),
-        Phaser.Math.FloatBetween(1.6, 3.2),
-        PRISM[i % PRISM.length],
-        0.9
-      ).setDepth(44));
-      this.scene.tweens.add({
-        targets: sp,
-        y: sp.y - Phaser.Math.Between(26, 58),
-        alpha: 0,
-        duration: 900 + i * 70,
-        ease: 'Sine.easeOut',
-        onComplete: () => sp.destroy()
-      });
-    }
   }
 }

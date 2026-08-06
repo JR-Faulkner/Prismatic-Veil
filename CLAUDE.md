@@ -71,6 +71,12 @@ attack     { name, damage, flavor, critChance, critMultiplier }
 frameColourway  portrait frame family: 'blue' | 'teal' | 'violet'
 commands   console glyph row. Exactly one entry is bound to the attack;
            the rest carry `locked: true` and only narrate when tapped.
+attackTiming  optional partial override of BattleController's POSE_TIMING
+              beats, merged in per round — Prismel's is tuned slower so
+              step and gather read as separate beats instead of a blur.
+fxVersion  optional. 'v2' routes a hero's charge/projectile/impact FX
+           through BattleFXDirector instead of BattleFX's own gather()/
+           beam()/impact() — absent means the original BattleFX path.
 ```
 
 Adding a hero means adding an entry plus their pose PNGs. New frame or damage styles are a small switch case each.
@@ -94,6 +100,8 @@ A defeated enemy doesn't just reset — `BattleController.resetBattle()` advance
 The Veil conduit dips on a command and recharges by the next round. **It gates nothing** — it is a readout, not a resource. Making it a real cost is a later mechanic.
 
 **`BattleFeel` (`src/BattleFeel.js`) is the sole owner of hit stop and camera shake — both directions, both heroes.** It centralizes what used to be scattered `battleCam.hitShake()` / `scene.hitStop()` calls so a normal hit and a critical always land with the same tuned weight (58ms / 92ms hit stop) regardless of which hero or which side is hitting. `scene.hitStop()` supports deadline extension — calling it again while already stopped pushes the deadline out rather than starting a second freeze — specifically so a critical that follows a normal impact within the same beat (`fx.impact()` then `fx.critical()`, back to back, same frame) escalates the existing freeze instead of stacking a muddy second one. **Nothing else may call `hitShake()` or `hitStop()` directly** — a second call on top of `BattleFeel`'s doesn't error, it just silently stretches the freeze back out to whatever the old caller asked for and undoes the tuning. This bit once already: a DAI package added `BattleFeel` and wired it into `BattleFX`, but `BattleController` — not included in that package — still had its own `cam.hitShake(hit.crit)` and `scene.hitStop(...)` calls sitting right next to the new ones.
+
+**`BattleFXDirector` (`src/BattleFXDirector.js`) and `AmbientBattlefieldDirector` (`src/AmbientBattlefieldDirector.js`) never touch camera, hit-stop, damage, battle sequencing, or audio — same non-ownership boundary as the `BattleFeel` rule above, just declared up front instead of learned the hard way.** `BattleFXDirector` drives Prismel's `fxVersion: 'v2'` charge/projectile/impact/residual visuals; `BattleController.playAttackCinematic()` calls `battleFeel.release()`/`battleFeel.impact()` explicitly around it, exactly where `fx.beam()`/`fx.impact()` already did that internally for Kineza's path. If either director ever grows a reason to touch hit-stop or camera, that call belongs in `BattleFeel`, not in the director — the whole point of the split is one thing owns feel, another owns pixels.
 
 ---
 

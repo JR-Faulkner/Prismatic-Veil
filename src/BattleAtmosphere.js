@@ -22,7 +22,11 @@ export default class BattleAtmosphere {
     this.parallax = [
       { obj: this.bands, factor: -0.16 },
       { obj: this.fog, factor: -0.07 },
-      { obj: this.floor, factor: 0.05 },
+      // v38A: the combat platform reads as a fixed stage floor the
+      // fighters stand on, not another drifting depth layer — zeroed so
+      // it's genuinely static rather than a near-zero factor that still
+      // moved a few px on a hard camera push.
+      { obj: this.floor, factor: 0 },
       { obj: this.foreground, factor: 0.22 }
     ];
     this.parallax.forEach(l => { l.homeX = 0; });

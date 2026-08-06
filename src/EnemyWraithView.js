@@ -95,6 +95,17 @@ export default class EnemyWraithView {
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut'
+      }),
+      // v38A: spectral idle — the sprite itself flickers faintly toward
+      // translucent, distinct from the aura's own pulse, reading as a
+      // non-corporeal shimmer on the body rather than just its glow.
+      this.scene.tweens.add({
+        targets: this.sprite,
+        alpha: { from: 1, to: 0.86 },
+        duration: 2400,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
       })
     ];
   }
@@ -102,7 +113,7 @@ export default class EnemyWraithView {
   stopIdle() {
     this._idleTweens.forEach(t => t && t.stop());
     this._idleTweens = [];
-    this.scene.tweens.killTweensOf([this.container, this.aura]);
+    this.scene.tweens.killTweensOf([this.container, this.aura, this.sprite]);
   }
 
   setPose(name, duration = 110) {
@@ -206,6 +217,30 @@ export default class EnemyWraithView {
   die() {
     this.stopIdle();
     this.setPose('shatter', 90);
+
+    // v38A: fragmented dissolve — small shard fragments scatter outward
+    // as the silhouette breaks apart, layered on top of the existing
+    // shrink/fade/skew tween rather than replacing it.
+    const cx = this.container.x;
+    const cy = this.container.y - this.sprite.displayHeight * 0.5;
+    for (let i = 0; i < 10; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 30 + Math.random() * 60;
+      const frag = this.scene.add.rectangle(
+        cx, cy, Phaser.Math.Between(3, 7), Phaser.Math.Between(3, 7), 0xb586ff, 0.75
+      ).setDepth(19).setAngle(Phaser.Math.Between(0, 180));
+      if (this.scene.worldAdd) this.scene.worldAdd(frag);
+      this.scene.tweens.add({
+        targets: frag,
+        x: cx + Math.cos(angle) * dist,
+        y: cy + Math.sin(angle) * dist - 20,
+        angle: frag.angle + Phaser.Math.Between(90, 260),
+        alpha: 0,
+        duration: Phaser.Math.Between(520, 780),
+        ease: 'Quad.easeOut',
+        onComplete: () => frag.destroy()
+      });
+    }
 
     this.scene.tweens.add({
       targets: this.container,

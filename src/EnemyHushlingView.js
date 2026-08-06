@@ -149,6 +149,29 @@ export default class EnemyHushlingView {
     this.stopIdle();
     this.setPose('hit', 60);
 
+    // v38A: light dust response — a few motes puff off the impact point,
+    // reading as light debris rather than the hero's own heavier ground
+    // impact effects.
+    for (let i = 0; i < 6; i++) {
+      const dust = this.scene.add.circle(
+        this.container.x + Phaser.Math.Between(-20, 20),
+        this.container.y - 6,
+        Phaser.Math.FloatBetween(1.5, 3),
+        0xcdbfa8,
+        0.5
+      ).setDepth(19);
+      if (this.scene.worldAdd) this.scene.worldAdd(dust);
+      this.scene.tweens.add({
+        targets: dust,
+        x: dust.x + Phaser.Math.Between(-30, 30),
+        y: dust.y - Phaser.Math.Between(10, 26),
+        alpha: 0,
+        duration: Phaser.Math.Between(280, 420),
+        ease: 'Quad.easeOut',
+        onComplete: () => dust.destroy()
+      });
+    }
+
     // One compression-and-recoil beat, matching the standard v32
     // established for the Wraith — a bigger silhouette gets a bigger
     // shove and a slower settle, not more bounces.
