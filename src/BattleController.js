@@ -1,6 +1,6 @@
-import BattleFeedback from './BattleFeedback.js?v=35';
-import { getHitStopMs } from './BattleFeel.js?v=35';
-import { nextEnemyId } from './EnemyCatalog.js?v=35';
+import BattleFeedback from './BattleFeedback.js?v=36';
+import { getHitStopMs } from './BattleFeel.js?v=36';
+import { nextEnemyId } from './EnemyCatalog.js?v=36';
 
 // Battle Presentation v3 — pose timing spec:
 //   Idle -> Step 220 -> Gather 450 -> Hold 120 -> Release 160

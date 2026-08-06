@@ -1,4 +1,4 @@
-import ActorPortrait from './ActorPortrait.js?v=35';
+import ActorPortrait from './ActorPortrait.js?v=36';
 
 export default class BattleHUD {
   constructor(scene, battleConfig) {

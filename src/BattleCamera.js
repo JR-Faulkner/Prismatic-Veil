@@ -23,10 +23,15 @@ export default class BattleCamera {
     const w = s.scale.width, h = s.scale.height;
     const hero = s.heroPoses && s.heroPoses.sprite;
     const foe = s.enemyView && s.enemyView.container;
-    if (!hero || !foe) return { x: w / 2, y: h * 0.66 };
+    // The enemy's own sprite carries the real display height — the
+    // container it sits in is never sized via setSize(), so container.height
+    // (and displayHeight) is always 0 and previously collapsed the enemy's
+    // side of this average down to its bare feet position.
+    const foeSprite = s.enemyView && s.enemyView.sprite;
+    if (!hero || !foe || !foeSprite) return { x: w / 2, y: h * 0.66 };
     return {
       x: (hero.x + foe.x) / 2,
-      y: (hero.y - hero.displayHeight * 0.5 + foe.y - foe.height * 0.2) / 2
+      y: (hero.y - hero.displayHeight * 0.5 + foe.y - foeSprite.displayHeight * 0.2) / 2
     };
   }
 

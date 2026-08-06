@@ -4,7 +4,7 @@ A family JRPG built with Phaser 3 — no build tools, no bundler, no CDN. Everyt
 
 **▶ Play the battle: https://jr-faulkner.github.io/Prismatic-Veil/battle-v2.html**
 
-> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=35`
+> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=36`
 
 ---
 
