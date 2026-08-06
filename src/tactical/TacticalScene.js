@@ -1,0 +1,755 @@
+// Tactical Field Foundation v2 — TacticalScene.
+// Owns phase sequencing, objectives, enemy intent, victory/defeat, and
+// coordination between the other tactical modules. Camera logic stays in
+// TacticalCamera; presentation stays in BattleCinematic; this module only
+// decides *when* those things happen.
+import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=40';
+import TerrainRegistry from './TerrainRegistry.js?v=40';
+import TacticalGrid from './TacticalGrid.js?v=40';
+import TacticalPathfinder from './TacticalPathfinder.js?v=40';
+import TacticalCamera from './TacticalCamera.js?v=40';
+import UnitController from './UnitController.js?v=40';
+import BattleCinematic from './BattleCinematic.js?v=40';
+
+// Placeholder combat stats — this pass is engineering foundation, not
+// balance. DECISION_LOG.md explicitly defers balance testing to later.
+// requiresLineOfSight is explicit per hero rather than inferred from range
+// numbers (e.g. "max range > 1") — the spec's actual rule is about attack
+// *type* (direct ranged vs. adjacent), and an inferred proxy would silently
+// break the moment a future hero has a ranged-but-max-1 kit.
+// Map tokens are procedural (accent-colored circle + initials), not photo
+// art — the legacy 48x72 pixel spritesheets read as low-quality at any
+// scale, and full battle-art PNGs (the enemy idle poses, ~1000-1500px)
+// are the wrong shape entirely for a small map marker. `cinematicKey`
+// points to the real portrait art instead, used only in BattleCinematic's
+// close-up cut-in where detail actually matters. Accent colors match the
+// values already established for these characters elsewhere in the
+// project (BattleConfig.js, EnemyCatalog.js), not invented fresh here.
+const HERO_STATS = Object.freeze({
+  prismel: { hp: 24, atk: 6, cinematicKey: 'portrait_prismel', name: 'Prismel', ability: 'Prismatic Shard', flavor: 'Crystal light converges...', accent: 0x67c8ff, requiresLineOfSight: true, label: 'Pr' },
+  auryi: { hp: 30, atk: 4, healAmount: 8, cinematicKey: 'portrait_auryi', name: 'Auryi', ability: 'Lumisong Renewal', flavor: 'A gentle song of restoration...', accent: 0xc8a8ff, requiresLineOfSight: true, label: 'Au' },
+  kineza: { hp: 26, atk: 7, cinematicKey: 'portrait_kineza', name: 'Kineza', ability: 'Momentum Fist', flavor: 'Kinetic force coils tight...', accent: 0x68ff8c, requiresLineOfSight: false, label: 'Ki' }
+});
+
+const ENEMY_STATS = Object.freeze({
+  hushling: { hp: 10, atk: 3, range: 1, cinematicKey: 'portrait_hushling', name: 'Hushling', ability: 'Hush Crush', accent: 0xe24145, label: 'Hu' },
+  veil_wraith: { hp: 26, atk: 6, range: 1, cinematicKey: 'portrait_wraith', name: 'Veil Wraith', ability: 'Veil Lash', accent: 0xc477ff, label: 'Wr' }
+});
+
+const TERRAIN_COLORS = Object.freeze({
+  open: 0x25203f,
+  barrier: 0x120b28,
+  difficult: 0x4a3a2a,
+  resonance: 0x3b215c
+});
+
+export default class TacticalScene extends Phaser.Scene {
+  constructor() {
+    super('TacticalScene');
+  }
+
+  preload() {
+    this.load.json('tacticalMap', './data/tactical_map_v2.json');
+    // Real portrait art, used only for the cinematic cut-in — map tokens
+    // are drawn procedurally in create(), no texture needed for those.
+    this.load.image('portrait_prismel', './assets/ui/portrait_prismel.png');
+    this.load.image('portrait_kineza', './assets/ui/portrait_kineza.png');
+    this.load.image('portrait_auryi', './assets/ui/portrait_auryi.png');
+    this.load.image('portrait_wraith', './assets/ui/portrait_wraith_v34.png');
+    this.load.image('portrait_hushling', './assets/ui/portrait_hushling_v34.png');
+  }
+
+  worldAdd(obj) {
+    if (Array.isArray(obj)) { obj.forEach(o => this.world.add(o)); return; }
+    this.world.add(obj);
+  }
+
+  uiAdd(obj) {
+    if (Array.isArray(obj)) { obj.forEach(o => this.uiLayer.add(o)); return; }
+    this.uiLayer.add(obj);
+  }
+
+  create() {
+    // scene.restart() reuses this instance but destroys every game object —
+    // clear anything cached on `this` so a second run never touches a dead
+    // reference. Same pattern VeilBattleScene uses.
+    this._dragging = false;
+    this._dragMoved = false;
+    if (this._resizeHandler) this.scale.off('resize', this._resizeHandler, this);
+    if (this._uiCamResizeHandler) this.scale.off('resize', this._uiCamResizeHandler, this);
+
+    this.tacticalConfig = { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT };
+
+    this.cameras.main.setBackgroundColor('#07060f');
+    this.world = this.add.container(0, 0);
+    this.uiLayer = this.add.container(0, 0).setDepth(1000);
+
+    const mapData = this.cache.json.get('tacticalMap');
+    this.mapData = mapData;
+
+    this.terrain = new TerrainRegistry({
+      open: { movementCost: 1, walkable: true, blocksLineOfSight: false },
+      barrier: { movementCost: null, walkable: false, blocksLineOfSight: true },
+      difficult: { movementCost: 2, walkable: true, blocksLineOfSight: false },
+      resonance: { movementCost: 1, walkable: true, blocksLineOfSight: false }
+    });
+    this.grid = new TacticalGrid(this, mapData, this.terrain);
+    this.pathfinder = new TacticalPathfinder(this.grid, this.terrain);
+    this.tacticalCamera = new TacticalCamera(this, this.grid, ZOOM);
+    this.unitController = new UnitController(this, this.grid, this.pathfinder);
+    this.cinematic = new BattleCinematic(this, TIMING);
+
+    this.turn = 1;
+    this.phase = 'player';
+    this.inputLocked = false;
+    this.message = 'Restore all three sound nodes. Defeating every enemy is optional.';
+    this.victory = false;
+    this.defeat = false;
+
+    this.heroes = mapData.heroes.map(h => this._buildHero(h));
+    this.enemies = mapData.enemies.map(e => this._buildEnemy(e));
+    this.nodes = mapData.nodes.map(n => ({ ...n, restored: false }));
+
+    this.heroes.forEach(h => this.grid.setOccupant(h.x, h.y, h));
+    this.enemies.forEach(e => this.grid.setOccupant(e.x, e.y, e));
+
+    this.tileLayer = this.worldWrap(this.add.graphics().setDepth(0));
+    this.nodeMarkers = [];
+
+    // World-space geometry is fixed regardless of viewport — the camera's
+    // zoom/pan is what adapts to screen size, not the grid itself. Tying
+    // tile scale to viewport width fought the camera system: a resize
+    // would rescale the whole world instead of just changing what's
+    // visible, which is the opposite of how Phaser cameras are meant to
+    // work here.
+    this.grid.setOrigin(0, 0, TILE.baseHalfW, TILE.baseHalfH);
+
+    this.buildHUD();
+    this.heroes.forEach(u => this._placeUnitSprite(u));
+    this.enemies.forEach(u => this._placeUnitSprite(u));
+    this.drawBoard();
+    this.drawNodes();
+    this.layout();
+    this.refreshHUD();
+
+    this.input.on('pointerdown', this.onPointerDown, this);
+    this.input.on('pointermove', this.onPointerMove, this);
+    this.input.on('pointerup', this.onPointerUp, this);
+    this.input.on('wheel', this.onWheel, this);
+
+    this._resizeHandler = () => this.layout();
+    this.scale.on('resize', this._resizeHandler, this);
+
+    this.uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height);
+    this.uiCam.setBackgroundColor('rgba(0,0,0,0)');
+    this.uiCam.ignore(this.world);
+    this.cameras.main.ignore(this.uiLayer);
+    // Named + stored so the cleanup block at the top of create() can
+    // remove it on the next restart — an inline anonymous function here
+    // would silently accumulate one extra 'resize' listener per restart,
+    // since there'd be no reference left to call .off() with.
+    this._uiCamResizeHandler = size => this.uiCam.setSize(size.width, size.height);
+    this.scale.on('resize', this._uiCamResizeHandler, this);
+
+    this.time.delayedCall(60, () => this.tacticalCamera.recenter(0));
+  }
+
+  worldWrap(obj) {
+    this.worldAdd(obj);
+    return obj;
+  }
+
+  // --- Setup helpers ---------------------------------------------------
+
+  // Procedural map token: an accent-colored circle with a two-letter
+  // label, ringed gold for heroes / red for enemies. Deliberately simple
+  // — this is the "tactical map sprite" half of the tactical-to-cinematic
+  // pairing the project's own reference art shows (a small map token that
+  // zooms into a detailed close-up on attack); the close-up is where the
+  // real portrait art belongs, in BattleCinematic.
+  _buildUnitToken(color, label, isHero) {
+    const container = this.add.container(0, 0).setDepth(10);
+    const ringColor = isHero ? 0xffe8a0 : 0xff503c;
+    const circle = this.add.circle(0, 0, 16, color, 0.94).setStrokeStyle(2, ringColor, 0.95);
+    const text = this.add.text(0, 0, label, {
+      fontSize: '12px', fontStyle: 'bold', color: '#0a0716'
+    }).setOrigin(0.5);
+    container.add([circle, text]);
+    this.worldAdd(container);
+    return container;
+  }
+
+  _buildHero(h) {
+    const stats = HERO_STATS[h.id];
+    const sprite = this._buildUnitToken(stats.accent, stats.label, true);
+    return {
+      id: h.id, x: h.x, y: h.y, move: h.move,
+      rangeMin: h.rangeMin, rangeMax: h.rangeMax,
+      hp: stats.hp, maxHp: stats.hp, atk: stats.atk, healAmount: stats.healAmount || 0,
+      name: stats.name, ability: stats.ability, flavor: stats.flavor,
+      portraitKey: stats.cinematicKey, accent: stats.accent,
+      requiresLineOfSight: stats.requiresLineOfSight,
+      moved: false, acted: false, alive: true, isHero: true,
+      sprite, spriteYOffset: 0
+    };
+  }
+
+  _buildEnemy(e) {
+    const stats = ENEMY_STATS[e.type];
+    const sprite = this._buildUnitToken(stats.accent, stats.label, false);
+    return {
+      id: e.id, type: e.type, x: e.x, y: e.y,
+      hp: stats.hp, maxHp: stats.hp, atk: stats.atk, range: stats.range,
+      name: stats.name, ability: stats.ability, portraitKey: stats.cinematicKey,
+      alive: true, isHero: false, sprite, spriteYOffset: 0
+    };
+  }
+
+  // Called on create() and every resize. World geometry never changes
+  // here — only the camera's bounds/clamp (viewport size changed) and the
+  // screen-space HUD need to respond.
+  layout() {
+    this.tacticalCamera.computeBounds();
+    this.tacticalCamera.defaultZoom = this.defaultZoomFor(this.scale.width, this.scale.height);
+    this.tacticalCamera.clamp();
+    this.layoutHUD();
+  }
+
+  // Board coverage is handled by pan (a required control, not a fallback),
+  // so this only has to pick a *readable* starting zoom per viewport —
+  // narrower phones start zoomed out a bit further to keep more of the
+  // board and its neighboring tiles in view at once.
+  defaultZoomFor(w, h) {
+    const landscape = w > h;
+    const compact = w < BREAKPOINTS.compactWidth || h < BREAKPOINTS.compactHeight;
+    if (landscape) return compact ? 0.85 : 0.95;
+    return compact ? 0.62 : 0.72;
+  }
+
+  _placeUnitSprite(u) {
+    const p = this.grid.toScreen(u.x, u.y);
+    u.sprite.setPosition(p.x, p.y);
+  }
+
+  drawBoard() {
+    this.tileLayer.clear();
+    for (let y = 0; y < GRID.rows; y++) {
+      for (let x = 0; x < GRID.columns; x++) {
+        const type = this.grid.terrainAt(x, y);
+        this.grid.drawDiamond(this.tileLayer, x, y, TERRAIN_COLORS[type] || TERRAIN_COLORS.open, 0.92, 0x0a0716, 0.5);
+      }
+    }
+  }
+
+  drawNodes() {
+    this.nodeMarkers.forEach(m => m.destroy());
+    this.nodeMarkers = [];
+    this.nodes.forEach(n => {
+      const p = this.grid.toScreen(n.x, n.y);
+      const marker = this.add.circle(p.x, p.y - 6, 7,
+        n.restored ? 0xffd56a : 0x8a45ff, n.restored ? 0.95 : 0.55)
+        .setStrokeStyle(2, n.restored ? 0xfff3c8 : 0xc8a8ff, 0.9)
+        .setDepth(4);
+      this.worldAdd(marker);
+      this.nodeMarkers.push(marker);
+    });
+  }
+
+  // --- HUD ---------------------------------------------------------------
+
+  buildHUD() {
+    this.turnText = this.add.text(0, 0, '', { fontSize: '16px', fontStyle: 'bold', color: '#FFE8A0' }).setOrigin(0.5, 0);
+    this.messageText = this.add.text(0, 0, '', { fontSize: '13px', color: '#C8A8FF', wordWrap: { width: 320 } }).setOrigin(0.5, 0);
+    this.heroCards = this.heroes.map((h, i) => this._buildHeroCard(h, i));
+    this.actionMenu = this._buildActionMenu();
+    this.zoomControls = this._buildZoomControls();
+    this.endPanel = null;
+
+    this.uiAdd([this.turnText, this.messageText, this.zoomControls.container, this.actionMenu.container]);
+    this.heroCards.forEach(c => this.uiAdd(c.container));
+  }
+
+  _buildHeroCard(hero, index) {
+    const container = this.add.container(0, 0);
+    const bg = this.add.rectangle(0, 0, 132, 46, 0x120b28, 0.88).setStrokeStyle(1, 0x5a3a88, 0.8).setOrigin(0, 0);
+    const name = this.add.text(8, 4, hero.name, { fontSize: '12px', fontStyle: 'bold', color: '#FFE8A0' });
+    const hp = this.add.text(8, 22, '', { fontSize: '11px', color: '#9fe0ff' });
+    container.add([bg, name, hp]);
+    container.setInteractive(new Phaser.Geom.Rectangle(0, 0, 132, 46), Phaser.Geom.Rectangle.Contains);
+    container.on('pointerdown', (p, lx, ly, ev) => { if (ev) ev.stopPropagation(); if (p.event) p.event._tacticalUIHandled = true; this.onHeroCardTap(hero); });
+    return { container, bg, hpText: hp, hero };
+  }
+
+  _buildActionMenu() {
+    const container = this.add.container(0, 0).setVisible(false);
+    const labels = ['Attack', 'Veil Art', 'Resonate', 'Guard', 'Wait', 'Cancel'];
+    const buttons = labels.map((label, i) => {
+      const bg = this.add.rectangle(0, i * 40, 132, 34, 0x1a1033, 0.92).setStrokeStyle(1, 0x5a3a88, 0.9).setOrigin(0, 0)
+        .setInteractive({ useHandCursor: true });
+      const text = this.add.text(66, i * 40 + 17, label, { fontSize: '13px', color: '#FFE8A0' }).setOrigin(0.5);
+      bg.on('pointerdown', (p, lx, ly, ev) => { if (ev) ev.stopPropagation(); if (p.event) p.event._tacticalUIHandled = true; this.onActionMenuChoice(label); });
+      container.add([bg, text]);
+      return { bg, text, label };
+    });
+    return { container, buttons };
+  }
+
+  _buildZoomControls() {
+    const container = this.add.container(0, 0);
+    const mk = (dx, label, cb) => {
+      const bg = this.add.circle(dx, 0, 22, 0x1a1033, 0.9).setStrokeStyle(1, 0x5a3a88, 0.9).setInteractive({ useHandCursor: true });
+      const text = this.add.text(dx, 0, label, { fontSize: '18px', color: '#FFE8A0' }).setOrigin(0.5);
+      bg.on('pointerdown', (p, lx, ly, ev) => { if (ev) ev.stopPropagation(); if (p.event) p.event._tacticalUIHandled = true; cb(); });
+      container.add([bg, text]);
+      return bg;
+    };
+    mk(-56, '-', () => this.tacticalCamera.zoomBy(-ZOOM.buttonStep));
+    mk(0, '⌖', () => this.tacticalCamera.recenter(TIMING.cameraFocusMs));
+    mk(56, '+', () => this.tacticalCamera.zoomBy(ZOOM.buttonStep));
+    return { container };
+  }
+
+  layoutHUD() {
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const compact = w < BREAKPOINTS.compactWidth || h < BREAKPOINTS.compactHeight;
+    const margin = compact ? 10 : 16;
+
+    this.turnText.setPosition(w / 2, margin);
+    this.messageText.setPosition(w / 2, margin + 24).setWordWrapWidth(w * 0.86);
+
+    this.heroCards.forEach((c, i) => {
+      c.container.setPosition(margin, margin + 54 + i * 52);
+    });
+
+    this.zoomControls.container.setPosition(w - margin - 56, h - margin - 24);
+
+    this.actionMenu.container.setPosition(w - margin - 132, h - margin - 24 - 40 * this.actionMenu.buttons.length);
+  }
+
+  refreshHUD() {
+    this.turnText.setText(`Turn ${this.turn} — ${this.phase === 'player' ? 'Player Phase' : 'Enemy Phase'}`);
+    this.messageText.setText(this.message);
+    this.heroCards.forEach(c => {
+      const alive = c.hero.alive;
+      c.hpText.setText(alive ? `HP ${c.hero.hp}/${c.hero.maxHp}${c.hero.acted ? ' ✓' : ''}` : 'Down');
+      c.bg.setFillStyle(0x120b28, alive ? 0.88 : 0.5);
+      c.bg.setStrokeStyle(1, c.hero === this.unitController.selected ? 0xffe8a0 : 0x5a3a88, 0.9);
+    });
+  }
+
+  setMessage(msg) {
+    this.message = msg;
+    this.messageText.setText(msg);
+  }
+
+  // --- Input arbitration -----------------------------------------------
+  // Tapping a unit/tile selects or moves; dragging empty battlefield pans;
+  // UI never pans. UI buttons stamp `_tacticalUIHandled` on the underlying
+  // event so this generic handler can tell "already handled by a button"
+  // apart from "a tap on the board" — both fire on the same pointerdown.
+
+  onPointerDown(pointer) {
+    if (pointer.event && pointer.event._tacticalUIHandled) return;
+    if (this.inputLocked) return;
+    this._dragging = true;
+    this._dragMoved = false;
+    this._dragStartX = pointer.x;
+    this._dragStartY = pointer.y;
+    this._lastX = pointer.x;
+    this._lastY = pointer.y;
+  }
+
+  onPointerMove(pointer) {
+    if (!this._dragging || !pointer.isDown || this.inputLocked) return;
+    const dx = pointer.x - this._dragStartX;
+    const dy = pointer.y - this._dragStartY;
+    if (!this._dragMoved && Math.hypot(dx, dy) > INPUT.dragThresholdPx) {
+      this._dragMoved = true;
+    }
+    if (this._dragMoved) {
+      this.tacticalCamera.panByScreenDelta(pointer.x - this._lastX, pointer.y - this._lastY);
+    }
+    this._lastX = pointer.x;
+    this._lastY = pointer.y;
+  }
+
+  onPointerUp(pointer) {
+    if (pointer.event && pointer.event._tacticalUIHandled) { this._dragging = false; return; }
+    const wasDrag = this._dragMoved;
+    this._dragging = false;
+    this._dragMoved = false;
+    if (this.inputLocked || wasDrag) return;
+    this.handleWorldTap(pointer);
+  }
+
+  onWheel(pointer, gameObjects, deltaX, deltaY) {
+    if (this.inputLocked) return;
+    this.tacticalCamera.zoomBy(deltaY > 0 ? -0.1 : 0.1);
+  }
+
+  handleWorldTap(pointer) {
+    if (this.phase !== 'player') return;
+    // pointer.worldX/worldY is ambiguous with two cameras in play (main
+    // world camera + the fixed uiCam) — Phaser updates it per-camera during
+    // hit-testing, so which camera's transform it reflects isn't
+    // guaranteed to be cameras.main. Ask the main camera explicitly
+    // instead of trusting the pointer's own cached value.
+    const world = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+    const tile = this.grid.toGrid(world.x, world.y);
+    if (!this.grid.inBounds(tile.x, tile.y)) return;
+
+    const occupant = this.grid.occupantAt(tile.x, tile.y);
+    const selected = this.unitController.selected;
+
+    if (this._pendingAction === 'attack') {
+      if (occupant && !occupant.isHero && occupant.alive && selected) {
+        this.tryAttack(selected, occupant);
+      }
+      return;
+    }
+
+    if (occupant && occupant.isHero && occupant.alive) {
+      this.selectHero(occupant);
+      return;
+    }
+
+    if (!selected || selected.moved || occupant) return;
+
+    const path = this.unitController.previewRouteTo(tile.x, tile.y);
+    if (!path) {
+      this.setMessage('That tile is out of reach.');
+      this._previewedTile = null;
+      this.flashInvalidTile(tile.x, tile.y);
+      return;
+    }
+
+    if (this._previewedTile && this._previewedTile.x === tile.x && this._previewedTile.y === tile.y) {
+      this.confirmMove(selected, path);
+      this._previewedTile = null;
+    } else {
+      this._previewedTile = { x: tile.x, y: tile.y };
+    }
+  }
+
+  flashInvalidTile(x, y) {
+    const g = this.add.graphics().setDepth(7);
+    this.worldAdd(g);
+    this.grid.drawDiamond(g, x, y, 0xff503c, 0.5);
+    this.tweens.add({ targets: g, alpha: 0, duration: 260, onComplete: () => g.destroy() });
+  }
+
+  // --- Selection and actions ---------------------------------------------
+
+  selectHero(hero) {
+    this.unitController.select(hero);
+    this._previewedTile = null;
+    this._pendingAction = null;
+    this.tacticalCamera.focusOn(hero.x, hero.y, TIMING.cameraFocusMs);
+    this.refreshHUD();
+    this.setMessage(hero.moved
+      ? `${hero.name} has already moved. Choose an action.`
+      : `${hero.name} selected. Tap a highlighted tile to move, or open actions.`);
+    this.showActionMenuFor(hero);
+  }
+
+  onHeroCardTap(hero) {
+    if (this.inputLocked || this.phase !== 'player' || !hero.alive) return;
+    this.selectHero(hero);
+  }
+
+  showActionMenuFor(hero) {
+    this.actionMenu.container.setVisible(true);
+    const canAct = !hero.acted;
+    const onNode = this.nodes.some(n => n.x === hero.x && n.y === hero.y && !n.restored);
+    this.actionMenu.buttons.forEach(b => {
+      let enabled = true;
+      if (b.label === 'Resonate') enabled = canAct && onNode;
+      else if (b.label === 'Attack' || b.label === 'Veil Art') enabled = canAct;
+      else if (b.label === 'Guard' || b.label === 'Wait') enabled = canAct;
+      b.bg.setAlpha(enabled ? 1 : 0.35);
+      b.bg.input.enabled = enabled;
+    });
+  }
+
+  onActionMenuChoice(label) {
+    const hero = this.unitController.selected;
+    if (!hero) return;
+
+    if (label === 'Cancel') {
+      this.unitController.clearSelection();
+      this.actionMenu.container.setVisible(false);
+      this._pendingAction = null;
+      this.refreshHUD();
+      return;
+    }
+    if (hero.acted) return;
+
+    if (label === 'Attack' || label === 'Veil Art') {
+      this._pendingAction = 'attack';
+      this.grid.showAttackRange(this.attackRangeTiles(hero));
+      this.setMessage(`${hero.name}: choose a target in range.`);
+      return;
+    }
+    if (label === 'Resonate') {
+      this.resonateNode(hero);
+      return;
+    }
+    if (label === 'Guard' || label === 'Wait') {
+      this.setMessage(`${hero.name} ${label === 'Guard' ? 'braces defensively' : 'waits'}.`);
+      this.finishHeroAction(hero);
+    }
+  }
+
+  attackRangeTiles(hero) {
+    const min = hero.rangeMin || 1;
+    const max = hero.rangeMax || min;
+    const tiles = [];
+    for (let y = 0; y < GRID.rows; y++) {
+      for (let x = 0; x < GRID.columns; x++) {
+        if (x === hero.x && y === hero.y) continue;
+        const dist = Math.abs(x - hero.x) + Math.abs(y - hero.y);
+        if (dist < min || dist > max) continue;
+        if (hero.requiresLineOfSight && !this.pathfinder.hasLineOfSight(hero.x, hero.y, x, y)) continue;
+        tiles.push({ x, y });
+      }
+    }
+    return tiles;
+  }
+
+  tryAttack(hero, target) {
+    const inRange = this.attackRangeTiles(hero).some(t => t.x === target.x && t.y === target.y);
+    if (!inRange) {
+      this.setMessage('Target is out of range or blocked by a barrier.');
+      return;
+    }
+    this.grid.clearAllOverlays();
+    this._pendingAction = null;
+    this.inputLocked = true;
+    this.actionMenu.container.setVisible(false);
+
+    this.tacticalCamera.saveCinematicState();
+    this.tacticalCamera.focusOn(
+      Math.round((hero.x + target.x) / 2), Math.round((hero.y + target.y) / 2), 160
+    );
+
+    this.time.delayedCall(180, () => {
+      this.cinematic.play({
+        attackerKey: hero.portraitKey, attackerName: hero.name,
+        targetKey: target.portraitKey, targetName: target.name,
+        abilityName: hero.ability, flavor: hero.flavor,
+        onImpact: () => {
+          target.hp = Math.max(0, target.hp - hero.atk);
+          this.setMessage(`${target.name} is hit for ${hero.atk} damage!`);
+          if (target.hp <= 0) this.defeatEnemy(target);
+        }
+      }).then(async () => {
+        await this.tacticalCamera.restoreCinematicState(TIMING.cameraRestoreMs);
+        this.inputLocked = false;
+        this.finishHeroAction(hero);
+        this.checkVictoryDefeat();
+      });
+    });
+  }
+
+  resonateNode(hero) {
+    const node = this.nodes.find(n => n.x === hero.x && n.y === hero.y && !n.restored);
+    if (!node) { this.setMessage('No silenced node here to resonate with.'); return; }
+    node.restored = true;
+    this.drawNodes();
+    this.setMessage(`${node.label} is restored!`);
+    this.finishHeroAction(hero);
+    this.checkVictoryDefeat();
+  }
+
+  finishHeroAction(hero) {
+    this.unitController.markActed(hero);
+    this.unitController.clearSelection();
+    this.actionMenu.container.setVisible(false);
+    this._pendingAction = null;
+    this._previewedTile = null;
+    this.refreshHUD();
+    this.maybeEndPlayerPhase();
+  }
+
+  async confirmMove(hero, path) {
+    this.inputLocked = true;
+    this.grid.clearAllOverlays();
+    await this.unitController.animateMove(hero, path, TIMING.stepMoveMs);
+    this.unitController.markMoved(hero);
+    this.inputLocked = false;
+    this.refreshHUD();
+    this.showActionMenuFor(hero);
+    this.setMessage(`${hero.name} moved. Choose an action.`);
+  }
+
+  maybeEndPlayerPhase() {
+    if (this.victory || this.defeat) return;
+    const allDone = this.heroes.every(h => !h.alive || h.acted);
+    if (allDone) this.time.delayedCall(300, () => this.startEnemyPhase());
+  }
+
+  // --- Enemy phase ---------------------------------------------------------
+
+  startEnemyPhase() {
+    this.phase = 'enemy';
+    this.unitController.clearSelection();
+    this.actionMenu.container.setVisible(false);
+    this.refreshHUD();
+    this.setMessage('Enemy Phase.');
+    this.runEnemyPhase();
+  }
+
+  async runEnemyPhase() {
+    this.inputLocked = true;
+    for (const enemy of this.enemies) {
+      if (!enemy.alive || this.victory || this.defeat) continue;
+      await this.runEnemyTurn(enemy);
+    }
+    this.inputLocked = false;
+    if (!this.victory && !this.defeat) this.startPlayerPhase();
+  }
+
+  async runEnemyTurn(enemy) {
+    const target = this.pickEnemyTarget(enemy);
+    if (!target) return;
+
+    let dist = Math.abs(enemy.x - target.x) + Math.abs(enemy.y - target.y);
+    if (dist > enemy.range) {
+      const moveBudget = 3;
+      const reach = this.pathfinder.reachable(enemy.x, enemy.y, moveBudget, enemy);
+      let bestTile = null;
+      let bestDist = dist;
+      reach.dist.forEach((cost, k) => {
+        const [x, y] = k.split(',').map(Number);
+        const d = Math.abs(x - target.x) + Math.abs(y - target.y);
+        if (d < bestDist) { bestDist = d; bestTile = { x, y }; }
+      });
+      if (bestTile) {
+        this.showEnemyIntent(enemy, bestTile, 'move');
+        await this.wait(TIMING.enemyIntentPauseMs);
+        const path = this.pathfinder.routeTo(enemy.x, enemy.y, bestTile.x, bestTile.y, reach);
+        await this.unitController.animateMove(enemy, path, TIMING.stepMoveMs);
+      }
+      dist = Math.abs(enemy.x - target.x) + Math.abs(enemy.y - target.y);
+    }
+
+    if (dist <= enemy.range) {
+      this.showEnemyIntent(enemy, { x: target.x, y: target.y }, 'attack');
+      const pause = enemy.type === 'veil_wraith' ? TIMING.enemyIntentPauseMs * 1.6 : TIMING.enemyIntentPauseMs;
+      await this.wait(pause);
+      await this.enemyAttack(enemy, target);
+    } else {
+      this.grid.clearAllOverlays();
+    }
+  }
+
+  pickEnemyTarget(enemy) {
+    let best = null;
+    let bestDist = Infinity;
+    this.heroes.forEach(h => {
+      if (!h.alive) return;
+      const d = Math.abs(h.x - enemy.x) + Math.abs(h.y - enemy.y);
+      if (d < bestDist) { bestDist = d; best = h; }
+    });
+    return best;
+  }
+
+  showEnemyIntent(enemy, tile, kind) {
+    this.grid.ensureOverlays();
+    this.grid.tileOverlay.clear();
+    this.grid.drawDiamond(
+      this.grid.tileOverlay, tile.x, tile.y,
+      kind === 'attack' ? 0xff503c : 0xffb36b, 0.4,
+      kind === 'attack' ? 0xffb3a8 : 0xffe0c0, 0.8
+    );
+    this.setMessage(kind === 'attack' ? `${enemy.name} prepares to strike!` : `${enemy.name} advances...`);
+  }
+
+  wait(ms) {
+    return new Promise(resolve => this.time.delayedCall(ms, resolve));
+  }
+
+  async enemyAttack(enemy, hero) {
+    this.grid.clearAllOverlays();
+    this.tacticalCamera.saveCinematicState();
+    this.tacticalCamera.focusOn(
+      Math.round((enemy.x + hero.x) / 2), Math.round((enemy.y + hero.y) / 2), 160
+    );
+    await this.wait(180);
+    await this.cinematic.play({
+      attackerKey: enemy.portraitKey, attackerName: enemy.name,
+      targetKey: hero.portraitKey, targetName: hero.name,
+      abilityName: enemy.ability, flavor: '',
+      onImpact: () => {
+        hero.hp = Math.max(0, hero.hp - enemy.atk);
+        this.setMessage(`${hero.name} suffers ${enemy.atk} damage!`);
+        if (hero.hp <= 0) this.defeatHero(hero);
+      }
+    });
+    await this.tacticalCamera.restoreCinematicState(TIMING.cameraRestoreMs);
+    this.refreshHUD();
+    this.checkVictoryDefeat();
+  }
+
+  defeatEnemy(enemy) {
+    enemy.alive = false;
+    this.grid.clearOccupant(enemy.x, enemy.y);
+    // sprite is a token Container now, not an Image/Sprite — no setTint(),
+    // alpha alone reads clearly enough for "defeated" on a small marker.
+    enemy.sprite.setAlpha(0.25);
+    this.setMessage(`${enemy.name} is defeated!`);
+  }
+
+  defeatHero(hero) {
+    hero.alive = false;
+    this.grid.clearOccupant(hero.x, hero.y);
+    hero.sprite.setAlpha(0.3);
+    this.setMessage(`${hero.name} has fallen!`);
+  }
+
+  startPlayerPhase() {
+    this.turn += 1;
+    this.phase = 'player';
+    this.unitController.resetForNewTurn(this.heroes.filter(h => h.alive));
+    this.refreshHUD();
+    this.setMessage('Player Phase. Select a hero.');
+  }
+
+  // --- Victory / defeat ------------------------------------------------
+
+  checkVictoryDefeat() {
+    if (this.victory || this.defeat) return;
+    if (this.nodes.every(n => n.restored)) {
+      this.victory = true;
+      this.showEndPanel('Silence Broken', 'All three sound nodes are restored. The backyard sings again.');
+      return;
+    }
+    if (!this.heroes.some(h => h.alive)) {
+      this.defeat = true;
+      this.showEndPanel('The Quiet Wins', 'All heroes have fallen. Try again.');
+    }
+  }
+
+  showEndPanel(title, body) {
+    this.inputLocked = true;
+    const w = this.scale.width, h = this.scale.height;
+    const container = this.add.container(w / 2, h / 2).setDepth(700);
+    const bg = this.add.rectangle(0, 0, Math.min(340, w * 0.86), 190, 0x120b28, 0.97).setStrokeStyle(2, 0x5a3a88, 1);
+    const titleText = this.add.text(0, -58, title, { fontSize: '20px', fontStyle: 'bold', color: '#FFE8A0' }).setOrigin(0.5);
+    const bodyText = this.add.text(0, -8, body, {
+      fontSize: '13px', color: '#C8A8FF', align: 'center', wordWrap: { width: Math.min(300, w * 0.76) }
+    }).setOrigin(0.5);
+    const retryBtn = this.add.rectangle(0, 58, 140, 36, 0x1a1033, 1).setStrokeStyle(1, 0x5a3a88, 1)
+      .setInteractive({ useHandCursor: true });
+    const retryText = this.add.text(0, 58, 'Restart', { fontSize: '14px', color: '#FFE8A0' }).setOrigin(0.5);
+    retryBtn.on('pointerdown', (p, lx, ly, ev) => {
+      if (ev) ev.stopPropagation();
+      if (p.event) p.event._tacticalUIHandled = true;
+      this.scene.restart();
+    });
+    container.add([bg, titleText, bodyText, retryBtn, retryText]);
+    this.uiAdd(container);
+    this.endPanel = container;
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "id": "backyard_too_quiet_v2",
+  "title": "Too Quiet",
+  "version": 2,
+  "grid": {
+    "columns": 12,
+    "rows": 10,
+    "movement": "orthogonal"
+  },
+  "terrainLegend": {
+    ".": "open",
+    "B": "barrier",
+    "D": "difficult",
+    "R": "resonance"
+  },
+  "terrainRows": [
+    "............",
+    ".....B......",
+    "..R..B..D...",
+    "....DD..B...",
+    ".......BB...",
+    "...B........",
+    "...B..DD....",
+    "......B.....",
+    ".........R..",
+    "..R........."
+  ],
+  "heroes": [
+    {
+      "id": "prismel",
+      "x": 1,
+      "y": 7,
+      "move": 3,
+      "rangeMin": 2,
+      "rangeMax": 4
+    },
+    {
+      "id": "auryi",
+      "x": 1,
+      "y": 8,
+      "move": 3,
+      "rangeMin": 1,
+      "rangeMax": 2
+    },
+    {
+      "id": "kineza",
+      "x": 2,
+      "y": 8,
+      "move": 4,
+      "rangeMin": 1,
+      "rangeMax": 1
+    }
+  ],
+  "enemies": [
+    {
+      "id": "hushling_1",
+      "type": "hushling",
+      "x": 8,
+      "y": 2
+    },
+    {
+      "id": "hushling_2",
+      "type": "hushling",
+      "x": 9,
+      "y": 6
+    },
+    {
+      "id": "hushling_3",
+      "type": "hushling",
+      "x": 6,
+      "y": 7
+    },
+    {
+      "id": "wraith_1",
+      "type": "veil_wraith",
+      "x": 10,
+      "y": 4
+    }
+  ],
+  "nodes": [
+    {
+      "id": "dogs",
+      "label": "Dogs Barking",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "id": "pool",
+      "label": "Pool Splash",
+      "x": 2,
+      "y": 9
+    },
+    {
+      "id": "laughter",
+      "label": "Backyard Laughter",
+      "x": 9,
+      "y": 8
+    }
+  ],
+  "notes": [
+    "Initial layout for engineering and camera validation.",
+    "FAI may adjust individual coordinates to prevent softlocks, but must preserve 12x10 size, three routes, and separated objectives.",
+    "Any map change must be documented in the return package."
+  ]
+}

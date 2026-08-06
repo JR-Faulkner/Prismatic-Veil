@@ -212,6 +212,30 @@ Design specs and per-package handoffs are exchanged as zip packages rather than 
 
 ---
 
+## Tactical Field prototype (standalone)
+
+**`tactical-field-v2.html`** — a separate, self-contained engineering prototype for a Shining Force-style tactical battle: a 12×10 grid, weighted pathfinding, barriers and difficult terrain, line of sight, camera pan/zoom, and cinematic attacks that hand off to a close-up cut-in and return to the exact tactical state. **Not merged into the main battle flow** — it shares nothing at runtime with `battle-v2.html` beyond `phaser.min.js` and some portrait art, by design, per the brief this was built against.
+
+```
+/tactical-field-v2.html
+/data/tactical_map_v2.json        the "Too Quiet" Restore Sound encounter
+/src/tactical/
+  TacticalConfig.js                grid size, zoom limits, timing, breakpoints
+  TerrainRegistry.js                movement cost / walkable / LOS-blocking lookup
+  TacticalGrid.js                   isometric projection, occupancy, overlays
+  TacticalPathfinder.js             weighted Dijkstra + deterministic, symmetric LOS raycast
+  TacticalCamera.js                 pan/zoom/clamp, cinematic state save/restore
+  UnitController.js                 selection, path preview/confirm, tile-by-tile move animation
+  BattleCinematic.js                presentation-only attack cut-in
+  TacticalScene.js                  phase sequencing, objectives, enemy AI, HUD
+```
+
+Three heroes (Prismel, Auryi, Kineza) and two enemy types (Hushling ×3, Veil Wraith ×1) restore three silenced sound nodes to win; defeating every enemy is optional. Map tokens are procedural (accent-colored circle + initials) rather than photo art — the project's legacy 48×72 pixel spritesheets read as low quality at any scale, and the full battle-art PNGs are the wrong shape for a small marker. The real portrait art (`assets/ui/portrait_*.png`) is reserved for `BattleCinematic`'s close-up cut-in, where detail matters — the same "tactical map sprite → zoomed battle sprite" pairing shown in this project's own reference art.
+
+World geometry is fixed regardless of viewport; only the camera's default zoom adapts per screen size (compact phones start zoomed out further to keep more context visible) — tying tile scale to viewport width instead would fight the camera system on every resize. See `CLAUDE.md`'s traps list for two bugs specific to this prototype's two-camera setup: `pointer.worldX`/`worldY` being ambiguous with more than one camera in the scene, and an anonymous resize listener leaking one extra registration per `scene.restart()`.
+
+---
+
 ## Running locally
 
 No build step. Serve over HTTP — opening the file directly breaks module imports and audio:
