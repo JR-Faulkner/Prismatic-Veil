@@ -294,6 +294,8 @@ The repository root **is** the GitHub Pages deployment — every asset must stay
 
 Module imports carry a `?v=` query that is bumped on notable deploys, because cache-busting the HTML alone leaves browsers running stale `src/*.js`.
 
+**If a freshly-pushed page 404s on the live site:** check whether the "pages build and deployment" run for that commit is stuck in `queued` status in the Actions tab (`created_at` and `updated_at` identical, no progress after several minutes) — this is a GitHub-side stall, not a broken push; `git log` on `origin/main` will already show the commit present. GitHub refuses to manually re-run a workflow it still considers "already running" even while stuck queued, so the fix is a fresh push (any real content change) rather than a re-run attempt — a new push spins up an independent deployment run rather than trying to unstick the old one.
+
 ---
 
 ## Credits
