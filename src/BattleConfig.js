@@ -45,6 +45,11 @@ export const HEROES = Object.freeze({
       critChance: 0.25,
       critMultiplier: 2
     }),
+    // Overrides BattleController's default POSE_TIMING beats for this
+    // hero only. Prismel's step and gather poses read as a blur back to
+    // back at the default pace, so both get more room before the next
+    // pose cuts in.
+    attackTiming: Object.freeze({ step: 340, hold: 220 }),
     frameColourway: 'blue',
     commands: Object.freeze([
       Object.freeze({ glyph: 'fracture', label: 'Release', kind: 'attack' }),

@@ -1,5 +1,5 @@
-import EnemyWraithView from './EnemyWraithView.js?v=36';
-import EnemyHushlingView from './EnemyHushlingView.js?v=36';
+import EnemyWraithView from './EnemyWraithView.js?v=37';
+import EnemyHushlingView from './EnemyHushlingView.js?v=37';
 
 export function createEnemyView(scene, enemy) {
   switch (enemy && enemy.viewId) {

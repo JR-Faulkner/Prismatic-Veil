@@ -1,10 +1,13 @@
-import BattleFeedback from './BattleFeedback.js?v=36';
-import { getHitStopMs } from './BattleFeel.js?v=36';
-import { nextEnemyId } from './EnemyCatalog.js?v=36';
+import BattleFeedback from './BattleFeedback.js?v=37';
+import { getHitStopMs } from './BattleFeel.js?v=37';
+import { nextEnemyId } from './EnemyCatalog.js?v=37';
 
 // Battle Presentation v3 — pose timing spec:
 //   Idle -> Step 220 -> Gather 450 -> Hold 120 -> Release 160
 //        -> Hit Stop 80 -> Recover 260 -> Idle
+// A hero's own `attackTiming` (BattleConfig.js) can override any of these
+// beats — playAttackCinematic() merges it in per round, so pacing stays
+// data, not a second copy of the timeline logic.
 export const POSE_TIMING = Object.freeze({
   step: 220,
   gather: 450,
@@ -134,6 +137,7 @@ export default class BattleController {
     const cam = this.scene.battleCam;
     const t = this.scene.time;
     const impactStopMs = getHitStopMs(!!(this.pendingHit && this.pendingHit.crit));
+    const timing = { ...POSE_TIMING, ...(hero.attackTiming || {}) };
     let at = 0;
 
     // Step
@@ -142,14 +146,14 @@ export default class BattleController {
       this.scene.atmosphere.compressionRipple(poses.sprite.x, poses.sprite.y, hero.accent);
     }
     this.emit(AUDIO_EVENTS.step);
-    at += POSE_TIMING.step;
+    at += timing.step;
 
     // Gather
     t.delayedCall(at, () => {
       if (poses) poses.setPose('gather');
-      if (fx) fx.gather(POSE_TIMING.gather);
+      if (fx) fx.gather(timing.gather);
       if (cam) cam.gatherPush();
-      if (this.scene.hudFrame) this.scene.hudFrame.gatherPulse(POSE_TIMING.gather);
+      if (this.scene.hudFrame) this.scene.hudFrame.gatherPulse(timing.gather);
       if (this.scene.abilityLight) this.scene.abilityLight('gather');
       this.emit(AUDIO_EVENTS.gather);
       // Veil conduit dips as the command draws on it. Presentation only
@@ -157,18 +161,18 @@ export default class BattleController {
       this.hud.updateVeil(Math.max(0, hero.veil - VEIL_DRAW));
       this.hud.queueMessage(hero.attack.flavor);
     });
-    at += POSE_TIMING.gather + POSE_TIMING.hold;
+    at += timing.gather + timing.hold;
 
     // Release
     t.delayedCall(at, () => {
       if (poses) poses.setPose('release');
-      if (fx) fx.beam(POSE_TIMING.release);
+      if (fx) fx.beam(timing.release);
       if (cam) cam.releaseSnap();
       if (this.scene.reticle) this.scene.reticle.confirm();
       this.emit(AUDIO_EVENTS.release);
       this.fracture.open();
     });
-    at += POSE_TIMING.release;
+    at += timing.release;
 
     // Impact + hit stop
     t.delayedCall(at, () => {
@@ -211,7 +215,7 @@ export default class BattleController {
       this.fracture.close();
       this.emit(AUDIO_EVENTS.recover);
     });
-    at += POSE_TIMING.recover;
+    at += timing.recover;
 
     // Idle, then resolve the round
     t.delayedCall(at, () => {
