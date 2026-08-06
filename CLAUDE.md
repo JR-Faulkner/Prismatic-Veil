@@ -137,6 +137,8 @@ Every one of these reached the repo and had to be fixed. Do not repeat them.
 
 **`scene.sound` is not one of the objects a restart destroys.** Switching heroes calls `scene.restart()`, and `create()` runs `this.sound.add('battle_music', ...)` again — but the previous instance was never stopped, so two loops layer on top of each other. Call `this.sound.stopAll(); this.sound.removeAll();` at the top of `create()`, same as the other restart-survivor caches.
 
+**A Phaser `Container`'s `.width`/`.height`/`.displayHeight` are `0` unless `setSize()` was called on it — reading them silently returns zero, never an error.** `BattleCamera.focusPoint()` averaged the hero's visual center with `enemyView.container.y - enemyView.container.height * 0.2`, meant to land just above the enemy's feet. Nobody ever called `setSize()` on that container, so `container.height` was always `0` and the enemy's whole contribution to the average collapsed to its bare feet position — biasing every gather/release camera push down and off-center by ~25-30px, in every enemy and every orientation, since whenever that container was first added. It read as plausible code (a real property name, a real arithmetic expression) and produced a real number, just always the same wrong one — nothing about it threw or looked broken. Fixed by reading `displayHeight` off `enemyView.sprite` (the actual sized child) instead, matching how the hero side already derives its center from its own sprite. **Any geometry read off a `Container` needs to come from a sized child inside it, or the container needs an explicit `setSize()` — never assume a container's own size fields are populated.**
+
 ---
 
 ## Standards
