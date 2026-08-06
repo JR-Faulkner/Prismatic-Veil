@@ -1,8 +1,15 @@
 
+// v38A: the backdrop gradient, distant light-shaft bands, floor disc, and
+// ambient motes this file used to draw procedurally are now superseded by
+// DAI's real painted battlefield layers (see AmbientBattlefieldDirector —
+// far background, mid spires, combat platform, particle overlay). Drawing
+// both would double up the same visual role. Fog banks and the foreground
+// corner silhouettes aren't covered by those five layers, so they stay,
+// along with every FX hook (gather/impact/compressionRipple) — none of
+// that is redundant with the new art.
 export default class BattleAtmosphere {
   constructor(scene) {
     this.scene = scene;
-    this.motes = [];
   }
 
   w(obj) {
@@ -11,29 +18,19 @@ export default class BattleAtmosphere {
   }
 
   create() {
-    this.backdrop = this.w(this.scene.add.graphics().setDepth(-100));
-    this.bands = this.w(this.scene.add.graphics().setDepth(-90));
     this.fog = this.w(this.scene.add.graphics().setDepth(-30));
-    this.floor = this.w(this.scene.add.graphics().setDepth(-40));
     this.foreground = this.w(this.scene.add.graphics().setDepth(90));
 
     // Package 08: layers drift at different rates against the camera, so
     // the field has depth rather than sliding as one flat plate.
     this.parallax = [
-      { obj: this.bands, factor: -0.16 },
       { obj: this.fog, factor: -0.07 },
-      // v38A: the combat platform reads as a fixed stage floor the
-      // fighters stand on, not another drifting depth layer — zeroed so
-      // it's genuinely static rather than a near-zero factor that still
-      // moved a few px on a hard camera push.
-      { obj: this.floor, factor: 0 },
       { obj: this.foreground, factor: 0.22 }
     ];
     this.parallax.forEach(l => { l.homeX = 0; });
     this.scene.events.on('update', this.updateParallax, this);
 
     this.buildFog();
-    this.buildMotes();
     this.layout();
 
     this.scene.scale.on('resize', this.layout, this);
@@ -67,18 +64,6 @@ export default class BattleAtmosphere {
     const w = this.scene.scale.width;
     const h = this.scene.scale.height;
 
-    this.backdrop.clear();
-    this.backdrop.fillGradientStyle(0x17102d, 0x0b0a18, 0x070611, 0x070611, 1);
-    this.backdrop.fillRect(0, 0, w, h);
-
-    // Distant Veil bands and light shafts, on their own parallax layer.
-    this.bands.clear();
-    for (let i = 0; i < 5; i++) {
-      const x = w * (0.08 + i * 0.22);
-      this.bands.fillStyle(i % 2 ? 0x5e39a6 : 0x276c85, 0.055);
-      this.bands.fillTriangle(x, 0, x + w * 0.18, 0, x + w * 0.04, h * 0.72);
-    }
-
     // Slow fog banks drifting across the midground.
     if (this.fogBanks) {
       this.fogBanks.forEach((e, i) => {
@@ -97,50 +82,10 @@ export default class BattleAtmosphere {
       });
     }
 
-    this.floor.clear();
-    this.floor.fillStyle(0x100d1d, 0.96);
-    this.floor.fillEllipse(w * 0.5, h * 0.74, w * 1.18, h * 0.34);
-    this.floor.lineStyle(1, 0xb586ff, 0.11);
-    for (let i = 0; i < 7; i++) {
-      this.floor.strokeEllipse(w * 0.5, h * (0.69 + i * 0.018), w * (0.25 + i * 0.13), h * (0.035 + i * 0.016));
-    }
-
     this.foreground.clear();
     this.foreground.fillStyle(0x05040a, 0.55);
     this.foreground.fillTriangle(0, h, w * 0.16, h * 0.83, w * 0.27, h);
     this.foreground.fillTriangle(w, h, w * 0.86, h * 0.82, w * 0.72, h);
-
-    this.positionMotes();
-  }
-
-  buildMotes() {
-    for (let i = 0; i < 24; i++) {
-      const mote = this.w(this.scene.add.circle(0, 0, Phaser.Math.FloatBetween(0.8, 2.2),
-        i % 3 === 0 ? 0x70d9ff : i % 3 === 1 ? 0xaa76ff : 0xffd56a,
-        Phaser.Math.FloatBetween(0.12, 0.34)).setDepth(-10));
-      this.motes.push(mote);
-      this.scene.tweens.add({
-        targets: mote,
-        y: '-=24',
-        x: `+=${Phaser.Math.Between(-12, 12)}`,
-        alpha: { from: mote.alpha, to: 0.04 },
-        duration: Phaser.Math.Between(2200, 4300),
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut'
-      });
-    }
-  }
-
-  positionMotes() {
-    const w = this.scene.scale.width;
-    const h = this.scene.scale.height;
-    this.motes.forEach((m, i) => {
-      m.setPosition(
-        ((i * 83) % 997) / 997 * w,
-        h * (0.18 + (((i * 151) % 719) / 719) * 0.62)
-      );
-    });
   }
 
   gather(heroId) {

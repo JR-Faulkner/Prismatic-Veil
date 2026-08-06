@@ -1,21 +1,38 @@
 // v38A Battle Presence Pass — AmbientBattlefieldDirector.
 //
-// Owns the battlefield's continuous ambient presence: the far-background
-// drift, the crystal midground (drift + shimmer), and the ambient
-// fracture pulse — the genuinely new pieces from the brief's layered-
-// battlefield roadmap. "Veil haze" and "ambient particles" are already
-// covered by BattleAtmosphere's fog banks and motes, and "Combat
-// Platform (static)" is BattleAtmosphere's floor layer with its
-// parallax factor zeroed out — duplicating any of those here would just
-// be two systems drawing the same thing on top of each other, so this
-// director layers alongside BattleAtmosphere rather than folding its
-// existing, already-tuned system into a rewrite. Never touches camera,
-// hit-stop, damage, battle sequencing, or audio — same non-ownership
-// boundary as BattleFXDirector.
+// Owns the battlefield's environment art: five real painted layers
+// supplied by DAI (assets/battle/veil_fracture/), stacked back to front
+// per LAYER_ORDER.md. Never touches camera, hit-stop, damage, battle
+// sequencing, or audio — same non-ownership boundary as BattleFXDirector.
+//
+// Motion per PARALLAX_SPEC.md:
+//   Far Background    ~0.15px/sec independent drift
+//   Crystal Midground  camera-relative parallax (factor 0.35, same
+//                       convention BattleAtmosphere.updateParallax() uses
+//                       for fog/foreground — an offset proportional to the
+//                       camera's displacement from home, not a velocity)
+//   Combat Platform    static — no motion at all
+//   Fracture Overlay   15-20% opacity, ~4.8s pulse
+//   Particle Overlay   independent low-density drift, its own slow rate
+//
+// Every layer is scaled to fully cover the viewport plus a margin wide
+// enough that its own motion never exposes an edge (PARALLAX_SPEC.md:
+// "Clamp offsets so no empty canvas edges become visible") — the margins
+// below are sized generously against the actual drift/parallax speeds,
+// not tuned per viewport.
+export const BATTLEFIELD_TEXTURES = Object.freeze({
+  farBackground: 'battlefield_far_background',
+  midSpires: 'battlefield_mid_spires',
+  combatPlatform: 'battlefield_combat_platform',
+  fractureOverlay: 'battlefield_fracture_overlay',
+  particleOverlay: 'battlefield_particle_overlay'
+});
+
 export default class AmbientBattlefieldDirector {
   constructor(scene) {
     this.scene = scene;
-    this._driftX = 0;
+    this._farDriftPx = 0;
+    this._particleDriftPx = 0;
     this._fracturePhase = 0;
   }
 
@@ -25,23 +42,11 @@ export default class AmbientBattlefieldDirector {
   }
 
   create() {
-    // Far Background: drawn wide enough that its slow drift never shows
-    // an edge within any realistic session length (0.15px/sec would take
-    // ~26 minutes to expose one at this width).
-    this.farDrift = this.w(this.scene.add.graphics().setDepth(-95));
-
-    // Crystal Midground: a handful of small procedural shard silhouettes,
-    // drifting and gently shimmering.
-    this.crystals = [];
-    for (let i = 0; i < 6; i++) {
-      const c = this.w(this.scene.add.polygon(0, 0, [0, -18, 7, 0, 0, 22, -7, 0], 0x8fd6ff, 0.1).setDepth(-60));
-      this.crystals.push(c);
-    }
-
-    // Fracture Overlay: an ambient wash distinct from VeilFracture.js's
-    // attack-triggered open/close beam effect — this one breathes
-    // continuously in the background rather than firing on a command.
-    this.fractureOverlay = this.w(this.scene.add.graphics().setDepth(-20));
+    this.farBackground = this.w(this.scene.add.image(0, 0, BATTLEFIELD_TEXTURES.farBackground).setDepth(-100));
+    this.midSpires = this.w(this.scene.add.image(0, 0, BATTLEFIELD_TEXTURES.midSpires).setDepth(-90));
+    this.combatPlatform = this.w(this.scene.add.image(0, 0, BATTLEFIELD_TEXTURES.combatPlatform).setDepth(-40));
+    this.fractureOverlay = this.w(this.scene.add.image(0, 0, BATTLEFIELD_TEXTURES.fractureOverlay).setDepth(-20));
+    this.particleOverlay = this.w(this.scene.add.image(0, 0, BATTLEFIELD_TEXTURES.particleOverlay).setDepth(-10));
 
     this.layout();
     this.scene.events.on('update', this.update, this);
@@ -52,48 +57,62 @@ export default class AmbientBattlefieldDirector {
     });
   }
 
-  layout() {
+  // Scales an image to fully cover the viewport (the larger of the
+  // width/height ratios) plus a margin, then bottom-weights its position
+  // — these are ground-plane scene paintings authored with sky/spires
+  // extending up and the floor toward the bottom, so cropping excess
+  // height off the top reads correctly and cropping off the bottom
+  // wouldn't. `bottomBufferPx` leaves a small amount of image hanging
+  // past the bottom edge too, so a layer with vertical parallax motion
+  // never exposes a gap there.
+  _coverFit(img, marginFactor, bottomBufferPx = 24) {
     const w = this.scene.scale.width;
     const h = this.scene.scale.height;
-    this.w_ = w;
-    this.h_ = h;
+    const scale = Math.max(w / img.width, h / img.height) * marginFactor;
+    const dispH = img.height * scale;
+    img.setScale(scale);
+    img.setPosition(w / 2, h - dispH / 2 + bottomBufferPx);
+    return { x: w / 2, y: h - dispH / 2 + bottomBufferPx };
+  }
 
-    this.farDrift.clear();
-    this.farDrift.fillStyle(0x2a1c4d, 0.05);
-    this.farDrift.fillEllipse(w * 0.5, h * 0.35, w * 2.2, h * 0.6);
-    this.farDrift.fillEllipse(w * 0.5, h * 0.44, w * 1.8, h * 0.4);
+  layout() {
+    // Margins sized against each layer's own motion: static/slow layers
+    // need less; the two that actually move need more headroom.
+    this._coverFit(this.farBackground, 1.06);
+    const midHome = this._coverFit(this.midSpires, 1.2);
+    this._coverFit(this.combatPlatform, 1.0);
+    this._coverFit(this.fractureOverlay, 1.05);
+    const particleHome = this._coverFit(this.particleOverlay, 1.3);
 
-    this.crystals.forEach((c, i) => {
-      c.setPosition(
-        ((i * 137) % 997) / 997 * w,
-        h * (0.15 + (((i * 211) % 719) / 719) * 0.35)
-      );
-      c.setScale(0.8 + (i % 3) * 0.25);
-    });
-
-    this.fractureOverlay.clear();
-    this.fractureOverlay.fillStyle(0x6a4fa8, 0.18);
-    this.fractureOverlay.fillRect(0, h * 0.35, w, h * 0.4);
+    this.midSpires.homeX = midHome.x;
+    this.midSpires.homeY = midHome.y;
+    this.particleOverlay.homeX = particleHome.x;
   }
 
   update(time, delta) {
     const dt = delta / 1000;
 
-    // Far Background: 0.15 px/sec continuous drift.
-    this._driftX += 0.15 * dt;
-    this.farDrift.x = -this._driftX;
+    // Far Background: ~0.15px/sec independent drift.
+    this._farDriftPx += 0.15 * dt;
+    this.farBackground.x = this.scene.scale.width / 2 - this._farDriftPx;
 
-    // Crystal Midground: 0.35 px/sec drift, wraps once fully offscreen,
-    // plus a slow per-crystal shimmer.
-    this.crystals.forEach((c, i) => {
-      c.x -= 0.35 * dt;
-      if (c.x < -30) c.x = this.w_ + 30;
-      c.alpha = 0.06 + Math.abs(Math.sin(time / 1400 + i)) * 0.1;
-    });
+    // Crystal Midground: camera-relative parallax (factor 0.35).
+    const cam = this.scene.cameras.main;
+    const cx = cam.scrollX + cam.width / 2 - this.scene.scale.width / 2;
+    const cy = cam.scrollY + cam.height / 2 - this.scene.scale.height / 2;
+    this.midSpires.x = this.midSpires.homeX + cx * 0.35;
+    this.midSpires.y = this.midSpires.homeY + cy * 0.35 * 0.6;
 
-    // Fracture Overlay: 15-20% opacity, 4.8s pulse.
+    // Combat Platform: static — no per-frame motion at all.
+
+    // Fracture Overlay: 15-20% opacity, ~4.8s pulse.
     this._fracturePhase += dt;
     const phase = (this._fracturePhase % 4.8) / 4.8;
     this.fractureOverlay.alpha = 0.15 + (Math.sin(phase * Math.PI * 2) * 0.5 + 0.5) * 0.05;
+
+    // Particle Overlay: independent low-density drift, its own (slower)
+    // rate so it doesn't read as locked to the far background.
+    this._particleDriftPx += 0.08 * dt;
+    this.particleOverlay.x = this.particleOverlay.homeX - this._particleDriftPx;
   }
 }

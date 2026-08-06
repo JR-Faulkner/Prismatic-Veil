@@ -1,25 +1,25 @@
-import BattleHUD from './BattleHUD.js?v=38';
-import BattleController from './BattleController.js?v=38';
-import Timeline from './Timeline.js?v=38';
-import VeilFracture from './VeilFracture.js?v=38';
-import HeroPoseView from './HeroPoseView.js?v=38';
-import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=38';
-import { HUSHLING_TEXTURES } from './EnemyHushlingView.js?v=38';
-import { createEnemyView } from './EnemyViewFactory.js?v=38';
-import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=38';
-import { selectEnemy, ENEMY_ORDER, nextEnemyId } from './EnemyCatalog.js?v=38';
-import BattleCamera from './BattleCamera.js?v=38';
-import BattleFX from './BattleFX.js?v=38';
-import BattleFXDirector from './BattleFXDirector.js?v=38';
-import BattleFeel from './BattleFeel.js?v=38';
-import AmbientBattlefieldDirector from './AmbientBattlefieldDirector.js?v=38';
-import BattleAtmosphere from './BattleAtmosphere.js?v=38';
-import HudFrame from './HudFrame.js?v=38';
-import CommandConsole from './CommandConsole.js?v=38';
-import TargetReticle from './TargetReticle.js?v=38';
-import UiAudio from './UiAudio.js?v=38';
-import { AUDIO_EVENTS } from './BattleController.js?v=38';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=38';
+import BattleHUD from './BattleHUD.js?v=40';
+import BattleController from './BattleController.js?v=40';
+import Timeline from './Timeline.js?v=40';
+import VeilFracture from './VeilFracture.js?v=40';
+import HeroPoseView from './HeroPoseView.js?v=40';
+import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=40';
+import { HUSHLING_TEXTURES } from './EnemyHushlingView.js?v=40';
+import { createEnemyView } from './EnemyViewFactory.js?v=40';
+import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=40';
+import { selectEnemy, ENEMY_ORDER, nextEnemyId } from './EnemyCatalog.js?v=40';
+import BattleCamera from './BattleCamera.js?v=40';
+import BattleFX from './BattleFX.js?v=40';
+import BattleFXDirector from './BattleFXDirector.js?v=40';
+import BattleFeel from './BattleFeel.js?v=40';
+import AmbientBattlefieldDirector, { BATTLEFIELD_TEXTURES } from './AmbientBattlefieldDirector.js?v=40';
+import BattleAtmosphere from './BattleAtmosphere.js?v=40';
+import HudFrame from './HudFrame.js?v=40';
+import CommandConsole from './CommandConsole.js?v=40';
+import TargetReticle from './TargetReticle.js?v=40';
+import UiAudio from './UiAudio.js?v=40';
+import { AUDIO_EVENTS } from './BattleController.js?v=40';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=40';
 
 function cloneConfig(source, heroKey, search, enemyKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -65,6 +65,13 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.load.image('portrait_kineza', './assets/ui/portrait_kineza.png');
     this.load.image('portrait_wraith', './assets/ui/portrait_wraith_v34.png');
     this.load.image('portrait_hushling', './assets/ui/portrait_hushling_v34.png');
+    // v38A battlefield layers — real painted art from DAI, replacing the
+    // procedural backdrop/bands/floor/motes BattleAtmosphere used to draw.
+    this.load.image(BATTLEFIELD_TEXTURES.farBackground, './assets/battle/veil_fracture/01_far_background_master.png');
+    this.load.image(BATTLEFIELD_TEXTURES.midSpires, './assets/battle/veil_fracture/02_mid_background_spires.png');
+    this.load.image(BATTLEFIELD_TEXTURES.combatPlatform, './assets/battle/veil_fracture/03_combat_platform.png');
+    this.load.image(BATTLEFIELD_TEXTURES.fractureOverlay, './assets/battle/veil_fracture/04_fracture_energy_overlay.png');
+    this.load.image(BATTLEFIELD_TEXTURES.particleOverlay, './assets/battle/veil_fracture/05_particle_overlay.png');
     this.loadUiKit();
     this.loadFeedbackDigits();
     // Every hero's pose set. A pose whose PNG is absent falls back to the
@@ -148,11 +155,12 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.atmosphere = new BattleAtmosphere(this);
     this.atmosphere.create();
 
-    // v38A: crystal-midground drift/shimmer and the ambient fracture
-    // pulse. Layers alongside BattleAtmosphere rather than folding into
-    // it — BattleAtmosphere's parallax/fog/motes system is untouched and
-    // already covers the "veil haze" and "ambient particles" ownership
-    // items from the brief.
+    // v38A: the five real painted battlefield layers (far background,
+    // mid spires, combat platform, fracture overlay, particle overlay),
+    // depth-stacked at -100/-90/-40/-20/-10 — BattleAtmosphere's
+    // remaining fog (-30) and foreground (90) layers interleave around
+    // them by depth, not creation order. See BattleAtmosphere's own note
+    // on why it no longer draws a competing backdrop/floor.
     this.ambientBattlefield = new AmbientBattlefieldDirector(this);
     this.ambientBattlefield.create();
 

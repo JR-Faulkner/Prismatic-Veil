@@ -4,7 +4,7 @@ A family JRPG built with Phaser 3 — no build tools, no bundler, no CDN. Everyt
 
 **▶ Play the battle: https://jr-faulkner.github.io/Prismatic-Veil/battle-v2.html**
 
-> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=38`
+> Add a cache-busting query when testing a fresh deploy: `battle-v2.html?v=40`
 
 ---
 
@@ -134,9 +134,9 @@ Right-to-left entrance sweep, gather push to 1.32×, release snap to 1.55×, hit
 **Two-camera architecture:** the main camera renders and zooms `scene.world`; a second camera renders `scene.uiLayer` and never moves. Without this the HUD would scale off screen during an attack. **Any new battlefield visual must register via `scene.worldAdd()`; HUD elements go on `uiLayer`.**
 
 ### Atmosphere — `src/BattleAtmosphere.js`, `src/AmbientBattlefieldDirector.js`
-Gradient backdrop, distant Veil light bands, drifting fog banks, an elliptical floor with perspective rings, ambient motes and foreground silhouettes — all on parallax layers that drift against the camera at different rates. Ground compression ripples spread beneath a fighter on footfalls and impacts. Abilities briefly tint the scene: cool refracted highlights for Prismel, warm kinetic flashes for Kineza. The combat platform (the floor) runs a zero parallax factor — it reads as the fixed stage the fighters stand on, not another drifting depth layer.
+The battlefield backdrop is five real painted layers (`assets/battle/veil_fracture/`), stacked back to front by `AmbientBattlefieldDirector`: far background (very slow independent drift), crystal midground (camera-relative parallax, factor 0.35 — the same offset-proportional-to-camera-displacement convention `BattleAtmosphere.updateParallax()` already used), the static combat platform the fighters stand on, a fracture-energy overlay (15–20% opacity, ~4.8s pulse), and a sparse particle overlay drifting at its own independent rate. Every layer is scaled to fully cover the viewport plus a margin sized against its own motion, so drift never exposes an empty edge.
 
-`AmbientBattlefieldDirector` layers two more pieces on top, continuously, independent of the camera's own parallax: a handful of small crystal-shard silhouettes drifting at 0.35px/sec with a slow shimmer, and a low-opacity (15–20%) fracture-pulse wash breathing on a 4.8s cycle — both deliberately subtle, not another attention-grabbing effect competing with combat FX.
+`BattleAtmosphere` still owns drifting fog banks and the foreground corner silhouettes — neither is covered by the five painted layers, so both stayed. Its old procedural backdrop gradient, light-shaft bands, floor disc, and ambient motes were removed once the real art shipped, since drawing both would double up the same visual role. Ground compression ripples and the per-hero ability-tint flashes (cool refracted highlights for Prismel, warm kinetic flashes for Kineza) are unchanged.
 
 ### Battle Presence FX — `src/BattleFXDirector.js`
 Prismel's attack (`fxVersion: 'v2'` in `BattleConfig.js`) routes its charge/projectile/impact/residual visuals through this director instead of `BattleFX`'s own `gather()`/`beam()`/`impact()` — Kineza keeps his original BattleFX-driven identity untouched. Six small procedural layer concepts (particle, mist, ribbon, distortion, residual, environmental overlay) back a four-call public API (`playChargeFX`/`playProjectileFX`/`playImpactFX`/`playResidualFX`, plus `clearResidualFX`/`clearAll`). It never touches camera, hit-stop, damage, sequencing, or audio — those calls stay explicit in `BattleController`, the same way `BattleFeel` owns them everywhere else. Residual FX are tracked per-target so a round that ends early still cleans up completely before the next one starts.
@@ -181,7 +181,7 @@ src/                        all battle code, ES modules
   BattleFX.js               Kineza's attack FX, crit flourish, victory
   BattleFXDirector.js       Prismel V2's layered charge/projectile/impact FX
   BattleAtmosphere.js       parallax layers, fog, floor, motes, ripples
-  AmbientBattlefieldDirector.js  crystal-midground drift, ambient fracture pulse
+  AmbientBattlefieldDirector.js  loads/composites the 5 painted battlefield layers
   BattleCamera.js           entrance sweep, pushes, shake, breath, pull-out
   UiAudio.js                synthesised UI cues (Web Audio)
   Timeline.js               stepped playback helper
