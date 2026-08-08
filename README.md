@@ -106,6 +106,10 @@ Authored **facing right throughout**, per the animation standard — no flipping
 - Author heroes **facing right**; enemy art faces **left**
 - One scale factor per pose set, derived from the idle frame. Crouched and wide poses are legitimately shorter and must not be stretched to match
 
+### Staged, not yet wired — `assets/prismel/walk/`
+
+A locked six-frame Prismel walk cycle (Contact A → Down A → Passing A → Contact B → Down B → Passing B), 1024×1536 transparent PNGs, QA'd at ~9.5fps. Nothing in the current battle or tactical systems drives a locomotion cycle yet — battle poses are the five-beat sequence above, and the tactical prototype uses procedural map tokens (see below) — so these are staged for whichever future feature actually walks a hero across a screen. `prismel_walk_manifest.json` in the same folder documents frame order and baseline.
+
 ---
 
 ## Systems

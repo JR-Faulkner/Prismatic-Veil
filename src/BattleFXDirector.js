@@ -12,7 +12,8 @@
 // `type` selects a visual palette so the director isn't hardcoded to one
 // hero — right now only Prismel's V2 attack calls it (Kineza keeps his
 // existing BattleFX-driven identity untouched, per the v38A brief).
-const PRISM = [0xff6b6b, 0xffb36b, 0xffef7d, 0x71ff88, 0x67c8ff, 0xc477ff, 0xff65c8];
+// Prismel-specific spectral palette. No kinetic green: green remains Kineza's combat language.
+const PRISM = [0x67e8ff, 0x9fd8ff, 0x8f7cff, 0xc7a8ff, 0xffa6d9, 0xff65c8, 0xffffff];
 
 const PALETTES = Object.freeze({
   prismel: Object.freeze({ core: 0xdff0ff, ribbon: 0x9fd8ff, mist: 0xc7e6ff, shards: PRISM })

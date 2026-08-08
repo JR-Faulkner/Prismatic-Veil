@@ -1,0 +1,59 @@
+{
+  "project": "The Prismatic Veil",
+  "character": "Prismel",
+  "package_status": "PREP / FAI REVIEW CANDIDATE",
+  "animation": "walk",
+  "direction": "right",
+  "frame_count": 6,
+  "frame_order": [
+    {
+      "index": 0,
+      "name": "contact_a",
+      "file": "prismel_walk_01_contact_a.png"
+    },
+    {
+      "index": 1,
+      "name": "down_a",
+      "file": "prismel_walk_02_down_a.png"
+    },
+    {
+      "index": 2,
+      "name": "passing_a",
+      "file": "prismel_walk_03_passing_a.png"
+    },
+    {
+      "index": 3,
+      "name": "contact_b",
+      "file": "prismel_walk_04_contact_b.png"
+    },
+    {
+      "index": 4,
+      "name": "down_b",
+      "file": "prismel_walk_05_down_b.png"
+    },
+    {
+      "index": 5,
+      "name": "passing_b",
+      "file": "prismel_walk_06_passing_b.png"
+    }
+  ],
+  "fullres_canvas": {
+    "width": 1024,
+    "height": 1536,
+    "baseline_y": 1323
+  },
+  "test_canvas": {
+    "width": 512,
+    "height": 768,
+    "sheet_width": 3072,
+    "sheet_height": 768
+  },
+  "initial_test_fps": 9.5,
+  "loop": true,
+  "notes": [
+    "All six poses are locked. Do not redraw or regenerate them.",
+    "Production processing only removes matte/background and aligns ground baseline.",
+    "Frame scale is preserved; down/passing poses are not stretched to equal visible height.",
+    "FAI should tune cadence only after in-game playback."
+  ]
+}
