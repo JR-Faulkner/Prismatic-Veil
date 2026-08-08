@@ -52,6 +52,10 @@ export default class UnitController {
   // current tile). Occupancy is cleared at the start and re-claimed only
   // once the unit reaches its final tile, so mid-move it doesn't block its
   // own old or new tile against a concurrent query.
+  // `unit.onStep(from, to)` and `unit.onMoveEnd()` are optional hooks a
+  // unit can implement for its own presentation (walk-frame cycling,
+  // facing flips) without this controller knowing anything character-
+  // specific — same generic-interface pattern as the enemy views.
   animateMove(unit, path, stepMs) {
     return new Promise(resolve => {
       if (!path || path.length < 2) { resolve(); return; }
@@ -61,10 +65,12 @@ export default class UnitController {
       const step = () => {
         if (i >= path.length) {
           this.grid.setOccupant(unit.x, unit.y, unit);
+          if (unit.onMoveEnd) unit.onMoveEnd();
           resolve();
           return;
         }
         const tile = path[i];
+        if (unit.onStep) unit.onStep({ x: unit.x, y: unit.y }, tile);
         const screen = this.grid.toScreen(tile.x, tile.y);
         this.scene.tweens.add({
           targets: unit.sprite,

@@ -106,9 +106,9 @@ Authored **facing right throughout**, per the animation standard — no flipping
 - Author heroes **facing right**; enemy art faces **left**
 - One scale factor per pose set, derived from the idle frame. Crouched and wide poses are legitimately shorter and must not be stretched to match
 
-### Staged, not yet wired — `assets/prismel/walk/`
+### Walk cycle — `assets/prismel/walk/`
 
-A locked six-frame Prismel walk cycle (Contact A → Down A → Passing A → Contact B → Down B → Passing B), 1024×1536 transparent PNGs, QA'd at ~9.5fps. Nothing in the current battle or tactical systems drives a locomotion cycle yet — battle poses are the five-beat sequence above, and the tactical prototype uses procedural map tokens (see below) — so these are staged for whichever future feature actually walks a hero across a screen. `prismel_walk_manifest.json` in the same folder documents frame order and baseline.
+A locked six-frame Prismel walk cycle (Contact A → Down A → Passing A → Contact B → Down B → Passing B), 1024×1536 transparent PNGs, QA'd at ~9.5fps. Not used by the five-beat battle pose sequence above — its consumer is the tactical prototype's map token (see "Tactical Field prototype" below), which walks Prismel tile-to-tile with these frames. `prismel_walk_manifest.json` in the same folder documents frame order and baseline.
 
 ---
 
@@ -234,7 +234,7 @@ Design specs and per-package handoffs are exchanged as zip packages rather than 
   TacticalScene.js                  phase sequencing, objectives, enemy AI, HUD
 ```
 
-Three heroes (Prismel, Auryi, Kineza) and two enemy types (Hushling ×3, Veil Wraith ×1) restore three silenced sound nodes to win; defeating every enemy is optional. Map tokens are procedural (accent-colored circle + initials) rather than photo art — the project's legacy 48×72 pixel spritesheets read as low quality at any scale, and the full battle-art PNGs are the wrong shape for a small marker. The real portrait art (`assets/ui/portrait_*.png`) is reserved for `BattleCinematic`'s close-up cut-in, where detail matters — the same "tactical map sprite → zoomed battle sprite" pairing shown in this project's own reference art.
+Three heroes (Prismel, Auryi, Kineza) and two enemy types (Hushling ×3, Veil Wraith ×1) restore three silenced sound nodes to win; defeating every enemy is optional. Hero map tokens use approved character art where an approved tactical-scale set exists: Prismel's locked Idle pose plus his six-frame walk cycle (`assets/prismel/walk/`), and Auryi's seven-frame movement set (`assets/auryi/movement/`), both walking tile-to-tile with frame cycling and a direction-based facing flip, `TacticalScene._buildCharacterToken()`/`CHARACTER_TOKEN_ART`. Kineza has no approved tactical sprite yet, so he keeps the procedural accent-colored-circle-and-initials token, same as the enemies (whose full battle-art portraits are the wrong shape/scale for a map marker). `_buildHero()` branches purely on whether `CHARACTER_TOKEN_ART` has an entry for that hero id, and `UnitController.animateMove()` drives presentation only through the optional `onStep`/`onMoveEnd` hooks a token returns — so dropping in Kineza's sprite later, whenever one is approved, is a new `CHARACTER_TOKEN_ART` entry, not a rewrite of grid movement, targeting, selection, or the cinematic battle-transition code. The real portrait art (`assets/ui/portrait_*.png`) is reserved separately for `BattleCinematic`'s close-up cut-in, where detail matters — the same "tactical map sprite → zoomed battle sprite" pairing shown in this project's own reference art.
 
 World geometry is fixed regardless of viewport; only the camera's default zoom adapts per screen size (compact phones start zoomed out further to keep more context visible) — tying tile scale to viewport width instead would fight the camera system on every resize. See `CLAUDE.md`'s traps list for two bugs specific to this prototype's two-camera setup: `pointer.worldX`/`worldY` being ambiguous with more than one camera in the scene, and an anonymous resize listener leaking one extra registration per `scene.restart()`.
 

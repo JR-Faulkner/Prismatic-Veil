@@ -1,0 +1,24 @@
+{
+  "character": "Auryi",
+  "asset_type": "movement",
+  "source_count": 7,
+  "source_format": "JPEG 1024x1536 white matte",
+  "production_format": "PNG RGBA 1024x1536",
+  "baseline_y": 1180,
+  "frame_order": [
+    "auryi_move_01.png",
+    "auryi_move_02.png",
+    "auryi_move_03.png",
+    "auryi_move_04.png",
+    "auryi_move_05.png",
+    "auryi_move_06.png",
+    "auryi_move_07.png"
+  ],
+  "status": "movement candidate assembled from user-provided current-conversation images",
+  "notes": [
+    "These seven frames are directly available as current-conversation binaries.",
+    "No artwork was regenerated.",
+    "White matte was converted to transparent alpha and frames were baseline-aligned without rescaling.",
+    "These appear to be a coherent movement/walk sequence, not a complete idle+attack package."
+  ]
+}

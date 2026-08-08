@@ -3,13 +3,13 @@
 // coordination between the other tactical modules. Camera logic stays in
 // TacticalCamera; presentation stays in BattleCinematic; this module only
 // decides *when* those things happen.
-import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=40';
-import TerrainRegistry from './TerrainRegistry.js?v=40';
-import TacticalGrid from './TacticalGrid.js?v=40';
-import TacticalPathfinder from './TacticalPathfinder.js?v=40';
-import TacticalCamera from './TacticalCamera.js?v=40';
-import UnitController from './UnitController.js?v=40';
-import BattleCinematic from './BattleCinematic.js?v=40';
+import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=41';
+import TerrainRegistry from './TerrainRegistry.js?v=41';
+import TacticalGrid from './TacticalGrid.js?v=41';
+import TacticalPathfinder from './TacticalPathfinder.js?v=41';
+import TacticalCamera from './TacticalCamera.js?v=41';
+import UnitController from './UnitController.js?v=41';
+import BattleCinematic from './BattleCinematic.js?v=41';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -17,14 +17,10 @@ import BattleCinematic from './BattleCinematic.js?v=40';
 // numbers (e.g. "max range > 1") — the spec's actual rule is about attack
 // *type* (direct ranged vs. adjacent), and an inferred proxy would silently
 // break the moment a future hero has a ranged-but-max-1 kit.
-// Map tokens are procedural (accent-colored circle + initials), not photo
-// art — the legacy 48x72 pixel spritesheets read as low-quality at any
-// scale, and full battle-art PNGs (the enemy idle poses, ~1000-1500px)
-// are the wrong shape entirely for a small map marker. `cinematicKey`
-// points to the real portrait art instead, used only in BattleCinematic's
-// close-up cut-in where detail actually matters. Accent colors match the
-// values already established for these characters elsewhere in the
-// project (BattleConfig.js, EnemyCatalog.js), not invented fresh here.
+// Accent colors match the values already established for these characters
+// elsewhere in the project (BattleConfig.js, EnemyCatalog.js), not
+// invented fresh here. `cinematicKey` points to the real portrait art used
+// in BattleCinematic's close-up cut-in.
 const HERO_STATS = Object.freeze({
   prismel: { hp: 24, atk: 6, cinematicKey: 'portrait_prismel', name: 'Prismel', ability: 'Prismatic Shard', flavor: 'Crystal light converges...', accent: 0x67c8ff, requiresLineOfSight: true, label: 'Pr' },
   auryi: { hp: 30, atk: 4, healAmount: 8, cinematicKey: 'portrait_auryi', name: 'Auryi', ability: 'Lumisong Renewal', flavor: 'A gentle song of restoration...', accent: 0xc8a8ff, requiresLineOfSight: true, label: 'Au' },
@@ -34,6 +30,52 @@ const HERO_STATS = Object.freeze({
 const ENEMY_STATS = Object.freeze({
   hushling: { hp: 10, atk: 3, range: 1, cinematicKey: 'portrait_hushling', name: 'Hushling', ability: 'Hush Crush', accent: 0xe24145, label: 'Hu' },
   veil_wraith: { hp: 26, atk: 6, range: 1, cinematicKey: 'portrait_wraith', name: 'Veil Wraith', ability: 'Veil Lash', accent: 0xc477ff, label: 'Wr' }
+});
+
+// Hero map tokens use existing approved character art where it exists —
+// Prismel's locked Idle battle pose plus his validated six-frame walk
+// cycle, and Auryi's validated seven-frame movement set. Kineza has no
+// approved tactical sprite package yet, so he (and the enemies, whose
+// full battle-art portraits are the wrong shape/scale for a map marker —
+// see the "giant enemy" note in git history) fall through to the
+// procedural circle token in _buildUnitToken(). Adding Kineza's sprite
+// later is a matter of giving him an entry below — _buildHero() already
+// branches on "does this id have a CHARACTER_TOKEN_ART entry", and
+// UnitController.animateMove() drives any unit's presentation purely
+// through the optional onStep/onMoveEnd hooks _buildCharacterToken()
+// returns, so grid movement, targeting, selection, and the cinematic
+// battle-transition code never need to change for it.
+// `originY` is each frame's baseline as a fraction of its own canvas
+// height (feet anchor); `scale` is derived per frame set from its own
+// content height so idle and walking read at the same apparent size
+// instead of jumping when the texture swaps — CLAUDE.md's "one scale
+// factor per pose set, derived from the idle frame" rule, applied per
+// frame-set rather than per character since Prismel's idle pose and his
+// walk-cycle frames come from two differently-cropped canvases.
+const PRISMEL_WALK_FRAMES = [
+  'prismel_walk_01_contact_a', 'prismel_walk_02_down_a', 'prismel_walk_03_passing_a',
+  'prismel_walk_04_contact_b', 'prismel_walk_05_down_b', 'prismel_walk_06_passing_b'
+];
+const AURYI_WALK_FRAMES = [
+  'auryi_move_01', 'auryi_move_02', 'auryi_move_03', 'auryi_move_04', 'auryi_move_05', 'auryi_move_06', 'auryi_move_07'
+];
+
+const CHARACTER_TOKEN_ART = Object.freeze({
+  prismel: {
+    baseFacing: 'right',
+    idle: { key: 'prismel_pose_idle', originY: 1, scale: 0.0825 },
+    walkFrames: PRISMEL_WALK_FRAMES,
+    walk: { originY: 1323 / 1536, scale: 0.0593 }
+  },
+  auryi: {
+    baseFacing: 'left',
+    idle: { key: 'auryi_move_04', originY: 1180 / 1536, scale: 0.062 },
+    walkFrames: AURYI_WALK_FRAMES,
+    walk: { originY: 1180 / 1536, scale: 0.062 }
+  }
+  // kineza: no approved tactical sprite package yet — add an entry here,
+  // in the same shape as the two above, once one exists. Until then he
+  // uses the procedural token, same as the enemies.
 });
 
 const TERRAIN_COLORS = Object.freeze({
@@ -50,13 +92,18 @@ export default class TacticalScene extends Phaser.Scene {
 
   preload() {
     this.load.json('tacticalMap', './data/tactical_map_v2.json');
-    // Real portrait art, used only for the cinematic cut-in — map tokens
-    // are drawn procedurally in create(), no texture needed for those.
+    // Real portrait art, used only for the cinematic cut-in.
     this.load.image('portrait_prismel', './assets/ui/portrait_prismel.png');
     this.load.image('portrait_kineza', './assets/ui/portrait_kineza.png');
     this.load.image('portrait_auryi', './assets/ui/portrait_auryi.png');
     this.load.image('portrait_wraith', './assets/ui/portrait_wraith_v34.png');
     this.load.image('portrait_hushling', './assets/ui/portrait_hushling_v34.png');
+    // Hero map tokens — existing battle-pose art plus the validated
+    // walk-cycle sets (see CHARACTER_TOKEN_ART above). Kineza and the
+    // enemies still use procedural tokens, no load needed for those.
+    this.load.image('prismel_pose_idle', './assets/poses/Pose01_Idle_LOCKED.png');
+    PRISMEL_WALK_FRAMES.forEach(key => this.load.image(key, `./assets/prismel/walk/${key}.png`));
+    AURYI_WALK_FRAMES.forEach(key => this.load.image(key, `./assets/auryi/movement/${key}.png`));
   }
 
   worldAdd(obj) {
@@ -162,11 +209,8 @@ export default class TacticalScene extends Phaser.Scene {
   // --- Setup helpers ---------------------------------------------------
 
   // Procedural map token: an accent-colored circle with a two-letter
-  // label, ringed gold for heroes / red for enemies. Deliberately simple
-  // — this is the "tactical map sprite" half of the tactical-to-cinematic
-  // pairing the project's own reference art shows (a small map token that
-  // zooms into a detailed close-up on attack); the close-up is where the
-  // real portrait art belongs, in BattleCinematic.
+  // label, ringed gold for heroes / red for enemies. Still used for
+  // enemies (no comparable small-scale art exists for them yet).
   _buildUnitToken(color, label, isHero) {
     const container = this.add.container(0, 0).setDepth(10);
     const ringColor = isHero ? 0xffe8a0 : 0xff503c;
@@ -179,10 +223,55 @@ export default class TacticalScene extends Phaser.Scene {
     return container;
   }
 
+  // Character-art map token (see CHARACTER_TOKEN_ART). Returns the
+  // container to use as `unit.sprite`, plus onStep/onMoveEnd hooks
+  // UnitController.animateMove() calls generically — this scene is the
+  // only place that knows these are Prismel or Auryi specifically.
+  _buildCharacterToken(charKey) {
+    const art = CHARACTER_TOKEN_ART[charKey];
+    const container = this.add.container(0, 0).setDepth(10);
+    const img = this.add.image(0, 0, art.idle.key)
+      .setOrigin(0.5, art.idle.originY)
+      .setScale(art.idle.scale);
+    container.add(img);
+    this.worldAdd(container);
+
+    let facingRight = art.baseFacing === 'right';
+    let frameIndex = 0;
+    const applyFlip = () => img.setFlipX(facingRight !== (art.baseFacing === 'right'));
+    applyFlip();
+
+    const onStep = (from, to) => {
+      const screenDX = (to.x - to.y) - (from.x - from.y);
+      if (screenDX !== 0) facingRight = screenDX > 0;
+      applyFlip();
+      if (art.walkFrames) {
+        frameIndex = (frameIndex + 1) % art.walkFrames.length;
+        img.setTexture(art.walkFrames[frameIndex]).setOrigin(0.5, art.walk.originY).setScale(art.walk.scale);
+      }
+    };
+    const onMoveEnd = () => {
+      if (!art.walkFrames) return;
+      frameIndex = 0;
+      img.setTexture(art.idle.key).setOrigin(0.5, art.idle.originY).setScale(art.idle.scale);
+    };
+
+    return { container, onStep, onMoveEnd };
+  }
+
   _buildHero(h) {
     const stats = HERO_STATS[h.id];
-    const sprite = this._buildUnitToken(stats.accent, stats.label, true);
-    return {
+    const art = CHARACTER_TOKEN_ART[h.id];
+    let sprite, onStep = null, onMoveEnd = null;
+    if (art) {
+      const token = this._buildCharacterToken(h.id);
+      sprite = token.container;
+      onStep = token.onStep;
+      onMoveEnd = token.onMoveEnd;
+    } else {
+      sprite = this._buildUnitToken(stats.accent, stats.label, true);
+    }
+    const hero = {
       id: h.id, x: h.x, y: h.y, move: h.move,
       rangeMin: h.rangeMin, rangeMax: h.rangeMax,
       hp: stats.hp, maxHp: stats.hp, atk: stats.atk, healAmount: stats.healAmount || 0,
@@ -192,6 +281,9 @@ export default class TacticalScene extends Phaser.Scene {
       moved: false, acted: false, alive: true, isHero: true,
       sprite, spriteYOffset: 0
     };
+    if (onStep) hero.onStep = onStep;
+    if (onMoveEnd) hero.onMoveEnd = onMoveEnd;
+    return hero;
   }
 
   _buildEnemy(e) {
