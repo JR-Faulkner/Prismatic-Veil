@@ -3,13 +3,13 @@
 // coordination between the other tactical modules. Camera logic stays in
 // TacticalCamera; presentation stays in BattleCinematic; this module only
 // decides *when* those things happen.
-import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=41';
-import TerrainRegistry from './TerrainRegistry.js?v=41';
-import TacticalGrid from './TacticalGrid.js?v=41';
-import TacticalPathfinder from './TacticalPathfinder.js?v=41';
-import TacticalCamera from './TacticalCamera.js?v=41';
-import UnitController from './UnitController.js?v=41';
-import BattleCinematic from './BattleCinematic.js?v=41';
+import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=43';
+import TerrainRegistry from './TerrainRegistry.js?v=43';
+import TacticalGrid from './TacticalGrid.js?v=43';
+import TacticalPathfinder from './TacticalPathfinder.js?v=43';
+import TacticalCamera from './TacticalCamera.js?v=43';
+import UnitController from './UnitController.js?v=43';
+import BattleCinematic from './BattleCinematic.js?v=43';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -52,6 +52,22 @@ const ENEMY_STATS = Object.freeze({
 // factor per pose set, derived from the idle frame" rule, applied per
 // frame-set rather than per character since Prismel's idle pose and his
 // walk-cycle frames come from two differently-cropped canvases.
+//
+// Tokens load pre-downsampled "map icon" textures (assets/*/map_icons/),
+// not the full battle-res source art directly. At a map token's actual
+// on-screen size, loading the full 533x800/1024x1536 texture and letting
+// the GPU minify it live is a ~20x downscale — linear-filtered
+// minification at that ratio averages huge numbers of soft, semi-
+// transparent edge pixels (hair, cloak fringe, Auryi's aura) into each
+// screen pixel and drops the effective alpha to ~78%, which reads as a
+// translucent "ghost" rather than a small solid sprite. Confirmed
+// directly: resampling the idle pose to its actual ~40px on-screen
+// height dropped mean nonzero alpha from ~255 to ~199. The map_icons
+// are pre-resized once (LANCZOS, offline) to land within a ~2-3x
+// runtime downscale instead, which a GPU linear filter handles cleanly.
+// `originY` is unchanged by this — it's a ratio within the canvas, and
+// uniform resizing preserves ratios; only `scale` (tuned against the
+// icon's own actual size) changes.
 const PRISMEL_WALK_FRAMES = [
   'prismel_walk_01_contact_a', 'prismel_walk_02_down_a', 'prismel_walk_03_passing_a',
   'prismel_walk_04_contact_b', 'prismel_walk_05_down_b', 'prismel_walk_06_passing_b'
@@ -63,15 +79,15 @@ const AURYI_WALK_FRAMES = [
 const CHARACTER_TOKEN_ART = Object.freeze({
   prismel: {
     baseFacing: 'right',
-    idle: { key: 'prismel_pose_idle', originY: 1, scale: 0.0825 },
+    idle: { key: 'prismel_pose_idle_mapicon', originY: 1, scale: 0.326 },
     walkFrames: PRISMEL_WALK_FRAMES,
-    walk: { originY: 1323 / 1536, scale: 0.0593 }
+    walk: { originY: 1323 / 1536, scale: 0.324 }
   },
   auryi: {
     baseFacing: 'left',
-    idle: { key: 'auryi_move_04', originY: 1180 / 1536, scale: 0.062 },
+    idle: { key: 'auryi_move_04', originY: 1180 / 1536, scale: 0.324 },
     walkFrames: AURYI_WALK_FRAMES,
-    walk: { originY: 1180 / 1536, scale: 0.062 }
+    walk: { originY: 1180 / 1536, scale: 0.324 }
   }
   // kineza: no approved tactical sprite package yet — add an entry here,
   // in the same shape as the two above, once one exists. Until then he
@@ -101,9 +117,9 @@ export default class TacticalScene extends Phaser.Scene {
     // Hero map tokens — existing battle-pose art plus the validated
     // walk-cycle sets (see CHARACTER_TOKEN_ART above). Kineza and the
     // enemies still use procedural tokens, no load needed for those.
-    this.load.image('prismel_pose_idle', './assets/poses/Pose01_Idle_LOCKED.png');
-    PRISMEL_WALK_FRAMES.forEach(key => this.load.image(key, `./assets/prismel/walk/${key}.png`));
-    AURYI_WALK_FRAMES.forEach(key => this.load.image(key, `./assets/auryi/movement/${key}.png`));
+    this.load.image('prismel_pose_idle_mapicon', './assets/prismel/walk/map_icons/prismel_idle_mapicon.png');
+    PRISMEL_WALK_FRAMES.forEach(key => this.load.image(key, `./assets/prismel/walk/map_icons/${key}_mapicon.png`));
+    AURYI_WALK_FRAMES.forEach(key => this.load.image(key, `./assets/auryi/movement/map_icons/${key}_mapicon.png`));
   }
 
   worldAdd(obj) {
@@ -227,13 +243,21 @@ export default class TacticalScene extends Phaser.Scene {
   // container to use as `unit.sprite`, plus onStep/onMoveEnd hooks
   // UnitController.animateMove() calls generically — this scene is the
   // only place that knows these are Prismel or Auryi specifically.
-  _buildCharacterToken(charKey) {
+  // A solid accent-colored backing disc sits behind the character art,
+  // same ring language as the procedural token (_buildUnitToken) — full-
+  // detail illustrated art has soft, semi-transparent edges (hair, cloak
+  // fringe, ambient glows) that read as a faint, ungrounded smudge at
+  // map-token scale with nothing solid behind them. The disc gives every
+  // token — sprite-based or procedural — the same grounded-medallion look
+  // instead of two visually unrelated systems side by side on the board.
+  _buildCharacterToken(charKey, accent) {
     const art = CHARACTER_TOKEN_ART[charKey];
     const container = this.add.container(0, 0).setDepth(10);
+    const disc = this.add.circle(0, 0, 15, accent, 0.9).setStrokeStyle(2, 0xffe8a0, 0.95);
     const img = this.add.image(0, 0, art.idle.key)
       .setOrigin(0.5, art.idle.originY)
       .setScale(art.idle.scale);
-    container.add(img);
+    container.add([disc, img]);
     this.worldAdd(container);
 
     let facingRight = art.baseFacing === 'right';
@@ -264,7 +288,7 @@ export default class TacticalScene extends Phaser.Scene {
     const art = CHARACTER_TOKEN_ART[h.id];
     let sprite, onStep = null, onMoveEnd = null;
     if (art) {
-      const token = this._buildCharacterToken(h.id);
+      const token = this._buildCharacterToken(h.id, stats.accent);
       sprite = token.container;
       onStep = token.onStep;
       onMoveEnd = token.onMoveEnd;
