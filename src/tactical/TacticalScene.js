@@ -3,13 +3,13 @@
 // coordination between the other tactical modules. Camera logic stays in
 // TacticalCamera; presentation stays in BattleCinematic; this module only
 // decides *when* those things happen.
-import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=43';
-import TerrainRegistry from './TerrainRegistry.js?v=43';
-import TacticalGrid from './TacticalGrid.js?v=43';
-import TacticalPathfinder from './TacticalPathfinder.js?v=43';
-import TacticalCamera from './TacticalCamera.js?v=43';
-import UnitController from './UnitController.js?v=43';
-import BattleCinematic from './BattleCinematic.js?v=43';
+import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=44';
+import TerrainRegistry from './TerrainRegistry.js?v=44';
+import TacticalGrid from './TacticalGrid.js?v=44';
+import TacticalPathfinder from './TacticalPathfinder.js?v=44';
+import TacticalCamera from './TacticalCamera.js?v=44';
+import UnitController from './UnitController.js?v=44';
+import BattleCinematic from './BattleCinematic.js?v=44';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -32,26 +32,26 @@ const ENEMY_STATS = Object.freeze({
   veil_wraith: { hp: 26, atk: 6, range: 1, cinematicKey: 'portrait_wraith', name: 'Veil Wraith', ability: 'Veil Lash', accent: 0xc477ff, label: 'Wr' }
 });
 
-// Hero map tokens use existing approved character art where it exists —
-// Prismel's locked Idle battle pose plus his validated six-frame walk
-// cycle, and Auryi's validated seven-frame movement set. Kineza has no
-// approved tactical sprite package yet, so he (and the enemies, whose
-// full battle-art portraits are the wrong shape/scale for a map marker —
-// see the "giant enemy" note in git history) fall through to the
-// procedural circle token in _buildUnitToken(). Adding Kineza's sprite
-// later is a matter of giving him an entry below — _buildHero() already
-// branches on "does this id have a CHARACTER_TOKEN_ART entry", and
-// UnitController.animateMove() drives any unit's presentation purely
+// Hero map tokens use existing approved TACTICAL-scale character art
+// where it exists — Prismel's validated six-frame walk cycle and Auryi's
+// validated seven-frame movement set, each used for both idle and
+// walking. Neither uses any cinematic battle-pose art (assets/poses/):
+// that library is BattleCinematic's close-up cut-in exclusively, kept
+// deliberately separate from the tactical map's own approved set. Kineza
+// has no approved tactical sprite package yet, so he (and the enemies,
+// whose full battle-art portraits are the wrong shape/scale for a map
+// marker — see the "giant enemy" note in git history) fall through to
+// the procedural circle token in _buildUnitToken(). Adding Kineza's
+// sprite later is a matter of giving him an entry below — _buildHero()
+// already branches on "does this id have a CHARACTER_TOKEN_ART entry",
+// and UnitController.animateMove() drives any unit's presentation purely
 // through the optional onStep/onMoveEnd hooks _buildCharacterToken()
 // returns, so grid movement, targeting, selection, and the cinematic
 // battle-transition code never need to change for it.
 // `originY` is each frame's baseline as a fraction of its own canvas
-// height (feet anchor); `scale` is derived per frame set from its own
-// content height so idle and walking read at the same apparent size
-// instead of jumping when the texture swaps — CLAUDE.md's "one scale
-// factor per pose set, derived from the idle frame" rule, applied per
-// frame-set rather than per character since Prismel's idle pose and his
-// walk-cycle frames come from two differently-cropped canvases.
+// height (feet anchor) — identical for idle and walk here since both
+// draw from the same frame family, one CLAUDE.md-style scale factor
+// for the whole set.
 //
 // Tokens load pre-downsampled "map icon" textures (assets/*/map_icons/),
 // not the full battle-res source art directly. At a map token's actual
@@ -63,11 +63,19 @@ const ENEMY_STATS = Object.freeze({
 // translucent "ghost" rather than a small solid sprite. Confirmed
 // directly: resampling the idle pose to its actual ~40px on-screen
 // height dropped mean nonzero alpha from ~255 to ~199. The map_icons
-// are pre-resized once (LANCZOS, offline) to land within a ~2-3x
-// runtime downscale instead, which a GPU linear filter handles cleanly.
+// are pre-resized once (LANCZOS, offline) at a larger reference size
+// (content height 260px) than the first pass, keeping the runtime
+// downscale in the ~3x range at a bigger, more legible on-screen size.
 // `originY` is unchanged by this — it's a ratio within the canvas, and
 // uniform resizing preserves ratios; only `scale` (tuned against the
 // icon's own actual size) changes.
+//
+// Prismel's tactical token uses ONLY his approved six-frame walk cycle —
+// idle and walking both — never the cinematic battle-pose art (his
+// locked Idle pose in assets/poses/). That library is for BattleCinematic's
+// close-up cut-in exclusively; the walk cycle is the tactical-scale asset
+// DAI approved for the map, so unlike the first pass, there's no separate
+// idle frame/scale here — same single-frameset shape as Auryi.
 const PRISMEL_WALK_FRAMES = [
   'prismel_walk_01_contact_a', 'prismel_walk_02_down_a', 'prismel_walk_03_passing_a',
   'prismel_walk_04_contact_b', 'prismel_walk_05_down_b', 'prismel_walk_06_passing_b'
@@ -79,15 +87,15 @@ const AURYI_WALK_FRAMES = [
 const CHARACTER_TOKEN_ART = Object.freeze({
   prismel: {
     baseFacing: 'right',
-    idle: { key: 'prismel_pose_idle_mapicon', originY: 1, scale: 0.326 },
+    idle: { key: 'prismel_walk_01_contact_a', originY: 1323 / 1536, scale: 0.294 },
     walkFrames: PRISMEL_WALK_FRAMES,
-    walk: { originY: 1323 / 1536, scale: 0.324 }
+    walk: { originY: 1323 / 1536, scale: 0.294 }
   },
   auryi: {
     baseFacing: 'left',
-    idle: { key: 'auryi_move_04', originY: 1180 / 1536, scale: 0.324 },
+    idle: { key: 'auryi_move_04', originY: 1180 / 1536, scale: 0.294 },
     walkFrames: AURYI_WALK_FRAMES,
-    walk: { originY: 1180 / 1536, scale: 0.324 }
+    walk: { originY: 1180 / 1536, scale: 0.294 }
   }
   // kineza: no approved tactical sprite package yet — add an entry here,
   // in the same shape as the two above, once one exists. Until then he
@@ -117,7 +125,6 @@ export default class TacticalScene extends Phaser.Scene {
     // Hero map tokens — existing battle-pose art plus the validated
     // walk-cycle sets (see CHARACTER_TOKEN_ART above). Kineza and the
     // enemies still use procedural tokens, no load needed for those.
-    this.load.image('prismel_pose_idle_mapicon', './assets/prismel/walk/map_icons/prismel_idle_mapicon.png');
     PRISMEL_WALK_FRAMES.forEach(key => this.load.image(key, `./assets/prismel/walk/map_icons/${key}_mapicon.png`));
     AURYI_WALK_FRAMES.forEach(key => this.load.image(key, `./assets/auryi/movement/map_icons/${key}_mapicon.png`));
   }
@@ -253,7 +260,7 @@ export default class TacticalScene extends Phaser.Scene {
   _buildCharacterToken(charKey, accent) {
     const art = CHARACTER_TOKEN_ART[charKey];
     const container = this.add.container(0, 0).setDepth(10);
-    const disc = this.add.circle(0, 0, 15, accent, 0.9).setStrokeStyle(2, 0xffe8a0, 0.95);
+    const disc = this.add.circle(0, 0, 18, accent, 0.9).setStrokeStyle(2, 0xffe8a0, 0.95);
     const img = this.add.image(0, 0, art.idle.key)
       .setOrigin(0.5, art.idle.originY)
       .setScale(art.idle.scale);
