@@ -3,13 +3,13 @@
 // coordination between the other tactical modules. Camera logic stays in
 // TacticalCamera; presentation stays in BattleCinematic; this module only
 // decides *when* those things happen.
-import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=44';
-import TerrainRegistry from './TerrainRegistry.js?v=44';
-import TacticalGrid from './TacticalGrid.js?v=44';
-import TacticalPathfinder from './TacticalPathfinder.js?v=44';
-import TacticalCamera from './TacticalCamera.js?v=44';
-import UnitController from './UnitController.js?v=44';
-import BattleCinematic from './BattleCinematic.js?v=44';
+import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=45';
+import TerrainRegistry from './TerrainRegistry.js?v=45';
+import TacticalGrid from './TacticalGrid.js?v=45';
+import TacticalPathfinder from './TacticalPathfinder.js?v=45';
+import TacticalCamera from './TacticalCamera.js?v=45';
+import UnitController from './UnitController.js?v=45';
+import BattleCinematic from './BattleCinematic.js?v=45';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -83,6 +83,13 @@ const PRISMEL_WALK_FRAMES = [
 const AURYI_WALK_FRAMES = [
   'auryi_move_01', 'auryi_move_02', 'auryi_move_03', 'auryi_move_04', 'auryi_move_05', 'auryi_move_06', 'auryi_move_07'
 ];
+
+// On-screen footprint (world px, at zoom 1) both character token sets
+// render at — icon content height (265px) * runtime scale (0.294) ≈ 78,
+// width sized to the wider of the two figures (Prismel, ~64) with a
+// little headroom. Drives the backing shape in _buildCharacterToken().
+const ONSCREEN_H = 78;
+const ONSCREEN_W = 64;
 
 const CHARACTER_TOKEN_ART = Object.freeze({
   prismel: {
@@ -250,21 +257,29 @@ export default class TacticalScene extends Phaser.Scene {
   // container to use as `unit.sprite`, plus onStep/onMoveEnd hooks
   // UnitController.animateMove() calls generically — this scene is the
   // only place that knows these are Prismel or Auryi specifically.
-  // A solid accent-colored backing disc sits behind the character art,
-  // same ring language as the procedural token (_buildUnitToken) — full-
-  // detail illustrated art has soft, semi-transparent edges (hair, cloak
-  // fringe, ambient glows) that read as a faint, ungrounded smudge at
-  // map-token scale with nothing solid behind them. The disc gives every
-  // token — sprite-based or procedural — the same grounded-medallion look
-  // instead of two visually unrelated systems side by side on the board.
+  // A solid accent-colored backing shape sits behind the FULL character
+  // silhouette, same ring language as the procedural token
+  // (_buildUnitToken). This isn't just about grounding a small ankle-
+  // level disc — this art has genuinely, intentionally semi-transparent
+  // regions throughout (Auryi's soft aura, painterly fabric shading),
+  // and at map-token scale those regions blend visibly with the tile
+  // grid lines behind them — invisible against flat black, obvious
+  // against a lined background, which read as "ghosting" even though
+  // the character texture itself is correctly opaque at its core. The
+  // backing ellipse is sized to the token's full on-screen footprint
+  // (ONSCREEN_W/ONSCREEN_H below, derived from CHARACTER_TOKEN_ART's
+  // scale) so nothing semi-transparent in the art ever has tile detail
+  // behind it to blend with — solid accent color instead.
   _buildCharacterToken(charKey, accent) {
     const art = CHARACTER_TOKEN_ART[charKey];
     const container = this.add.container(0, 0).setDepth(10);
-    const disc = this.add.circle(0, 0, 18, accent, 0.9).setStrokeStyle(2, 0xffe8a0, 0.95);
+    const backingCenterY = -ONSCREEN_H * 0.5;
+    const backing = this.add.ellipse(0, backingCenterY, ONSCREEN_W * 1.15, ONSCREEN_H * 1.08, accent, 0.92)
+      .setStrokeStyle(2, 0xffe8a0, 0.95);
     const img = this.add.image(0, 0, art.idle.key)
       .setOrigin(0.5, art.idle.originY)
       .setScale(art.idle.scale);
-    container.add([disc, img]);
+    container.add([backing, img]);
     this.worldAdd(container);
 
     let facingRight = art.baseFacing === 'right';
