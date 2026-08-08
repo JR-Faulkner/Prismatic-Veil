@@ -3,13 +3,13 @@
 // coordination between the other tactical modules. Camera logic stays in
 // TacticalCamera; presentation stays in BattleCinematic; this module only
 // decides *when* those things happen.
-import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=45';
-import TerrainRegistry from './TerrainRegistry.js?v=45';
-import TacticalGrid from './TacticalGrid.js?v=45';
-import TacticalPathfinder from './TacticalPathfinder.js?v=45';
-import TacticalCamera from './TacticalCamera.js?v=45';
-import UnitController from './UnitController.js?v=45';
-import BattleCinematic from './BattleCinematic.js?v=45';
+import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=46';
+import TerrainRegistry from './TerrainRegistry.js?v=46';
+import TacticalGrid from './TacticalGrid.js?v=46';
+import TacticalPathfinder from './TacticalPathfinder.js?v=46';
+import TacticalCamera from './TacticalCamera.js?v=46';
+import UnitController from './UnitController.js?v=46';
+import BattleCinematic from './BattleCinematic.js?v=46';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -136,9 +136,26 @@ export default class TacticalScene extends Phaser.Scene {
     AURYI_WALK_FRAMES.forEach(key => this.load.image(key, `./assets/auryi/movement/map_icons/${key}_mapicon.png`));
   }
 
+  // `this.world` is a single flat Container holding the tile layer, node
+  // markers, overlays, and every unit token, each relying on `.depth` to
+  // stack correctly (tiles under tokens, overlays under tokens, etc.).
+  // Phaser does NOT auto-resort a Container's children by depth when a
+  // new child is added — it only reflects `.depth` for objects that were
+  // already in relative depth order at insertion time. TacticalGrid's
+  // tile/path overlays are created lazily, on the player's first tile
+  // selection, well after every unit token already exists in the list —
+  // so despite depth 5/6 versus the tokens' depth 10, the overlay
+  // rendered ON TOP of them once created, not behind. Confirmed directly:
+  // toggling the overlay's visibility on/off at an identical camera
+  // position showed the character art fully clean with it hidden, and
+  // visibly cut across by the overlay's tile grid lines with it shown.
+  // Sorting after every addition — not just once at boot — means no
+  // future overlay, marker, or token added after `create()` can hit the
+  // same bug, lazily-created or not.
   worldAdd(obj) {
-    if (Array.isArray(obj)) { obj.forEach(o => this.world.add(o)); return; }
+    if (Array.isArray(obj)) { obj.forEach(o => this.world.add(o)); this.world.sort('depth'); return; }
     this.world.add(obj);
+    this.world.sort('depth');
   }
 
   uiAdd(obj) {
