@@ -10,6 +10,7 @@ import TacticalPathfinder from './TacticalPathfinder.js?v=49';
 import TacticalCamera from './TacticalCamera.js?v=49';
 import UnitController from './UnitController.js?v=49';
 import BattleCinematic from './BattleCinematic.js?v=49';
+import TacticalActionConsole from './TacticalActionConsole.js?v=50';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -176,6 +177,18 @@ export default class TacticalScene extends Phaser.Scene {
     AURYI_WALK_FRAMES.forEach(key => {
       this.load.image(key, `./assets/auryi/movement/map_icons/${key}_mapicon.png`);
       this.load.image(`${key}_silhouette`, `./assets/auryi/movement/map_icons/${key}_silhouette.png`);
+    });
+    // v0.5A Tactical Command Console Core — button states and command
+    // icons. Pre-resized offline (LANCZOS, 480x368 / 160x160) from the
+    // handoff's native 1536x1178 / 768x768 masters — rendering those
+    // directly at gameplay button/icon scale would be a ~7-30x runtime
+    // minification, well into the range that has previously produced
+    // visible alpha-averaging haze on this project's soft/glowing art.
+    ['default', 'hover', 'selected', 'pressed', 'disabled', 'veilshift_ready'].forEach(state => {
+      this.load.image(`tac_console_button_${state}`, `./assets/ui/tactical_console/button_${state}.png`);
+    });
+    ['attack', 'resonart', 'attune', 'veilshift', 'guard', 'wait'].forEach(kind => {
+      this.load.image(`tac_console_icon_${kind}`, `./assets/ui/tactical_console/icon_${kind}.png`);
     });
   }
 
@@ -530,18 +543,27 @@ export default class TacticalScene extends Phaser.Scene {
     return { container, bg, hpText: hp, rpBarFill, facets, cardH, hero };
   }
 
+  // v0.5A: the six locked commands render through TacticalActionConsole
+  // (real button-state art + icons). Cancel isn't part of that art set —
+  // the handoff's icon/state set is six commands only — so it stays a
+  // small plain pill alongside the console, same style the whole menu
+  // used to share.
   _buildActionMenu() {
     const container = this.add.container(0, 0).setVisible(false);
-    const buttons = ACTION_DEFS.map((def, i) => {
-      const bg = this.add.rectangle(0, i * 40, 132, 34, 0x1a1033, 0.92).setStrokeStyle(1, 0x5a3a88, 0.9).setOrigin(0, 0)
-        .setInteractive({ useHandCursor: true });
-      const text = this.add.text(66, i * 40 + 17, def.label, { fontSize: '13px', color: '#FFE8A0' }).setOrigin(0.5);
-      const entry = { bg, text, kind: def.kind, label: def.label };
-      bg.on('pointerdown', (p, lx, ly, ev) => { if (ev) ev.stopPropagation(); if (p.event) p.event._tacticalUIHandled = true; this.onActionMenuChoice(entry.kind); });
-      container.add([bg, text]);
-      return entry;
-    });
-    return { container, buttons };
+
+    const consoleDefs = ACTION_DEFS.filter(d => d.kind !== 'cancel');
+    const actionConsole = new TacticalActionConsole(this, consoleDefs, kind => this.onActionMenuChoice(kind)).create();
+    container.add(actionConsole.container);
+    this.actionConsole = actionConsole;
+
+    const cancelDef = ACTION_DEFS.find(d => d.kind === 'cancel');
+    const cancelBg = this.add.rectangle(0, 0, 90, 30, 0x1a1033, 0.92).setStrokeStyle(1, 0x5a3a88, 0.9).setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+    const cancelText = this.add.text(0, 0, cancelDef.label, { fontSize: '12px', color: '#FFE8A0' }).setOrigin(0.5);
+    cancelBg.on('pointerdown', (p, lx, ly, ev) => { if (ev) ev.stopPropagation(); if (p.event) p.event._tacticalUIHandled = true; this.onActionMenuChoice('cancel'); });
+    container.add([cancelBg, cancelText]);
+
+    return { container, cancelBg, cancelText };
   }
 
   _buildZoomControls() {
@@ -574,7 +596,32 @@ export default class TacticalScene extends Phaser.Scene {
 
     this.zoomControls.container.setPosition(w - margin - 56, h - margin - 24);
 
-    this.actionMenu.container.setPosition(w - margin - 132, h - margin - 24 - 40 * this.actionMenu.buttons.length);
+    // Console buttons render at a fixed touch-friendly height regardless
+    // of viewport; only the row gap and cancel pill shrink in compact.
+    const barHeight = compact ? 40 : 46;
+    const gap = compact ? 8 : 10;
+    const { barW, stackH } = this.actionConsole.layout(barHeight, gap);
+
+    const cancelGap = 10;
+    const cancelH = compact ? 26 : 30;
+    const cancelW = Math.max(80, Math.round(barW * 0.5));
+    this.actionMenu.cancelBg.setSize(cancelW, cancelH);
+    this.actionMenu.cancelBg.setPosition(barW / 2, stackH + cancelGap + cancelH / 2);
+    this.actionMenu.cancelText.setPosition(barW / 2, stackH + cancelGap + cancelH / 2);
+    // Mutate the existing hit area in place rather than calling
+    // setInteractive() again — GameObject.setInteractive()'s enable() is
+    // `input ? input.enabled = true : setHitArea(...)`, so a second call
+    // on an object that's already interactive silently skips the hit-area
+    // update entirely (confirmed via scene.input.hitTestPointer() while
+    // chasing the same bug on the console buttons below — see
+    // TacticalActionConsole.js's layout()). A Shape's width/height ARE
+    // its own current geometry (unlike an Image's fixed texture frame),
+    // so frame-space here is exactly (0,0,cancelW,cancelH) — no origin
+    // centering math needed.
+    this.actionMenu.cancelBg.input.hitArea.setTo(0, 0, cancelW, cancelH);
+
+    const totalH = stackH + cancelGap + cancelH;
+    this.actionMenu.container.setPosition(w - margin - barW, h - margin - totalH);
   }
 
   refreshHUD() {
@@ -720,16 +767,16 @@ export default class TacticalScene extends Phaser.Scene {
 
   showActionMenuFor(hero) {
     this.actionMenu.container.setVisible(true);
+    // Zoom controls share the bottom-right corner with the console; the
+    // camera isn't something the player needs mid-command-selection, and
+    // the console's actual width varies with the command stack's own
+    // layout, so hiding zoom rather than trying to dodge it sidesteps a
+    // second overlap calculation entirely.
+    this.zoomControls.container.setVisible(false);
     const canAct = !hero.acted;
     const onNode = this.nodes.some(n => n.x === hero.x && n.y === hero.y && !n.restored);
-    this.actionMenu.buttons.forEach(b => {
-      let enabled = true;
-      if (b.kind === 'attune') enabled = canAct && onNode;
-      else if (b.kind === 'attack' || b.kind === 'resonart' || b.kind === 'veilshift') enabled = canAct;
-      else if (b.kind === 'guard' || b.kind === 'wait') enabled = canAct;
-      b.bg.setAlpha(enabled ? 1 : 0.35);
-      b.bg.input.enabled = enabled;
-    });
+    const pendingKind = this._pendingAction === 'attack' ? this._pendingActionKind : null;
+    this.actionConsole.refresh(hero, { canAct, onNode, pendingKind });
   }
 
   onActionMenuChoice(kind) {
@@ -739,6 +786,7 @@ export default class TacticalScene extends Phaser.Scene {
     if (kind === 'cancel') {
       this.unitController.clearSelection();
       this.actionMenu.container.setVisible(false);
+      this.zoomControls.container.setVisible(true);
       this._pendingAction = null;
       this.refreshHUD();
       return;
@@ -750,6 +798,9 @@ export default class TacticalScene extends Phaser.Scene {
       this._pendingActionKind = kind;
       this.grid.showAttackRange(this.attackRangeTiles(hero));
       this.setMessage(`${hero.name}: choose a target in range.`);
+      // Re-run so the chosen button switches to its sustained "selected"
+      // texture immediately — the console stays open through targeting.
+      this.showActionMenuFor(hero);
       return;
     }
     if (kind === 'attune') {
@@ -924,6 +975,7 @@ export default class TacticalScene extends Phaser.Scene {
     this.unitController.markActed(hero);
     this.unitController.clearSelection();
     this.actionMenu.container.setVisible(false);
+    this.zoomControls.container.setVisible(true);
     this._pendingAction = null;
     this._previewedTile = null;
     this.refreshHUD();
@@ -953,6 +1005,7 @@ export default class TacticalScene extends Phaser.Scene {
     this.phase = 'enemy';
     this.unitController.clearSelection();
     this.actionMenu.container.setVisible(false);
+    this.zoomControls.container.setVisible(true);
     this.refreshHUD();
     this.setMessage('Enemy Phase.');
     this.runEnemyPhase();
