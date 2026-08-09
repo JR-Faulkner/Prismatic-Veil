@@ -18,7 +18,7 @@ The current work is a **stage battle** in the Shining Force tradition: a hero on
 
 ## Battle system status
 
-**Playable now:** Prismel or Kineza versus the Veil Wraith (default) or the Hushling — art-complete and audio-complete on both sides, portrait-phone first.
+**Playable now:** Prismel, Kineza, or Auryi versus the Veil Wraith (default) or the Hushling — art-complete on all three heroes, audio-complete on Prismel and Kineza (Auryi has no SFX bank yet — `playSfx()` no-ops gracefully for her, same as a missing enemy cue), portrait-phone first.
 
 > Pick the encounter with a query param: `battle-v2.html?enemy=wraith` or `battle-v2.html?enemy=hushling`. It's read once at battle start, and is overridden by an in-game enemy switch or a gauntlet win (see below) once either has fired.
 
@@ -54,7 +54,7 @@ next enemy in ENEMY_ORDER (loops to the first after the last) → restart
 | | |
 |---|---|
 | Damage wording | `<name> uses <attack>!` → `<target> is hit for <n> damage!` (player) / `<target> suffers <n> damage!` (enemy) |
-| Criticals | 25% Prismel, 22% Kineza, 15% enemy — double damage, `CRITICAL!` callout, doubled hit stop, harder shake |
+| Criticals | 25% Prismel, 22% Kineza, 20% Auryi, 15% enemy — double damage, `CRITICAL!` callout, doubled hit stop, harder shake |
 | Hit stop | 80ms scene freeze on impact, 160ms on a critical |
 | Hero switch | Button on the right cycles the active hero and restarts the battle |
 | Enemy switch | Button below the hero switch cycles the active enemy and restarts the battle |
@@ -65,16 +65,19 @@ next enemy in ENEMY_ORDER (loops to the first after the last) → restart
 
 | Hero | Pronouns | HP | Attack | Damage | Accent |
 |---|---|---|---|---|---|
-| **Prismel** | — | 100 | Prismatic Release | 14 | violet-blue |
+| **Prismel** | — | 100 | Refractive Burst | 14 | violet-blue |
 | **Kineza** | he/him | 115 | Momentum Fist | 17 | kinetic green |
+| **Auryi** | she/her | 100 | Veil Pulse | 13 | lavender-gold |
 
-*Auryi, Vyan and Sarallel are designed but have no battle pose libraries yet.*
+Refractive Burst is the player-facing name (v0.3 Battle Presentation Base handoff); the internal pose/state name stays `release` throughout the codebase. Veil Pulse is a working player-facing name — the pose is locked, the name may still evolve.
+
+*Vyan and Sarallel are designed but have no battle pose libraries yet.*
 
 ---
 
 ## Completed pose pipelines
 
-Both heroes run the same canonical five-beat sequence. Poses crossfade through a ghost layer that stays fully opaque behind the incoming frame, so the character is never see-through mid-blend.
+All three heroes run the same canonical five-beat sequence. Poses crossfade through a ghost layer that stays fully opaque behind the incoming frame, so the character is never see-through mid-blend.
 
 ### Prismel — `assets/poses/`
 
@@ -99,6 +102,18 @@ Authored with **mixed orientation** — Release fires right, the rest look left 
 | Recover | `Kineza05_Recover_LOCKED.png` |
 
 Authored **facing right throughout**, per the animation standard — no flipping needed. This is the template for every future character.
+
+### Auryi — `assets/poses/auryi/`
+
+| Pose | File |
+|---|---|
+| Battle Ready | `Pose01_BattleReady_BattleMasterA_LOCKED.png` |
+| Veil Step | `Pose02_VeilStep_LOCKED.png` |
+| Orb Gather | `Pose03_OrbGather_LOCKED.png` |
+| Attack / Veil Pulse | `Pose04_Attack_VeilPulse_POSE_LOCKED.png` |
+| Recompose | `Pose05_Recompose_LOCKED.png` |
+
+Delivered (v0.3 Battle Presentation Base) as flat RGB renders on a solid studio backdrop, no alpha channel — background keyed out (distance-based chroma key from the sampled corner color, graded edge alpha, not a hard threshold) before these landed in the repo; originals are untouched outside this pipeline. Same mixed-orientation pattern as Prismel's set — Attack/Veil Pulse already fires right, the rest look left. `scaleMul: 1.29`, derived from the locked trio scale calibration reference (Auryi measures ~1.29x Prismel's head-to-foot height there) — her pose canvases carry almost the same content-to-canvas ratio as Prismel's idle pose, so that ratio carries straight through without a separate padding correction.
 
 ### Art standards
 
@@ -235,6 +250,10 @@ Design specs and per-package handoffs are exchanged as zip packages rather than 
 ```
 
 Three heroes (Prismel, Auryi, Kineza) and two enemy types (Hushling ×3, Veil Wraith ×1) restore three silenced sound nodes to win; defeating every enemy is optional. Hero map tokens use approved *tactical-scale* character art where it exists: Prismel's six-frame walk cycle (`assets/prismel/walk/`) and Auryi's seven-frame movement set (`assets/auryi/movement/`), each used for both idle and walking, both walking tile-to-tile with frame cycling and a direction-based facing flip, `TacticalScene._buildCharacterToken()`/`CHARACTER_TOKEN_ART`. Neither uses the cinematic battle-pose art in `assets/poses/` — that library is `BattleCinematic`'s close-up cut-in exclusively, kept deliberately separate from whatever's approved for the map itself. Kineza has no approved tactical sprite yet, so he keeps the procedural accent-colored-circle-and-initials token, same as the enemies (whose full battle-art portraits are the wrong shape/scale for a map marker). `_buildHero()` branches purely on whether `CHARACTER_TOKEN_ART` has an entry for that hero id, and `UnitController.animateMove()` drives presentation only through the optional `onStep`/`onMoveEnd` hooks a token returns — so dropping in Kineza's sprite later, whenever one is approved, is a new `CHARACTER_TOKEN_ART` entry, not a rewrite of grid movement, targeting, selection, or the cinematic battle-transition code. The real portrait art (`assets/ui/portrait_*.png`) is reserved separately for `BattleCinematic`'s close-up cut-in, where detail matters — the same "tactical map sprite → zoomed battle sprite" pairing shown in this project's own reference art.
+
+Sprite tokens sit on a subtle character-following outline plus a small grounded contact shadow (`ONSCREEN_W`/`ONSCREEN_H`, `map_icons/*_silhouette.png`) rather than a heavy colored oval — the outline is a separately pre-thresholded solid-alpha silhouette texture, not just a tinted copy of the display texture, since `setTint()` never changes a texture's alpha and a tinted copy would carry the same semi-transparent regions (Auryi's aura, painterly shading) responsible for the original grid-bleed-through ghost bug. See `CLAUDE.md`'s traps list for the full story.
+
+The post-move action menu's second slot shows a hero-specific special-move name — Prismel's is Prism Weaver, Kineza's is Momentum Kid, Auryi's is Auragician (`HERO_SPECIAL_LABEL` in `TacticalScene.js`) — alongside Attack, Resonate (restores a silenced node), Veilshift (narrated placeholder — design-only per `RESONANCE_VEILSHIFT_DESIGN_ONLY.md`, no implementation yet), Guard, Wait, and Cancel. Button identity is a stable `kind`, decoupled from the display `label`, so relabeling the special slot per hero can't desync the enable/dispatch logic from what's on screen.
 
 Sprite tokens load pre-downsampled `map_icons/` copies of the character art (`assets/prismel/walk/map_icons/`, `assets/auryi/movement/map_icons/`), not the full battle-res source directly. Loading a 1024×1536-scale texture and letting the GPU minify it live down to a small token is a large downscale — linear-filtered minification at that ratio averages so many soft, semi-transparent edge pixels (hair, cloak fringe, ambient glow) into each screen pixel that the effective alpha visibly drops, reading as a translucent ghost rather than a small solid sprite even though every alpha/tint value in code is correct. The `map_icons` are pre-resized once (LANCZOS, offline, 260px reference content height) to keep the runtime downscale in a range a GPU linear filter handles cleanly, and every sprite token also sits on a solid accent-colored backing disc (same gold-ring language as the procedural tokens) so full-detail illustrated art has a grounded, contrasted base against the tile art instead of floating on nothing. See `CLAUDE.md`'s traps list for the full story, including a first attempt that undersized the fix.
 
