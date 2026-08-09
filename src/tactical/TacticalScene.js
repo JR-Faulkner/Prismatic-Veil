@@ -3,13 +3,13 @@
 // coordination between the other tactical modules. Camera logic stays in
 // TacticalCamera; presentation stays in BattleCinematic; this module only
 // decides *when* those things happen.
-import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=46';
-import TerrainRegistry from './TerrainRegistry.js?v=46';
-import TacticalGrid from './TacticalGrid.js?v=46';
-import TacticalPathfinder from './TacticalPathfinder.js?v=46';
-import TacticalCamera from './TacticalCamera.js?v=46';
-import UnitController from './UnitController.js?v=46';
-import BattleCinematic from './BattleCinematic.js?v=46';
+import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=48';
+import TerrainRegistry from './TerrainRegistry.js?v=48';
+import TacticalGrid from './TacticalGrid.js?v=48';
+import TacticalPathfinder from './TacticalPathfinder.js?v=48';
+import TacticalCamera from './TacticalCamera.js?v=48';
+import UnitController from './UnitController.js?v=48';
+import BattleCinematic from './BattleCinematic.js?v=48';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -25,6 +25,30 @@ const HERO_STATS = Object.freeze({
   prismel: { hp: 24, atk: 6, cinematicKey: 'portrait_prismel', name: 'Prismel', ability: 'Prismatic Shard', flavor: 'Crystal light converges...', accent: 0x67c8ff, requiresLineOfSight: true, label: 'Pr' },
   auryi: { hp: 30, atk: 4, healAmount: 8, cinematicKey: 'portrait_auryi', name: 'Auryi', ability: 'Lumisong Renewal', flavor: 'A gentle song of restoration...', accent: 0xc8a8ff, requiresLineOfSight: true, label: 'Au' },
   kineza: { hp: 26, atk: 7, cinematicKey: 'portrait_kineza', name: 'Kineza', ability: 'Momentum Fist', flavor: 'Kinetic force coils tight...', accent: 0x68ff8c, requiresLineOfSight: false, label: 'Ki' }
+});
+
+// Action menu buttons carry a stable `kind` separate from their display
+// `label` — the special-move slot's label is swapped per hero
+// (HERO_SPECIAL_LABEL) each time the menu opens, and dispatch/enable
+// logic keys off `kind` so relabeling never breaks either. Resonate and
+// Veilshift are both still design-only (RESONANCE_VEILSHIFT_DESIGN_ONLY.md):
+// Resonate has real behavior (resonateNode()), Veilshift is a narrated
+// placeholder, same non-goal as the battle console's own Resonate/
+// Veilshift slots.
+const ACTION_DEFS = Object.freeze([
+  { kind: 'attack', label: 'Attack' },
+  { kind: 'special', label: 'Veil Art' },
+  { kind: 'resonate', label: 'Resonate' },
+  { kind: 'veilshift', label: 'Veilshift' },
+  { kind: 'guard', label: 'Guard' },
+  { kind: 'wait', label: 'Wait' },
+  { kind: 'cancel', label: 'Cancel' }
+]);
+
+const HERO_SPECIAL_LABEL = Object.freeze({
+  prismel: 'Prism Weaver',
+  kineza: 'Momentum Kid',
+  auryi: 'Auragician'
 });
 
 const ENEMY_STATS = Object.freeze({
@@ -132,8 +156,14 @@ export default class TacticalScene extends Phaser.Scene {
     // Hero map tokens — existing battle-pose art plus the validated
     // walk-cycle sets (see CHARACTER_TOKEN_ART above). Kineza and the
     // enemies still use procedural tokens, no load needed for those.
-    PRISMEL_WALK_FRAMES.forEach(key => this.load.image(key, `./assets/prismel/walk/map_icons/${key}_mapicon.png`));
-    AURYI_WALK_FRAMES.forEach(key => this.load.image(key, `./assets/auryi/movement/map_icons/${key}_mapicon.png`));
+    PRISMEL_WALK_FRAMES.forEach(key => {
+      this.load.image(key, `./assets/prismel/walk/map_icons/${key}_mapicon.png`);
+      this.load.image(`${key}_silhouette`, `./assets/prismel/walk/map_icons/${key}_silhouette.png`);
+    });
+    AURYI_WALK_FRAMES.forEach(key => {
+      this.load.image(key, `./assets/auryi/movement/map_icons/${key}_mapicon.png`);
+      this.load.image(`${key}_silhouette`, `./assets/auryi/movement/map_icons/${key}_silhouette.png`);
+    });
   }
 
   // `this.world` is a single flat Container holding the tile layer, node
@@ -287,21 +317,47 @@ export default class TacticalScene extends Phaser.Scene {
   // (ONSCREEN_W/ONSCREEN_H below, derived from CHARACTER_TOKEN_ART's
   // scale) so nothing semi-transparent in the art ever has tile detail
   // behind it to blend with — solid accent color instead.
-  _buildCharacterToken(charKey, accent) {
+  _buildCharacterToken(charKey) {
     const art = CHARACTER_TOKEN_ART[charKey];
     const container = this.add.container(0, 0).setDepth(10);
-    const backingCenterY = -ONSCREEN_H * 0.5;
-    const backing = this.add.ellipse(0, backingCenterY, ONSCREEN_W * 1.15, ONSCREEN_H * 1.08, accent, 0.92)
-      .setStrokeStyle(2, 0xffe8a0, 0.95);
+
+    // Small grounded contact shadow — subtle, dark, at the feet. Not
+    // accent-colored: a shadow, not a team-color plate.
+    const shadow = this.add.ellipse(0, -3, ONSCREEN_W * 0.56, ONSCREEN_H * 0.1, 0x000000, 0.35);
+
+    // Character-following outline: a slightly-larger, near-black copy of
+    // the SAME silhouette sits directly behind the real image. It reads
+    // as a thin rim (only the margin past the real edges is visible —
+    // the rest is covered by the character art on top), not a plate, per
+    // OUTLINE_SHADOW_DIRECTION.md's "keep the character art itself
+    // visually dominant." Unlike the earlier oval backing, it's built
+    // from a pre-thresholded fully-opaque silhouette texture (map_icons/
+    // *_silhouette.png), not a tinted copy of the real art — a tint
+    // preserves the original alpha channel, so a tinted copy would still
+    // carry the same soft/semi-transparent regions (Auryi's aura,
+    // painterly shading) that caused the original grid-bleed-through
+    // ghosting. Backing the ENTIRE silhouette solid (not just a stroke)
+    // still prevents tile grid lines from showing through mid-body, the
+    // actual bug two passes back — a thin ring alone would not.
+    const outline = this.add.image(0, 0, `${art.idle.key}_silhouette`)
+      .setOrigin(0.5, art.idle.originY)
+      .setScale(art.idle.scale * 1.05)
+      .setTint(0x0a0716)
+      .setAlpha(0.85);
+
     const img = this.add.image(0, 0, art.idle.key)
       .setOrigin(0.5, art.idle.originY)
       .setScale(art.idle.scale);
-    container.add([backing, img]);
+    container.add([shadow, outline, img]);
     this.worldAdd(container);
 
     let facingRight = art.baseFacing === 'right';
     let frameIndex = 0;
-    const applyFlip = () => img.setFlipX(facingRight !== (art.baseFacing === 'right'));
+    const applyFlip = () => {
+      const flip = facingRight !== (art.baseFacing === 'right');
+      img.setFlipX(flip);
+      outline.setFlipX(flip);
+    };
     applyFlip();
 
     const onStep = (from, to) => {
@@ -310,13 +366,16 @@ export default class TacticalScene extends Phaser.Scene {
       applyFlip();
       if (art.walkFrames) {
         frameIndex = (frameIndex + 1) % art.walkFrames.length;
-        img.setTexture(art.walkFrames[frameIndex]).setOrigin(0.5, art.walk.originY).setScale(art.walk.scale);
+        const key = art.walkFrames[frameIndex];
+        img.setTexture(key).setOrigin(0.5, art.walk.originY).setScale(art.walk.scale);
+        outline.setTexture(`${key}_silhouette`).setOrigin(0.5, art.walk.originY).setScale(art.walk.scale * 1.05);
       }
     };
     const onMoveEnd = () => {
       if (!art.walkFrames) return;
       frameIndex = 0;
       img.setTexture(art.idle.key).setOrigin(0.5, art.idle.originY).setScale(art.idle.scale);
+      outline.setTexture(`${art.idle.key}_silhouette`).setOrigin(0.5, art.idle.originY).setScale(art.idle.scale * 1.05);
     };
 
     return { container, onStep, onMoveEnd };
@@ -327,7 +386,7 @@ export default class TacticalScene extends Phaser.Scene {
     const art = CHARACTER_TOKEN_ART[h.id];
     let sprite, onStep = null, onMoveEnd = null;
     if (art) {
-      const token = this._buildCharacterToken(h.id, stats.accent);
+      const token = this._buildCharacterToken(h.id);
       sprite = token.container;
       onStep = token.onStep;
       onMoveEnd = token.onMoveEnd;
@@ -437,14 +496,14 @@ export default class TacticalScene extends Phaser.Scene {
 
   _buildActionMenu() {
     const container = this.add.container(0, 0).setVisible(false);
-    const labels = ['Attack', 'Veil Art', 'Resonate', 'Guard', 'Wait', 'Cancel'];
-    const buttons = labels.map((label, i) => {
+    const buttons = ACTION_DEFS.map((def, i) => {
       const bg = this.add.rectangle(0, i * 40, 132, 34, 0x1a1033, 0.92).setStrokeStyle(1, 0x5a3a88, 0.9).setOrigin(0, 0)
         .setInteractive({ useHandCursor: true });
-      const text = this.add.text(66, i * 40 + 17, label, { fontSize: '13px', color: '#FFE8A0' }).setOrigin(0.5);
-      bg.on('pointerdown', (p, lx, ly, ev) => { if (ev) ev.stopPropagation(); if (p.event) p.event._tacticalUIHandled = true; this.onActionMenuChoice(label); });
+      const text = this.add.text(66, i * 40 + 17, def.label, { fontSize: '13px', color: '#FFE8A0' }).setOrigin(0.5);
+      const entry = { bg, text, kind: def.kind, label: def.label };
+      bg.on('pointerdown', (p, lx, ly, ev) => { if (ev) ev.stopPropagation(); if (p.event) p.event._tacticalUIHandled = true; this.onActionMenuChoice(entry.kind); });
       container.add([bg, text]);
-      return { bg, text, label };
+      return entry;
     });
     return { container, buttons };
   }
@@ -618,20 +677,24 @@ export default class TacticalScene extends Phaser.Scene {
     const canAct = !hero.acted;
     const onNode = this.nodes.some(n => n.x === hero.x && n.y === hero.y && !n.restored);
     this.actionMenu.buttons.forEach(b => {
+      if (b.kind === 'special') {
+        b.label = HERO_SPECIAL_LABEL[hero.id] || 'Veil Art';
+        b.text.setText(b.label);
+      }
       let enabled = true;
-      if (b.label === 'Resonate') enabled = canAct && onNode;
-      else if (b.label === 'Attack' || b.label === 'Veil Art') enabled = canAct;
-      else if (b.label === 'Guard' || b.label === 'Wait') enabled = canAct;
+      if (b.kind === 'resonate') enabled = canAct && onNode;
+      else if (b.kind === 'attack' || b.kind === 'special' || b.kind === 'veilshift') enabled = canAct;
+      else if (b.kind === 'guard' || b.kind === 'wait') enabled = canAct;
       b.bg.setAlpha(enabled ? 1 : 0.35);
       b.bg.input.enabled = enabled;
     });
   }
 
-  onActionMenuChoice(label) {
+  onActionMenuChoice(kind) {
     const hero = this.unitController.selected;
     if (!hero) return;
 
-    if (label === 'Cancel') {
+    if (kind === 'cancel') {
       this.unitController.clearSelection();
       this.actionMenu.container.setVisible(false);
       this._pendingAction = null;
@@ -640,18 +703,22 @@ export default class TacticalScene extends Phaser.Scene {
     }
     if (hero.acted) return;
 
-    if (label === 'Attack' || label === 'Veil Art') {
+    if (kind === 'attack' || kind === 'special') {
       this._pendingAction = 'attack';
       this.grid.showAttackRange(this.attackRangeTiles(hero));
       this.setMessage(`${hero.name}: choose a target in range.`);
       return;
     }
-    if (label === 'Resonate') {
+    if (kind === 'resonate') {
       this.resonateNode(hero);
       return;
     }
-    if (label === 'Guard' || label === 'Wait') {
-      this.setMessage(`${hero.name} ${label === 'Guard' ? 'braces defensively' : 'waits'}.`);
+    if (kind === 'veilshift') {
+      this.setMessage(`${hero.name}'s Veilshift is not attuned yet.`);
+      return;
+    }
+    if (kind === 'guard' || kind === 'wait') {
+      this.setMessage(`${hero.name} ${kind === 'guard' ? 'braces defensively' : 'waits'}.`);
       this.finishHeroAction(hero);
     }
   }
