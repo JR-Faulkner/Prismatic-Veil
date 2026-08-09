@@ -42,7 +42,8 @@
 <div id="game-container"></div>
 
 <script type="module">
-  import TacticalScene from './src/tactical/TacticalScene.js?v=48';
+  import TacticalScene from './src/tactical/TacticalScene.js?v=49';
+  import VeilBattleScene from './src/VeilBattleScene.js?v=42';
 
   const boot = document.getElementById('loading');
 
@@ -70,6 +71,13 @@
       }
     }
 
+    // v0.4 Tactical <-> Battle Presentation bridge: both scenes live in
+    // one Phaser.Game now, so a linked ATTACK/RESONART can pause Tactical
+    // in place (state, camera, and all, untouched in memory) and launch
+    // the full VeilBattleScene on top, instead of restarting either scene
+    // or hand-rolling a state snapshot/restore. battle-v2.html remains a
+    // completely separate single-scene boot — standalone BP is
+    // unaffected by any of this.
     try {
       new Phaser.Game({
         type: Phaser.AUTO,
@@ -82,7 +90,7 @@
           autoCenter: Phaser.Scale.CENTER_BOTH
         },
         input: { activePointers: 2 },
-        scene: [HarnessScene]
+        scene: [HarnessScene, VeilBattleScene]
       });
     } catch (error) {
       fail(error);

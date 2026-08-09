@@ -3,13 +3,13 @@
 // coordination between the other tactical modules. Camera logic stays in
 // TacticalCamera; presentation stays in BattleCinematic; this module only
 // decides *when* those things happen.
-import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=48';
-import TerrainRegistry from './TerrainRegistry.js?v=48';
-import TacticalGrid from './TacticalGrid.js?v=48';
-import TacticalPathfinder from './TacticalPathfinder.js?v=48';
-import TacticalCamera from './TacticalCamera.js?v=48';
-import UnitController from './UnitController.js?v=48';
-import BattleCinematic from './BattleCinematic.js?v=48';
+import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=49';
+import TerrainRegistry from './TerrainRegistry.js?v=49';
+import TacticalGrid from './TacticalGrid.js?v=49';
+import TacticalPathfinder from './TacticalPathfinder.js?v=49';
+import TacticalCamera from './TacticalCamera.js?v=49';
+import UnitController from './UnitController.js?v=49';
+import BattleCinematic from './BattleCinematic.js?v=49';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -20,40 +20,53 @@ import BattleCinematic from './BattleCinematic.js?v=48';
 // Accent colors match the values already established for these characters
 // elsewhere in the project (BattleConfig.js, EnemyCatalog.js), not
 // invented fresh here. `cinematicKey` points to the real portrait art used
-// in BattleCinematic's close-up cut-in.
+// in BattleCinematic's close-up cut-in. `title` is identity/flavor
+// language (v0.4 COMMAND_LEXICON_LOCK.md) — shown on the hero card, never
+// as an action-button label. rp/maxRp/attunement/attunementMax are v0.4
+// HP/RP/Attunement architecture placeholders (HUD_DATA_REFERENCE.json) —
+// numbers are for plumbing/UI QA, not a balance lock.
 const HERO_STATS = Object.freeze({
-  prismel: { hp: 24, atk: 6, cinematicKey: 'portrait_prismel', name: 'Prismel', ability: 'Prismatic Shard', flavor: 'Crystal light converges...', accent: 0x67c8ff, requiresLineOfSight: true, label: 'Pr' },
-  auryi: { hp: 30, atk: 4, healAmount: 8, cinematicKey: 'portrait_auryi', name: 'Auryi', ability: 'Lumisong Renewal', flavor: 'A gentle song of restoration...', accent: 0xc8a8ff, requiresLineOfSight: true, label: 'Au' },
-  kineza: { hp: 26, atk: 7, cinematicKey: 'portrait_kineza', name: 'Kineza', ability: 'Momentum Fist', flavor: 'Kinetic force coils tight...', accent: 0x68ff8c, requiresLineOfSight: false, label: 'Ki' }
+  prismel: { hp: 24, atk: 6, cinematicKey: 'portrait_prismel', name: 'Prismel', title: 'Prism Weaver', ability: 'Prismatic Shard', flavor: 'Crystal light converges...', accent: 0x67c8ff, requiresLineOfSight: true, label: 'Pr', rp: 100, maxRp: 100, attunement: 0, attunementMax: 3 },
+  auryi: { hp: 30, atk: 4, healAmount: 8, cinematicKey: 'portrait_auryi', name: 'Auryi', title: 'Aura Acolyte', ability: 'Lumisong Renewal', flavor: 'A gentle song of restoration...', accent: 0xc8a8ff, requiresLineOfSight: true, label: 'Au', rp: 100, maxRp: 100, attunement: 0, attunementMax: 3 },
+  kineza: { hp: 26, atk: 7, cinematicKey: 'portrait_kineza', name: 'Kineza', title: 'Momentum Born', ability: 'Momentum Fist', flavor: 'Kinetic force coils tight...', accent: 0x68ff8c, requiresLineOfSight: false, label: 'Ki', rp: 100, maxRp: 100, attunement: 0, attunementMax: 3 }
 });
 
-// Action menu buttons carry a stable `kind` separate from their display
-// `label` — the special-move slot's label is swapped per hero
-// (HERO_SPECIAL_LABEL) each time the menu opens, and dispatch/enable
-// logic keys off `kind` so relabeling never breaks either. Resonate and
-// Veilshift are both still design-only (RESONANCE_VEILSHIFT_DESIGN_ONLY.md):
-// Resonate has real behavior (resonateNode()), Veilshift is a narrated
-// placeholder, same non-goal as the battle console's own Resonate/
-// Veilshift slots.
+// Player-facing command lexicon — LOCKED (v0.4 COMMAND_LEXICON_LOCK.md):
+// ATTACK | RESONART | ATTUNE | VEILSHIFT | GUARD | WAIT. Character titles
+// (Prism Weaver / Aura Acolyte / Momentum Born, see HERO_STATS) are never
+// used as button text — RESONART is the universal label for every hero's
+// technique slot. Action menu buttons carry a stable `kind` separate from
+// their display `label` so a relabel can never desync dispatch/enable
+// logic from what's on screen. ATTACK and RESONART both route through
+// the v0.4 Tactical<->Battle Presentation bridge (enterLinkedBattle());
+// ATTUNE/VEILSHIFT/GUARD/WAIT stay tactical-only for this pass, per the
+// bridge spec's explicit scope, but already carry stable kinds so a
+// later presentation hook is a new branch, not a bridge rewrite. ATTUNE
+// keeps resonateNode()'s real behavior (the deprecated "Resonate"
+// wording only changed player-facing, not the mechanic); VEILSHIFT
+// stays a narrated placeholder — full mechanics are an explicit non-goal.
 const ACTION_DEFS = Object.freeze([
-  { kind: 'attack', label: 'Attack' },
-  { kind: 'special', label: 'Veil Art' },
-  { kind: 'resonate', label: 'Resonate' },
-  { kind: 'veilshift', label: 'Veilshift' },
-  { kind: 'guard', label: 'Guard' },
-  { kind: 'wait', label: 'Wait' },
+  { kind: 'attack', label: 'ATTACK' },
+  { kind: 'resonart', label: 'RESONART' },
+  { kind: 'attune', label: 'ATTUNE' },
+  { kind: 'veilshift', label: 'VEILSHIFT' },
+  { kind: 'guard', label: 'GUARD' },
+  { kind: 'wait', label: 'WAIT' },
   { kind: 'cancel', label: 'Cancel' }
 ]);
-
-const HERO_SPECIAL_LABEL = Object.freeze({
-  prismel: 'Prism Weaver',
-  kineza: 'Momentum Kid',
-  auryi: 'Auragician'
-});
 
 const ENEMY_STATS = Object.freeze({
   hushling: { hp: 10, atk: 3, range: 1, cinematicKey: 'portrait_hushling', name: 'Hushling', ability: 'Hush Crush', accent: 0xe24145, label: 'Hu' },
   veil_wraith: { hp: 26, atk: 6, range: 1, cinematicKey: 'portrait_wraith', name: 'Veil Wraith', ability: 'Veil Lash', accent: 0xc477ff, label: 'Wr' }
+});
+
+// EncounterContext.enemyId must match BattleConfig.js/EnemyCatalog.js's
+// canonical ids ('wraith'/'hushling'), not Tactical's own map-data type
+// strings ('veil_wraith'/'hushling') — the two vocabularies grew
+// independently and were never reconciled.
+const TACTICAL_TO_BP_ENEMY_ID = Object.freeze({
+  veil_wraith: 'wraith',
+  hushling: 'hushling'
 });
 
 // Hero map tokens use existing approved TACTICAL-scale character art
@@ -397,7 +410,8 @@ export default class TacticalScene extends Phaser.Scene {
       id: h.id, x: h.x, y: h.y, move: h.move,
       rangeMin: h.rangeMin, rangeMax: h.rangeMax,
       hp: stats.hp, maxHp: stats.hp, atk: stats.atk, healAmount: stats.healAmount || 0,
-      name: stats.name, ability: stats.ability, flavor: stats.flavor,
+      rp: stats.rp, maxRp: stats.maxRp, attunement: stats.attunement, attunementMax: stats.attunementMax,
+      name: stats.name, title: stats.title, ability: stats.ability, flavor: stats.flavor,
       portraitKey: stats.cinematicKey, accent: stats.accent,
       requiresLineOfSight: stats.requiresLineOfSight,
       moved: false, acted: false, alive: true, isHero: true,
@@ -483,15 +497,37 @@ export default class TacticalScene extends Phaser.Scene {
     this.heroCards.forEach(c => this.uiAdd(c.container));
   }
 
+  // v0.4 HP/RP/Attunement HUD architecture (HP_RP_ATTUNEMENT_HUD_SPEC.md):
+  // three concepts, three visual languages. HP stays the familiar text
+  // readout; RP gets a thin bar visually distinct from HP (not a color
+  // variant of the same bar); Attunement is three small facets, not a
+  // third bar — a segmented/faceted state gauge, not a spendable
+  // resource. This is the "compact hero-card read" tier the spec calls
+  // for — the richer full-size BP HUD treatment is BattleHUD's job.
   _buildHeroCard(hero, index) {
+    const cardH = 58;
     const container = this.add.container(0, 0);
-    const bg = this.add.rectangle(0, 0, 132, 46, 0x120b28, 0.88).setStrokeStyle(1, 0x5a3a88, 0.8).setOrigin(0, 0);
-    const name = this.add.text(8, 4, hero.name, { fontSize: '12px', fontStyle: 'bold', color: '#FFE8A0' });
-    const hp = this.add.text(8, 22, '', { fontSize: '11px', color: '#9fe0ff' });
-    container.add([bg, name, hp]);
-    container.setInteractive(new Phaser.Geom.Rectangle(0, 0, 132, 46), Phaser.Geom.Rectangle.Contains);
+    const bg = this.add.rectangle(0, 0, 132, cardH, 0x120b28, 0.88).setStrokeStyle(1, 0x5a3a88, 0.8).setOrigin(0, 0);
+    const name = this.add.text(8, 3, hero.name, { fontSize: '12px', fontStyle: 'bold', color: '#FFE8A0' });
+    const hp = this.add.text(8, 20, '', { fontSize: '11px', color: '#9fe0ff' });
+
+    const rpBarBg = this.add.rectangle(8, 37, 88, 4, 0x241a3a, 1).setOrigin(0, 0);
+    const rpBarFill = this.add.rectangle(8, 37, 88, 4, 0xffd76a, 1).setOrigin(0, 0);
+
+    // Segment i is lit once attunement > i; all three lit is VEILSHIFT
+    // READY (turns gold rather than the usual attuned violet).
+    const facetSize = 7;
+    const facets = [];
+    for (let i = 0; i < (hero.attunementMax || 3); i++) {
+      const f = this.add.rectangle(100 + i * (facetSize + 3), 39, facetSize, facetSize, 0x2a1f42, 1)
+        .setStrokeStyle(1, 0x8a6ad0, 0.9).setOrigin(0, 0).setAngle(45);
+      facets.push(f);
+    }
+
+    container.add([bg, name, hp, rpBarBg, rpBarFill, ...facets]);
+    container.setInteractive(new Phaser.Geom.Rectangle(0, 0, 132, cardH), Phaser.Geom.Rectangle.Contains);
     container.on('pointerdown', (p, lx, ly, ev) => { if (ev) ev.stopPropagation(); if (p.event) p.event._tacticalUIHandled = true; this.onHeroCardTap(hero); });
-    return { container, bg, hpText: hp, hero };
+    return { container, bg, hpText: hp, rpBarFill, facets, cardH, hero };
   }
 
   _buildActionMenu() {
@@ -533,7 +569,7 @@ export default class TacticalScene extends Phaser.Scene {
     this.messageText.setPosition(w / 2, margin + 24).setWordWrapWidth(w * 0.86);
 
     this.heroCards.forEach((c, i) => {
-      c.container.setPosition(margin, margin + 54 + i * 52);
+      c.container.setPosition(margin, margin + 54 + i * (c.cardH + 6));
     });
 
     this.zoomControls.container.setPosition(w - margin - 56, h - margin - 24);
@@ -545,10 +581,20 @@ export default class TacticalScene extends Phaser.Scene {
     this.turnText.setText(`Turn ${this.turn} — ${this.phase === 'player' ? 'Player Phase' : 'Enemy Phase'}`);
     this.messageText.setText(this.message);
     this.heroCards.forEach(c => {
-      const alive = c.hero.alive;
-      c.hpText.setText(alive ? `HP ${c.hero.hp}/${c.hero.maxHp}${c.hero.acted ? ' ✓' : ''}` : 'Down');
+      const hero = c.hero;
+      const alive = hero.alive;
+      c.hpText.setText(alive ? `HP ${hero.hp}/${hero.maxHp}${hero.acted ? ' ✓' : ''}` : 'Down');
       c.bg.setFillStyle(0x120b28, alive ? 0.88 : 0.5);
-      c.bg.setStrokeStyle(1, c.hero === this.unitController.selected ? 0xffe8a0 : 0x5a3a88, 0.9);
+      c.bg.setStrokeStyle(1, hero === this.unitController.selected ? 0xffe8a0 : 0x5a3a88, 0.9);
+
+      const rpFrac = alive && hero.maxRp ? Phaser.Math.Clamp(hero.rp / hero.maxRp, 0, 1) : 0;
+      c.rpBarFill.setSize(88 * rpFrac, 4);
+
+      const veilshiftReady = alive && hero.attunement >= hero.attunementMax;
+      c.facets.forEach((f, i) => {
+        const lit = alive && hero.attunement > i;
+        f.setFillStyle(lit ? (veilshiftReady ? 0xffe8a0 : 0x8a6ad0) : 0x2a1f42, 1);
+      });
     });
   }
 
@@ -677,13 +723,9 @@ export default class TacticalScene extends Phaser.Scene {
     const canAct = !hero.acted;
     const onNode = this.nodes.some(n => n.x === hero.x && n.y === hero.y && !n.restored);
     this.actionMenu.buttons.forEach(b => {
-      if (b.kind === 'special') {
-        b.label = HERO_SPECIAL_LABEL[hero.id] || 'Veil Art';
-        b.text.setText(b.label);
-      }
       let enabled = true;
-      if (b.kind === 'resonate') enabled = canAct && onNode;
-      else if (b.kind === 'attack' || b.kind === 'special' || b.kind === 'veilshift') enabled = canAct;
+      if (b.kind === 'attune') enabled = canAct && onNode;
+      else if (b.kind === 'attack' || b.kind === 'resonart' || b.kind === 'veilshift') enabled = canAct;
       else if (b.kind === 'guard' || b.kind === 'wait') enabled = canAct;
       b.bg.setAlpha(enabled ? 1 : 0.35);
       b.bg.input.enabled = enabled;
@@ -703,13 +745,14 @@ export default class TacticalScene extends Phaser.Scene {
     }
     if (hero.acted) return;
 
-    if (kind === 'attack' || kind === 'special') {
+    if (kind === 'attack' || kind === 'resonart') {
       this._pendingAction = 'attack';
+      this._pendingActionKind = kind;
       this.grid.showAttackRange(this.attackRangeTiles(hero));
       this.setMessage(`${hero.name}: choose a target in range.`);
       return;
     }
-    if (kind === 'resonate') {
+    if (kind === 'attune') {
       this.resonateNode(hero);
       return;
     }
@@ -746,32 +789,125 @@ export default class TacticalScene extends Phaser.Scene {
       return;
     }
     this.grid.clearAllOverlays();
+    const actionKind = this._pendingActionKind || 'attack';
     this._pendingAction = null;
+    this._pendingActionKind = null;
     this.inputLocked = true;
     this.actionMenu.container.setVisible(false);
+    this.enterLinkedBattle(hero, target, actionKind);
+  }
 
-    this.tacticalCamera.saveCinematicState();
-    this.tacticalCamera.focusOn(
-      Math.round((hero.x + target.x) / 2), Math.round((hero.y + target.y) / 2), 160
-    );
+  // v0.4 Tactical <-> Battle Presentation bridge (TP_BP_BRIDGE_SPEC.md).
+  // Tactical stays the gameplay/state authority: it computes an
+  // immutable resolution plan up front using its own existing damage
+  // math (unchanged from the old lightweight-cinematic flow — no roll
+  // happens twice), hands it to the full VeilBattleScene as an
+  // EncounterContext, and commits the returned BattleResult exactly
+  // once in onBattleResolved(). VeilBattleScene never rolls or applies
+  // damage independently for a linked round (see BattleController's
+  // `linkedResolution` branch) — it only presents the plan Tactical
+  // already made.
+  //
+  // No manual camera/state snapshot is needed for the trip: `this.scene
+  // .pause()` freezes Tactical's update loop and input in place —
+  // camera, unit positions, everything — exactly as it already was, so
+  // "restores exactly on return" is true by construction rather than
+  // something to hand-reconstruct. `scene.launch()` starts the full BP
+  // scene on top in parallel; BP's own entrance sweep is the transition,
+  // not a second one layered on top of it here.
+  enterLinkedBattle(hero, target, actionKind) {
+    this._bridgeHero = hero;
+    this._bridgeTarget = target;
 
-    this.time.delayedCall(180, () => {
-      this.cinematic.play({
-        attackerKey: hero.portraitKey, attackerName: hero.name,
-        targetKey: target.portraitKey, targetName: target.name,
-        abilityName: hero.ability, flavor: hero.flavor,
-        onImpact: () => {
-          target.hp = Math.max(0, target.hp - hero.atk);
-          this.setMessage(`${target.name} is hit for ${hero.atk} damage!`);
-          if (target.hp <= 0) this.defeatEnemy(target);
-        }
-      }).then(async () => {
-        await this.tacticalCamera.restoreCinematicState(TIMING.cameraRestoreMs);
-        this.inputLocked = false;
-        this.finishHeroAction(hero);
-        this.checkVictoryDefeat();
-      });
-    });
+    const enemyId = TACTICAL_TO_BP_ENEMY_ID[target.type] || target.type;
+    const context = {
+      mode: 'linked',
+      encounterId: `${this.turn}-${hero.id}-${target.id}-${this.time.now}`,
+      heroId: hero.id,
+      enemyId,
+      action: { kind: actionKind, displayName: hero.ability },
+      tacticalSnapshot: {
+        turn: this.turn,
+        phase: this.phase,
+        heroTile: { x: hero.x, y: hero.y },
+        enemyTile: { x: target.x, y: target.y },
+        heroMoved: hero.moved,
+        heroActed: hero.acted,
+        heroHP: hero.hp,
+        heroMaxHP: hero.maxHp,
+        heroRP: hero.rp,
+        heroAttunement: hero.attunement,
+        enemyHP: target.hp,
+        enemyMaxHP: target.maxHp
+      },
+      resolutionPlan: {
+        // v0.4 shares Tactical's existing flat prototype damage math —
+        // no crit roll here yet, matching the old cinematic's onImpact.
+        // A future shared CombatResolver can replace this without
+        // changing the bridge contract itself (TP_BP_BRIDGE_SPEC.md).
+        damage: hero.atk,
+        critical: false,
+        statusChanges: [],
+        resourceDelta: { rp: 0, attunement: 0 }
+      }
+    };
+
+    // pause() only stops Tactical's own update loop — a paused scene is
+    // still marked visible and Phaser renders it every frame regardless,
+    // so without this, the full tactical map/HUD keeps drawing underneath
+    // BP's opaque battlefield for the whole trip: twice the per-frame
+    // render cost of a single scene, invisible to the player but not free
+    // to the GPU/CPU. Confirmed materially: with visibility left on, a
+    // linked round's own delayedCall/tween timers (reticle seek/lock,
+    // typewriter dialogue, cinematic beats) stretched to 10-15x their
+    // configured durations under load heavy enough to matter — Phaser
+    // clamps the max per-frame delta it feeds timers, so a starved frame
+    // rate makes game-clock time crawl even though nothing is logically
+    // stuck. setVisible(false) is restored in onBattleResolved(), the one
+    // place already guaranteed to run before control hands back.
+    this.scene.pause();
+    this.scene.setVisible(false);
+    this.scene.launch('VeilBattleScene', context);
+  }
+
+  // Called by VeilBattleScene exactly once, after the full Battle
+  // Presentation has resolved and torn itself down. Applies the plan
+  // Tactical itself already computed in enterLinkedBattle() — BP only
+  // ever presented and returned it, never recalculated it, so this
+  // can't double-apply damage already reflected in `battleResult`.
+  onBattleResolved(battleResult) {
+    // Undo enterLinkedBattle()'s setVisible(false) — this runs while
+    // Tactical is still paused, before VeilBattleScene stops itself and
+    // resumes this scene, so visibility is back on by the time the
+    // player actually sees the tactical map again.
+    this.scene.setVisible(true);
+
+    const hero = this._bridgeHero;
+    const target = this._bridgeTarget;
+    this._bridgeHero = null;
+    this._bridgeTarget = null;
+    if (!hero || !target) return;
+
+    target.hp = battleResult.enemyHP;
+    hero.hp = battleResult.heroHP;
+    // v0.4: RP/Attunement don't yet flow from anything (resourceDelta is
+    // always {rp:0, attunement:0} until Resonart/Attune actually cost or
+    // build them), but the "update exactly once" application is wired
+    // now so a future non-zero delta needs no bridge changes.
+    if (battleResult.resourceDelta) {
+      if (battleResult.resourceDelta.rp) {
+        hero.rp = Math.max(0, Math.min(hero.maxRp, hero.rp + battleResult.resourceDelta.rp));
+      }
+      if (battleResult.resourceDelta.attunement) {
+        hero.attunement = Math.max(0, Math.min(hero.attunementMax, hero.attunement + battleResult.resourceDelta.attunement));
+      }
+    }
+    this.setMessage(`${target.name} is hit for ${battleResult.damageApplied} damage!`);
+    if (battleResult.enemyDefeated) this.defeatEnemy(target);
+
+    this.inputLocked = false;
+    this.finishHeroAction(hero);
+    this.checkVictoryDefeat();
   }
 
   resonateNode(hero) {

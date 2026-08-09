@@ -1,25 +1,25 @@
-import BattleHUD from './BattleHUD.js?v=41';
-import BattleController from './BattleController.js?v=41';
-import Timeline from './Timeline.js?v=41';
-import VeilFracture from './VeilFracture.js?v=41';
-import HeroPoseView from './HeroPoseView.js?v=41';
-import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=41';
-import { HUSHLING_TEXTURES } from './EnemyHushlingView.js?v=41';
-import { createEnemyView } from './EnemyViewFactory.js?v=41';
-import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=41';
-import { selectEnemy, ENEMY_ORDER, nextEnemyId } from './EnemyCatalog.js?v=41';
-import BattleCamera from './BattleCamera.js?v=41';
-import BattleFX from './BattleFX.js?v=41';
-import BattleFXDirector from './BattleFXDirector.js?v=41';
-import BattleFeel from './BattleFeel.js?v=41';
-import AmbientBattlefieldDirector, { BATTLEFIELD_TEXTURES } from './AmbientBattlefieldDirector.js?v=41';
-import BattleAtmosphere from './BattleAtmosphere.js?v=41';
-import HudFrame from './HudFrame.js?v=41';
-import CommandConsole from './CommandConsole.js?v=41';
-import TargetReticle from './TargetReticle.js?v=41';
-import UiAudio from './UiAudio.js?v=41';
-import { AUDIO_EVENTS } from './BattleController.js?v=41';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=41';
+import BattleHUD from './BattleHUD.js?v=42';
+import BattleController from './BattleController.js?v=42';
+import Timeline from './Timeline.js?v=42';
+import VeilFracture from './VeilFracture.js?v=42';
+import HeroPoseView from './HeroPoseView.js?v=42';
+import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=42';
+import { HUSHLING_TEXTURES } from './EnemyHushlingView.js?v=42';
+import { createEnemyView } from './EnemyViewFactory.js?v=42';
+import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=42';
+import { selectEnemy, ENEMY_ORDER, nextEnemyId } from './EnemyCatalog.js?v=42';
+import BattleCamera from './BattleCamera.js?v=42';
+import BattleFX from './BattleFX.js?v=42';
+import BattleFXDirector from './BattleFXDirector.js?v=42';
+import BattleFeel from './BattleFeel.js?v=42';
+import AmbientBattlefieldDirector, { BATTLEFIELD_TEXTURES } from './AmbientBattlefieldDirector.js?v=42';
+import BattleAtmosphere from './BattleAtmosphere.js?v=42';
+import HudFrame from './HudFrame.js?v=42';
+import CommandConsole from './CommandConsole.js?v=42';
+import TargetReticle from './TargetReticle.js?v=42';
+import UiAudio from './UiAudio.js?v=42';
+import { AUDIO_EVENTS } from './BattleController.js?v=42';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=42';
 
 function cloneConfig(source, heroKey, search, enemyKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -42,6 +42,17 @@ export default class VeilBattleScene extends Phaser.Scene {
     super('VeilBattleScene');
   }
 
+  // v0.4 Tactical <-> Battle Presentation bridge (TP_BP_BRIDGE_SPEC.md).
+  // Phaser calls init(data) before every create() — including a plain
+  // scene.restart(), where `data` is undefined, so linkedContext falls
+  // back to null exactly when it should (a hero/enemy switch restart, or
+  // resetBattle()'s gauntlet restart, both correctly fall out of linked
+  // mode). Only `this.scene.launch('VeilBattleScene', context)` from
+  // TacticalScene supplies a real `{ mode: 'linked', ... }` payload.
+  init(data) {
+    this.linkedContext = (data && data.mode === 'linked') ? data : null;
+  }
+
   preload() {
     this.load.audio('battle_music', './Veilbreak.mp3');
     preloadEnemyAudio(this);
@@ -58,6 +69,14 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.load.audio('kineza_recover', './assets/sfx/kineza/kineza_recover.mp3');
     this.load.audio('kineza_idle_pulse', './assets/sfx/kineza/kineza_idle_pulse.mp3');
     this.load.audio('kineza_debris', './assets/sfx/kineza/kineza_debris.mp3');
+    // v0.4: Auryi's own dedicated bank — warm/luminous/harmonic, never
+    // Prismel's or Kineza's cues (AURYI_AUDIO_INTEGRATION.md).
+    this.load.audio('auryi_step', './assets/sfx/auryi/auryi_step.mp3');
+    this.load.audio('auryi_gather', './assets/sfx/auryi/auryi_gather.mp3');
+    this.load.audio('auryi_release', './assets/sfx/auryi/auryi_release.mp3');
+    this.load.audio('auryi_impact', './assets/sfx/auryi/auryi_impact.mp3');
+    this.load.audio('auryi_recompose', './assets/sfx/auryi/auryi_recompose.mp3');
+    this.load.audio('auryi_idle_pulse', './assets/sfx/auryi/auryi_idle_pulse.mp3');
     this.load.image('dialogFrame', './assets/ui/dialog_frame_9slice.png');
     this.load.image('continueCrystal', './assets/ui/continue_crystal.png');
     this.load.image('prismelLocked', './assets/prismel_locked.png');
@@ -134,17 +153,43 @@ export default class VeilBattleScene extends Phaser.Scene {
     // The Sound Manager is NOT one of the objects a restart destroys —
     // the previous battle's music and SFX instances survive it. Without
     // this, switching heroes layers a second battle_music loop over the
-    // first and neither one ever stops.
-    this.sound.stopAll();
-    this.sound.removeAll();
+    // first and neither one ever stops. v0.4: this used to be a blanket
+    // this.sound.stopAll()/removeAll(), which was safe when this scene
+    // owned the only Phaser.Game instance it ever ran in — now that the
+    // Tactical<->Battle bridge shares one Game (and one Sound Manager)
+    // between TacticalScene and this scene, a blanket clear would just
+    // as happily destroy Tactical-owned audio the moment it has any.
+    // Stop/destroy only what THIS scene's own previous instance created
+    // — tracked on `this` across restarts, same cache-and-clear idiom as
+    // every other restart-survivor in this method.
+    this._stopOwnAudio();
 
-    this.activeHero = this.registry.get('heroKey') || HERO_ORDER[0];
+    this.linkedMode = !!this.linkedContext;
+    this.activeHero = this.linkedMode
+      ? this.linkedContext.heroId
+      : (this.registry.get('heroKey') || HERO_ORDER[0]);
     this.battleConfig = cloneConfig(
       BATTLE_CONFIG,
       this.activeHero,
       window.location.search,
-      this.registry.get('enemyKey')
+      this.linkedMode ? this.linkedContext.enemyId : this.registry.get('enemyKey')
     );
+
+    if (this.linkedMode) {
+      // Tactical is the state authority — its hero/enemy HP may already
+      // differ from BattleConfig's frozen defaults (earlier damage this
+      // same tactical encounter), and its resolution plan is what this
+      // round must present, not a fresh roll. See BattleController's
+      // `linkedResolution` branch for the no-double-roll half of this.
+      const snap = this.linkedContext.tacticalSnapshot;
+      this.battleConfig.hero.hp = snap.heroHP;
+      this.battleConfig.hero.maxHp = snap.heroMaxHP;
+      if (snap.heroRP != null) this.battleConfig.hero.rp = snap.heroRP;
+      if (snap.heroAttunement != null) this.battleConfig.hero.attunement = snap.heroAttunement;
+      this.battleConfig.enemy.hp = snap.enemyHP;
+      this.battleConfig.enemy.maxHp = snap.enemyMaxHP;
+      this.battleConfig.linkedResolution = this.linkedContext.resolutionPlan;
+    }
 
     this.cameras.main.setBackgroundColor('#070611');
 
@@ -251,6 +296,20 @@ export default class VeilBattleScene extends Phaser.Scene {
         victory: this.sound.add('sfx_victory', { volume: 0.88 }),
         idle: this.sound.add('kineza_idle_pulse', { volume: 0.22 }),
         debris: this.sound.add('kineza_debris', { volume: 0.62 })
+      },
+      // v0.4 dedicated Auryi bank (AUDIO_LIFECYCLE_REQUIREMENT.md /
+      // AURYI_AUDIO_INTEGRATION.md's suggested event mapping). No
+      // fallback to Prismel/Kineza cues — playSfx() already resolves
+      // strictly by heroId, so simply having this entry is what
+      // guarantees that.
+      auryi: {
+        step: this.sound.add('auryi_step', { volume: 0.7 }),
+        gather: this.sound.add('auryi_gather', { volume: 0.85 }),
+        release: this.sound.add('auryi_release', { volume: 0.95 }),
+        impact: this.sound.add('auryi_impact', { volume: 0.9 }),
+        recover: this.sound.add('auryi_recompose', { volume: 0.75 }),
+        victory: this.sound.add('sfx_victory', { volume: 0.9 }),
+        idle: this.sound.add('auryi_idle_pulse', { volume: 0.18 })
       }
     };
 
@@ -295,14 +354,28 @@ export default class VeilBattleScene extends Phaser.Scene {
       if (this.enemyAudio) this.enemyAudio.destroy();
     });
 
-    this.buildHeroSwitch();
-    this.buildEnemySwitch();
+    // Linked mode: the hero/enemy were chosen in Tactical, not picked
+    // here — LINKED_VS_STANDALONE_BP.md is explicit that linked BP hides
+    // the debug switchers rather than leaving them live and misleading.
+    if (!this.linkedMode) {
+      this.buildHeroSwitch();
+      this.buildEnemySwitch();
+    }
 
     this.uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height);
     this.uiCam.setBackgroundColor('rgba(0,0,0,0)');
     this.uiCam.ignore(this.world);
     this.cameras.main.ignore(this.uiLayer);
-    this.scale.on('resize', size => this.uiCam.setSize(size.width, size.height));
+    // Named + stored so the 'shutdown' cleanup below can remove it — an
+    // inline anonymous listener here would leak one extra 'resize'
+    // registration every time this scene runs, same trap already fixed
+    // in TacticalScene.js. It went uncaught here before v0.4 because
+    // this scene only ever re-ran via an explicit hero/enemy-switch
+    // scene.restart(), not the frequent scene.launch()/stop() cycling
+    // a linked battle now does on every single attack.
+    if (this._uiCamResizeHandler) this.scale.off('resize', this._uiCamResizeHandler, this);
+    this._uiCamResizeHandler = size => this.uiCam.setSize(size.width, size.height);
+    this.scale.on('resize', this._uiCamResizeHandler, this);
 
     this.time.delayedCall(INTRO_MS + 80, () => {
       this.battleCam.markHome();
@@ -464,6 +537,42 @@ export default class VeilBattleScene extends Phaser.Scene {
         this.time.delayedCall(36, () => bank.debris.play());
       }
     }
+  }
+
+  // v0.4 audio lifecycle (AUDIO_LIFECYCLE_REQUIREMENT.md): stop/destroy
+  // only the specific Sound objects THIS scene's previous instance
+  // created (music + every hero's SFX bank, including any idle-pulse
+  // loop-tick sound — HeroPoseView's recurring idle cue just calls
+  // .play() on whatever's cached here, so destroying the object is
+  // enough, no separate idle-timer cleanup needed). Called both at the
+  // top of create() (guarded — a no-op on first boot) and explicitly
+  // before handing control back to Tactical, since scene.stop() doesn't
+  // trigger another create() to do this cleanup for us.
+  _stopOwnAudio() {
+    if (this.battleMusic) {
+      this.battleMusic.stop();
+      this.battleMusic.destroy();
+      this.battleMusic = null;
+    }
+    if (this.sfx) {
+      Object.values(this.sfx).forEach(bank => {
+        Object.values(bank).forEach(s => { s.stop(); s.destroy(); });
+      });
+      this.sfx = null;
+    }
+  }
+
+  // v0.4 bridge exit. Called by BattleController exactly once, when a
+  // linked round has fully resolved and BP has nothing left to show.
+  // Order matters: apply the result to Tactical (still paused, so this
+  // can't race its own update loop) before this scene tears itself down
+  // and Tactical resumes rendering the already-updated state.
+  returnToTactical(battleResult) {
+    this._stopOwnAudio();
+    const tactical = this.scene.get('TacticalScene');
+    if (tactical && tactical.onBattleResolved) tactical.onBattleResolved(battleResult);
+    this.scene.stop();
+    this.scene.resume('TacticalScene');
   }
 
   // v3 hit stop: freeze the scene clock and tweens for a beat so impacts

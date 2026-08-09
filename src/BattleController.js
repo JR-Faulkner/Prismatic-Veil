@@ -33,10 +33,10 @@ export const AUDIO_EVENTS = Object.freeze({
   enemyDefeat: 'PLAY_ENEMY_DEFEAT'
 });
 
-// How far the Veil conduit dips when a command fires, and how much it
-// recovers by the next round. Nothing is gated on it — see the note on
-// BattleHUD.updateVeil.
-const VEIL_DRAW = 18;
+// How far RP dips when a command fires, and how much it recovers by the
+// next round. Nothing is gated on it yet — see the note on
+// BattleHUD.updateRp.
+const RP_DRAW = 18;
 
 export default class BattleController {
   constructor(scene, timeline, fracture, hud, battleConfig) {
@@ -93,6 +93,19 @@ export default class BattleController {
     this.hud.setActiveActor('hero');                      // 1
     if (this.scene.setHint) this.scene.setHint('Select a Veil command');
 
+    // v0.4 bridge: a linked round's action was already chosen in
+    // Tactical (ATTACK or RESONART) — LINKED_VS_STANDALONE_BP.md is
+    // explicit that BP must not force a redundant second selection, so
+    // the console never opens here. Both action kinds share the hero's
+    // one existing bound attack command for presentation in v0.4
+    // (TP_BP_BRIDGE_SPEC.md: RESONART "may share existing prototype
+    // damage/range behavior").
+    if (this.scene.linkedMode) {
+      const bound = (this.config.hero.commands || []).find(c => c.kind === 'attack');
+      this.beginCommand(bound || null);
+      return;
+    }
+
     const console_ = this.scene.commandConsole;
     if (!console_) return this.beginCommand(null);        // console-less fallback
     console_.show(cmd => this.beginCommand(cmd));         // 2, 3
@@ -103,7 +116,13 @@ export default class BattleController {
   beginCommand(cmd) {
     const hero = this.config.hero;
     this.running = true;
-    this.pendingHit = this.rollAttack(hero);
+    // v0.4 bridge: Tactical is the state authority for a linked round —
+    // it already computed an immutable resolution plan before entering
+    // BP (TP_BP_BRIDGE_SPEC.md's "no double roll" rule), so this must
+    // consume that plan rather than rolling a second, different result.
+    this.pendingHit = this.config.linkedResolution
+      ? { crit: !!this.config.linkedResolution.critical, damage: this.config.linkedResolution.damage }
+      : this.rollAttack(hero);
     this.pendingCommand = cmd;
     if (this.scene.setHint) this.scene.setHint('');
 
@@ -168,9 +187,9 @@ export default class BattleController {
       if (this.scene.hudFrame) this.scene.hudFrame.gatherPulse(timing.gather);
       if (this.scene.abilityLight) this.scene.abilityLight('gather');
       this.emit(AUDIO_EVENTS.gather);
-      // Veil conduit dips as the command draws on it. Presentation only
-      // — no command is gated on having Veil left.
-      this.hud.updateVeil(Math.max(0, hero.veil - VEIL_DRAW));
+      // RP dips as the command draws on it. Presentation only — no
+      // command is gated on having RP left, yet.
+      this.hud.updateRp(Math.max(0, hero.rp - RP_DRAW), hero.maxRp);
       this.hud.queueMessage(hero.attack.flavor);
     });
     at += timing.gather + timing.hold;
@@ -238,6 +257,7 @@ export default class BattleController {
     // Recover
     t.delayedCall(at, () => {
       if (poses) poses.setPose('recover');
+      if (useFXDirector) fxDirector.playRecoverFX(hero.id, fx.castPoint());
       if (cam) cam.recoverEase();
       this.fracture.close();
       this.emit(AUDIO_EVENTS.recover);
@@ -266,7 +286,8 @@ export default class BattleController {
       : `${enemy.name} is hit for ${hit.damage} damage!`;
 
     this.hud.queueMessage(line, () => {
-      if (enemy.hp <= 0) {
+      const defeated = enemy.hp <= 0;
+      if (defeated) {
         if (this.scene.enemyView) this.scene.enemyView.die();
         if (this.scene.battleFx) this.scene.battleFx.victoryStinger();
         if (this.scene.hudFrame) this.scene.hudFrame.victoryBloom();
@@ -274,6 +295,35 @@ export default class BattleController {
         if (this.scene.battleCam) this.scene.battleCam.victoryPullOut();
         this.emit(AUDIO_EVENTS.enemyDefeat);
         this.emit(AUDIO_EVENTS.victory);
+      }
+
+      // v0.4 bridge: a linked round never chains into the standalone
+      // gauntlet (RETURN_STATE_CONTRACT.md — "no duplicate reward/
+      // victory callback runs") and never falls through to an enemy
+      // round here either — Tactical's own enemy phase, not BP's, owns
+      // that for a linked encounter. Exactly one BattleResult goes back,
+      // whether or not the enemy was defeated.
+      if (this.scene.linkedMode) {
+        const finish = () => this.scene.returnToTactical({
+          encounterId: this.scene.linkedContext.encounterId,
+          actionKind: this.scene.linkedContext.action.kind,
+          damageApplied: hit.damage,
+          critical: hit.crit,
+          heroHP: this.config.hero.hp,
+          enemyHP: enemy.hp,
+          enemyDefeated: defeated,
+          resourceDelta: (this.scene.linkedContext.resolutionPlan && this.scene.linkedContext.resolutionPlan.resourceDelta) || { rp: 0, attunement: 0 },
+          completed: true
+        });
+        if (defeated) {
+          this.hud.queueMessage(`${enemy.name} shatters! The veil clears...`, finish);
+        } else {
+          finish();
+        }
+        return;
+      }
+
+      if (defeated) {
         this.hud.queueMessage(`${enemy.name} shatters! The veil clears...`, () => {
           this.resetBattle();
         });
@@ -281,7 +331,7 @@ export default class BattleController {
       }
 
       // 8 — the conduit recharges and the round hands over
-      this.hud.updateVeil(Math.min(100, this.config.hero.veil + VEIL_DRAW));
+      this.hud.updateRp(Math.min(this.config.hero.maxRp, this.config.hero.rp + RP_DRAW), this.config.hero.maxRp);
       this.hud.setTurn(this.config.text.enemyTurn);
       this.hud.setActiveActor('enemy');
       if (this.scene.setHint) this.scene.setHint('Tap to continue');
