@@ -10,13 +10,23 @@
 // this director is deliberately built to have no path to either.
 //
 // `type` selects a visual palette so the director isn't hardcoded to one
-// hero — right now only Prismel's V2 attack calls it (Kineza keeps his
-// existing BattleFX-driven identity untouched, per the v38A brief).
+// hero — Prismel and (v0.4) Auryi's attacks call it; Kineza keeps his
+// existing BattleFX-driven identity untouched, per the v38A brief.
 // Prismel-specific spectral palette. No kinetic green: green remains Kineza's combat language.
 const PRISM = [0x67e8ff, 0x9fd8ff, 0x8f7cff, 0xc7a8ff, 0xffa6d9, 0xff65c8, 0xffffff];
 
+// Auryi's palette (AURYI_BATTLE_FX_PROFILE.md / AURYI_FX_PROFILE_REFERENCE.js):
+// gold-white core, lavender ribbons/ripple, soft support green. The hard
+// rule from that doc — support green stays close to Auryi, source-local,
+// never the attack's projectile/impact core — is why it's a distinct
+// `support` field consumed only by _supportAura() below, not folded into
+// `shards`/`core`/`ribbon` where the generic layers would happily fire it
+// at the target.
+const AURYI = [0xfff3c4, 0xffd76a, 0xf3c873, 0xd7b8ff, 0xc8a8ff, 0xffffff];
+
 const PALETTES = Object.freeze({
-  prismel: Object.freeze({ core: 0xdff0ff, ribbon: 0x9fd8ff, mist: 0xc7e6ff, shards: PRISM })
+  prismel: Object.freeze({ core: 0xdff0ff, ribbon: 0x9fd8ff, mist: 0xc7e6ff, shards: PRISM }),
+  auryi: Object.freeze({ core: 0xfff3c4, ribbon: 0xc8a8ff, mist: 0xb99aff, shards: AURYI, support: 0x9de5b8 })
 });
 
 function paletteFor(type) {
@@ -132,13 +142,34 @@ export default class BattleFXDirector {
     });
   }
 
+  // --- Support Aura Layer: a soft glow that stays put at `source` and
+  // never travels — Auryi's supportive presence, not her attack's core.
+  // Only fires when the palette defines `support` (currently just her —
+  // AURYI_BATTLE_FX_PROFILE.md's hard rule is that green never becomes
+  // the projectile/impact core, so this deliberately has no path to
+  // being called with a target position). ---
+  _supportAura(x, y, palette, duration) {
+    if (!palette.support) return;
+    const aura = this._w(this.scene.add.circle(x, y, 22, palette.support, 0.16).setDepth(37));
+    this.scene.tweens.add({
+      targets: aura,
+      radius: 30,
+      alpha: 0,
+      duration,
+      ease: 'Sine.easeInOut',
+      onComplete: () => this._done(aura)
+    });
+  }
+
   // ---- Public API ----------------------------------------------------
 
   // Particle + Mist, staged so the charge visibly escalates rather than
-  // dumping every mote at once.
+  // dumping every mote at once. Support aura (if the palette has one)
+  // expands subtly around the source alongside the charge.
   playChargeFX(type, source) {
     const palette = paletteFor(type);
     this._mist(source.x, source.y, 26, palette, 520);
+    this._supportAura(source.x, source.y, palette, 560);
     this.scene.time.delayedCall(40, () => this._particles(source.x, source.y, 4, palette, 20, 380));
     this.scene.time.delayedCall(75, () => this._particles(source.x, source.y, 5, palette, 30, 420));
     this.scene.time.delayedCall(115, () => this._particles(source.x, source.y, 6, palette, 42, 460));
@@ -147,10 +178,13 @@ export default class BattleFXDirector {
   // Ribbon + Distortion. Duration defaults to the attack's own release
   // beat so the trail's length always matches however long that pose
   // actually holds, rather than a constant tuned for one hero's timing.
+  // Support aura (if any) stays at the source while the ribbon travels
+  // to the target — it never rides along as part of the projectile.
   playProjectileFX(type, source, target, duration = 160) {
     const palette = paletteFor(type);
     this._ribbon(source, target, palette, duration + 15);
     this._distortion(source.x, source.y, palette, duration * 0.6);
+    this._supportAura(source.x, source.y, palette, duration + 60);
   }
 
   // Particle burst + Distortion ring + a brief Environmental wash.
@@ -159,6 +193,19 @@ export default class BattleFXDirector {
     this._particles(target.x, target.y, 12, palette, 70, 560);
     this._distortion(target.x, target.y, palette, 420);
     this._envWash(target.x, target.y, palette, 520);
+  }
+
+  // Mist fade + Support Aura contracting back to baseline at the source
+  // — Auryi's "energy returns home" recompose beat (AURYI_BATTLE_FX_
+  // PROFILE.md's motion thesis: gather inward -> release outward ->
+  // energy returns home). No prior BattleController beat called into
+  // BattleFXDirector at Recover at all, so this is a new hook, not a
+  // rerouted existing one. Harmless/subtle for a palette with no
+  // `support` entry (Prismel) — just the soft settle mist.
+  playRecoverFX(type, source) {
+    const palette = paletteFor(type);
+    this._mist(source.x, source.y, 18, palette, 420);
+    this._supportAura(source.x, source.y, palette, 380);
   }
 
   // Residual mist, tracked against `target` so a specific instance can be
