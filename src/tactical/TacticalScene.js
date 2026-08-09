@@ -10,7 +10,7 @@ import TacticalPathfinder from './TacticalPathfinder.js?v=49';
 import TacticalCamera from './TacticalCamera.js?v=49';
 import UnitController from './UnitController.js?v=49';
 import BattleCinematic from './BattleCinematic.js?v=49';
-import TacticalActionConsole from './TacticalActionConsole.js?v=50';
+import TacticalActionConsole from './TacticalActionConsole.js?v=51';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
