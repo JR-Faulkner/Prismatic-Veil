@@ -244,6 +244,10 @@ Design specs and per-package handoffs are exchanged as zip packages rather than 
 
 ATTUNE, GUARD, and WAIT resolve entirely within Tactical and never enter BP. VEILSHIFT is narrated as not-yet-attuned until Attunement reaches its max (3 facets).
 
+`TitleScene.js` is the first scene registered in `tactical-field-v2.html`'s boot — it reuses the original wave-survival prototype's title art and music (`title_screen.jpg`, `prism-of-elders.mp3`, both at repo root), rebuilt for `Phaser.Scale.RESIZE` (viewport-relative layout, re-laid-out on resize) rather than the original's fixed-canvas positions. Only the background image loads in `preload()`; the ~11MB music loads lazily in `create()` so the title is up and tappable immediately rather than sitting behind a loading spinner for it. `battle-v2.html` has no title screen — it stays the standalone BP dev/test harness.
+
+Both `tactical-field-v2.html` and `battle-v2.html` patch `Phaser.GameObjects.GameObjectFactory.prototype.text` once at boot to set a `resolution: devicePixelRatio` default on every text object. `Phaser.Scale.RESIZE` ties the canvas's backing-store resolution 1:1 to its CSS pixel size with no DPI awareness at all, so on any real phone the browser upscales that low-res canvas to fill the physical screen — visible mostly as soft text and small icons. A full fix (bigger backing store, matching camera zoom so world coordinates still map 1:1) touches camera-zoom math and the `getWorldPoint()` input-coordinate conversion this project's already been bitten by once; per-object text `resolution` is a safe, self-contained partial fix with none of that risk, since each Text object rasterizes to its own off-screen bitmap independent of the main canvas.
+
 ```
 /tactical-field-v2.html
 /data/tactical_map_v2.json        the "Too Quiet" Restore Sound encounter
@@ -256,6 +260,7 @@ ATTUNE, GUARD, and WAIT resolve entirely within Tactical and never enter BP. VEI
   UnitController.js                 selection, path preview/confirm, tile-by-tile move animation
   BattleCinematic.js                presentation-only attack cut-in
   TacticalActionConsole.js          the six command buttons — v0.5A button-state/icon art, state machine
+  TitleScene.js                     title screen — first scene on boot, taps into TacticalScene
   TacticalScene.js                  phase sequencing, objectives, enemy AI, HUD
 ```
 
