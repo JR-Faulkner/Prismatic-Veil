@@ -10,18 +10,31 @@
 //                   is bound to the hero's attack; the rest are slots
 //                   with nothing behind them yet, and say so when
 //                   selected. No command consumes or gates a resource —
-//                   that stays a later mechanic. Resonate/Veilshift (v0.3
-//                   Battle Presentation Base) are the same kind of empty
-//                   slot as Barrier/Return were — RESONANCE_VEILSHIFT_
-//                   DESIGN_ONLY.md is explicit that full implementation
-//                   isn't requested yet, just the naming direction.
+//                   that stays a later mechanic.
+//
+// v0.4 additions (COMMAND_LEXICON_LOCK.md, HP_RP_ATTUNEMENT_HUD_SPEC.md):
+//   title       identity/flavor language (Prism Weaver, Aura Acolyte,
+//               Momentum Born) — shown as identity text, never as an
+//               action-button label. RESONART is the universal label
+//               for every hero's technique slot instead.
+//   rp/maxRp/attunement/attunementMax  HP/RP/Attunement resource
+//               architecture. Numbers are prototype placeholders for
+//               plumbing/UI QA, not a balance lock — see
+//               HUD_DATA_REFERENCE.json. RP is the spendable Resonance
+//               resource; Attunement is a synchronization state (three
+//               facets), not a third bar — VEILSHIFT unlocks at
+//               attunement >= attunementMax.
 export const HEROES = Object.freeze({
   prismel: Object.freeze({
     id: 'prismel',
     name: 'Prismel',
+    title: 'Prism Weaver',
     hp: 100,
     maxHp: 100,
-    veil: 100,
+    rp: 100,
+    maxRp: 100,
+    attunement: 0,
+    attunementMax: 3,
     portrait: 'portrait_prismel',
     // HUD identity: bar fill, frame accents, damage-number styling.
     accent: 0x67c8ff,
@@ -65,18 +78,22 @@ export const HEROES = Object.freeze({
     fxVersion: 'v2',
     frameColourway: 'blue',
     commands: Object.freeze([
-      Object.freeze({ glyph: 'fracture', label: 'Burst', kind: 'attack' }),
-      Object.freeze({ glyph: 'barrier', label: 'Resonate', locked: true }),
-      Object.freeze({ glyph: 'returnpath', label: 'Veilshift', locked: true })
+      Object.freeze({ glyph: 'fracture', label: 'ATTACK', kind: 'attack' }),
+      Object.freeze({ glyph: 'barrier', label: 'RESONART', locked: true }),
+      Object.freeze({ glyph: 'returnpath', label: 'VEILSHIFT', locked: true })
     ])
   }),
 
   kineza: Object.freeze({
     id: 'kineza',
     name: 'Kineza',
+    title: 'Momentum Born',
     hp: 115,
     maxHp: 115,
-    veil: 100,
+    rp: 100,
+    maxRp: 100,
+    attunement: 0,
+    attunementMax: 3,
     portrait: 'portrait_kineza',
     accent: 0x68ff8c,
     accentAlt: 0xd8ffe1,
@@ -106,18 +123,22 @@ export const HEROES = Object.freeze({
     }),
     frameColourway: 'teal',
     commands: Object.freeze([
-      Object.freeze({ glyph: 'resonance', label: 'Momentum', kind: 'attack' }),
-      Object.freeze({ glyph: 'barrier', label: 'Resonate', locked: true }),
-      Object.freeze({ glyph: 'returnpath', label: 'Veilshift', locked: true })
+      Object.freeze({ glyph: 'resonance', label: 'ATTACK', kind: 'attack' }),
+      Object.freeze({ glyph: 'barrier', label: 'RESONART', locked: true }),
+      Object.freeze({ glyph: 'returnpath', label: 'VEILSHIFT', locked: true })
     ])
   }),
 
   auryi: Object.freeze({
     id: 'auryi',
     name: 'Auryi',
+    title: 'Aura Acolyte',
     hp: 100,
     maxHp: 100,
-    veil: 100,
+    rp: 100,
+    maxRp: 100,
+    attunement: 0,
+    attunementMax: 3,
     portrait: 'portrait_auryi',
     accent: 0xc8a8ff,
     accentAlt: 0xffd76a,
@@ -155,11 +176,15 @@ export const HEROES = Object.freeze({
       critChance: 0.2,
       critMultiplier: 2
     }),
+    // v0.4: opts into BattleFXDirector's layered path with her own
+    // explicit profile (BattleFXDirector.js PALETTES.auryi) — never
+    // Prismel's fallback. See AURYI_BATTLE_FX_PROFILE.md.
+    fxVersion: 'v2',
     frameColourway: 'violet',
     commands: Object.freeze([
-      Object.freeze({ glyph: 'resonance', label: 'Pulse', kind: 'attack' }),
-      Object.freeze({ glyph: 'barrier', label: 'Resonate', locked: true }),
-      Object.freeze({ glyph: 'returnpath', label: 'Veilshift', locked: true })
+      Object.freeze({ glyph: 'resonance', label: 'ATTACK', kind: 'attack' }),
+      Object.freeze({ glyph: 'barrier', label: 'RESONART', locked: true }),
+      Object.freeze({ glyph: 'returnpath', label: 'VEILSHIFT', locked: true })
     ])
   })
 });

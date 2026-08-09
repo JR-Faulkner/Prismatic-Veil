@@ -24,7 +24,14 @@ export default class BattleHUD {
       color: '#F8E7B0'
     }).setOrigin(1, 0);
 
-    this.veilText = this.scene.add.text(0, 0, '', {
+    // v0.4: RP (Resonance Points) — HP_RP_ATTUNEMENT_HUD_SPEC.md's
+    // "luminous energy bar, visually distinct from HP." This is the
+    // same conduit-with-chip-and-recharge bar the old "Veil" readout
+    // already was (same dips-on-command, recharges-by-next-round,
+    // gates-nothing prototype philosophy) — renamed, not duplicated,
+    // since a second bar for the identical mechanic would just be the
+    // same thing under two names.
+    this.rpText = this.scene.add.text(0, 0, '', {
       fontSize: '16px',
       color: '#8EDCFF'
     });
@@ -55,9 +62,9 @@ export default class BattleHUD {
     const hero = this.config.hero;
     this.bars = {
       heroHp: Object.assign(this._makeBar(0x71ff88, { accent: hero.accent }), { isHeroHp: true }),
-      heroVeil: Object.assign(
+      heroRp: Object.assign(
         this._makeBar(hero.accent || 0x67c8ff, { accent: hero.accentAlt }),
-        { isVeil: true }
+        { isRp: true }
       ),
       enemyHp: this._makeBar(0xa855f7, { accent: 0xc477ff, corrupted: true })
     };
@@ -77,6 +84,21 @@ export default class BattleHUD {
     });
     this.heroPortrait.create();
     this.enemyPortrait.create();
+
+    // v0.4 Attunement — three small facets integrated into the hero's
+    // own frame area, not a third bar (HP_RP_ATTUNEMENT_HUD_SPEC.md:
+    // "a distinct progression/state indicator, not a clone of RP").
+    // Segment i lights once attunement > i; all three lit is VEILSHIFT
+    // READY, which reads as a gold rather than the usual violet glow —
+    // deliberately restrained per the spec's "avoid giant arcade-style
+    // 'ultimate ready' treatment."
+    const facetCount = hero.attunementMax || 3;
+    this.attunementFacets = [];
+    for (let i = 0; i < facetCount; i++) {
+      const f = this.scene.add.rectangle(0, 0, 8, 8, 0x2a1f42, 1)
+        .setStrokeStyle(1, 0x8a6ad0, 0.9).setAngle(45);
+      this.attunementFacets.push(f);
+    }
 
     this.msgBox = this.scene.add.nineslice(
       0,
@@ -117,9 +139,10 @@ export default class BattleHUD {
       ...barParts,
       this.heroPortrait.container,
       this.enemyPortrait.container,
+      ...this.attunementFacets,
       this.hpText,
       this.hpValue,
-      this.veilText,
+      this.rpText,
       this.enemyText,
       this.enemyValue,
       this.turnText,
@@ -197,10 +220,10 @@ export default class BattleHUD {
     // healing / damage flash
     if (bar.flash > 0.01) drawFill(bar.ratio, 0xffffff, bar.flash * 0.55);
 
-    // Veil recharge reads differently from HP healing: instead of a
+    // RP recharge reads differently from HP healing: instead of a
     // white wash over the whole fill, a bright wavefront travels along
     // the conduit to the new level.
-    if (bar.isVeil && bar.recharge > 0.01) {
+    if (bar.isRp && bar.recharge > 0.01) {
       const fw = inner * bar.ratio;
       const head = Math.max(4, Math.min(18, w * 0.14));
       const hx = x + 2 + Math.max(0, fw - head) * bar.recharge;
@@ -283,7 +306,8 @@ export default class BattleHUD {
 
   refreshFromConfig(instant) {
     this.updateHP(this.config.hero.hp, this.config.hero.maxHp, instant);
-    this.updateVeil(this.config.hero.veil, 'instant');
+    this.updateRp(this.config.hero.rp, this.config.hero.maxRp, true);
+    this.updateAttunement(this.config.hero.attunement, this.config.hero.attunementMax);
     this.updateEnemyHP(this.config.enemy.hp, this.config.enemy.maxHp, instant);
   }
 
@@ -374,27 +398,37 @@ export default class BattleHUD {
       : (compact ? Math.min(118, width * 0.30) : 200);
     const barH = landscape ? 7 : (compact ? 7 : 9);
     const hpBarY = margin + (landscape ? 24 : (compact ? 24 : 38));
-    const veilBarY = hpBarY + (compact ? 12 : 16);
+    const rpBarY = hpBarY + (compact ? 12 : 16);
 
     this.heroPortrait.setSize(portraitSize)
       .setPosition(margin + portraitSize / 2, margin + portraitSize / 2 + 2);
     this.enemyPortrait.setSize(portraitSize)
       .setPosition(width - margin - portraitSize / 2, margin + portraitSize / 2 + 2);
 
+    // Attunement facets sit under the hero portrait, integrated into
+    // that frame area rather than floating with the bars.
+    const facetSize = compact ? 6 : 8;
+    const facetGap = facetSize + 3;
+    const facetsY = margin + portraitSize + (compact ? 8 : 12);
+    this.attunementFacets.forEach((f, i) => {
+      f.setSize(facetSize, facetSize)
+        .setPosition(margin + portraitSize / 2 + (i - (this.attunementFacets.length - 1) / 2) * facetGap, facetsY);
+    });
+
     this.hpText.setPosition(textLeft, margin);
     this.hpValue.setPosition(textLeft + barW, margin);
     // "VEIL WRAITH 30/30" does not fit one 118px row on a 390px screen,
-    // and the enemy has no Veil conduit, so its HP value drops to the
+    // and the enemy has no RP conduit, so its HP value drops to the
     // free row where the hero's conduit sits.
     this.enemyText.setPosition(width - textLeft, margin);
     this.enemyValue.setOrigin(1, 0)
-      .setPosition(width - textLeft, veilBarY - (compact ? 5 : 7));
-    this.veilText.setFontSize(compact ? 9 : 13)
-      .setPosition(textLeft + barW * 0.82 + 8, veilBarY - (compact ? 5 : 7));
-    this.turnText.setPosition(width / 2, landscape ? margin + 2 : (compact ? veilBarY + 14 : margin));
+      .setPosition(width - textLeft, rpBarY - (compact ? 5 : 7));
+    this.rpText.setFontSize(compact ? 9 : 13)
+      .setPosition(textLeft + barW * 0.82 + 8, rpBarY - (compact ? 5 : 7));
+    this.turnText.setPosition(width / 2, landscape ? margin + 2 : (compact ? rpBarY + 14 : margin));
 
     this._layoutBar(this.bars.heroHp, textLeft, hpBarY, barW, barH, false);
-    this._layoutBar(this.bars.heroVeil, textLeft, veilBarY, barW * 0.82, barH - 2, false);
+    this._layoutBar(this.bars.heroRp, textLeft, rpBarY, barW * 0.82, barH - 2, false);
     this._layoutBar(this.bars.enemyHp, width - textLeft, hpBarY, barW, barH, true);
 
     this.msgBox.setPosition(width / 2, dialogY);
@@ -498,26 +532,30 @@ export default class BattleHUD {
     this.heroPortrait.setHealth(ratio);
   }
 
-  // The Veil conduit is a readout, not a cost — nothing in the battle is
-  // gated on it. It dips when a command fires and recharges before the
-  // next round so the conduit has visible chip and recharge states, as
-  // the kit asks. Making it an actual resource is a later mechanic.
-  updateVeil(percent, mode) {
-    const bar = this.bars.heroVeil;
-    const previous = this.config.hero.veil;
-    this.config.hero.veil = percent;
-    this._tickTo('veil', percent, mode === 'instant', v =>
-      this.veilText.setText(`VEIL ${v}%`));
+  // RP (Resonance Points) — v0.4 rename of what was the "Veil conduit":
+  // a readout, not a cost, still gating nothing in the battle. It dips
+  // when a command fires and recharges before the next round so the
+  // conduit has visible chip and recharge states, as the kit asks.
+  // Resonarts consuming/restoring RP for real is a later mechanic —
+  // HP_RP_ATTUNEMENT_HUD_SPEC.md: "RP is what you can spend/use," not
+  // yet wired to actually gate anything in this pass.
+  updateRp(cur, max, instant) {
+    const bar = this.bars.heroRp;
+    const previous = this.config.hero.rp;
+    this.config.hero.rp = cur;
+    this._tickTo('rp', cur, instant, v =>
+      this.rpText.setText(`RP ${v}/${max}`));
 
-    if (mode === 'instant') {
-      this._setBar(bar, percent / 100, true);
+    const ratio = max ? cur / max : 0;
+    if (instant) {
+      this._setBar(bar, ratio, true);
       bar.recharge = 0;
       return;
     }
 
-    this._setBar(bar, percent / 100);
+    this._setBar(bar, ratio);
 
-    if (percent > previous) {
+    if (cur > previous) {
       // recharge wavefront runs the length of the conduit
       this.scene.tweens.killTweensOf(bar, 'recharge');
       bar.recharge = 0;
@@ -530,6 +568,21 @@ export default class BattleHUD {
         onComplete: () => { bar.recharge = 0; this._drawBar(bar); }
       });
     }
+  }
+
+  // Attunement — a synchronization state, not a spendable resource:
+  // segment i lights once `value > i`. At attunementMax, VEILSHIFT
+  // becomes available and the lit facets read gold instead of violet —
+  // a restrained state change, not an "ultimate ready" flourish
+  // (HP_RP_ATTUNEMENT_HUD_SPEC.md's explicit presentation direction).
+  updateAttunement(value, max) {
+    this.config.hero.attunement = value;
+    const ready = value >= max;
+    this.attunementFacets.forEach((f, i) => {
+      const lit = value > i;
+      f.setFillStyle(lit ? (ready ? 0xffe8a0 : 0x8a6ad0) : 0x2a1f42, 1);
+      f.setStrokeStyle(1, ready && lit ? 0xffe8a0 : 0x8a6ad0, 0.9);
+    });
   }
 
   updateEnemyHP(cur, max, instant) {
