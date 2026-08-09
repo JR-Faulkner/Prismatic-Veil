@@ -145,16 +145,21 @@ export default class TacticalActionConsole {
     const canvasW = canvasH * CANVAS_AR;
     const barW = canvasW * 0.9447;
     const spacing = barHeight + gap;
-    const iconSize = barHeight * 0.52;
-    const iconInset = barW * 0.16;
-    const labelX = iconInset + iconSize * 0.5 + 8;
+    // Bumped up from 0.52/0.28 — at the old sizes (~23px icons, ~12px
+    // font) the console read correctly in isolated screenshots but was
+    // reported hard to make out on a real device; these intricate,
+    // detailed icons in particular need more pixels to read as anything
+    // but a blob at small sizes, independent of any display/DPI concern.
+    const iconSize = barHeight * 0.7;
+    const iconInset = barW * 0.19;
+    const labelX = iconInset + iconSize * 0.5 + 10;
 
     this.entries.forEach((entry, i) => {
       const cy = i * spacing + barHeight / 2;
       entry.row.setPosition(barW / 2, cy);
       entry.bg.setDisplaySize(canvasW, canvasH);
       entry.icon.setPosition(-barW / 2 + iconInset, 0).setDisplaySize(iconSize, iconSize);
-      entry.labelText.setPosition(-barW / 2 + labelX, 1).setFontSize(Math.round(barHeight * 0.28));
+      entry.labelText.setPosition(-barW / 2 + labelX, 1).setFontSize(Math.round(barHeight * 0.32));
       // A 44px touch target regardless of the rendered bar height — the
       // same floor CommandConsole.js already holds BP's glyphs to.
       //

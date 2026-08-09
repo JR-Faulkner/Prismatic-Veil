@@ -42,7 +42,8 @@
 <div id="game-container"></div>
 
 <script type="module">
-  import TacticalScene from './src/tactical/TacticalScene.js?v=50';
+  import TitleScene from './src/tactical/TitleScene.js?v=1';
+  import TacticalScene from './src/tactical/TacticalScene.js?v=51';
   import VeilBattleScene from './src/VeilBattleScene.js?v=42';
 
   const boot = document.getElementById('loading');
@@ -64,6 +65,32 @@
   if (!window.Phaser) {
     fail('Phaser did not load. Make sure phaser.min.js is in the repository root.');
   } else {
+    // Phaser.Scale.RESIZE ties the canvas's backing-store resolution 1:1
+    // to its CSS pixel size, with no devicePixelRatio awareness at all —
+    // confirmed directly (canvas.width stayed 390 at both DPR 1 and DPR 3
+    // in the same RESIZE-mode config). On any real phone (DPR 2-3, i.e.
+    // nearly all of them) the browser then upscales that low-res canvas
+    // to fill the physical screen, softening everything. A full fix
+    // (bigger backing store + matching camera zoom so world coordinates
+    // still map 1:1) touches TacticalCamera/BattleCamera's own zoom math
+    // and the getWorldPoint() input-coordinate conversion this project's
+    // already been bitten by once (see CLAUDE.md) — too much blast radius
+    // for a quick pass. Text objects are a safe, self-contained exception:
+    // each one rasterizes to its own off-screen bitmap independent of the
+    // main canvas, so a per-object `resolution` style genuinely sharpens
+    // it with no camera/coordinate risk. Patching the factory once here
+    // means every existing and future `add.text(...)` call gets this for
+    // free without touching every call site.
+    (function () {
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      const orig = Phaser.GameObjects.GameObjectFactory.prototype.text;
+      Phaser.GameObjects.GameObjectFactory.prototype.text = function (x, y, text, style) {
+        style = style || {};
+        if (style.resolution === undefined) style.resolution = dpr;
+        return orig.call(this, x, y, text, style);
+      };
+    })();
+
     class HarnessScene extends TacticalScene {
       create() {
         if (boot) boot.style.display = 'none';
@@ -90,7 +117,7 @@
           autoCenter: Phaser.Scale.CENTER_BOTH
         },
         input: { activePointers: 2 },
-        scene: [HarnessScene, VeilBattleScene]
+        scene: [TitleScene, HarnessScene, VeilBattleScene]
       });
     } catch (error) {
       fail(error);
