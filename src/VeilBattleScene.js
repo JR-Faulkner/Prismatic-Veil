@@ -1,25 +1,25 @@
-import BattleHUD from './BattleHUD.js?v=40';
-import BattleController from './BattleController.js?v=40';
-import Timeline from './Timeline.js?v=40';
-import VeilFracture from './VeilFracture.js?v=40';
-import HeroPoseView from './HeroPoseView.js?v=40';
-import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=40';
-import { HUSHLING_TEXTURES } from './EnemyHushlingView.js?v=40';
-import { createEnemyView } from './EnemyViewFactory.js?v=40';
-import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=40';
-import { selectEnemy, ENEMY_ORDER, nextEnemyId } from './EnemyCatalog.js?v=40';
-import BattleCamera from './BattleCamera.js?v=40';
-import BattleFX from './BattleFX.js?v=40';
-import BattleFXDirector from './BattleFXDirector.js?v=40';
-import BattleFeel from './BattleFeel.js?v=40';
-import AmbientBattlefieldDirector, { BATTLEFIELD_TEXTURES } from './AmbientBattlefieldDirector.js?v=40';
-import BattleAtmosphere from './BattleAtmosphere.js?v=40';
-import HudFrame from './HudFrame.js?v=40';
-import CommandConsole from './CommandConsole.js?v=40';
-import TargetReticle from './TargetReticle.js?v=40';
-import UiAudio from './UiAudio.js?v=40';
-import { AUDIO_EVENTS } from './BattleController.js?v=40';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=40';
+import BattleHUD from './BattleHUD.js?v=41';
+import BattleController from './BattleController.js?v=41';
+import Timeline from './Timeline.js?v=41';
+import VeilFracture from './VeilFracture.js?v=41';
+import HeroPoseView from './HeroPoseView.js?v=41';
+import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=41';
+import { HUSHLING_TEXTURES } from './EnemyHushlingView.js?v=41';
+import { createEnemyView } from './EnemyViewFactory.js?v=41';
+import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=41';
+import { selectEnemy, ENEMY_ORDER, nextEnemyId } from './EnemyCatalog.js?v=41';
+import BattleCamera from './BattleCamera.js?v=41';
+import BattleFX from './BattleFX.js?v=41';
+import BattleFXDirector from './BattleFXDirector.js?v=41';
+import BattleFeel from './BattleFeel.js?v=41';
+import AmbientBattlefieldDirector, { BATTLEFIELD_TEXTURES } from './AmbientBattlefieldDirector.js?v=41';
+import BattleAtmosphere from './BattleAtmosphere.js?v=41';
+import HudFrame from './HudFrame.js?v=41';
+import CommandConsole from './CommandConsole.js?v=41';
+import TargetReticle from './TargetReticle.js?v=41';
+import UiAudio from './UiAudio.js?v=41';
+import { AUDIO_EVENTS } from './BattleController.js?v=41';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=41';
 
 function cloneConfig(source, heroKey, search, enemyKey) {
   const hero = HEROES[heroKey] || source.hero;
@@ -63,6 +63,7 @@ export default class VeilBattleScene extends Phaser.Scene {
     this.load.image('prismelLocked', './assets/prismel_locked.png');
     this.load.image('portrait_prismel', './assets/ui/portrait_prismel.png');
     this.load.image('portrait_kineza', './assets/ui/portrait_kineza.png');
+    this.load.image('portrait_auryi', './assets/ui/portrait_auryi.png');
     this.load.image('portrait_wraith', './assets/ui/portrait_wraith_v34.png');
     this.load.image('portrait_hushling', './assets/ui/portrait_hushling_v34.png');
     // v38A battlefield layers — real painted art from DAI, replacing the
