@@ -165,14 +165,23 @@ export default class BattleFXDirector {
 
   // Particle + Mist, staged so the charge visibly escalates rather than
   // dumping every mote at once. Support aura (if the palette has one)
-  // expands subtly around the source alongside the charge.
-  playChargeFX(type, source) {
+  // expands subtly around the source alongside the charge. Duration
+  // defaults to the ~570ms this was originally tuned at (450ms default
+  // gather + 120ms default hold) and scales every internal beat
+  // proportionally — same "duration matches however long the pose
+  // actually holds" principle playProjectileFX already uses, just
+  // applied here too so a hero with a longer gather+hold window (see
+  // BattleConfig.js attackTiming) actually gets a charge effect that
+  // fills it, instead of the effect finishing early and the pose sitting
+  // there with nothing left animating.
+  playChargeFX(type, source, duration = 570) {
     const palette = paletteFor(type);
-    this._mist(source.x, source.y, 26, palette, 520);
-    this._supportAura(source.x, source.y, palette, 560);
-    this.scene.time.delayedCall(40, () => this._particles(source.x, source.y, 4, palette, 20, 380));
-    this.scene.time.delayedCall(75, () => this._particles(source.x, source.y, 5, palette, 30, 420));
-    this.scene.time.delayedCall(115, () => this._particles(source.x, source.y, 6, palette, 42, 460));
+    const k = duration / 570;
+    this._mist(source.x, source.y, 26, palette, 520 * k);
+    this._supportAura(source.x, source.y, palette, 560 * k);
+    this.scene.time.delayedCall(40 * k, () => this._particles(source.x, source.y, 4, palette, 20, 380 * k));
+    this.scene.time.delayedCall(75 * k, () => this._particles(source.x, source.y, 5, palette, 30, 420 * k));
+    this.scene.time.delayedCall(115 * k, () => this._particles(source.x, source.y, 6, palette, 42, 460 * k));
   }
 
   // Ribbon + Distortion. Duration defaults to the attack's own release

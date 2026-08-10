@@ -179,11 +179,18 @@ export default class BattleController {
     t.delayedCall(at, () => {
       if (poses) poses.setPose('gather');
       if (useFXDirector) {
-        fxDirector.playChargeFX(hero.id, fx.castPoint());
+        // Charge FX's own internal choreography (mist/aura/particle
+        // bursts) used to run on a hardcoded ~570ms schedule regardless
+        // of how long this pose actually holds — playProjectileFX
+        // already took a duration for exactly this reason ("the trail's
+        // length always matches however long that pose actually holds,
+        // rather than a constant tuned for one hero's timing"); this
+        // gives playChargeFX the same treatment.
+        fxDirector.playChargeFX(hero.id, fx.castPoint(), timing.gather + timing.hold);
       } else if (fx) {
         fx.gather(timing.gather);
       }
-      if (cam) cam.gatherPush();
+      if (cam) cam.gatherPush(hero.scaleMul);
       if (this.scene.hudFrame) this.scene.hudFrame.gatherPulse(timing.gather);
       if (this.scene.abilityLight) this.scene.abilityLight('gather');
       this.emit(AUDIO_EVENTS.gather);
@@ -203,7 +210,7 @@ export default class BattleController {
       } else if (fx) {
         fx.beam(timing.release);
       }
-      if (cam) cam.releaseSnap();
+      if (cam) cam.releaseSnap(hero.scaleMul);
       if (this.scene.reticle) this.scene.reticle.confirm();
       this.emit(AUDIO_EVENTS.release);
       this.fracture.open();

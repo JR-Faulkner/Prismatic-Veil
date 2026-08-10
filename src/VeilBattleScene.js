@@ -1,5 +1,5 @@
 import BattleHUD from './BattleHUD.js?v=43';
-import BattleController from './BattleController.js?v=42';
+import BattleController from './BattleController.js?v=43';
 import Timeline from './Timeline.js?v=42';
 import VeilFracture from './VeilFracture.js?v=42';
 import HeroPoseView from './HeroPoseView.js?v=42';
@@ -8,9 +8,9 @@ import { HUSHLING_TEXTURES } from './EnemyHushlingView.js?v=42';
 import { createEnemyView } from './EnemyViewFactory.js?v=42';
 import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=42';
 import { selectEnemy, ENEMY_ORDER, nextEnemyId } from './EnemyCatalog.js?v=42';
-import BattleCamera from './BattleCamera.js?v=42';
+import BattleCamera from './BattleCamera.js?v=43';
 import BattleFX from './BattleFX.js?v=42';
-import BattleFXDirector from './BattleFXDirector.js?v=42';
+import BattleFXDirector from './BattleFXDirector.js?v=43';
 import BattleFeel from './BattleFeel.js?v=42';
 import AmbientBattlefieldDirector, { BATTLEFIELD_TEXTURES } from './AmbientBattlefieldDirector.js?v=42';
 import BattleAtmosphere from './BattleAtmosphere.js?v=42';
@@ -18,8 +18,8 @@ import HudFrame from './HudFrame.js?v=42';
 import CommandConsole from './CommandConsole.js?v=42';
 import TargetReticle from './TargetReticle.js?v=42';
 import UiAudio from './UiAudio.js?v=42';
-import { AUDIO_EVENTS } from './BattleController.js?v=42';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=42';
+import { AUDIO_EVENTS } from './BattleController.js?v=43';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=43';
 
 function cloneConfig(source, heroKey, search, enemyKey) {
   const hero = HEROES[heroKey] || source.hero;

@@ -69,8 +69,15 @@ export const HEROES = Object.freeze({
     // Overrides BattleController's default POSE_TIMING beats for this
     // hero only. Prismel's step and gather poses read as a blur back to
     // back at the default pace, so both get more room before the next
-    // pose cuts in.
-    attackTiming: Object.freeze({ step: 340, hold: 220 }),
+    // pose cuts in. Extending step/hold alone wasn't enough — reported
+    // directly as still blurring together — since gather/release stayed
+    // at the shared defaults, too fast for BattleFXDirector's own
+    // layered charge/projectile FX (mist + aura + staged particle
+    // bursts) to actually resolve before the next pose cut in. Kineza,
+    // on the older single-effect BattleFX path (no fxVersion), reads
+    // fine at the defaults — this is specifically a v2/FXDirector-path
+    // issue, not a general pose-timing one.
+    attackTiming: Object.freeze({ step: 340, gather: 560, hold: 220, release: 220 }),
     // v38A Battle Presence Pass: routes this hero's charge/projectile/
     // impact FX through BattleFXDirector instead of BattleFX's own
     // gather()/beam()/impact(). Kineza has no fxVersion and keeps his
@@ -180,6 +187,13 @@ export const HEROES = Object.freeze({
     // explicit profile (BattleFXDirector.js PALETTES.auryi) — never
     // Prismel's fallback. See AURYI_BATTLE_FX_PROFILE.md.
     fxVersion: 'v2',
+    // Auryi had no override at all and ran on bare POSE_TIMING defaults —
+    // reported as her attack phases blurring together, same underlying
+    // cause as Prismel's (see his attackTiming comment): the default
+    // pace doesn't give BattleFXDirector's layered charge/projectile FX
+    // room to resolve. Same profile as Prismel's since both are on the
+    // v2 path for the same reason.
+    attackTiming: Object.freeze({ step: 340, gather: 560, hold: 220, release: 220 }),
     frameColourway: 'violet',
     commands: Object.freeze([
       Object.freeze({ glyph: 'resonance', label: 'ATTACK', kind: 'attack' }),

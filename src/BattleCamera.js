@@ -49,12 +49,32 @@ export default class BattleCamera {
     this.cam.zoomTo(this.baseZoom, duration, 'Expo.easeOut', true);
   }
 
-  gatherPush() {
-    this.pushIn(1.32, 450);
+  // gatherPush/releaseSnap's zoom levels were tuned against Prismel
+  // (scaleMul 1) and applied flatly to every hero regardless of their own
+  // scaleMul — but a hero's on-screen size before the camera even zooms
+  // already varies per hero (BattleConfig.js's scaleMul: Kineza 0.78,
+  // Prismel 1, Auryi 1.29). Auryi, the largest, got cropped at the same
+  // nominal zoom that reads fine on Prismel and comfortably frames the
+  // smaller Kineza. displayHeight scales directly with scaleMul (same
+  // canvas-to-content ratio across the roster — see BattleConfig.js's
+  // scaleMul comment), so keeping a hero's on-screen size at a given beat
+  // consistent with Prismel's baseline means dividing the zoom itself by
+  // scaleMul, not just the boost above baseline — a gentler boost-only
+  // version was tried first and confirmed (by sampling actual on-screen
+  // sprite bounds during the release beat) to still crop Auryi's feet by
+  // ~22px. Only applied when scaleMul > 1, so Kineza (0.78, already
+  // smaller than baseline) and Prismel (1, the tuning baseline) are
+  // completely untouched.
+  scaledZoom(zoom, scaleMul) {
+    return zoom / Math.max(1, scaleMul || 1);
   }
 
-  releaseSnap() {
-    this.pushIn(1.55, 170, 'Back.easeOut');
+  gatherPush(scaleMul) {
+    this.pushIn(this.scaledZoom(1.32, scaleMul), 450);
+  }
+
+  releaseSnap(scaleMul) {
+    this.pushIn(this.scaledZoom(1.55, scaleMul), 170, 'Back.easeOut');
   }
 
   // Package 08: the camera is never quite still — a 1-2px drift keeps

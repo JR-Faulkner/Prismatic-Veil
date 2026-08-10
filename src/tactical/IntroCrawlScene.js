@@ -23,8 +23,10 @@ const CRAWL_BODY = [
 ].join('\n\n');
 
 // Long enough to actually read at a cinematic pace without overstaying
-// its welcome — tune here if it ever needs adjusting.
-const SCROLL_MS = 30000;
+// its welcome — tune here if it ever needs adjusting. Reported directly
+// as too fast at the original 30000; the text itself didn't change, just
+// how long it takes to cross the screen.
+const SCROLL_MS = 46000;
 // A tap in the first moment shouldn't skip the whole thing — this is the
 // same kind of deliberate-tap gate the rest of the project already uses
 // (BP's dialogue, the enemy cut-in) rather than a hair-trigger dismiss.
