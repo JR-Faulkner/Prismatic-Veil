@@ -10,7 +10,7 @@ import TacticalPathfinder from './TacticalPathfinder.js?v=49';
 import TacticalCamera from './TacticalCamera.js?v=49';
 import UnitController from './UnitController.js?v=49';
 import BattleCinematic from './BattleCinematic.js?v=49';
-import TacticalActionConsole from './TacticalActionConsole.js?v=51';
+import TacticalActionConsole from './TacticalActionConsole.js?v=52';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -599,7 +599,7 @@ export default class TacticalScene extends Phaser.Scene {
     // Console buttons render at a fixed touch-friendly height regardless
     // of viewport; only the row gap and cancel pill shrink in compact.
     const barHeight = compact ? 40 : 46;
-    const gap = compact ? 8 : 10;
+    const gap = compact ? 5 : 6;
     const { barW, stackH } = this.actionConsole.layout(barHeight, gap);
 
     const cancelGap = 10;

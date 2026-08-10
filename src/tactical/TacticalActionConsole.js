@@ -27,6 +27,19 @@
 //   veilshiftReady     Veilshift's own slot once Attunement is maxed,
 //                      independent of the other states (still subject to
 //                      disabled if the hero has already acted)
+//
+// Bar width: the button art is one baked pill image at a fixed ~5:1
+// width:height, so a single Image sized for a touch-friendly height comes
+// out the same width for every row regardless of label length — "ATTACK"
+// and "VEILSHIFT" got an identical, mostly-empty bar. Same fix this
+// project's own KitFrame.js already uses for its command-window frame:
+// crop three pieces out of the one texture — a left cap and a right cap
+// (kept at natural scale, so the gem/gold-corner ornaments never
+// distort) and a thin flat-rail slice from the middle (which IS safe to
+// stretch — it's a straight horizontal line, not a shape). Crop bounds
+// were picked by sampling the actual pixels for the most saturated
+// (ornament) columns near each edge (x=24 / x=454 of 480) and confirming
+// visually that x=230-250 is clean flat rail with no hidden detail.
 
 const ICON_TEX = Object.freeze({
   attack: 'tac_console_icon_attack',
@@ -52,7 +65,13 @@ const BUTTON_TEX = Object.freeze({
 // a few px — so every state can share one registration point (canvas
 // center) without the bar visibly shifting when the texture swaps.
 const BAR_H_FRAC = 0.236;
-const CANVAS_AR = 480 / 368;
+const NATIVE_W = 480;
+const NATIVE_H = 368;
+const CAP_W = 100;
+const MID_X0 = 230;
+const MID_W = 20;
+
+const CAP_FRAME = Object.freeze({ left: 'capLeft', mid: 'midRail', right: 'capRight' });
 
 const PRESSED_FLASH_MS = 110;
 
@@ -65,31 +84,51 @@ export default class TacticalActionConsole {
     this.entries = [];
   }
 
+  // Frames belong to the texture, not to any one Image instance, so this
+  // only needs to run once per texture — guarded in case create() ever
+  // runs again (scene restart) rather than assuming it won't.
+  _ensureFrames() {
+    Object.values(BUTTON_TEX).forEach(key => {
+      const tex = this.scene.textures.get(key);
+      if (!tex.has(CAP_FRAME.left)) tex.add(CAP_FRAME.left, 0, 0, 0, CAP_W, NATIVE_H);
+      if (!tex.has(CAP_FRAME.right)) tex.add(CAP_FRAME.right, 0, NATIVE_W - CAP_W, 0, CAP_W, NATIVE_H);
+      if (!tex.has(CAP_FRAME.mid)) tex.add(CAP_FRAME.mid, 0, MID_X0, 0, MID_W, NATIVE_H);
+    });
+  }
+
   create() {
     const s = this.scene;
+    this._ensureFrames();
     this.container = s.add.container(0, 0);
 
     this.entries = this.actionDefs.map(def => {
       const row = s.add.container(0, 0);
-      const bg = s.add.image(0, 0, BUTTON_TEX.default).setOrigin(0.5);
+      const bgLeft = s.add.image(0, 0, BUTTON_TEX.default, CAP_FRAME.left).setOrigin(0.5);
+      const bgMid = s.add.image(0, 0, BUTTON_TEX.default, CAP_FRAME.mid).setOrigin(0.5);
+      const bgRight = s.add.image(0, 0, BUTTON_TEX.default, CAP_FRAME.right).setOrigin(0.5);
       const icon = s.add.image(0, 0, ICON_TEX[def.kind]).setOrigin(0.5);
       const label = s.add.text(0, 0, def.label, {
         fontSize: '12px',
         fontStyle: 'bold',
         color: '#F8E7B0'
       }).setOrigin(0, 0.5);
-      row.add([bg, icon, label]);
+      // Invisible hit target spanning the full bar footprint — the three
+      // background pieces don't need their own interactivity, and a
+      // single shared zone avoids any seam between them ever being a
+      // dead click spot.
+      const hitZone = s.add.rectangle(0, 0, 10, 10, 0x000000, 0).setOrigin(0.5);
+      row.add([bgLeft, bgMid, bgRight, icon, label, hitZone]);
       this.container.add(row);
 
       const entry = {
-        kind: def.kind, label: def.label, row, bg, icon, labelText: label,
+        kind: def.kind, label: def.label, row, bgLeft, bgMid, bgRight, icon, labelText: label, hitZone,
         enabled: true, ready: false, pending: false, hovered: false, pressed: false
       };
 
-      bg.setInteractive({ useHandCursor: true });
-      bg.on('pointerover', () => { entry.hovered = true; this._applyTexture(entry); });
-      bg.on('pointerout', () => { entry.hovered = false; this._applyTexture(entry); });
-      bg.on('pointerdown', (p, lx, ly, ev) => {
+      hitZone.setInteractive({ useHandCursor: true });
+      hitZone.on('pointerover', () => { entry.hovered = true; this._applyTexture(entry); });
+      hitZone.on('pointerout', () => { entry.hovered = false; this._applyTexture(entry); });
+      hitZone.on('pointerdown', (p, lx, ly, ev) => {
         if (!entry.enabled) return;
         if (ev) ev.stopPropagation();
         if (p.event) p.event._tacticalUIHandled = true;
@@ -120,7 +159,7 @@ export default class TacticalActionConsole {
       entry.enabled = enabled;
       entry.ready = entry.kind === 'veilshift' && !!hero && hero.attunement >= hero.attunementMax;
       entry.pending = entry.kind === pendingKind;
-      entry.bg.input.enabled = enabled;
+      entry.hitZone.input.enabled = enabled;
       this._applyTexture(entry);
     });
   }
@@ -132,64 +171,69 @@ export default class TacticalActionConsole {
     else if (entry.pending) tex = BUTTON_TEX.selected;
     else if (entry.pressed) tex = BUTTON_TEX.pressed;
     else if (entry.hovered) tex = BUTTON_TEX.hover;
-    entry.bg.setTexture(tex);
+    entry.bgLeft.setTexture(tex, CAP_FRAME.left);
+    entry.bgMid.setTexture(tex, CAP_FRAME.mid);
+    entry.bgRight.setTexture(tex, CAP_FRAME.right);
     entry.labelText.setAlpha(entry.enabled ? 1 : 0.55);
     entry.icon.setAlpha(entry.enabled ? 1 : 0.55);
   }
 
-  // barHeight drives every other measurement — canvas AR and the bar's
-  // fixed fraction of its own canvas (BAR_H_FRAC) are constants measured
-  // from the source art, not independently tunable.
+  // barHeight drives the vertical scale (and the cap pieces' width,
+  // since they scale uniformly with it to avoid distorting the gold
+  // corner/gem ornaments); barWidth is now driven by content — each
+  // row's actual icon+label footprint — rather than being a fixed
+  // multiple of barHeight, so "ATTACK" no longer carries the same
+  // mostly-empty bar as "VEILSHIFT".
   layout(barHeight, gap) {
     const canvasH = barHeight / BAR_H_FRAC;
-    const canvasW = canvasH * CANVAS_AR;
-    const barW = canvasW * 0.9447;
+    const scale = canvasH / NATIVE_H;
+    const capW = CAP_W * scale;
     const spacing = barHeight + gap;
-    // Bumped up from 0.52/0.28 — at the old sizes (~23px icons, ~12px
-    // font) the console read correctly in isolated screenshots but was
-    // reported hard to make out on a real device; these intricate,
-    // detailed icons in particular need more pixels to read as anything
-    // but a blob at small sizes, independent of any display/DPI concern.
     const iconSize = barHeight * 0.7;
-    const iconInset = barW * 0.19;
-    const labelX = iconInset + iconSize * 0.5 + 10;
+    const iconInset = capW * 0.55;
+    const labelGap = 10;
+    const rightPad = capW * 0.6;
+
+    // Font sized first so each label's real rendered width (not a
+    // guessed character count) drives the shared bar width below.
+    this.entries.forEach(entry => {
+      entry.labelText.setFontSize(Math.round(barHeight * 0.34));
+    });
+
+    // One shared width across all six rows (sized to the longest label,
+    // currently VEILSHIFT) keeps the stack reading as a uniform grid —
+    // per-row variable widths would look ragged rather than "sized
+    // better".
+    const contentW = Math.max(...this.entries.map(entry =>
+      iconInset + iconSize * 0.5 + labelGap + entry.labelText.width
+    ));
+    const barW = Math.max(contentW + rightPad, capW * 2 + 12);
+    const midW = Math.max(2, barW - capW * 2);
 
     this.entries.forEach((entry, i) => {
       const cy = i * spacing + barHeight / 2;
       entry.row.setPosition(barW / 2, cy);
-      entry.bg.setDisplaySize(canvasW, canvasH);
+
+      entry.bgLeft.setDisplaySize(capW, canvasH).setPosition(-barW / 2 + capW / 2, 0);
+      entry.bgRight.setDisplaySize(capW, canvasH).setPosition(barW / 2 - capW / 2, 0);
+      entry.bgMid.setDisplaySize(midW, canvasH).setPosition(0, 0);
+
       entry.icon.setPosition(-barW / 2 + iconInset, 0).setDisplaySize(iconSize, iconSize);
-      entry.labelText.setPosition(-barW / 2 + labelX, 1).setFontSize(Math.round(barHeight * 0.32));
+      entry.labelText.setPosition(-barW / 2 + iconInset + iconSize * 0.5 + labelGap, 1);
+
       // A 44px touch target regardless of the rendered bar height — the
       // same floor CommandConsole.js already holds BP's glyphs to.
-      //
-      // Phaser's GameObject.setInteractive() silently no-ops on hit-area
-      // updates once an object already has an `.input` component — its
-      // enable() is `t.input ? t.input.enabled = true : this.setHitArea(...)`,
-      // so a *second* setInteractive() call (this one, on resize/layout)
-      // never replaces the hit area created by create()'s first call.
-      // Left unfixed, every row kept its default hit area sized to the
-      // full un-scaled canvas (480x368) — with rows only ~50px apart,
-      // that overlapped 3-4 neighboring buttons at once (confirmed via
-      // scene.input.hitTestPointer(), which returned both `attack` and
-      // `resonart` for the same point). Mutating the existing hitArea's
-      // geometry directly, instead of re-calling setInteractive(), routes
-      // around the no-op entirely.
-      //
-      // Hit-area coordinates are frame-space (0,0 at the texture's own
-      // top-left, 0..frameWidth/frameHeight), not origin-relative —
-      // Phaser adds displayOriginX/Y before testing against the hitArea,
-      // so a center-origin object's own center sits at
-      // (frameWidth/2, frameHeight/2) in that space, not (0,0).
+      // hitZone is a Shape (not an Image), so unlike bgLeft/Mid/Right its
+      // width/height ARE its own current geometry rather than a fixed
+      // texture frame — frame-space for hit-testing is exactly
+      // (0,0,barW,hitH), no origin-centering offset needed (confirmed
+      // against the identical cancelBg case in TacticalScene.js).
+      // Mutating the existing hit area in place, not re-calling
+      // setInteractive() — see the note on that no-op in
+      // TacticalScene.js's own cancelBg hit-area update.
       const hitH = Math.max(44, barHeight);
-      const hitW = barW / entry.bg.scaleX;
-      const hitHLocal = hitH / entry.bg.scaleY;
-      const frameW = entry.bg.width;
-      const frameH = entry.bg.height;
-      entry.bg.input.hitArea.setTo(
-        frameW / 2 - hitW / 2, frameH / 2 - hitHLocal / 2,
-        hitW, hitHLocal
-      );
+      entry.hitZone.setSize(barW, hitH);
+      entry.hitZone.input.hitArea.setTo(0, 0, barW, hitH);
     });
 
     return { barW, stackH: spacing * this.entries.length };
