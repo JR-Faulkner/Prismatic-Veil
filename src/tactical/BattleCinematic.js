@@ -31,6 +31,19 @@ export default class BattleCinematic {
       const targetImg = this.scene.add.image(w * 0.74, h * 0.5, targetKey)
         .setAlpha(0).setScale(0.001).setFlipX(true);
 
+      // Portrait sources aren't all the same resolution — most of this
+      // roster is 256x256, but Auryi's is 1122x1402. A bare `scale: 1`
+      // (native pixel size) rendered her at full source resolution on a
+      // 390px phone screen, filling the entire viewport with her face
+      // instead of sitting in her half of the cut-in like everyone else.
+      // Normalizing every portrait to the same on-screen height — the
+      // existing 256px set's own native size, so their look is unchanged —
+      // makes this correct for any future portrait regardless of the
+      // asset's actual resolution.
+      const PORTRAIT_TARGET_H = 256;
+      const attackerScale = PORTRAIT_TARGET_H / attackerImg.height;
+      const targetScale = PORTRAIT_TARGET_H / targetImg.height;
+
       // A real box behind the name/flavor lines, not just text floating
       // over whatever the tactical map happens to show there — playtest
       // feedback was that this cut-in's own narration was unreadable.
@@ -59,7 +72,7 @@ export default class BattleCinematic {
 
       // Tap-to-continue prompt — hidden until the impact beat reveals the
       // damage line, then it's the only way forward (see below). Same
-      // "TAP TO BEGIN" pulse language as TitleScene's own prompt.
+      // pulsing-prompt language as TitleScene's own tap prompt.
       const tapPrompt = this.scene.add.text(w / 2, h * 0.895, '▼ Tap to continue', {
         fontSize: Math.round(Math.max(13, w * 0.03)) + 'px',
         fontStyle: 'bold',
@@ -71,11 +84,11 @@ export default class BattleCinematic {
       const t = this.scene.tweens;
       t.add({ targets: overlay, alpha: 0.74, duration: this.timing.cinematicInMs });
       t.add({
-        targets: attackerImg, alpha: 1, scale: 1,
+        targets: attackerImg, alpha: 1, scale: attackerScale,
         duration: this.timing.cinematicInMs, ease: 'Back.easeOut'
       });
       t.add({
-        targets: targetImg, alpha: 1, scale: 1,
+        targets: targetImg, alpha: 1, scale: targetScale,
         duration: this.timing.cinematicInMs, ease: 'Back.easeOut', delay: 60
       });
       t.add({ targets: [textBox, nameLabel, flavorLabel], alpha: 1, duration: 180, delay: 140 });

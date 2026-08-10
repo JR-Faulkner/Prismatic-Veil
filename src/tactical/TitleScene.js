@@ -44,7 +44,7 @@ export default class TitleScene extends Phaser.Scene {
       align: 'center'
     }).setOrigin(0.5).setAlpha(0.9);
 
-    this.prompt = this.add.text(0, 0, 'TAP TO BEGIN', {
+    this.prompt = this.add.text(0, 0, 'TAP OR PRESS ANY KEY', {
       fontFamily: 'Courier New',
       fontSize: '20px',
       fontStyle: 'bold',
@@ -91,14 +91,27 @@ export default class TitleScene extends Phaser.Scene {
     if (this._resizeHandler) this.scale.off('resize', this._resizeHandler, this);
     this._resizeHandler = () => this.layout();
     this.scale.on('resize', this._resizeHandler, this);
-    this.events.once('shutdown', () => this.scale.off('resize', this._resizeHandler, this));
 
     // Lazy-load the music in the background — the title is already up
     // and interactive by the time this resolves, and a tap before it
-    // finishes just starts the game without music rather than waiting.
+    // finishes just starts the game without waiting for it. That used to
+    // mean skipping title music for the *entire session* if the tap won
+    // the race (very plausible — this is an ~11MB file, and an eager or
+    // slow-connection tap easily lands before it's done): beginGame()
+    // only ever checked readiness once, at the moment of the tap, and
+    // nothing picked the track back up if it finished loading a moment
+    // later. Now it does — if beginGame() already ran without playing
+    // it (this._started but no this.music yet), start it retroactively
+    // right here instead of leaving it silently skipped.
     this._musicReady = false;
     this.load.audio('title_music', './prism-of-elders.mp3');
-    this.load.once('complete', () => { this._musicReady = true; });
+    this.load.once('complete', () => {
+      this._musicReady = true;
+      if (this._started && !this.music) {
+        this.music = this.sound.add('title_music', { loop: true, volume: 0.45 });
+        this.music.play();
+      }
+    });
     this.load.start();
 
     this._started = false;
@@ -162,7 +175,19 @@ export default class TitleScene extends Phaser.Scene {
       // TacticalScene.create() crossfades it out into its own tactical
       // theme once the map is up (Tactical didn't have one of its own
       // until v0.5B).
-      this.scene.start('TacticalScene');
+      //
+      // scene.launch() + pause() + setVisible(false) instead of
+      // scene.start('TacticalScene') — start() would fully shut down
+      // this scene's systems, including its LoaderPlugin, which broke
+      // the retroactive title-music start above: the still-loading
+      // title track's 'complete' event just never fired once this scene
+      // was gone, no matter how much later the file actually finished.
+      // Paused rather than stopped, this scene's Loader keeps running in
+      // the background and can still pick it up.
+      this.scale.off('resize', this._resizeHandler, this);
+      this.scene.launch('TacticalScene');
+      this.scene.pause();
+      this.scene.setVisible(false);
     });
   }
 }
