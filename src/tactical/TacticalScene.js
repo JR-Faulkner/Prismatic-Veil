@@ -9,7 +9,7 @@ import TacticalGrid from './TacticalGrid.js?v=49';
 import TacticalPathfinder from './TacticalPathfinder.js?v=49';
 import TacticalCamera from './TacticalCamera.js?v=49';
 import UnitController from './UnitController.js?v=49';
-import BattleCinematic from './BattleCinematic.js?v=52';
+import BattleCinematic from './BattleCinematic.js?v=53';
 import TacticalActionConsole from './TacticalActionConsole.js?v=52';
 
 // Placeholder combat stats — this pass is engineering foundation, not

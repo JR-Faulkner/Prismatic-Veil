@@ -39,22 +39,34 @@ export default class BattleCinematic {
       // whatever's actually populated, so a future non-empty flavor
       // string doesn't need this box's math touched too.
       const textBoxY = h * 0.81;
-      const textBox = this.scene.add.rectangle(w / 2, textBoxY, Math.min(w - 32, 420), 68, 0x05040a, 0.78)
+      const textBox = this.scene.add.rectangle(w / 2, textBoxY, Math.min(w - 32, 420), 80, 0x05040a, 0.78)
         .setStrokeStyle(1, 0x5a3a88, 0.75)
         .setOrigin(0.5)
         .setAlpha(0);
 
+      // Sized up from the original v0.4 pass (13px/11px minimums) — kid
+      // playtesting flagged this box's text as hard to read on a real
+      // phone, the same complaint that drove BP's own tap-gated dialogue.
       const nameLabel = this.scene.add.text(w / 2, h * 0.78, `${attackerName} uses ${abilityName}!`, {
-        fontSize: Math.round(Math.max(13, w * 0.032)) + 'px',
+        fontSize: Math.round(Math.max(16, w * 0.04)) + 'px',
         fontStyle: 'bold',
         color: '#FFE8A0'
       }).setOrigin(0.5).setAlpha(0);
       const flavorLabel = this.scene.add.text(w / 2, h * 0.84, flavor || '', {
-        fontSize: Math.round(Math.max(11, w * 0.026)) + 'px',
+        fontSize: Math.round(Math.max(15, w * 0.036)) + 'px',
         color: '#C8A8FF'
       }).setOrigin(0.5).setAlpha(0);
 
-      layer.add([overlay, attackerImg, targetImg, textBox, nameLabel, flavorLabel]);
+      // Tap-to-continue prompt — hidden until the impact beat reveals the
+      // damage line, then it's the only way forward (see below). Same
+      // "TAP TO BEGIN" pulse language as TitleScene's own prompt.
+      const tapPrompt = this.scene.add.text(w / 2, h * 0.895, '▼ Tap to continue', {
+        fontSize: Math.round(Math.max(13, w * 0.03)) + 'px',
+        fontStyle: 'bold',
+        color: '#C8A8FF'
+      }).setOrigin(0.5).setAlpha(0);
+
+      layer.add([overlay, attackerImg, targetImg, textBox, nameLabel, flavorLabel, tapPrompt]);
 
       const t = this.scene.tweens;
       t.add({ targets: overlay, alpha: 0.74, duration: this.timing.cinematicInMs });
@@ -101,15 +113,35 @@ export default class BattleCinematic {
           ease: 'Quad.easeOut'
         });
 
+        // Live playtesting: this used to auto-close on a fixed timer right
+        // after showing the damage line, same "read it before it's gone"
+        // problem BP's dialogue had before it went tap-gated. The cut-in
+        // now waits out the same settle beat (letting the shake/flinch
+        // above actually finish) and then genuinely waits for a tap
+        // before closing — no fixed hold guessing how fast the player
+        // reads.
         this.scene.time.delayedCall(this.timing.cinematicOutMs, () => {
-          t.add({
-            targets: [overlay, attackerImg, targetImg, textBox, nameLabel, flavorLabel],
-            alpha: 0,
-            duration: this.timing.cinematicOutMs,
-            onComplete: () => {
-              layer.destroy();
-              resolve();
-            }
+          t.add({ targets: tapPrompt, alpha: 1, duration: 200, onComplete: () => {
+            this.scene.tweens.add({
+              targets: tapPrompt,
+              alpha: { from: 1, to: 0.4 },
+              duration: 550,
+              yoyo: true,
+              repeat: -1
+            });
+          } });
+
+          this.scene.input.once('pointerdown', () => {
+            this.scene.tweens.killTweensOf(tapPrompt);
+            t.add({
+              targets: [overlay, attackerImg, targetImg, textBox, nameLabel, flavorLabel, tapPrompt],
+              alpha: 0,
+              duration: this.timing.cinematicOutMs,
+              onComplete: () => {
+                layer.destroy();
+                resolve();
+              }
+            });
           });
         });
       });
