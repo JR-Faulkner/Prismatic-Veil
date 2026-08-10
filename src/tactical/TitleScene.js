@@ -199,12 +199,13 @@ export default class TitleScene extends Phaser.Scene {
       // its own title into character select. It's a Sound Manager
       // object findable by key (`this.sound.get('title_music')`) from
       // any scene, not something only TitleScene can reach —
+      // IntroCrawlScene plays underneath it unmodified, and
       // TacticalScene.create() crossfades it out into its own tactical
       // theme once the map is up (Tactical didn't have one of its own
       // until v0.5B).
       //
       // scene.launch() + pause() + setVisible(false) instead of
-      // scene.start('TacticalScene') — start() would fully shut down
+      // scene.start('IntroCrawlScene') — start() would fully shut down
       // this scene's systems, including its LoaderPlugin, which broke
       // the retroactive title-music start above: the still-loading
       // title track's 'complete' event just never fired once this scene
@@ -212,7 +213,7 @@ export default class TitleScene extends Phaser.Scene {
       // Paused rather than stopped, this scene's Loader keeps running in
       // the background and can still pick it up.
       this.scale.off('resize', this._resizeHandler, this);
-      this.scene.launch('TacticalScene');
+      this.scene.launch('IntroCrawlScene');
       this.scene.pause();
       this.scene.setVisible(false);
     });
