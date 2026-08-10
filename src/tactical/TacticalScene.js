@@ -32,6 +32,18 @@ const HERO_STATS = Object.freeze({
   kineza: { hp: 26, atk: 7, cinematicKey: 'portrait_kineza', name: 'Kineza', title: 'Momentum Born', ability: 'Momentum Fist', flavor: 'Kinetic force coils tight...', accent: 0x68ff8c, requiresLineOfSight: false, label: 'Ki', rp: 100, maxRp: 100, attunement: 0, attunementMax: 3 }
 });
 
+// Reuses BP's own per-hero impact clips (VeilBattleScene.js's `sfx` bank)
+// for the enemy tactical cut-in's hit beat — this cut-in never had any
+// sound on the hero actually getting hit, just the camera flash/shake.
+// Not a full EnemyAudioDirector-style bank (no release/hurt/defeat cues
+// here, just the one moment that needed one), so a plain lookup table is
+// enough rather than standing up a second audio system for Tactical.
+const HERO_HIT_SFX = Object.freeze({
+  prismel: { key: 'sfx_impact', path: './assets/sfx/sfx_impact.mp3' },
+  kineza: { key: 'kineza_impact', path: './assets/sfx/kineza/kineza_impact.mp3' },
+  auryi: { key: 'auryi_impact', path: './assets/sfx/auryi/auryi_impact.mp3' }
+});
+
 // Player-facing command lexicon — LOCKED (v0.4 COMMAND_LEXICON_LOCK.md):
 // ATTACK | RESONART | ATTUNE | VEILSHIFT | GUARD | WAIT. Character titles
 // (Prism Weaver / Aura Acolyte / Momentum Born, see HERO_STATS) are never
@@ -190,6 +202,7 @@ export default class TacticalScene extends Phaser.Scene {
       this.load.image(key, `./assets/kineza/movement/map_icons/${key}_mapicon.png`);
       this.load.image(`${key}_silhouette`, `./assets/kineza/movement/map_icons/${key}_silhouette.png`);
     });
+    Object.values(HERO_HIT_SFX).forEach(({ key, path }) => this.load.audio(key, path));
     // v0.5A Tactical Command Console Core — button states and command
     // icons. Pre-resized offline (LANCZOS, 480x368 / 160x160) from the
     // handoff's native 1536x1178 / 768x768 masters — rendering those
@@ -1166,6 +1179,11 @@ export default class TacticalScene extends Phaser.Scene {
         hero.hp = Math.max(0, hero.hp - enemy.atk);
         const msg = `${hero.name} suffers ${enemy.atk} damage!`;
         this.setMessage(msg);
+        const hitSfx = HERO_HIT_SFX[hero.id];
+        if (hitSfx) {
+          const sfx = this.sound.get(hitSfx.key) || this.sound.add(hitSfx.key, { volume: 0.9 });
+          sfx.play();
+        }
         if (hero.hp <= 0) this.defeatHero(hero);
         return msg;
       }
@@ -1195,21 +1213,33 @@ export default class TacticalScene extends Phaser.Scene {
     if (!unit || !unit.sprite) return;
     const x = unit.sprite.x;
     const y = unit.sprite.y - 18;
+    // Sized and weighted up from the original pass (15/20px, 3px stroke,
+    // straight linear fade over 850ms) — playtest feedback was that it
+    // read as thin and rushed. The heavier stroke plus a brief full-alpha
+    // hold before the fade (rather than starting to dissolve immediately)
+    // gives it a beat to actually be read before it drifts off.
     const text = this.add.text(x, y, `-${amount}`, {
-      fontSize: critical ? '20px' : '15px',
+      fontSize: critical ? '26px' : '19px',
       fontStyle: 'bold',
       color: critical ? '#FFE8A0' : '#FFFFFF',
       stroke: '#000000',
-      strokeThickness: 3
+      strokeThickness: critical ? 6 : 5
     }).setOrigin(0.5).setDepth(30);
     this.worldAdd(text);
+    const FLOAT_MS = 1250;
     this.tweens.add({
       targets: text,
-      y: y - 34,
-      alpha: { from: 1, to: 0 },
-      duration: 850,
+      y: y - 42,
+      duration: FLOAT_MS,
       ease: 'Quad.easeOut',
       onComplete: () => text.destroy()
+    });
+    this.tweens.add({
+      targets: text,
+      alpha: { from: 1, to: 0 },
+      delay: FLOAT_MS * 0.4,
+      duration: FLOAT_MS * 0.6,
+      ease: 'Quad.easeIn'
     });
 
     // Reset to the token's known resting scale (1 — neither token builder

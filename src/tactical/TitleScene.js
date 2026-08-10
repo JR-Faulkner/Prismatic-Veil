@@ -111,7 +111,20 @@ export default class TitleScene extends Phaser.Scene {
     this.load.start();
 
     this._started = false;
-    const begin = () => this.beginGame();
+    const begin = () => {
+      // Belt-and-suspenders alongside _tryStartMusic()'s sound.locked
+      // check: Phaser's own unlock is entirely automatic, driven by
+      // listeners it attaches to document.body — a well-known flaky
+      // spot on iOS Safari in particular. Calling context.resume()
+      // ourselves, synchronously, as the very first thing this actual
+      // tap/keydown does, gives the browser a second, more directly-tied-
+      // to-the-real-gesture path to unlock through, at zero cost if
+      // Phaser's own listener already handles it fine.
+      if (this.sound.context && this.sound.context.state === 'suspended') {
+        this.sound.context.resume();
+      }
+      this.beginGame();
+    };
     this.input.once('pointerdown', begin);
     if (this.input.keyboard) this.input.keyboard.once('keydown', begin);
   }
