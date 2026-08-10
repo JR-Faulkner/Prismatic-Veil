@@ -119,7 +119,8 @@ const PRISMEL_WALK_FRAMES = [
   'prismel_walk_04_contact_b', 'prismel_walk_05_down_b', 'prismel_walk_06_passing_b'
 ];
 const AURYI_WALK_FRAMES = [
-  'auryi_move_01', 'auryi_move_02', 'auryi_move_03', 'auryi_move_04', 'auryi_move_05', 'auryi_move_06', 'auryi_move_07'
+  'auryi_move_01_contact_a', 'auryi_move_02_down_a', 'auryi_move_03_passing_a',
+  'auryi_move_04_contact_b', 'auryi_move_05_down_b', 'auryi_move_06_passing_b'
 ];
 const KINEZA_WALK_FRAMES = [
   'kineza_run_01_contact_a', 'kineza_run_02_down_a', 'kineza_run_03_passing_a',
@@ -142,9 +143,9 @@ const CHARACTER_TOKEN_ART = Object.freeze({
   },
   auryi: {
     baseFacing: 'left',
-    idle: { key: 'auryi_move_04', originY: 1180 / 1536, scale: 0.294 },
+    idle: { key: 'auryi_move_01_contact_a', originY: 0.860759, scale: 0.294 },
     walkFrames: AURYI_WALK_FRAMES,
-    walk: { originY: 1180 / 1536, scale: 0.294 }
+    walk: { originY: 0.860759, scale: 0.294 }
   },
   kineza: {
     baseFacing: 'right',
