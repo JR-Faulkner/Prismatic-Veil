@@ -3,13 +3,13 @@
 // coordination between the other tactical modules. Camera logic stays in
 // TacticalCamera; presentation stays in BattleCinematic; this module only
 // decides *when* those things happen.
-import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=49';
+import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=50';
 import TerrainRegistry from './TerrainRegistry.js?v=49';
 import TacticalGrid from './TacticalGrid.js?v=49';
 import TacticalPathfinder from './TacticalPathfinder.js?v=49';
 import TacticalCamera from './TacticalCamera.js?v=49';
 import UnitController from './UnitController.js?v=49';
-import BattleCinematic from './BattleCinematic.js?v=50';
+import BattleCinematic from './BattleCinematic.js?v=51';
 import TacticalActionConsole from './TacticalActionConsole.js?v=52';
 
 // Placeholder combat stats — this pass is engineering foundation, not
@@ -918,6 +918,15 @@ export default class TacticalScene extends Phaser.Scene {
     // place already guaranteed to run before control hands back.
     this.scene.pause();
     this.scene.setVisible(false);
+    // The title theme keeps playing straight into Tactical (see
+    // TitleScene.beginGame()) since Tactical has no music of its own —
+    // but VeilBattleScene has its own battle_music, and the two would
+    // layer if this one isn't paused first. It's a Sound Manager object
+    // findable by key from any scene, not something only TitleScene
+    // holds a reference to.
+    const titleMusic = this.sound.get('title_music');
+    this._titleMusicWasPlaying = !!(titleMusic && titleMusic.isPlaying);
+    if (this._titleMusicWasPlaying) titleMusic.pause();
     this.scene.launch('VeilBattleScene', context);
   }
 
@@ -932,6 +941,11 @@ export default class TacticalScene extends Phaser.Scene {
     // resumes this scene, so visibility is back on by the time the
     // player actually sees the tactical map again.
     this.scene.setVisible(true);
+    if (this._titleMusicWasPlaying) {
+      const titleMusic = this.sound.get('title_music');
+      if (titleMusic) titleMusic.resume();
+      this._titleMusicWasPlaying = false;
+    }
 
     const hero = this._bridgeHero;
     const target = this._bridgeTarget;

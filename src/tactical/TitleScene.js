@@ -28,6 +28,11 @@ export default class TitleScene extends Phaser.Scene {
     this.bg = this.add.image(0, 0, 'title_bg');
     this.veil = this.add.rectangle(0, 0, 10, 10, 0x03020a, 0.34).setOrigin(0, 0);
     this.gradientPanel = this.add.rectangle(0, 0, 10, 160, 0x03020a, 0.62).setOrigin(0, 0);
+    // A second, denser panel just behind the credit line — the art's
+    // ground/reflection detail at the very bottom is bright enough in
+    // places that the wider gradient panel alone wasn't reliably dark
+    // enough for small light-colored text sitting on top of it.
+    this.creditBacking = this.add.rectangle(0, 0, 10, 30, 0x03020a, 0.85).setOrigin(0.5);
 
     this.crest = this.add.text(0, 0, '✦ PRISMATIC VEIL ✦', {
       fontFamily: 'Georgia, serif',
@@ -53,8 +58,8 @@ export default class TitleScene extends Phaser.Scene {
       fontSize: '11px',
       color: '#ffd56a',
       stroke: '#000000',
-      strokeThickness: 2
-    }).setOrigin(0.5);
+      strokeThickness: 1
+    }).setOrigin(0.5).setDepth(1);
 
     this.tweens.add({
       targets: this.prompt,
@@ -114,7 +119,9 @@ export default class TitleScene extends Phaser.Scene {
 
     this.crest.setPosition(w / 2, h * 0.16);
     this.prompt.setPosition(w / 2, h * 0.82);
-    this.credit.setPosition(w / 2, h - 20);
+    this.credit.setPosition(w / 2, h - 24);
+    this.creditBacking.setPosition(w / 2, h - 24)
+      .setSize(Math.min(w - 20, this.credit.width + 28), 24);
 
     this._moteBounds = { top: h * 0.18, bottom: h * 0.78, w, h };
     this.motes.forEach(mote => {
@@ -147,7 +154,15 @@ export default class TitleScene extends Phaser.Scene {
 
     this.cameras.main.fadeOut(450, 7, 6, 15);
     this.time.delayedCall(470, () => {
-      if (this.music) this.music.stop();
+      // Deliberately NOT stopping this.music here — Tactical has no
+      // theme of its own, so the title track keeps playing straight
+      // into the map (same "music didn't just cut off" continuity the
+      // original prototype had going from its own title into character
+      // select). It's a Sound Manager object findable by key
+      // (`this.sound.get('title_music')`) from any scene, not something
+      // only TitleScene can reach — TacticalScene.enterLinkedBattle()
+      // pauses it before a linked BP round launches (so it doesn't layer
+      // under battle_music) and resumes it in onBattleResolved().
       this.scene.start('TacticalScene');
     });
   }
