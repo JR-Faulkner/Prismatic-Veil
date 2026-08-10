@@ -201,6 +201,9 @@ export default class TacticalScene extends Phaser.Scene {
     ['attack', 'resonart', 'attune', 'veilshift', 'guard', 'wait'].forEach(kind => {
       this.load.image(`tac_console_icon_${kind}`, `./assets/ui/tactical_console/icon_${kind}.png`);
     });
+    // Tactical's own persistent music bed (v0.5B) — see the crossfade
+    // in create() that hands off from title_music once this loads.
+    this.load.audio('tactical_music', './assets/music/veil_clockwork_drift.mp3');
   }
 
   // `this.world` is a single flat Container holding the tile layer, node
@@ -314,22 +317,44 @@ export default class TacticalScene extends Phaser.Scene {
 
     this.time.delayedCall(60, () => this.tacticalCamera.recenter(0));
 
-    // Title music was deliberately left playing into the map rather than
-    // cut off (Tactical has no theme of its own) — but at the title
-    // screen's own 0.45, it stayed a bit loud once you're actually
-    // playing. A one-time gentle dip on arrival; this only ever runs
-    // once per session (TacticalScene is never scene.restart()'d the way
-    // BP is on a hero switch), so it won't re-trigger on every bridge
-    // pause/resume — the sound object's own pause()/resume() around a
-    // linked BP round (see enterLinkedBattle()/onBattleResolved()) leaves
-    // whatever volume it's already at untouched.
+    // Title music used to keep playing straight into Tactical because
+    // Tactical had no theme of its own yet (only ever dipped in volume
+    // on arrival, never stopped) — now that it does (v0.5B "Veil
+    // Clockwork Drift"), the two crossfade instead of title music
+    // running underneath the whole map indefinitely. create() does run
+    // more than once per session — the defeat/victory panel's "Restart"
+    // button calls scene.restart() — so this reuses an existing
+    // tactical_music instance rather than sound.add()-ing a second one,
+    // and fadeInTacticalMusic() no-ops if it's already playing; the
+    // title-music fade is similarly guarded on titleMusic.isPlaying, so a
+    // restart after the crossfade has already happened touches neither
+    // track. enterLinkedBattle()/onBattleResolved() pause and resume this
+    // same instance in place around a linked BP round (see below).
+    let tacticalMusic = this.sound.get('tactical_music');
+    if (!tacticalMusic) {
+      tacticalMusic = this.sound.add('tactical_music', { loop: true, volume: 0 });
+    }
+    this.tacticalMusic = tacticalMusic;
+
+    const fadeInTacticalMusic = () => {
+      if (tacticalMusic.isPlaying) return;
+      tacticalMusic.play();
+      this.tweens.add({ targets: tacticalMusic, volume: 0.38, duration: 900, ease: 'Sine.easeInOut' });
+    };
+    if (this.sound.locked) {
+      this.sound.once('unlocked', fadeInTacticalMusic);
+    } else {
+      fadeInTacticalMusic();
+    }
+
     const titleMusic = this.sound.get('title_music');
-    if (titleMusic) {
+    if (titleMusic && titleMusic.isPlaying) {
       this.tweens.add({
         targets: titleMusic,
-        volume: 0.22,
-        duration: 1200,
-        ease: 'Sine.easeInOut'
+        volume: 0,
+        duration: 900,
+        ease: 'Sine.easeInOut',
+        onComplete: () => titleMusic.stop()
       });
     }
   }
@@ -948,15 +973,14 @@ export default class TacticalScene extends Phaser.Scene {
     // place already guaranteed to run before control hands back.
     this.scene.pause();
     this.scene.setVisible(false);
-    // The title theme keeps playing straight into Tactical (see
-    // TitleScene.beginGame()) since Tactical has no music of its own —
-    // but VeilBattleScene has its own battle_music, and the two would
-    // layer if this one isn't paused first. It's a Sound Manager object
-    // findable by key from any scene, not something only TitleScene
-    // holds a reference to.
-    const titleMusic = this.sound.get('title_music');
-    this._titleMusicWasPlaying = !!(titleMusic && titleMusic.isPlaying);
-    if (this._titleMusicWasPlaying) titleMusic.pause();
+    // Tactical's own music (see the crossfade in create()) needs to be
+    // paused before BP launches, since VeilBattleScene has its own
+    // battle_music and the two would layer otherwise. It's a Sound
+    // Manager object findable by key from any scene, not something only
+    // this scene holds a reference to.
+    const tacticalMusic = this.sound.get('tactical_music');
+    this._tacticalMusicWasPlaying = !!(tacticalMusic && tacticalMusic.isPlaying);
+    if (this._tacticalMusicWasPlaying) tacticalMusic.pause();
     this.scene.launch('VeilBattleScene', context);
   }
 
@@ -971,10 +995,10 @@ export default class TacticalScene extends Phaser.Scene {
     // resumes this scene, so visibility is back on by the time the
     // player actually sees the tactical map again.
     this.scene.setVisible(true);
-    if (this._titleMusicWasPlaying) {
-      const titleMusic = this.sound.get('title_music');
-      if (titleMusic) titleMusic.resume();
-      this._titleMusicWasPlaying = false;
+    if (this._tacticalMusicWasPlaying) {
+      const tacticalMusic = this.sound.get('tactical_music');
+      if (tacticalMusic) tacticalMusic.resume();
+      this._tacticalMusicWasPlaying = false;
     }
 
     const hero = this._bridgeHero;

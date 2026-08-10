@@ -154,15 +154,14 @@ export default class TitleScene extends Phaser.Scene {
 
     this.cameras.main.fadeOut(450, 7, 6, 15);
     this.time.delayedCall(470, () => {
-      // Deliberately NOT stopping this.music here — Tactical has no
-      // theme of its own, so the title track keeps playing straight
-      // into the map (same "music didn't just cut off" continuity the
-      // original prototype had going from its own title into character
-      // select). It's a Sound Manager object findable by key
-      // (`this.sound.get('title_music')`) from any scene, not something
-      // only TitleScene can reach — TacticalScene.enterLinkedBattle()
-      // pauses it before a linked BP round launches (so it doesn't layer
-      // under battle_music) and resumes it in onBattleResolved().
+      // Deliberately NOT stopping this.music here — same "music didn't
+      // just cut off" continuity the original prototype had going from
+      // its own title into character select. It's a Sound Manager
+      // object findable by key (`this.sound.get('title_music')`) from
+      // any scene, not something only TitleScene can reach —
+      // TacticalScene.create() crossfades it out into its own tactical
+      // theme once the map is up (Tactical didn't have one of its own
+      // until v0.5B).
       this.scene.start('TacticalScene');
     });
   }
