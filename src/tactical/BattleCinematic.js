@@ -57,6 +57,23 @@ export default class BattleCinematic {
       this.scene.time.delayedCall(this.timing.cinematicHoldMs, () => {
         if (onImpact) onImpact();
         this.scene.cameras.main.flash(140, 255, 240, 200);
+        // Presentation weight to match the full Battle Presentation's own
+        // hit language — a flinch-compress on the target portrait plus a
+        // camera micro-shake, rather than just the flash this cut-in
+        // shipped with. Still purely visual, no camera "tactical-state
+        // bookkeeping" (that stays TacticalCamera's save/restore, called
+        // by TacticalScene around this whole cut-in) — a bare .shake()
+        // call is the same kind of stateless, self-contained effect the
+        // .flash() call right above it already is.
+        this.scene.cameras.main.shake(160, 0.008);
+        t.add({
+          targets: targetImg,
+          scaleX: targetImg.scaleX * 0.92,
+          scaleY: targetImg.scaleY * 0.92,
+          duration: 80,
+          yoyo: true,
+          ease: 'Quad.easeOut'
+        });
 
         this.scene.time.delayedCall(this.timing.cinematicOutMs, () => {
           t.add({

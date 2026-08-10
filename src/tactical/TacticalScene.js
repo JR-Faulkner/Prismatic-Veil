@@ -9,7 +9,7 @@ import TacticalGrid from './TacticalGrid.js?v=49';
 import TacticalPathfinder from './TacticalPathfinder.js?v=49';
 import TacticalCamera from './TacticalCamera.js?v=49';
 import UnitController from './UnitController.js?v=49';
-import BattleCinematic from './BattleCinematic.js?v=49';
+import BattleCinematic from './BattleCinematic.js?v=50';
 import TacticalActionConsole from './TacticalActionConsole.js?v=52';
 
 // Placeholder combat stats — this pass is engineering foundation, not
@@ -954,6 +954,7 @@ export default class TacticalScene extends Phaser.Scene {
       }
     }
     this.setMessage(`${target.name} is hit for ${battleResult.damageApplied} damage!`);
+    this.floatDamage(target, battleResult.damageApplied, battleResult.critical);
     if (battleResult.enemyDefeated) this.defeatEnemy(target);
 
     this.inputLocked = false;
@@ -1098,9 +1099,65 @@ export default class TacticalScene extends Phaser.Scene {
         if (hero.hp <= 0) this.defeatHero(hero);
       }
     });
+    // Same tactical-map hit feedback the linked BP path gets on return —
+    // the cut-in's own fade-out has already resolved by this point (its
+    // promise only resolves once the overlay layer is destroyed), so the
+    // map is fully visible again and this reads clean, not layered under
+    // the cinematic's darkening overlay.
+    this.floatDamage(hero, enemy.atk, false);
     await this.tacticalCamera.restoreCinematicState(TIMING.cameraRestoreMs);
     this.refreshHUD();
     this.checkVictoryDefeat();
+  }
+
+  // Presentation polish: returning from a full Battle Presentation round
+  // (or closing the lighter enemy cut-in) used to just snap back to a
+  // changed HP number and a text line — nothing marked the hit on the
+  // tactical map itself. A floating number + a brief punch-scale on the
+  // target's own token + a camera micro-shake gives that moment some
+  // weight without touching anything about the actual combat resolution.
+  // unit.sprite is always a Container (both the procedural circle-and-
+  // initials token and the character-art token build one), so a uniform
+  // `.scale` punch works identically regardless of which kind is hit —
+  // no need to know or care which token type this is.
+  floatDamage(unit, amount, critical) {
+    if (!unit || !unit.sprite) return;
+    const x = unit.sprite.x;
+    const y = unit.sprite.y - 18;
+    const text = this.add.text(x, y, `-${amount}`, {
+      fontSize: critical ? '20px' : '15px',
+      fontStyle: 'bold',
+      color: critical ? '#FFE8A0' : '#FFFFFF',
+      stroke: '#000000',
+      strokeThickness: 3
+    }).setOrigin(0.5).setDepth(30);
+    this.worldAdd(text);
+    this.tweens.add({
+      targets: text,
+      y: y - 34,
+      alpha: { from: 1, to: 0 },
+      duration: 850,
+      ease: 'Quad.easeOut',
+      onComplete: () => text.destroy()
+    });
+
+    // Reset to the token's known resting scale (1 — neither token builder
+    // ever scales the outer container itself) before punching, rather
+    // than reading whatever scale is current: a hit landing mid-tween
+    // from a *previous* punch would otherwise capture that in-flight
+    // value as the new "base" and the token could creep permanently
+    // larger over several rapid hits.
+    this.tweens.killTweensOf(unit.sprite);
+    unit.sprite.setScale(1);
+    this.tweens.add({
+      targets: unit.sprite,
+      scale: 1.18,
+      duration: 90,
+      yoyo: true,
+      ease: 'Quad.easeOut'
+    });
+
+    this.cameras.main.shake(140, 0.006);
   }
 
   defeatEnemy(enemy) {
