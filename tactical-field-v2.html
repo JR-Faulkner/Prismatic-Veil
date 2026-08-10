@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Prismatic Veil — Tactical Field v2</title>
 <meta name="theme-color" content="#07060f">
+<!-- v0.5B App Icon handoff — this is the live game entry point, so it's
+     the one page that gets a Home Screen icon and manifest. The example
+     manifest's start_url ("./") would resolve to the repo root, which
+     GitHub Pages serves as index.html — the legacy wave-survival
+     prototype, not this game — so tactical.webmanifest overrides it to
+     point at this file explicitly. index.html and battle-v2.html are
+     untouched: the legacy prototype and the standalone BP dev harness
+     aren't "the live game site" this handoff is for. -->
+<link rel="apple-touch-icon" sizes="180x180" href="./assets/ui/apple_touch_icon_180.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./assets/ui/android_chrome_512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./assets/ui/android_chrome_192.png">
+<link rel="manifest" href="./tactical.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="The Prismatic Veil">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {

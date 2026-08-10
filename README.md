@@ -250,6 +250,8 @@ Returning from a full BP round used to snap straight back to the tactical map wi
 
 Both `tactical-field-v2.html` and `battle-v2.html` patch `Phaser.GameObjects.GameObjectFactory.prototype.text` once at boot to set a `resolution: devicePixelRatio` default on every text object. `Phaser.Scale.RESIZE` ties the canvas's backing-store resolution 1:1 to its CSS pixel size with no DPI awareness at all, so on any real phone the browser upscales that low-res canvas to fill the physical screen — visible mostly as soft text and small icons. A full fix (bigger backing store, matching camera zoom so world coordinates still map 1:1) touches camera-zoom math and the `getWorldPoint()` input-coordinate conversion this project's already been bitten by once; per-object text `resolution` is a safe, self-contained partial fix with none of that risk, since each Text object rasterizes to its own off-screen bitmap independent of the main canvas.
 
+`tactical-field-v2.html` — and only that file, since it's the actual live game entry point, not `index.html` (legacy prototype) or `battle-v2.html` (standalone BP harness) — carries a Home Screen icon and `tactical.webmanifest` (v0.5B App Icon handoff). The manifest's `start_url` is `./tactical-field-v2.html` explicitly, not the example's `./`: this manifest lives at the repo root alongside `index.html`, and GitHub Pages serves that as the site root, so an unmodified `start_url` would launch the legacy prototype from the Home Screen icon instead of this game.
+
 ```
 /tactical-field-v2.html
 /data/tactical_map_v2.json        the "Too Quiet" Restore Sound encounter
