@@ -302,6 +302,25 @@ export default class TacticalScene extends Phaser.Scene {
     this.scale.on('resize', this._uiCamResizeHandler, this);
 
     this.time.delayedCall(60, () => this.tacticalCamera.recenter(0));
+
+    // Title music was deliberately left playing into the map rather than
+    // cut off (Tactical has no theme of its own) — but at the title
+    // screen's own 0.45, it stayed a bit loud once you're actually
+    // playing. A one-time gentle dip on arrival; this only ever runs
+    // once per session (TacticalScene is never scene.restart()'d the way
+    // BP is on a hero switch), so it won't re-trigger on every bridge
+    // pause/resume — the sound object's own pause()/resume() around a
+    // linked BP round (see enterLinkedBattle()/onBattleResolved()) leaves
+    // whatever volume it's already at untouched.
+    const titleMusic = this.sound.get('title_music');
+    if (titleMusic) {
+      this.tweens.add({
+        targets: titleMusic,
+        volume: 0.22,
+        duration: 1200,
+        ease: 'Sine.easeInOut'
+      });
+    }
   }
 
   worldWrap(obj) {
