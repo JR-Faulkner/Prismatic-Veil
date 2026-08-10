@@ -27,8 +27,11 @@ export const ZOOM = Object.freeze({
 export const TIMING = Object.freeze({
   stepMoveMs: 140,
   cinematicInMs: 220,
-  cinematicHoldMs: 520,
-  cinematicOutMs: 200,
+  // Bumped from 520/200 — playtest feedback: the enemy cut-in's own
+  // "X uses Y!" line was gone before there was any real chance to read
+  // it, on top of having no text box behind it (see BattleCinematic.js).
+  cinematicHoldMs: 1500,
+  cinematicOutMs: 350,
   cameraFocusMs: 260,
   cameraRestoreMs: 220,
   enemyStepPauseMs: 90,

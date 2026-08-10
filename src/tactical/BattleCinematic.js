@@ -30,6 +30,20 @@ export default class BattleCinematic {
         .setAlpha(0).setScale(0.001);
       const targetImg = this.scene.add.image(w * 0.74, h * 0.5, targetKey)
         .setAlpha(0).setScale(0.001).setFlipX(true);
+
+      // A real box behind the name/flavor lines, not just text floating
+      // over whatever the tactical map happens to show there — playtest
+      // feedback was that this cut-in's own narration was unreadable.
+      // Fixed size regardless of whether flavor is empty (as it is from
+      // TacticalScene.enemyAttack() today) rather than only sizing for
+      // whatever's actually populated, so a future non-empty flavor
+      // string doesn't need this box's math touched too.
+      const textBoxY = h * 0.81;
+      const textBox = this.scene.add.rectangle(w / 2, textBoxY, Math.min(w - 32, 420), 68, 0x05040a, 0.78)
+        .setStrokeStyle(1, 0x5a3a88, 0.75)
+        .setOrigin(0.5)
+        .setAlpha(0);
+
       const nameLabel = this.scene.add.text(w / 2, h * 0.78, `${attackerName} uses ${abilityName}!`, {
         fontSize: Math.round(Math.max(13, w * 0.032)) + 'px',
         fontStyle: 'bold',
@@ -40,7 +54,7 @@ export default class BattleCinematic {
         color: '#C8A8FF'
       }).setOrigin(0.5).setAlpha(0);
 
-      layer.add([overlay, attackerImg, targetImg, nameLabel, flavorLabel]);
+      layer.add([overlay, attackerImg, targetImg, textBox, nameLabel, flavorLabel]);
 
       const t = this.scene.tweens;
       t.add({ targets: overlay, alpha: 0.74, duration: this.timing.cinematicInMs });
@@ -52,7 +66,7 @@ export default class BattleCinematic {
         targets: targetImg, alpha: 1, scale: 1,
         duration: this.timing.cinematicInMs, ease: 'Back.easeOut', delay: 60
       });
-      t.add({ targets: [nameLabel, flavorLabel], alpha: 1, duration: 180, delay: 140 });
+      t.add({ targets: [textBox, nameLabel, flavorLabel], alpha: 1, duration: 180, delay: 140 });
 
       this.scene.time.delayedCall(this.timing.cinematicHoldMs, () => {
         if (onImpact) onImpact();
@@ -77,7 +91,7 @@ export default class BattleCinematic {
 
         this.scene.time.delayedCall(this.timing.cinematicOutMs, () => {
           t.add({
-            targets: [overlay, attackerImg, targetImg, nameLabel, flavorLabel],
+            targets: [overlay, attackerImg, targetImg, textBox, nameLabel, flavorLabel],
             alpha: 0,
             duration: this.timing.cinematicOutMs,
             onComplete: () => {
