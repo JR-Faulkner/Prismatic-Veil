@@ -632,10 +632,14 @@ export default class BattleHUD {
 
     if (!item) {
       this._showing = false;
+      this._currentItem = null;
       return;
     }
 
     this._showing = true;
+    this._currentItem = item;
+    this._waitingForTap = false;
+    this._pendingAdvance = null;
     this._showBox();
     this.messageText.setText('');
     this.msgCursor.setVisible(false);
@@ -647,16 +651,51 @@ export default class BattleHUD {
       callback: () => {
         index += 1;
         this.messageText.setText(item.text.slice(0, index));
-
-        if (index >= item.text.length) {
-          this.msgCursor.setVisible(true);
-          this.scene.time.delayedCall(850, () => {
-            this.msgCursor.setVisible(false);
-            if (item.onDone) item.onDone();
-            this._nextMessage();
-          });
-        }
+        if (index >= item.text.length) this._openTapGate(item);
       }
     });
+  }
+
+  // Live playtesting with a kid at the controls: lines were auto-
+  // advancing on a fixed hold before there was any real chance to read
+  // them. Every line now waits for an actual tap instead of a timer —
+  // a speed *setting* can layer on top of this later, but the default
+  // has to be "wait for the player," not "assume how fast they read."
+  _openTapGate(item) {
+    this._typingEvent = null;
+    this.msgCursor.setVisible(true);
+    this._waitingForTap = true;
+    this._pendingAdvance = () => {
+      this._waitingForTap = false;
+      this._pendingAdvance = null;
+      this.msgCursor.setVisible(false);
+      if (item.onDone) item.onDone();
+      this._nextMessage();
+    };
+  }
+
+  // Called by the scene's own pointerdown handling, ahead of whatever
+  // that tap would otherwise mean (e.g. "start the next round") — a tap
+  // while narration is up is never also a round-advance tap. A tap
+  // while a line is still typing fast-forwards to the full text and
+  // opens the same tap-to-continue gate immediately, rather than making
+  // an impatient reader sit through the remaining per-character delay
+  // too. Returns false only when nothing is showing, so the caller
+  // knows to fall through to its own tap handling.
+  tryAdvance() {
+    if (!this._showing || !this._currentItem) return false;
+
+    if (this._waitingForTap) {
+      const advance = this._pendingAdvance;
+      if (advance) advance();
+      return true;
+    }
+
+    if (this._typingEvent) {
+      this.scene.time.removeEvent(this._typingEvent);
+      this.messageText.setText(this._currentItem.text);
+      this._openTapGate(this._currentItem);
+    }
+    return true;
   }
 }

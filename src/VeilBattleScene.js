@@ -1,4 +1,4 @@
-import BattleHUD from './BattleHUD.js?v=42';
+import BattleHUD from './BattleHUD.js?v=43';
 import BattleController from './BattleController.js?v=42';
 import Timeline from './Timeline.js?v=42';
 import VeilFracture from './VeilFracture.js?v=42';
@@ -382,7 +382,15 @@ export default class VeilBattleScene extends Phaser.Scene {
       this.battleCam.startIdleBreath();
       this.controller.startNextRound();
     });
-    this.input.on('pointerdown', () => this.controller.startNextRound());
+    // A tap goes to the currently-showing dialogue line first — narration
+    // now waits for a real tap to advance instead of a fixed timer (see
+    // BattleHUD.tryAdvance()), so the same tap that used to always mean
+    // "start the next round" has to check that first, or a tap meant to
+    // advance a line would also fire round-advancement underneath it.
+    this.input.on('pointerdown', () => {
+      if (this.hud && this.hud.tryAdvance()) return;
+      this.controller.startNextRound();
+    });
   }
 
   // Tap to cycle the active hero and restart the battle with them.
