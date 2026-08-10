@@ -100,17 +100,13 @@ export default class TitleScene extends Phaser.Scene {
     // slow-connection tap easily lands before it's done): beginGame()
     // only ever checked readiness once, at the moment of the tap, and
     // nothing picked the track back up if it finished loading a moment
-    // later. Now it does — if beginGame() already ran without playing
-    // it (this._started but no this.music yet), start it retroactively
-    // right here instead of leaving it silently skipped.
+    // later. _tryStartMusic() (below) now runs from both this load's
+    // completion and from beginGame() itself, whichever happens last.
     this._musicReady = false;
     this.load.audio('title_music', './prism-of-elders.mp3');
     this.load.once('complete', () => {
       this._musicReady = true;
-      if (this._started && !this.music) {
-        this.music = this.sound.add('title_music', { loop: true, volume: 0.45 });
-        this.music.play();
-      }
+      this._tryStartMusic();
     });
     this.load.start();
 
@@ -156,14 +152,32 @@ export default class TitleScene extends Phaser.Scene {
     });
   }
 
+  // Guards this._started/_musicReady/this.music together so it's safe to
+  // call from wherever either condition can become true (the tap and the
+  // load's own completion, in either order) without double-creating the
+  // sound. Also checks `sound.locked` before playing — DAI's own v0.5B
+  // tactical-music spec calls this out explicitly (see the matching
+  // check in TacticalScene.create()) and title_music was the one place
+  // that skipped it, calling `.play()` unconditionally the instant a tap
+  // fired. That's fine on a fast desktop unlock, but a real phone's
+  // AudioContext can still be mid-unlock in that exact instant even
+  // inside a genuine tap handler — playing while still locked doesn't
+  // reliably auto-start once it unlocks a moment later, so on a slower
+  // device this could mean no title music at all, tap or no tap.
+  _tryStartMusic() {
+    if (!this._started || !this._musicReady || this.music) return;
+    if (this.sound.locked) {
+      this.sound.once('unlocked', () => this._tryStartMusic());
+      return;
+    }
+    this.music = this.sound.add('title_music', { loop: true, volume: 0.45 });
+    this.music.play();
+  }
+
   beginGame() {
     if (this._started) return;
     this._started = true;
-
-    if (this._musicReady) {
-      this.music = this.sound.add('title_music', { loop: true, volume: 0.45 });
-      this.music.play();
-    }
+    this._tryStartMusic();
 
     this.cameras.main.fadeOut(450, 7, 6, 15);
     this.time.delayedCall(470, () => {
