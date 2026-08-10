@@ -69,7 +69,19 @@ export default class BattleCinematic {
       t.add({ targets: [textBox, nameLabel, flavorLabel], alpha: 1, duration: 180, delay: 140 });
 
       this.scene.time.delayedCall(this.timing.cinematicHoldMs, () => {
-        if (onImpact) onImpact();
+        // onImpact does the actual damage math (TacticalScene owns that,
+        // this module never touches it) and can return the resulting
+        // "<target> suffers <n> damage!" line — the cut-in only ever
+        // said "<attacker> uses <ability>!" and sat there for the whole
+        // hold, never actually telling the player what happened to their
+        // hero. flavorLabel is already faded in and empty for enemy
+        // attacks (see the caller), so it's a free second line rather
+        // than a layout change.
+        const impactText = onImpact ? onImpact() : null;
+        if (impactText) {
+          flavorLabel.setText(impactText);
+          t.add({ targets: flavorLabel, scale: { from: 1.2, to: 1 }, duration: 160, ease: 'Back.easeOut' });
+        }
         this.scene.cameras.main.flash(140, 255, 240, 200);
         // Presentation weight to match the full Battle Presentation's own
         // hit language — a flinch-compress on the target portrait plus a
