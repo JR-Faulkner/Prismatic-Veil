@@ -256,6 +256,17 @@ export default class TacticalScene extends Phaser.Scene {
     this.load.image('hero_hud_master_a', './assets/ui/tactical_hud/hero_hud_master_a.png');
     this.load.image('hud_hp_icon', './assets/ui/tactical_hud/hp_icon.png');
     this.load.image('hud_rp_icon', './assets/ui/tactical_hud/rp_icon.png');
+    // v0.5D Tactical Chrome Polish — status drawer tab, Player Phase/Goal
+    // frames, Cancel, and the three map controls. All visual only, per
+    // the handoff's own scope — none of the logic these sit on top of
+    // changes.
+    this.load.image('tac_status_tab', './assets/ui/tactical_chrome/status_drawer_tab.png');
+    this.load.image('tac_phase_frame', './assets/ui/tactical_chrome/player_phase_frame.png');
+    this.load.image('tac_goal_frame', './assets/ui/tactical_chrome/goal_plate_frame.png');
+    this.load.image('tac_cancel_button', './assets/ui/tactical_chrome/cancel_button.png');
+    this.load.image('tac_zoom_out_button', './assets/ui/tactical_chrome/map_zoom_out.png');
+    this.load.image('tac_center_button', './assets/ui/tactical_chrome/map_center.png');
+    this.load.image('tac_zoom_in_button', './assets/ui/tactical_chrome/map_zoom_in.png');
     // v0.5A Tactical Command Console Core — button states and command
     // icons. Pre-resized offline (LANCZOS, 480x368 / 160x160) from the
     // handoff's native 1536x1178 / 768x768 masters — rendering those
@@ -628,7 +639,21 @@ export default class TacticalScene extends Phaser.Scene {
   // --- HUD ---------------------------------------------------------------
 
   buildHUD() {
-    this.turnText = this.add.text(0, 0, '', { fontSize: '16px', fontStyle: 'bold', color: '#FFE8A0' }).setOrigin(0.5, 0);
+    // v0.5D: framed plates behind the Player Phase header and a new,
+    // static Goal reminder — distinct from messageText below, which
+    // keeps handling the ever-changing turn-by-turn narration
+    // ("Prismel selected...", "suffers 3 damage!", etc.) exactly as
+    // before. The goal text is fixed for this map, so it's set once
+    // here rather than threaded through refreshHUD().
+    this.phaseFrame = this.add.image(0, 0, 'tac_phase_frame').setOrigin(0.5, 0);
+    this.turnText = this.add.text(0, 0, '', { fontSize: '16px', fontStyle: 'bold', color: '#FFE8A0' }).setOrigin(0.5, 0.5);
+    this.goalFrame = this.add.image(0, 0, 'tac_goal_frame').setOrigin(0.5, 0);
+    this.goalPrimaryText = this.add.text(0, 0, 'Goal: Restore all 3 sound nodes.', {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', color: '#FFE8A0', align: 'center'
+    }).setOrigin(0.5, 0.5);
+    this.goalSecondaryText = this.add.text(0, 0, 'Defeating every enemy is optional.', {
+      fontFamily: 'Georgia, serif', color: '#C8A8FF', align: 'center'
+    }).setOrigin(0.5, 0.5);
     this.messageText = this.add.text(0, 0, '', { fontSize: '13px', color: '#C8A8FF', wordWrap: { width: 320 } }).setOrigin(0.5, 0);
     this.heroCards = this.heroes.map((h, i) => this._buildHeroCard(h, i));
 
@@ -647,18 +672,40 @@ export default class TacticalScene extends Phaser.Scene {
     this.zoomControls = this._buildZoomControls();
     this.endPanel = null;
 
-    this.uiAdd([this.turnText, this.messageText, this.zoomControls.container, this.actionMenu.container, this.heroCardsDrawer, this.hudHandle.container]);
+    this.uiAdd([
+      this.phaseFrame, this.turnText, this.goalFrame, this.goalPrimaryText, this.goalSecondaryText, this.messageText,
+      this.zoomControls.container, this.actionMenu.container, this.heroCardsDrawer, this.hudHandle.container
+    ]);
   }
 
   // A small fixed tab at the screen's left edge — never moves, so it's
   // always where the player expects it regardless of drawer state.
-  // Swaps its own arrow glyph to hint open vs. close.
+  // v0.5D swapped the plain rectangle + arrow-glyph placeholder for real
+  // art (a vertical "STATUS" plate, no arrow baked in) — the slide
+  // itself already communicates open/closed, so nothing needs to change
+  // per state here anymore.
   _buildHudHandle() {
     const container = this.add.container(0, 0);
-    const bg = this.add.rectangle(0, 0, 26, 64, 0x1a1033, 0.94)
-      .setStrokeStyle(1, 0x5a3a88, 0.95).setOrigin(0, 0.5)
+    // Fixed size, not viewport-scaled — this is a small edge touch
+    // target, not content that needs to stay readable across widths.
+    // Source art is 72x260 (aspect ~0.277); matching by width would make
+    // it notably taller than the old 64px placeholder, which is fine —
+    // "STATUS" spelled vertically needs the room.
+    const tabW = 30;
+    const tabH = Math.round(tabW / (72 / 260));
+    const bg = this.add.image(0, 0, 'tac_status_tab').setOrigin(0, 0.5)
+      .setDisplaySize(tabW, tabH)
       .setInteractive({ useHandCursor: true });
-    const arrow = this.add.text(13, 0, '›', { fontSize: '20px', fontStyle: 'bold', color: '#FFE8A0' }).setOrigin(0.5);
+    // Explicit hit area padded beyond the visible art — "maintain a
+    // generous invisible touch target on mobile" per the handoff, and
+    // this project's own 44px-touch-target standard (the art alone is
+    // only 30px wide on screen). Hit-area coordinates are the texture's
+    // native, UNSCALED frame space (72x260 here), not display size —
+    // Phaser divides by the object's current scale before hit-testing,
+    // so padding has to be expressed in native px too: ~7 desired screen
+    // px of horizontal padding / (30/72 display scale) ≈ 17 native px;
+    // ~10 desired vertical screen px / same scale ≈ 24 native px.
+    bg.input.hitArea.setTo(-17, -24, 72 + 34, 260 + 48);
     bg.on('pointerdown', (p, lx, ly, ev) => {
       if (ev) ev.stopPropagation();
       if (p.event) p.event._tacticalUIHandled = true;
@@ -671,8 +718,8 @@ export default class TacticalScene extends Phaser.Scene {
       this._hudHandleJustTapped = true;
       this.toggleHudDrawer();
     });
-    container.add([bg, arrow]);
-    return { container, bg, arrow };
+    container.add([bg]);
+    return { container, bg };
   }
 
   // forceExpanded lets other call sites (e.g. dismissing on an outside
@@ -682,7 +729,6 @@ export default class TacticalScene extends Phaser.Scene {
     const next = typeof forceExpanded === 'boolean' ? forceExpanded : !this.hudExpanded;
     if (next === this.hudExpanded) return;
     this.hudExpanded = next;
-    this.hudHandle.arrow.setText(next ? '‹' : '›');
     this.tweens.killTweensOf(this.heroCardsDrawer);
     this.tweens.add({
       targets: this.heroCardsDrawer,
@@ -847,29 +893,39 @@ export default class TacticalScene extends Phaser.Scene {
     container.add(actionConsole.container);
     this.actionConsole = actionConsole;
 
-    const cancelDef = ACTION_DEFS.find(d => d.kind === 'cancel');
-    const cancelBg = this.add.rectangle(0, 0, 90, 30, 0x1a1033, 0.92).setStrokeStyle(1, 0x5a3a88, 0.9).setOrigin(0.5)
+    // v0.5D: real art with "Cancel" baked in (it's a fixed label, never
+    // runtime text) replaces the plain rectangle pill. Same interactive
+    // logic, just a different visual.
+    const cancelBg = this.add.image(0, 0, 'tac_cancel_button').setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
-    const cancelText = this.add.text(0, 0, cancelDef.label, { fontSize: '12px', color: '#FFE8A0' }).setOrigin(0.5);
     cancelBg.on('pointerdown', (p, lx, ly, ev) => { if (ev) ev.stopPropagation(); if (p.event) p.event._tacticalUIHandled = true; this.onActionMenuChoice('cancel'); });
-    container.add([cancelBg, cancelText]);
+    container.add([cancelBg]);
 
-    return { container, cancelBg, cancelText };
+    return { container, cancelBg };
   }
 
+  // v0.5D: real art (glyphs baked in) replaces the plain circle+text
+  // buttons. Zoom/recenter math is untouched — only the visual and the
+  // interactive object itself changed from a Circle to an Image. Native
+  // art (125-130x140) is far bigger than a touch button needs to be, so
+  // layoutHUD() below sizes each one down to the action console's own
+  // touch-friendly height and spaces them by actual rendered width —
+  // hardcoded here since it's this method's own source art, same pattern
+  // as the STATUS tab's fixed 72/260 aspect below.
   _buildZoomControls() {
     const container = this.add.container(0, 0);
-    const mk = (dx, label, cb) => {
-      const bg = this.add.circle(dx, 0, 22, 0x1a1033, 0.9).setStrokeStyle(1, 0x5a3a88, 0.9).setInteractive({ useHandCursor: true });
-      const text = this.add.text(dx, 0, label, { fontSize: '18px', color: '#FFE8A0' }).setOrigin(0.5);
-      bg.on('pointerdown', (p, lx, ly, ev) => { if (ev) ev.stopPropagation(); if (p.event) p.event._tacticalUIHandled = true; cb(); });
-      container.add([bg, text]);
-      return bg;
-    };
-    mk(-56, '-', () => this.tacticalCamera.zoomBy(-ZOOM.buttonStep));
-    mk(0, '⌖', () => this.tacticalCamera.recenter(TIMING.cameraFocusMs));
-    mk(56, '+', () => this.tacticalCamera.zoomBy(ZOOM.buttonStep));
-    return { container };
+    const specs = [
+      { key: 'tac_zoom_out_button', nativeW: 125, nativeH: 140, cb: () => this.tacticalCamera.zoomBy(-ZOOM.buttonStep) },
+      { key: 'tac_center_button', nativeW: 130, nativeH: 140, cb: () => this.tacticalCamera.recenter(TIMING.cameraFocusMs) },
+      { key: 'tac_zoom_in_button', nativeW: 125, nativeH: 140, cb: () => this.tacticalCamera.zoomBy(ZOOM.buttonStep) },
+    ];
+    const buttons = specs.map(s => {
+      const bg = this.add.image(0, 0, s.key).setInteractive({ useHandCursor: true });
+      bg.on('pointerdown', (p, lx, ly, ev) => { if (ev) ev.stopPropagation(); if (p.event) p.event._tacticalUIHandled = true; s.cb(); });
+      container.add([bg]);
+      return { bg, nativeW: s.nativeW, nativeH: s.nativeH };
+    });
+    return { container, buttons };
   }
 
   layoutHUD() {
@@ -877,9 +933,6 @@ export default class TacticalScene extends Phaser.Scene {
     const h = this.scale.height;
     const compact = w < BREAKPOINTS.compactWidth || h < BREAKPOINTS.compactHeight;
     const margin = compact ? 10 : 16;
-
-    this.turnText.setPosition(w / 2, margin);
-    this.messageText.setPosition(w / 2, margin + 24).setWordWrapWidth(w * 0.86);
 
     // v0.5C hero HUD cards used to be capped well short of the full
     // screen width (max 260-340px) — reported directly as hard to read,
@@ -889,8 +942,45 @@ export default class TacticalScene extends Phaser.Scene {
     // well/bar/facet/text position in the card is a fraction of its own
     // width (HERO_HUD_GEOMETRY), so going edge-to-edge scales
     // everything up together for free — no other layout math to touch.
+    // v0.5D's Player Phase and Goal frames share this same edge-to-edge
+    // width on phone-sized viewports so the whole HUD column reads as
+    // one consistent block. Unlike the hero cards (hidden in a
+    // collapsed-by-default drawer, so their own width doesn't cost
+    // permanent screen space), these two frames are always on screen —
+    // going edge-to-edge at a wide desktop width would blow their fixed
+    // aspect ratio up into a header hundreds of pixels tall, eating the
+    // battlefield. Capped at a phone-plausible width; below the cap
+    // (every real target device) it's identical to full edge-to-edge.
     const cardW = w - margin * 2;
-    const stackTop = margin + 54;
+    const headerW = Math.min(cardW, 480);
+
+    // Player Phase frame: height follows the source art's own aspect
+    // ratio (555x100) rather than a hand-picked number, so it scales
+    // correctly at any viewport width instead of stretching or
+    // letterboxing.
+    const phaseFrameH = Math.round(headerW * (100 / 555));
+    this.phaseFrame.setDisplaySize(headerW, phaseFrameH);
+    this.phaseFrame.setPosition(w / 2, margin);
+    this.turnText.setPosition(w / 2, margin + phaseFrameH / 2);
+
+    // Goal plate sits directly below, same width, its own aspect ratio
+    // (560x155). Primary/secondary lines are placed as fractions of the
+    // plate's own height so they stay inside the frame art regardless of
+    // viewport.
+    const goalGap = 6;
+    const goalFrameH = Math.round(headerW * (155 / 560));
+    const goalFrameY = margin + phaseFrameH + goalGap;
+    this.goalFrame.setDisplaySize(headerW, goalFrameH);
+    this.goalFrame.setPosition(w / 2, goalFrameY);
+    this.goalPrimaryText.setFontSize(compact ? 13 : 15).setWordWrapWidth(headerW * 0.88);
+    this.goalSecondaryText.setFontSize(compact ? 11 : 12).setWordWrapWidth(headerW * 0.88);
+    this.goalPrimaryText.setPosition(w / 2, goalFrameY + goalFrameH * 0.36);
+    this.goalSecondaryText.setPosition(w / 2, goalFrameY + goalFrameH * 0.68);
+
+    const messageY = goalFrameY + goalFrameH + 6;
+    this.messageText.setPosition(w / 2, messageY).setWordWrapWidth(w * 0.86);
+
+    const stackTop = messageY + (compact ? 34 : 40);
     let cardY = stackTop;
     this.heroCards.forEach(c => {
       this._layoutHeroCard(c, cardW);
@@ -912,7 +1002,27 @@ export default class TacticalScene extends Phaser.Scene {
       this._hudDrawerInit = true;
     }
 
-    this.zoomControls.container.setPosition(w - margin - 56, h - margin - 24);
+    // Size each button to the action console's own touch-friendly height
+    // (kept in sync with barHeight just below) while preserving each
+    // texture's individual native aspect ratio — a shared square
+    // displaySize would stretch the zoom-out/zoom-in glyphs, which are
+    // narrower than the center button. Spaced by actual rendered width,
+    // not a hardcoded dx, so the row stays evenly gapped regardless of
+    // the compact/full touch size.
+    const zoomBtnH = compact ? 40 : 46;
+    const zoomGap = 10;
+    const zoomWidths = this.zoomControls.buttons.map(b => {
+      const bw = Math.round(zoomBtnH * (b.nativeW / b.nativeH));
+      b.bg.setDisplaySize(bw, zoomBtnH);
+      return bw;
+    });
+    const totalZoomW = zoomWidths.reduce((a, b) => a + b, 0) + zoomGap * (zoomWidths.length - 1);
+    let zx = -totalZoomW / 2;
+    this.zoomControls.buttons.forEach((b, i) => {
+      b.bg.setPosition(zx + zoomWidths[i] / 2, 0);
+      zx += zoomWidths[i] + zoomGap;
+    });
+    this.zoomControls.container.setPosition(w - margin - totalZoomW / 2, h - margin - zoomBtnH / 2);
 
     // Console buttons render at a fixed touch-friendly height regardless
     // of viewport; only the row gap and cancel pill shrink in compact.
@@ -923,20 +1033,18 @@ export default class TacticalScene extends Phaser.Scene {
     const cancelGap = 10;
     const cancelH = compact ? 26 : 30;
     const cancelW = Math.max(80, Math.round(barW * 0.5));
-    this.actionMenu.cancelBg.setSize(cancelW, cancelH);
+    // setDisplaySize(), not setSize() — cancelBg is now an Image (v0.5D),
+    // and an Image's visual size is its display size/scale, not its
+    // `.width/.height` (those just feed origin math). No hit-area
+    // mutation needed here unlike the console buttons below: Phaser
+    // scales pointer hit-testing by the object's current scale
+    // automatically, so the hit area generated at the original
+    // setInteractive() call (the full native frame) already tracks
+    // whatever setDisplaySize() below scales it to — nothing here is
+    // trying to change the hit area's own *proportions*, just scale the
+    // whole object uniformly.
+    this.actionMenu.cancelBg.setDisplaySize(cancelW, cancelH);
     this.actionMenu.cancelBg.setPosition(barW / 2, stackH + cancelGap + cancelH / 2);
-    this.actionMenu.cancelText.setPosition(barW / 2, stackH + cancelGap + cancelH / 2);
-    // Mutate the existing hit area in place rather than calling
-    // setInteractive() again — GameObject.setInteractive()'s enable() is
-    // `input ? input.enabled = true : setHitArea(...)`, so a second call
-    // on an object that's already interactive silently skips the hit-area
-    // update entirely (confirmed via scene.input.hitTestPointer() while
-    // chasing the same bug on the console buttons below — see
-    // TacticalActionConsole.js's layout()). A Shape's width/height ARE
-    // its own current geometry (unlike an Image's fixed texture frame),
-    // so frame-space here is exactly (0,0,cancelW,cancelH) — no origin
-    // centering math needed.
-    this.actionMenu.cancelBg.input.hitArea.setTo(0, 0, cancelW, cancelH);
 
     const totalH = stackH + cancelGap + cancelH;
     this.actionMenu.container.setPosition(w - margin - barW, h - margin - totalH);

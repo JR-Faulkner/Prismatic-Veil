@@ -304,6 +304,15 @@ Sprite tokens load pre-downsampled `map_icons/` copies of the character art (`as
 
 World geometry is fixed regardless of viewport; only the camera's default zoom adapts per screen size (compact phones start zoomed out further to keep more context visible) — tying tile scale to viewport width instead would fight the camera system on every resize. See `CLAUDE.md`'s traps list for two bugs specific to this prototype's two-camera setup: `pointer.worldX`/`worldY` being ambiguous with more than one camera in the scene, and an anonymous resize listener leaking one extra registration per `scene.restart()`.
 
+### Chrome polish — v0.5D Tactical Chrome Polish
+Five more placeholder elements swapped for approved art: the STATUS drawer tab, a framed Player Phase header, a new Goal plate, the Cancel button, and the three map zoom/recenter controls. Explicitly visual-only — the handoff's own `behavior_lock` confirms drawer/cancel/zoom/recenter/turn-rules/command-behavior/TP↔BP-flow are all unchanged, and every interactive element kept its existing `pointerdown` handler and `_tacticalUIHandled` stamping, just swapped the underlying object from a Shape/rectangle to an `Image`.
+
+The Goal plate is a genuinely new, static UI element, distinct from the pre-existing `messageText` narration — its copy (`Goal: Restore all 3 sound nodes.` / `Defeating every enemy is optional.`) is set once in `buildHUD()` rather than threaded through `refreshHUD()`'s dynamic per-turn narration, since it never changes for this map. `turnText` (`Turn {N} — Player Phase`) stays fully runtime-driven, sitting inside the new `phaseFrame` art rather than floating bare at the top margin.
+
+Both new frames size themselves off their own source art's aspect ratio (555×100 for the phase frame, 560×155 for the goal plate) against the same edge-to-edge width the v0.5C hero cards already use, rather than a hand-picked pixel height — correct at any viewport without re-deriving geometry, same pattern as `HERO_HUD_GEOMETRY`. Unlike the hero cards, though, these two frames are *always* on screen (not tucked in a collapsed-by-default drawer), so letting them go fully edge-to-edge on a wide desktop viewport would blow a fixed-aspect-ratio frame up into a header hundreds of pixels tall — capped at a phone-plausible 480px; every real target device (phones, per "Portrait phone first") sits well under that cap and renders identically to true edge-to-edge.
+
+The three map control buttons ship as full Image art (125-140px native) with glyphs baked in, replacing plain circles — sized down in `layoutHUD()` to the action console's own touch-friendly height (matching `barHeight`) while preserving each texture's individual aspect ratio, and spaced by their actual rendered width rather than a hardcoded offset, so the row stays evenly gapped at both the compact and full touch size.
+
 ---
 
 ## Running locally
