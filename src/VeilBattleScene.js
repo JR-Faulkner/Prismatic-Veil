@@ -19,7 +19,7 @@ import CommandConsole from './CommandConsole.js?v=42';
 import TargetReticle from './TargetReticle.js?v=42';
 import UiAudio from './UiAudio.js?v=42';
 import { AUDIO_EVENTS } from './BattleController.js?v=43';
-import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=43';
+import { BATTLE_CONFIG, HEROES, HERO_ORDER } from './BattleConfig.js?v=44';
 
 function cloneConfig(source, heroKey, search, enemyKey) {
   const hero = HEROES[heroKey] || source.hero;

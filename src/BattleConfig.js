@@ -167,12 +167,21 @@ export const HEROES = Object.freeze({
     // scaleMul without a separate padding correction the way Kineza's
     // needed one.
     scaleMul: 1.29,
-    // Locked poses 1/2/3/5 hold the orb in her screen-left-raised hand;
-    // pose 4 (Attack/Veil Pulse) already breaks from that to release
-    // toward screen-right — same "release already fires right, the rest
-    // look left" pattern as Prismel's set.
+    // Reported directly from real-device testing: her first couple of
+    // poses read as facing the wrong way. Traced to this flip block —
+    // it was set by which hand holds the orb (screen-left in poses
+    // 1/2/3/5, so flip:true was assumed to fix it), but the signal that
+    // actually reads as "facing" is gaze/head direction, not prop hand.
+    // Checked all five source images directly: her face looks
+    // screen-right, toward where the enemy stands, in every single one
+    // of them, including pose 4 — she was already fully correct as
+    // authored, unlike Prismel's genuinely mixed-orientation v1 set.
+    // Flipping idle/step/gather/recover mirrored her gaze to screen-left
+    // (away from the enemy) while leaving the orb hand "fixed" — visibly
+    // wrong despite the hand ending up on the expected side. No flips
+    // needed anywhere in this set.
     flip: Object.freeze({
-      idle: true, step: true, gather: true, release: false, recover: true
+      idle: false, step: false, gather: false, release: false, recover: false
     }),
     attack: Object.freeze({
       // Veil Pulse is a working player-facing name (pose is locked;
