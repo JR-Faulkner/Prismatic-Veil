@@ -204,6 +204,20 @@ const ONSCREEN_W = 64;
 // copy of hero stats rather than importing BattleConfig, e.g.
 // HERO_STATS' hp/atk numbers are unrelated to BP's), just matched by
 // hand so the two views agree on who's bigger than whom.
+//
+// Kineza's 0.78 needed a follow-up correction, reported directly after
+// the first pass ("he looks almost too small now"). BP's own comment on
+// his scaleMul explains why it doesn't transfer 1:1: his BP pose
+// canvases are "framed wider and taller than Prismel's" (extra aura/
+// dust-trail padding baked into the same canvas Prismel's tighter crop
+// doesn't carry), so 0.78 is his true height ratio *compounded with* a
+// padding correction Auryi's scaleMul explicitly says she never needed.
+// The tactical map_icons are a separately, independently normalized
+// asset set (pre-resized to the same reference content height
+// regardless of source padding) — they don't carry that same BP-canvas
+// padding, so applying 0.78 to them re-applied a correction that had
+// nothing left to correct for, shrinking him too far. Nudged back up
+// partway between the flat 0.78 and no-correction 1.0.
 const CHARACTER_TOKEN_ART = Object.freeze({
   prismel: {
     baseFacing: 'right',
@@ -219,9 +233,9 @@ const CHARACTER_TOKEN_ART = Object.freeze({
   },
   kineza: {
     baseFacing: 'right',
-    idle: { key: 'kineza_run_01_contact_a', originY: 0.860759, scale: 0.229 },
+    idle: { key: 'kineza_run_01_contact_a', originY: 0.860759, scale: 0.259 },
     walkFrames: KINEZA_WALK_FRAMES,
-    walk: { originY: 0.860759, scale: 0.229 }
+    walk: { originY: 0.860759, scale: 0.259 }
   }
 });
 
