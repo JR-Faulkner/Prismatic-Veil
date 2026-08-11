@@ -1318,6 +1318,19 @@ export default class TacticalScene extends Phaser.Scene {
   }
 
   onActionMenuChoice(kind) {
+    // Reported directly: Cancel didn't cancel an in-flight move — the
+    // hero kept walking to the tile anyway, and the action menu
+    // reappeared afterward despite Cancel having supposedly cleared the
+    // selection. The action console stays visible and interactive the
+    // whole time a hero is selected, including during confirmMove()'s
+    // multi-tile animateMove() (inputLocked is true for that whole
+    // span), but this handler never checked inputLocked at all — every
+    // other tap path here already does (handleWorldTap, onHeroCardTap).
+    // Cancelling mid-stride isn't something the game can present
+    // cleanly anyway (there's no "walk back" animation), so the correct
+    // fix is the same one already used everywhere else: just don't
+    // accept the tap until whatever's resolving has finished.
+    if (this.inputLocked) return;
     const hero = this.unitController.selected;
     if (!hero) return;
 
@@ -1326,6 +1339,11 @@ export default class TacticalScene extends Phaser.Scene {
       this.actionMenu.container.setVisible(false);
       this.zoomControls.container.setVisible(true);
       this._pendingAction = null;
+      // Every other place that clears a selection (selectHero(),
+      // finishHeroAction()) also resets this — Cancel was the one path
+      // that didn't, leaving a stale previewed tile behind selection
+      // state that's otherwise fully cleared.
+      this._previewedTile = null;
       this.refreshHUD();
       return;
     }
