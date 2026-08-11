@@ -44,6 +44,27 @@ const HERO_HIT_SFX = Object.freeze({
   auryi: { key: 'auryi_impact', path: './assets/sfx/auryi/auryi_impact.mp3' }
 });
 
+// v0.5C Tactical Hero HUD — every position below is a fraction of
+// hero_hud_master_a's own pixel dimensions (1252x453, already cropped to
+// content), measured directly off the shipped asset (well/bar/facet
+// centers and bounds via pixel sampling, not eyeballed off the handoff's
+// preview). _buildHeroCard()/_layoutHeroCard() multiply these against
+// whatever on-screen width a card actually renders at, so the whole
+// layout stays correct at any viewport size without re-measuring.
+const HERO_HUD_GEOMETRY = Object.freeze({
+  aspect: 1252 / 453,
+  title: { leftX: 382 / 1252, rightX: 1000 / 1252, y: 66 / 453 },
+  hp: { wellX: 100 / 1252, wellY: 205 / 453, barX0: 172 / 1252, barX1: 678 / 1252, barY: 205 / 453, barH: 34 / 453 },
+  rp: { wellX: 100 / 1252, wellY: 297 / 453, barX0: 172 / 1252, barX1: 678 / 1252, barY: 297 / 453, barH: 34 / 453 },
+  wellDiameter: 130 / 1252,
+  facets: { xs: [845 / 1252, 985 / 1252, 1125 / 1252], y: 205 / 453, glowSize: 60 / 1252 },
+  ready: { x0: 795 / 1252, x1: 1160 / 1252, y: 333 / 453, h: 30 / 453 }
+});
+// Multiply-tint for the "Inactive" state — cools and darkens Master A's
+// own warm gold/navy without desaturating to grey (which would read as
+// disabled, explicitly against the handoff's intent).
+const HUD_INACTIVE_TINT = 0x9098c8;
+
 // Player-facing command lexicon — LOCKED (v0.4 COMMAND_LEXICON_LOCK.md):
 // ATTACK | RESONART | ATTUNE | VEILSHIFT | GUARD | WAIT. Character titles
 // (Prism Weaver / Aura Acolyte / Momentum Born, see HERO_STATS) are never
@@ -203,6 +224,17 @@ export default class TacticalScene extends Phaser.Scene {
       this.load.image(`${key}_silhouette`, `./assets/kineza/movement/map_icons/${key}_silhouette.png`);
     });
     Object.values(HERO_HIT_SFX).forEach(({ key, path }) => this.load.audio(key, path));
+    // v0.5C Tactical Hero HUD — Master A is the sole geometry authority
+    // (see HERO_HUD_GEOMETRY below); the icons drop into its two circular
+    // wells. State treatment (inactive/active/veilshift ready) is done at
+    // runtime via tint/glow on this one texture, never by swapping in the
+    // handoff's other state-reference images — those carry real geometry
+    // drift from Master A (confirmed directly: ~20-23% differing
+    // silhouette pixels for active/inactive), which would shift the HP/RP
+    // channels and Attunement sockets between states.
+    this.load.image('hero_hud_master_a', './assets/ui/tactical_hud/hero_hud_master_a.png');
+    this.load.image('hud_hp_icon', './assets/ui/tactical_hud/hp_icon.png');
+    this.load.image('hud_rp_icon', './assets/ui/tactical_hud/rp_icon.png');
     // v0.5A Tactical Command Console Core — button states and command
     // icons. Pre-resized offline (LANCZOS, 480x368 / 160x160) from the
     // handoff's native 1536x1178 / 768x768 masters — rendering those
@@ -579,37 +611,137 @@ export default class TacticalScene extends Phaser.Scene {
     this.heroCards.forEach(c => this.uiAdd(c.container));
   }
 
-  // v0.4 HP/RP/Attunement HUD architecture (HP_RP_ATTUNEMENT_HUD_SPEC.md):
-  // three concepts, three visual languages. HP stays the familiar text
-  // readout; RP gets a thin bar visually distinct from HP (not a color
-  // variant of the same bar); Attunement is three small facets, not a
-  // third bar — a segmented/faceted state gauge, not a spendable
-  // resource. This is the "compact hero-card read" tier the spec calls
-  // for — the richer full-size BP HUD treatment is BattleHUD's job.
+  // v0.5C Tactical Hero HUD — replaces the earlier procedural card (flat
+  // rectangle, text-only HP, thin generic RP bar, plain rotated-square
+  // facets) with the approved shell art. hero_hud_master_a is the ONLY
+  // geometry source (see HERO_HUD_GEOMETRY) — the handoff's other state
+  // images (active/inactive/veilshift_ready) exist purely as lighting/
+  // color references and are never loaded as textures, since they carry
+  // real geometry drift from Master A (confirmed by pixel diff — see the
+  // preload() comment). State differences (inactive/active/veilshift
+  // ready) are done at runtime instead: a tint on the one shell texture
+  // plus additive glow overlays, the same idiom this codebase already
+  // uses everywhere else for emphasis (BattleFXDirector's aura layers,
+  // HUD gatherPulse/critFlare) — not an attempt to pixel-match the
+  // handoff's AI-generated reference art, which the handoff itself
+  // frames as mood guidance, not a literal asset to extract.
+  //
+  // HP now gets a real fill bar (it was numeric-only before) and RP
+  // keeps its own — "three concepts, three visual languages" still
+  // holds: HP fills crimson-red, RP fills violet-blue, Attunement stays
+  // three discrete facets rather than a third bar.
   _buildHeroCard(hero, index) {
-    const cardH = 58;
     const container = this.add.container(0, 0);
-    const bg = this.add.rectangle(0, 0, 132, cardH, 0x120b28, 0.88).setStrokeStyle(1, 0x5a3a88, 0.8).setOrigin(0, 0);
-    const name = this.add.text(8, 3, hero.name, { fontSize: '12px', fontStyle: 'bold', color: '#FFE8A0' });
-    const hp = this.add.text(8, 20, '', { fontSize: '11px', color: '#9fe0ff' });
 
-    const rpBarBg = this.add.rectangle(8, 37, 88, 4, 0x241a3a, 1).setOrigin(0, 0);
-    const rpBarFill = this.add.rectangle(8, 37, 88, 4, 0xffd76a, 1).setOrigin(0, 0);
+    // Sits behind the shell, additive-blended — the "active/selected"
+    // treatment. Invisible (alpha 0) by default; refreshHUD() raises its
+    // alpha only for the currently-selected hero.
+    const selectionGlow = this.add.rectangle(0, 0, 10, 10, 0xffe8a0, 0.5)
+      .setOrigin(0, 0).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0);
 
-    // Segment i is lit once attunement > i; all three lit is VEILSHIFT
-    // READY (turns gold rather than the usual attuned violet).
-    const facetSize = 7;
+    const shell = this.add.image(0, 0, 'hero_hud_master_a').setOrigin(0, 0);
+
+    const name = this.add.text(0, 0, hero.name, {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', color: '#FFE8A0'
+    }).setOrigin(0, 0.5);
+    const title = this.add.text(0, 0, hero.title || '', {
+      fontFamily: 'Georgia, serif', color: '#C8A8FF'
+    }).setOrigin(0, 0.5);
+
+    const hpIcon = this.add.image(0, 0, 'hud_hp_icon').setOrigin(0.5);
+    const hpFill = this.add.rectangle(0, 0, 10, 10, 0xd21f3c, 1).setOrigin(0, 0.5);
+    const hpText = this.add.text(0, 0, '', {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', color: '#FFFFFF', stroke: '#000000', strokeThickness: 3
+    }).setOrigin(0.5);
+
+    const rpIcon = this.add.image(0, 0, 'hud_rp_icon').setOrigin(0.5);
+    const rpFill = this.add.rectangle(0, 0, 10, 10, 0x8a5cff, 1).setOrigin(0, 0.5);
+    const rpText = this.add.text(0, 0, '', {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', color: '#FFFFFF', stroke: '#000000', strokeThickness: 3
+    }).setOrigin(0.5);
+
+    // Segment i lights once attunement > i. A soft additive diamond glow
+    // sitting inside Master A's own baked (always-dormant) facet outline
+    // — the outline itself never changes, only whether light shows
+    // through it — rather than redrawing the facet shape from scratch.
     const facets = [];
     for (let i = 0; i < (hero.attunementMax || 3); i++) {
-      const f = this.add.rectangle(100 + i * (facetSize + 3), 39, facetSize, facetSize, 0x2a1f42, 1)
-        .setStrokeStyle(1, 0x8a6ad0, 0.9).setOrigin(0, 0).setAngle(45);
+      const f = this.add.rectangle(0, 0, 10, 10, 0x8a6ad0, 0.85)
+        .setOrigin(0.5).setAngle(45).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0);
       facets.push(f);
     }
 
-    container.add([bg, name, hp, rpBarBg, rpBarFill, ...facets]);
-    container.setInteractive(new Phaser.Geom.Rectangle(0, 0, 132, cardH), Phaser.Geom.Rectangle.Contains);
+    const readyText = this.add.text(0, 0, 'VEILSHIFT READY', {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', color: '#FFE8A0', stroke: '#000000', strokeThickness: 2
+    }).setOrigin(0.5).setAlpha(0);
+    // Pulsing gold wash over the facets + ready-slot region specifically
+    // — state-priority rule from the handoff: "Veilshift Ready treatment
+    // wins within the Attunement/ready-slot region" while Active stays
+    // legible everywhere else on the shell.
+    const veilshiftGlow = this.add.rectangle(0, 0, 10, 10, 0xffe8a0, 0.4)
+      .setOrigin(0, 0).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0);
+
+    container.add([selectionGlow, shell, veilshiftGlow, name, title, hpIcon, hpFill, hpText, rpIcon, rpFill, rpText, ...facets, readyText]);
+    container.setInteractive(new Phaser.Geom.Rectangle(0, 0, 10, 10), Phaser.Geom.Rectangle.Contains);
     container.on('pointerdown', (p, lx, ly, ev) => { if (ev) ev.stopPropagation(); if (p.event) p.event._tacticalUIHandled = true; this.onHeroCardTap(hero); });
-    return { container, bg, hpText: hp, rpBarFill, facets, cardH, hero };
+
+    return {
+      container, shell, selectionGlow, name, title,
+      hpIcon, hpFill, hpText, rpIcon, rpFill, rpText,
+      facets, readyText, veilshiftGlow, hero, cardW: 0, cardH: 0
+    };
+  }
+
+  // Repositions/rescales one hero card's children for a given on-screen
+  // shell width — called from layoutHUD() so the whole card stays
+  // correct at any viewport size without re-deriving geometry. Every
+  // offset here is HERO_HUD_GEOMETRY (a fraction of Master A's own
+  // 1252x453) times this card's current width/height.
+  _layoutHeroCard(card, width) {
+    const g = HERO_HUD_GEOMETRY;
+    const height = width / g.aspect;
+    card.cardW = width;
+    card.cardH = height;
+
+    card.shell.setDisplaySize(width, height);
+    card.selectionGlow.setPosition(-width * 0.03, -height * 0.06).setSize(width * 1.06, height * 1.12);
+    card.veilshiftGlow.setPosition(width * g.facets.xs[0] - width * 0.08, height * g.facets.y - height * 0.18)
+      .setSize(width * (g.ready.x1 - g.facets.xs[0] + 0.14), height * (g.ready.y + g.ready.h - g.facets.y + 0.22));
+
+    card.name.setPosition(width * g.title.leftX, height * g.title.y)
+      .setFontSize(Math.round(height * 0.13));
+    card.title.setPosition(width * g.title.rightX, height * g.title.y)
+      .setFontSize(Math.round(height * 0.1));
+
+    const wellD = width * g.wellDiameter;
+    card.hpIcon.setPosition(width * g.hp.wellX, height * g.hp.wellY).setDisplaySize(wellD, wellD);
+    card.rpIcon.setPosition(width * g.rp.wellX, height * g.rp.wellY).setDisplaySize(wellD, wellD);
+
+    card._hpBarX = width * g.hp.barX0;
+    card._hpBarW = width * (g.hp.barX1 - g.hp.barX0);
+    card.hpFill.setPosition(card._hpBarX, height * g.hp.barY).setSize(card._hpBarW, height * g.hp.barH);
+    card.hpText.setPosition(width * (g.hp.barX0 + g.hp.barX1) / 2, height * g.hp.barY)
+      .setFontSize(Math.round(height * 0.09));
+
+    card._rpBarX = width * g.rp.barX0;
+    card._rpBarW = width * (g.rp.barX1 - g.rp.barX0);
+    card.rpFill.setPosition(card._rpBarX, height * g.rp.barY).setSize(card._rpBarW, height * g.rp.barH);
+    card.rpText.setPosition(width * (g.rp.barX0 + g.rp.barX1) / 2, height * g.rp.barY)
+      .setFontSize(Math.round(height * 0.09));
+
+    const facetSize = width * g.facets.glowSize;
+    card.facets.forEach((f, i) => {
+      f.setPosition(width * g.facets.xs[i], height * g.facets.y).setSize(facetSize, facetSize);
+    });
+
+    card.readyText.setPosition(width * (g.ready.x0 + g.ready.x1) / 2, height * g.ready.y)
+      .setFontSize(Math.round(height * 0.085));
+
+    // Mutate the existing hit area in place rather than calling
+    // setInteractive() again — a second call silently no-ops the
+    // hit-area update once an object is already interactive (see
+    // TacticalActionConsole.js's own layout() for the same fix).
+    card.container.input.hitArea.setTo(0, 0, width, height);
   }
 
   // v0.5A: the six locked commands render through TacticalActionConsole
@@ -659,8 +791,16 @@ export default class TacticalScene extends Phaser.Scene {
     this.turnText.setPosition(w / 2, margin);
     this.messageText.setPosition(w / 2, margin + 24).setWordWrapWidth(w * 0.86);
 
-    this.heroCards.forEach((c, i) => {
-      c.container.setPosition(margin, margin + 54 + i * (c.cardH + 6));
+    // v0.5C hero HUD cards are wider than the old flat 132px cards (the
+    // shell's own resource wells/bars/facets need real room to read) —
+    // sized off viewport width per breakpoint, capped so they never
+    // crowd out the message text above or the console below.
+    const cardW = compact ? Math.min(w * 0.72, 260) : Math.min(w * 0.42, 340);
+    let cardY = margin + 54;
+    this.heroCards.forEach(c => {
+      this._layoutHeroCard(c, cardW);
+      c.container.setPosition(margin, cardY);
+      cardY += c.cardH + 6;
     });
 
     this.zoomControls.container.setPosition(w - margin - 56, h - margin - 24);
@@ -693,24 +833,77 @@ export default class TacticalScene extends Phaser.Scene {
     this.actionMenu.container.setPosition(w - margin - barW, h - margin - totalH);
   }
 
+  // v0.5C state mapping, following HERO_HUD_INTEGRATION.md's documented
+  // priority (Veilshift Ready > Active > Default > Inactive) against
+  // this game's actual state model — the handoff doesn't define what
+  // triggers Default vs Inactive itself, so: a hero is Active while
+  // actually selected, Inactive while a *different* hero is selected
+  // (present, available, just not the current focus), and Default
+  // (Master A untreated) in the idle moment nothing is selected yet.
+  // Veilshift Ready layers on top of any of the three, independent of
+  // selection, exactly as the priority list says it can coexist with
+  // Active.
   refreshHUD() {
     this.turnText.setText(`Turn ${this.turn} — ${this.phase === 'player' ? 'Player Phase' : 'Enemy Phase'}`);
     this.messageText.setText(this.message);
+    const selected = this.unitController.selected;
+
     this.heroCards.forEach(c => {
       const hero = c.hero;
       const alive = hero.alive;
-      c.hpText.setText(alive ? `HP ${hero.hp}/${hero.maxHp}${hero.acted ? ' ✓' : ''}` : 'Down');
-      c.bg.setFillStyle(0x120b28, alive ? 0.88 : 0.5);
-      c.bg.setStrokeStyle(1, hero === this.unitController.selected ? 0xffe8a0 : 0x5a3a88, 0.9);
+      const isSelected = alive && hero === selected;
+
+      c.container.setAlpha(alive ? 1 : 0.55);
+      if (isSelected) {
+        c.shell.clearTint();
+      } else if (selected) {
+        c.shell.setTint(HUD_INACTIVE_TINT);
+      } else {
+        c.shell.clearTint();
+      }
+      c.selectionGlow.setAlpha(isSelected ? 0.35 : 0);
+
+      const hpFrac = alive && hero.maxHp ? Phaser.Math.Clamp(hero.hp / hero.maxHp, 0, 1) : 0;
+      c.hpFill.setSize(Math.max(1, c._hpBarW * hpFrac), c.hpFill.height);
+      c.hpText.setText(alive ? `${hero.hp}/${hero.maxHp}${hero.acted ? ' ✓' : ''}` : 'DOWN');
+      // Restrained low-HP pulse, not arcade flashing — a slow alpha
+      // breathe, and only actually running while genuinely low so it
+      // doesn't tween forever on every hero.
+      const lowHp = alive && hpFrac > 0 && hpFrac <= 0.25;
+      if (lowHp && !c._lowHpPulse) {
+        c._lowHpPulse = this.tweens.add({
+          targets: c.hpFill, alpha: { from: 1, to: 0.55 }, duration: 700, yoyo: true, repeat: -1
+        });
+      } else if (!lowHp && c._lowHpPulse) {
+        c._lowHpPulse.stop();
+        c._lowHpPulse = null;
+        c.hpFill.setAlpha(1);
+      }
 
       const rpFrac = alive && hero.maxRp ? Phaser.Math.Clamp(hero.rp / hero.maxRp, 0, 1) : 0;
-      c.rpBarFill.setSize(88 * rpFrac, 4);
+      c.rpFill.setSize(Math.max(1, c._rpBarW * rpFrac), c.rpFill.height);
+      c.rpText.setText(alive ? `${hero.rp}/${hero.maxRp}` : '');
+      // Brief shimmer only on an actual gain/spend, not every refresh.
+      if (alive && c._lastRp != null && hero.rp !== c._lastRp) {
+        this.tweens.add({ targets: c.rpFill, scaleY: { from: 1.6, to: 1 }, duration: 220, ease: 'Quad.easeOut' });
+      }
+      c._lastRp = hero.rp;
 
       const veilshiftReady = alive && hero.attunement >= hero.attunementMax;
       c.facets.forEach((f, i) => {
         const lit = alive && hero.attunement > i;
-        f.setFillStyle(lit ? (veilshiftReady ? 0xffe8a0 : 0x8a6ad0) : 0x2a1f42, 1);
+        f.setFillStyle(veilshiftReady ? 0xffe8a0 : 0x8a6ad0, 0.85).setAlpha(lit ? 0.9 : 0);
       });
+      c.readyText.setAlpha(veilshiftReady ? 1 : 0);
+      if (veilshiftReady && !c._veilshiftPulse) {
+        c._veilshiftPulse = this.tweens.add({
+          targets: c.veilshiftGlow, alpha: { from: 0.15, to: 0.45 }, duration: 650, yoyo: true, repeat: -1
+        });
+      } else if (!veilshiftReady && c._veilshiftPulse) {
+        c._veilshiftPulse.stop();
+        c._veilshiftPulse = null;
+        c.veilshiftGlow.setAlpha(0);
+      }
     });
   }
 
