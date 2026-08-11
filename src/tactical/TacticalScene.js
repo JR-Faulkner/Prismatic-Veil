@@ -71,8 +71,10 @@ const HERO_HUD_GEOMETRY = Object.freeze({
   // real-device feedback it sat too high, then pulled back up ~5% to
   // 88/453 after that read as having gone slightly too far — net ~5%
   // down from the original, both adjustments against a real device, not
-  // a screenshot.
-  title: { leftX: 340 / 1252, rightX: 1030 / 1252, y: 88 / 453 },
+  // a screenshot. leftX: 340 -> 403 (+5% of card width), name confirmed
+  // vertically correct and title confirmed correct as-is — real-device
+  // feedback again, name just needed to shift right.
+  title: { leftX: 403 / 1252, rightX: 1030 / 1252, y: 88 / 453 },
   hp: { wellX: 100 / 1252, wellY: 205 / 453, barX0: 172 / 1252, barX1: 678 / 1252, barY: 205 / 453, barH: 34 / 453 },
   rp: { wellX: 100 / 1252, wellY: 297 / 453, barX0: 172 / 1252, barX1: 678 / 1252, barY: 297 / 453, barH: 34 / 453 },
   wellDiameter: 130 / 1252,
