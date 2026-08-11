@@ -51,9 +51,23 @@ const HERO_HIT_SFX = Object.freeze({
 // preview). _buildHeroCard()/_layoutHeroCard() multiply these against
 // whatever on-screen width a card actually renders at, so the whole
 // layout stays correct at any viewport size without re-measuring.
+//
+// title.leftX/rightX are the one exception, tuned empirically rather
+// than pixel-measured: the name/title pill's actual dark-fill bounds are
+// genuinely ambiguous by simple color thresholding (its diagonal end
+// caps and the ornamental ring bleed into the same dark tones), and two
+// different careful measurements of "the strip's true edges" disagreed
+// with each other by enough to matter. Both were wrong in the same
+// direction — reported and independently confirmed on a real render:
+// each label read as pulled toward the centre divider rather than
+// centred in its own half. Fixed by rendering, looking at the actual
+// result, and adjusting directly (verified against all three heroes,
+// including "Momentum Born" and "Aura Acolyte" — the longest titles —
+// for clipping) instead of trusting another pixel measurement of the
+// same ambiguous art.
 const HERO_HUD_GEOMETRY = Object.freeze({
   aspect: 1252 / 453,
-  title: { leftX: 382 / 1252, rightX: 1000 / 1252, y: 66 / 453 },
+  title: { leftX: 340 / 1252, rightX: 1030 / 1252, y: 66 / 453 },
   hp: { wellX: 100 / 1252, wellY: 205 / 453, barX0: 172 / 1252, barX1: 678 / 1252, barY: 205 / 453, barH: 34 / 453 },
   rp: { wellX: 100 / 1252, wellY: 297 / 453, barX0: 172 / 1252, barX1: 678 / 1252, barY: 297 / 453, barH: 34 / 453 },
   wellDiameter: 130 / 1252,
