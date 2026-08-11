@@ -285,6 +285,13 @@ export default class TacticalScene extends Phaser.Scene {
     // reference. Same pattern VeilBattleScene uses.
     this._dragging = false;
     this._dragMoved = false;
+    this._hudHandleJustTapped = false;
+    // buildHUD() rebuilds heroCardsDrawer from scratch every create()
+    // call, so this flag (checked in layoutHUD()) must reset too, or the
+    // fresh drawer skips its snap-to-collapsed positioning and starts
+    // wherever a brand-new Container's default x (0, i.e. "expanded")
+    // happens to sit.
+    this._hudDrawerInit = false;
     if (this._resizeHandler) this.scale.off('resize', this._resizeHandler, this);
     if (this._uiCamResizeHandler) this.scale.off('resize', this._uiCamResizeHandler, this);
 
@@ -603,12 +610,65 @@ export default class TacticalScene extends Phaser.Scene {
     this.turnText = this.add.text(0, 0, '', { fontSize: '16px', fontStyle: 'bold', color: '#FFE8A0' }).setOrigin(0.5, 0);
     this.messageText = this.add.text(0, 0, '', { fontSize: '13px', color: '#C8A8FF', wordWrap: { width: 320 } }).setOrigin(0.5, 0);
     this.heroCards = this.heroes.map((h, i) => this._buildHeroCard(h, i));
+
+    // The v0.5C cards are far bigger than the old 132x58 ones — reported
+    // directly as covering too much of the map to see the characters.
+    // Heroes are also selectable straight off their map token
+    // (handleWorldTap()), so the HUD's detail view doesn't have to stay
+    // permanently on screen to be usable — it's a drawer, collapsed by
+    // default, that slides in from the left on tap.
+    this.hudExpanded = false;
+    this.heroCardsDrawer = this.add.container(0, 0);
+    this.heroCards.forEach(c => this.heroCardsDrawer.add(c.container));
+    this.hudHandle = this._buildHudHandle();
+
     this.actionMenu = this._buildActionMenu();
     this.zoomControls = this._buildZoomControls();
     this.endPanel = null;
 
-    this.uiAdd([this.turnText, this.messageText, this.zoomControls.container, this.actionMenu.container]);
-    this.heroCards.forEach(c => this.uiAdd(c.container));
+    this.uiAdd([this.turnText, this.messageText, this.zoomControls.container, this.actionMenu.container, this.heroCardsDrawer, this.hudHandle.container]);
+  }
+
+  // A small fixed tab at the screen's left edge — never moves, so it's
+  // always where the player expects it regardless of drawer state.
+  // Swaps its own arrow glyph to hint open vs. close.
+  _buildHudHandle() {
+    const container = this.add.container(0, 0);
+    const bg = this.add.rectangle(0, 0, 26, 64, 0x1a1033, 0.94)
+      .setStrokeStyle(1, 0x5a3a88, 0.95).setOrigin(0, 0.5)
+      .setInteractive({ useHandCursor: true });
+    const arrow = this.add.text(13, 0, '›', { fontSize: '20px', fontStyle: 'bold', color: '#FFE8A0' }).setOrigin(0.5);
+    bg.on('pointerdown', (p, lx, ly, ev) => {
+      if (ev) ev.stopPropagation();
+      if (p.event) p.event._tacticalUIHandled = true;
+      // pointer.event isn't reliably the SAME stamped object by the time
+      // onPointerUp checks it a moment later (confirmed directly: the
+      // stamp above alone still let handleWorldTap() run afterward,
+      // toggling the drawer straight back closed on the very tap that
+      // opened it) — a separate flag that only this handler sets and
+      // onPointerUp always clears survives the gap the stamp doesn't.
+      this._hudHandleJustTapped = true;
+      this.toggleHudDrawer();
+    });
+    container.add([bg, arrow]);
+    return { container, bg, arrow };
+  }
+
+  // forceExpanded lets other call sites (e.g. dismissing on an outside
+  // tap) request a specific state without needing to know the current
+  // one first.
+  toggleHudDrawer(forceExpanded) {
+    const next = typeof forceExpanded === 'boolean' ? forceExpanded : !this.hudExpanded;
+    if (next === this.hudExpanded) return;
+    this.hudExpanded = next;
+    this.hudHandle.arrow.setText(next ? '‹' : '›');
+    this.tweens.killTweensOf(this.heroCardsDrawer);
+    this.tweens.add({
+      targets: this.heroCardsDrawer,
+      x: next ? 0 : -this._hudDrawerHiddenOffset,
+      duration: 280,
+      ease: 'Sine.easeInOut'
+    });
   }
 
   // v0.5C Tactical Hero HUD — replaces the earlier procedural card (flat
@@ -641,12 +701,16 @@ export default class TacticalScene extends Phaser.Scene {
 
     const shell = this.add.image(0, 0, 'hero_hud_master_a').setOrigin(0, 0);
 
+    // HERO_HUD_GEOMETRY.title.leftX/rightX are each strip's own centre
+    // x — origin must be (0.5, 0.5) to actually land centred there, not
+    // (0, 0.5), which anchors the text's *left edge* to that point and
+    // visibly pushes it right of true centre.
     const name = this.add.text(0, 0, hero.name, {
       fontFamily: 'Georgia, serif', fontStyle: 'bold', color: '#FFE8A0'
-    }).setOrigin(0, 0.5);
+    }).setOrigin(0.5, 0.5);
     const title = this.add.text(0, 0, hero.title || '', {
       fontFamily: 'Georgia, serif', color: '#C8A8FF'
-    }).setOrigin(0, 0.5);
+    }).setOrigin(0.5, 0.5);
 
     const hpIcon = this.add.image(0, 0, 'hud_hp_icon').setOrigin(0.5);
     const hpFill = this.add.rectangle(0, 0, 10, 10, 0xd21f3c, 1).setOrigin(0, 0.5);
@@ -796,12 +860,27 @@ export default class TacticalScene extends Phaser.Scene {
     // sized off viewport width per breakpoint, capped so they never
     // crowd out the message text above or the console below.
     const cardW = compact ? Math.min(w * 0.72, 260) : Math.min(w * 0.42, 340);
-    let cardY = margin + 54;
+    const stackTop = margin + 54;
+    let cardY = stackTop;
     this.heroCards.forEach(c => {
       this._layoutHeroCard(c, cardW);
       c.container.setPosition(margin, cardY);
       cardY += c.cardH + 6;
     });
+
+    // Handle is a sibling of the drawer, not a child of it, so its own
+    // screen position never moves — only the drawer (the cards) slides
+    // underneath/behind it. Vertically centred on the card stack's
+    // current height, which changes with cardW/breakpoint.
+    this._hudDrawerHiddenOffset = margin + cardW;
+    this.hudHandle.container.setPosition(0, (stackTop + cardY - 6) / 2);
+    // First layout after create()/restart snaps straight to the correct
+    // resting position for the (collapsed-by-default) state; a later
+    // resize mid-session shouldn't fight an in-flight open/close tween.
+    if (!this._hudDrawerInit || !this.tweens.isTweening(this.heroCardsDrawer)) {
+      this.heroCardsDrawer.x = this.hudExpanded ? 0 : -this._hudDrawerHiddenOffset;
+      this._hudDrawerInit = true;
+    }
 
     this.zoomControls.container.setPosition(w - margin - 56, h - margin - 24);
 
@@ -944,12 +1023,13 @@ export default class TacticalScene extends Phaser.Scene {
   }
 
   onPointerUp(pointer) {
-    if (pointer.event && pointer.event._tacticalUIHandled) { this._dragging = false; return; }
+    if (pointer.event && pointer.event._tacticalUIHandled) { this._dragging = false; this._hudHandleJustTapped = false; return; }
     const wasDrag = this._dragMoved;
     this._dragging = false;
     this._dragMoved = false;
-    if (this.inputLocked || wasDrag) return;
+    if (this.inputLocked || wasDrag) { this._hudHandleJustTapped = false; return; }
     this.handleWorldTap(pointer);
+    this._hudHandleJustTapped = false;
   }
 
   onWheel(pointer, gameObjects, deltaX, deltaY) {
@@ -959,6 +1039,19 @@ export default class TacticalScene extends Phaser.Scene {
 
   handleWorldTap(pointer) {
     if (this.phase !== 'player') return;
+    // Guards specifically against the handle's own tap: onPointerUp's
+    // _tacticalUIHandled check alone wasn't enough here (see the
+    // handle's pointerdown handler for why) — without this, tapping the
+    // handle to open the drawer immediately toggled it back closed on
+    // the same gesture.
+    if (this._hudHandleJustTapped) return;
+    // A tap here already means it landed on the board, not on any UI
+    // element (the hero cards themselves stopPropagation and stamp
+    // _tacticalUIHandled, so onPointerUp never even calls this for a tap
+    // on the open drawer) — standard drawer UX: the first tap outside
+    // just dismisses it, it doesn't also act on whatever tile happens to
+    // be underneath.
+    if (this.hudExpanded) { this.toggleHudDrawer(false); return; }
     // pointer.worldX/worldY is ambiguous with two cameras in play (main
     // world camera + the fixed uiCam) — Phaser updates it per-camera during
     // hit-testing, so which camera's transform it reflects isn't
