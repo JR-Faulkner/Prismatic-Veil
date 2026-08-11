@@ -378,10 +378,19 @@ export default class BattleHUD {
     const bottomClear = compact ? margin + 12 : margin;
     const dialogY = height - dialogHeight / 2 - bottomClear;
 
-    this.hpText.setFontSize(compact ? 12 : 20);
-    this.hpValue.setFontSize(compact ? 12 : 20);
-    this.enemyText.setFontSize(compact ? 12 : 20);
-    this.enemyValue.setFontSize(compact ? 10 : 15);
+    // Reported directly from a desktop test: the hero's name and HP ran
+    // together as "PRISMEL100/100". turnText/messageText just below
+    // already branch on landscape separately from compact — these four
+    // never did, so a landscape-shaped window that isn't also compact
+    // (any real landscape *phone* is under the 520px compact-height
+    // threshold too, which is why this never showed up there) kept the
+    // full 20px non-compact font while barW below still shrinks to
+    // landscape's tighter 170px cap. Same landscape-sits-near-compact
+    // sizing turnText already uses.
+    this.hpText.setFontSize(landscape ? 13 : (compact ? 12 : 20));
+    this.hpValue.setFontSize(landscape ? 13 : (compact ? 12 : 20));
+    this.enemyText.setFontSize(landscape ? 13 : (compact ? 12 : 20));
+    this.enemyValue.setFontSize(landscape ? 11 : (compact ? 10 : 15));
     this.turnText.setFontSize(landscape ? 13 : (compact ? 12 : 18));
     this.messageText.setFontSize(landscape ? 16 : (compact ? 17 : 24));
     const cursorSize = landscape ? 16 : (compact ? 18 : 24);

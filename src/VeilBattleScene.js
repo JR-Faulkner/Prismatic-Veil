@@ -1,4 +1,4 @@
-import BattleHUD from './BattleHUD.js?v=43';
+import BattleHUD from './BattleHUD.js?v=44';
 import BattleController from './BattleController.js?v=43';
 import Timeline from './Timeline.js?v=42';
 import VeilFracture from './VeilFracture.js?v=42';
@@ -12,7 +12,7 @@ import BattleCamera from './BattleCamera.js?v=43';
 import BattleFX from './BattleFX.js?v=42';
 import BattleFXDirector from './BattleFXDirector.js?v=43';
 import BattleFeel from './BattleFeel.js?v=42';
-import AmbientBattlefieldDirector, { BATTLEFIELD_TEXTURES } from './AmbientBattlefieldDirector.js?v=42';
+import AmbientBattlefieldDirector, { BATTLEFIELD_TEXTURES } from './AmbientBattlefieldDirector.js?v=43';
 import BattleAtmosphere from './BattleAtmosphere.js?v=42';
 import HudFrame from './HudFrame.js?v=42';
 import CommandConsole from './CommandConsole.js?v=42';
@@ -360,6 +360,10 @@ export default class VeilBattleScene extends Phaser.Scene {
     if (!this.linkedMode) {
       this.buildHeroSwitch();
       this.buildEnemySwitch();
+      // layoutSceneText() already ran once above (before these existed),
+      // so titleText sized itself without knowing to reserve space
+      // against them — re-run now that it can actually see their bounds.
+      this.layoutSceneText();
     }
 
     this.uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height);
@@ -707,6 +711,31 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     this.titleText.setVisible(!short)
       .setFontSize(compact ? 26 : 40).setPosition(width / 2, compact ? 96 : 120);
+    // "VEIL FRACTURE" is a fixed string, but the available width isn't —
+    // reported directly at 360px, where the flat compact size (26px,
+    // already tight against the standalone harness's ► Kineza/► Hushling
+    // switch labels even at 390px) ran the text off both edges. Shrink
+    // to fit instead of guessing a smaller flat size, so it stays
+    // correct at any width without re-tuning by hand for the next
+    // narrow device. Symmetric margins alone still weren't enough —
+    // those switch labels only exist in standalone/unlinked mode (a
+    // real, documented page — battle-v2.html — not just a dev tool) and
+    // sit right-aligned in the same corner the title's centered width
+    // can reach into well before it hits the canvas edge itself. Reserve
+    // real space against whichever label is wider, when either exists,
+    // instead of a flat margin that has no idea they're there.
+    const titleMargin = compact ? 12 : 24;
+    let maxHalfWidth = width / 2 - titleMargin;
+    const switchLabel = this.heroSwitch || this.enemySwitch;
+    if (switchLabel) {
+      const switchLeftEdge = switchLabel.x - switchLabel.width;
+      maxHalfWidth = Math.min(maxHalfWidth, switchLeftEdge - 10 - width / 2);
+    }
+    const maxTitleWidth = Math.max(40, maxHalfWidth * 2);
+    if (this.titleText.width > maxTitleWidth) {
+      const fitSize = Math.max(14, Math.floor((compact ? 26 : 40) * (maxTitleWidth / this.titleText.width)));
+      this.titleText.setFontSize(fitSize);
+    }
     this.hintText.setFontSize(compact ? 11 : 14)
       .setPosition(width / 2, short ? 84 : (compact ? 134 : 172));
   }

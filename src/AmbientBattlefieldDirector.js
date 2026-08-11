@@ -76,13 +76,28 @@ export default class AmbientBattlefieldDirector {
   }
 
   layout() {
-    // Margins sized against each layer's own motion: static/slow layers
-    // need less; the two that actually move need more headroom.
-    this._coverFit(this.farBackground, 1.06);
-    const midHome = this._coverFit(this.midSpires, 1.2);
-    this._coverFit(this.combatPlatform, 1.0);
-    this._coverFit(this.fractureOverlay, 1.05);
-    const particleHome = this._coverFit(this.particleOverlay, 1.3);
+    // Margins here were sized only against each layer's own drift/
+    // parallax speed — they never accounted for BattleCamera itself
+    // panning away from canvas-center at all, which it does routinely
+    // (pushIn()/focusPoint() on every hero AND enemy attack beat, not
+    // just an edge case). Reported directly from a desktop test as a
+    // black void with a stray bit of art floating in it — measured
+    // directly against a real captured camera state (scrollX 564.7,
+    // zoom 1.098 on a 1920-wide canvas): the camera's actual worldView
+    // needed coverage out to x=2313, but combatPlatform's old 1.0
+    // margin (literally zero slack) only reached x=1920, and
+    // farBackground's 1.06 only reached x=1977.6 — both exposing bare
+    // canvas well before the camera's real edge. Static/untracked
+    // layers (farBackground, combatPlatform, fractureOverlay) now carry
+    // enough margin to cover that excursion with real headroom, not
+    // just barely; midSpires/particleOverlay already partially track
+    // camera motion (see update() below) but got a smaller bump too,
+    // since their own tracking only covers part of the movement.
+    this._coverFit(this.farBackground, 1.6);
+    const midHome = this._coverFit(this.midSpires, 1.4);
+    this._coverFit(this.combatPlatform, 1.6);
+    this._coverFit(this.fractureOverlay, 1.6);
+    const particleHome = this._coverFit(this.particleOverlay, 1.4);
 
     this.midSpires.homeX = midHome.x;
     this.midSpires.homeY = midHome.y;
