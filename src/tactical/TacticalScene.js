@@ -881,11 +881,15 @@ export default class TacticalScene extends Phaser.Scene {
     this.turnText.setPosition(w / 2, margin);
     this.messageText.setPosition(w / 2, margin + 24).setWordWrapWidth(w * 0.86);
 
-    // v0.5C hero HUD cards are wider than the old flat 132px cards (the
-    // shell's own resource wells/bars/facets need real room to read) —
-    // sized off viewport width per breakpoint, capped so they never
-    // crowd out the message text above or the console below.
-    const cardW = compact ? Math.min(w * 0.72, 260) : Math.min(w * 0.42, 340);
+    // v0.5C hero HUD cards used to be capped well short of the full
+    // screen width (max 260-340px) — reported directly as hard to read,
+    // since it's the drawer's whole reason for existing now (see
+    // buildHUD()): it only shows while expanded, on demand, so there's
+    // no permanent-map-coverage cost to using the full width. Every
+    // well/bar/facet/text position in the card is a fraction of its own
+    // width (HERO_HUD_GEOMETRY), so going edge-to-edge scales
+    // everything up together for free — no other layout math to touch.
+    const cardW = w - margin * 2;
     const stackTop = margin + 54;
     let cardY = stackTop;
     this.heroCards.forEach(c => {
