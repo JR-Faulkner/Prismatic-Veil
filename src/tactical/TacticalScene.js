@@ -951,8 +951,19 @@ export default class TacticalScene extends Phaser.Scene {
     // aspect ratio up into a header hundreds of pixels tall, eating the
     // battlefield. Capped at a phone-plausible width; below the cap
     // (every real target device) it's identical to full edge-to-edge.
-    const cardW = w - margin * 2;
-    const headerW = Math.min(cardW, 480);
+    const rawW = w - margin * 2;
+    const headerW = Math.min(rawW, 480);
+    // Reported directly from a desktop test: the STATUS handle wasn't
+    // visible at all. Root cause was this value staying uncapped while
+    // headerW just above it got capped — on a wide viewport, 3 hero
+    // cards at full aspect-locked width (1252x453) run ~450px tall
+    // *each*; the handle's own y (vertically centred on the full card
+    // stack height, below) landed past 900px on a 1280x800 desktop
+    // window, off the bottom of the screen entirely. The drawer itself
+    // is hidden by default so an oversized card was never visually
+    // obvious the way the always-on-screen header frames were — same
+    // cap fixes both for the same reason.
+    const cardW = headerW;
 
     // Player Phase frame: height follows the source art's own aspect
     // ratio (555x100) rather than a hand-picked number, so it scales
