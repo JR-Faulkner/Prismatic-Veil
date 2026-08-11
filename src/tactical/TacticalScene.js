@@ -67,10 +67,12 @@ const HERO_HIT_SFX = Object.freeze({
 // same ambiguous art.
 const HERO_HUD_GEOMETRY = Object.freeze({
   aspect: 1252 / 453,
-  // y nudged down ~10% of card height from the original 66/453 —
-  // reported directly against a real device as needing to sit lower,
-  // not just eyeballed off a screenshot.
-  title: { leftX: 340 / 1252, rightX: 1030 / 1252, y: 111 / 453 },
+  // y: 66/453 originally, nudged to 111/453 (+10% of card height) after
+  // real-device feedback it sat too high, then pulled back up ~5% to
+  // 88/453 after that read as having gone slightly too far — net ~5%
+  // down from the original, both adjustments against a real device, not
+  // a screenshot.
+  title: { leftX: 340 / 1252, rightX: 1030 / 1252, y: 88 / 453 },
   hp: { wellX: 100 / 1252, wellY: 205 / 453, barX0: 172 / 1252, barX1: 678 / 1252, barY: 205 / 453, barH: 34 / 453 },
   rp: { wellX: 100 / 1252, wellY: 297 / 453, barX0: 172 / 1252, barX1: 678 / 1252, barY: 297 / 453, barH: 34 / 453 },
   wellDiameter: 130 / 1252,
