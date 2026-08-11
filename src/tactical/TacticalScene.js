@@ -181,13 +181,29 @@ const KINEZA_WALK_FRAMES = [
   'kineza_run_04_contact_b', 'kineza_run_05_down_b', 'kineza_run_06_passing_b'
 ];
 
-// On-screen footprint (world px, at zoom 1) both character token sets
-// render at — icon content height (265px) * runtime scale (0.294) ≈ 78,
-// width sized to the wider of the two figures (Prismel, ~64) with a
-// little headroom. Drives the backing shape in _buildCharacterToken().
+// On-screen footprint (world px, at zoom 1) Prismel's token (the
+// baseline, scaleMul 1) renders at — icon content height (265px) *
+// runtime scale (0.294) ≈ 78, width sized to his own figure (~64) with
+// a little headroom. Drives the *shadow's* size in _buildCharacterToken()
+// — the character art itself now varies per hero, see CHARACTER_TOKEN_ART.
 const ONSCREEN_H = 78;
 const ONSCREEN_W = 64;
 
+// Reported directly: even though Auryi's map icon is nominally taller
+// than Prismel's, she read as noticeably thinner and smaller overall on
+// the tactical map — not a small difference either. Traced to two
+// things stacking: the map_icons/ pre-resize step (see the big comment
+// below) deliberately normalizes every hero to the same ~260px content
+// height regardless of their true relative size, and every hero's
+// `scale` here was then left flat at the same 0.294 on top of that —
+// so Battle Presentation's own established size hierarchy (BattleConfig.js
+// scaleMul: Prismel 1, Kineza 0.78, Auryi 1.29 — she's *deliberately*
+// the tallest of the three there) never carried over to the tactical
+// map at all. Scaled each hero's token by that same ratio here — not
+// imported directly (TacticalScene already keeps its own independent
+// copy of hero stats rather than importing BattleConfig, e.g.
+// HERO_STATS' hp/atk numbers are unrelated to BP's), just matched by
+// hand so the two views agree on who's bigger than whom.
 const CHARACTER_TOKEN_ART = Object.freeze({
   prismel: {
     baseFacing: 'right',
@@ -197,15 +213,15 @@ const CHARACTER_TOKEN_ART = Object.freeze({
   },
   auryi: {
     baseFacing: 'left',
-    idle: { key: 'auryi_move_01_contact_a', originY: 0.860759, scale: 0.294 },
+    idle: { key: 'auryi_move_01_contact_a', originY: 0.860759, scale: 0.379 },
     walkFrames: AURYI_WALK_FRAMES,
-    walk: { originY: 0.860759, scale: 0.294 }
+    walk: { originY: 0.860759, scale: 0.379 }
   },
   kineza: {
     baseFacing: 'right',
-    idle: { key: 'kineza_run_01_contact_a', originY: 0.860759, scale: 0.294 },
+    idle: { key: 'kineza_run_01_contact_a', originY: 0.860759, scale: 0.229 },
     walkFrames: KINEZA_WALK_FRAMES,
-    walk: { originY: 0.860759, scale: 0.294 }
+    walk: { originY: 0.860759, scale: 0.229 }
   }
 });
 
@@ -488,8 +504,12 @@ export default class TacticalScene extends Phaser.Scene {
     const container = this.add.container(0, 0).setDepth(10);
 
     // Small grounded contact shadow — subtle, dark, at the feet. Not
-    // accent-colored: a shadow, not a team-color plate.
-    const shadow = this.add.ellipse(0, -3, ONSCREEN_W * 0.56, ONSCREEN_H * 0.1, 0x000000, 0.35);
+    // accent-colored: a shadow, not a team-color plate. Sized off this
+    // hero's own scale relative to Prismel's baseline (0.294), not the
+    // flat ONSCREEN_W/H constants, so a visibly bigger Auryi doesn't
+    // stand on the same tiny shadow as everyone else.
+    const shadowMul = art.idle.scale / 0.294;
+    const shadow = this.add.ellipse(0, -3, ONSCREEN_W * 0.56 * shadowMul, ONSCREEN_H * 0.1 * shadowMul, 0x000000, 0.35);
 
     // Character-following outline: a slightly-larger, near-black copy of
     // the SAME silhouette sits directly behind the real image. It reads
