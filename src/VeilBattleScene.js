@@ -536,8 +536,14 @@ export default class VeilBattleScene extends Phaser.Scene {
   }
 
   playSfx(name) {
-    const heroId = this.battleConfig && this.battleConfig.hero.id || 'prismel';
-    const bank = this.sfx && this.sfx[heroId];
+    // No hero fallback here on purpose — a missing/unset battleConfig
+    // used to silently default to 'prismel', which meant any stray call
+    // (e.g. a leftover event listener from a scene instance mid-
+    // teardown) would play Prismel's own bank regardless of who was
+    // actually fighting. Missing config now just means no sound, never
+    // the wrong hero's sound.
+    const heroId = this.battleConfig && this.battleConfig.hero && this.battleConfig.hero.id;
+    const bank = heroId && this.sfx && this.sfx[heroId];
     const s = bank && bank[name];
     if (s && !this.sound.locked) {
       s.play();
