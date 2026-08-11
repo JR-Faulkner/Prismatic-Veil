@@ -180,62 +180,116 @@ const KINEZA_WALK_FRAMES = [
   'kineza_run_01_contact_a', 'kineza_run_02_down_a', 'kineza_run_03_passing_a',
   'kineza_run_04_contact_b', 'kineza_run_05_down_b', 'kineza_run_06_passing_b'
 ];
+// v0.5E Tactical Movement Masters — enemies get illustrated walk-cycle
+// tokens for the first time (previously always the plain procedural
+// circle from _buildUnitToken()), same six-frame shape as the heroes.
+const WRAITH_WALK_FRAMES = [
+  'wraith_hover_01_contact_a', 'wraith_hover_02_down_a', 'wraith_hover_03_passing_a',
+  'wraith_hover_04_contact_b', 'wraith_hover_05_down_b', 'wraith_hover_06_passing_b'
+];
+const HUSHLING_WALK_FRAMES = [
+  'hushling_stomp_01_contact_a', 'hushling_stomp_02_down_a', 'hushling_stomp_03_passing_a',
+  'hushling_stomp_04_contact_b', 'hushling_stomp_05_down_b', 'hushling_stomp_06_passing_b'
+];
 
 // On-screen footprint (world px, at zoom 1) Prismel's token (the
-// baseline, scaleMul 1) renders at — icon content height (265px) *
-// runtime scale (0.294) ≈ 78, width sized to his own figure (~64) with
-// a little headroom. Drives the *shadow's* size in _buildCharacterToken()
-// — the character art itself now varies per hero, see CHARACTER_TOKEN_ART.
+// baseline) renders at — icon content height (261px) * runtime scale
+// (0.294) ≈ 77, width sized to his own figure with a little headroom.
+// Drives the *shadow's* size in _buildCharacterToken() — the character
+// art itself varies per hero/enemy, see CHARACTER_TOKEN_ART/ENEMY_TOKEN_ART.
 const ONSCREEN_H = 78;
 const ONSCREEN_W = 64;
 
-// Reported directly: even though Auryi's map icon is nominally taller
-// than Prismel's, she read as noticeably thinner and smaller overall on
-// the tactical map — not a small difference either. Traced to two
-// things stacking: the map_icons/ pre-resize step (see the big comment
-// below) deliberately normalizes every hero to the same ~260px content
-// height regardless of their true relative size, and every hero's
-// `scale` here was then left flat at the same 0.294 on top of that —
-// so Battle Presentation's own established size hierarchy (BattleConfig.js
-// scaleMul: Prismel 1, Kineza 0.78, Auryi 1.29 — she's *deliberately*
-// the tallest of the three there) never carried over to the tactical
-// map at all. Scaled each hero's token by that same ratio here — not
-// imported directly (TacticalScene already keeps its own independent
-// copy of hero stats rather than importing BattleConfig, e.g.
-// HERO_STATS' hp/atk numbers are unrelated to BP's), just matched by
-// hand so the two views agree on who's bigger than whom.
+// v0.5E Tactical Movement Masters replaced Auryi's and Prismel's walk
+// cycles with cleaned illustrated masters (Kineza untouched — his own
+// dedicated v0.5B handoff already locked his numbers below). Party scale
+// lock per that handoff: Auryi tallest, Prismel middle, Kineza shortest,
+// "do not normalize all three to one identical visual content height."
 //
-// Kineza's 0.78 needed a follow-up correction, reported directly after
-// the first pass ("he looks almost too small now"). BP's own comment on
-// his scaleMul explains why it doesn't transfer 1:1: his BP pose
-// canvases are "framed wider and taller than Prismel's" (extra aura/
-// dust-trail padding baked into the same canvas Prismel's tighter crop
-// doesn't carry), so 0.78 is his true height ratio *compounded with* a
-// padding correction Auryi's scaleMul explicitly says she never needed.
-// The tactical map_icons are a separately, independently normalized
-// asset set (pre-resized to the same reference content height
-// regardless of source padding) — they don't carry that same BP-canvas
-// padding, so applying 0.78 to them re-applied a correction that had
-// nothing left to correct for, shrinking him too far. Nudged back up
-// partway between the flat 0.78 and no-correction 1.0.
+// Kineza's own manifest (v0.5B, KINEZA_TACTICAL_MANIFEST.json) is the
+// reference for how this is *supposed* to work: one flat runtime scale
+// (0.294) shared by everyone, with the relative height ordering baked
+// into each character's own pre-processed map-icon content height
+// instead (his: 230px measured content height at that scale). A prior
+// pass here mistakenly treated 0.294-for-everyone as an accidental bug
+// and layered BP's scaleMul (Prismel 1 / Kineza 0.78 / Auryi 1.29) on
+// top as a second multiplier — BP's own comment on Kineza's scaleMul
+// explains why that number specifically doesn't transfer: it's his true
+// height ratio *compounded with* a correction for his BP pose canvas
+// being "framed wider and taller than Prismel's," a padding difference
+// the tactical map-icons (independently pre-processed) never had to
+// begin with. That left Kineza's tactical token shrunk twice, reported
+// directly as "he looks almost too small now." Reverted to his own
+// locked 230px/0.294 and brought Auryi/Prismel onto the same one-flat-
+// scale system by baking their relative sizing into the new masters'
+// own resize instead — content heights of 344px (Auryi) and 261px
+// (Prismel), the latter unchanged from before, the former chosen to
+// preserve her already-live, already-approved on-screen size (267px *
+// 0.379 effective ≈ what 344px * 0.294 reproduces) rather than reverting
+// to this package's own older "270px" historical anchor, since Auryi's
+// current size was never itself reported as a problem — only Kineza's.
 const CHARACTER_TOKEN_ART = Object.freeze({
   prismel: {
     baseFacing: 'right',
-    idle: { key: 'prismel_walk_01_contact_a', originY: 1323 / 1536, scale: 0.294 },
+    // sizeMul: content height relative to Prismel's own 261px baseline
+    // (always 1 for him) — now that runtime `scale` is flat 0.294 for
+    // everyone, relative size lives entirely in each character's own
+    // pre-processed content height, and the shadow below needs *some*
+    // per-character signal now that art.idle.scale/0.294 is always 1.
+    sizeMul: 1,
+    idle: { key: 'prismel_walk_01_contact_a', originY: 0.954088, scale: 0.294 },
     walkFrames: PRISMEL_WALK_FRAMES,
-    walk: { originY: 1323 / 1536, scale: 0.294 }
+    walk: { originY: 0.954088, scale: 0.294 }
   },
   auryi: {
-    baseFacing: 'left',
-    idle: { key: 'auryi_move_01_contact_a', originY: 0.860759, scale: 0.379 },
+    // New masters are authored right-facing (per LOCKED_MOVEMENT_FORMULA.md
+    // — "consistent right-facing tactical three-quarter profile"),
+    // unlike her old left-facing set — baseFacing flips to 'right' to
+    // match, same convention as Prismel/Kineza now.
+    baseFacing: 'right',
+    sizeMul: 344 / 261,
+    idle: { key: 'auryi_move_01_contact_a', originY: 0.951754, scale: 0.294 },
     walkFrames: AURYI_WALK_FRAMES,
-    walk: { originY: 0.860759, scale: 0.379 }
+    walk: { originY: 0.951754, scale: 0.294 }
   },
   kineza: {
     baseFacing: 'right',
-    idle: { key: 'kineza_run_01_contact_a', originY: 0.860759, scale: 0.259 },
+    sizeMul: 230 / 261,
+    idle: { key: 'kineza_run_01_contact_a', originY: 0.860759, scale: 0.294 },
     walkFrames: KINEZA_WALK_FRAMES,
-    walk: { originY: 0.860759, scale: 0.259 }
+    walk: { originY: 0.860759, scale: 0.294 }
+  }
+});
+
+// v0.5E also adds illustrated movement tokens for both enemies — they
+// previously only ever rendered as the plain procedural circle
+// (_buildUnitToken()). No prior approved reference existed for their
+// relative size the way the hero trio had, so these two targets are
+// FAI's own calibrated choice: Wraith comparable to (a little larger
+// than) the tallest hero, matching "purple spectral hover... imposing"
+// intent; Hushling larger still, matching "massive... may exceed hero
+// silhouettes... do not shrink to match" — his own wider stance
+// (content width/height ~0.70 vs the casters' ~0.55-0.63) carries the
+// "breadth" cue on top of the height difference. Source art faces
+// screen-left already (unverified against a written spec, since none
+// of this package's docs state an enemy facing convention — matched to
+// the project's existing enemy-faces-left standard instead, the same
+// convention Battle Presentation's own Wraith/Hushling views already
+// use), so baseFacing is 'left', not 'right' like the hero trio.
+const ENEMY_TOKEN_ART = Object.freeze({
+  veil_wraith: {
+    baseFacing: 'left',
+    sizeMul: 360 / 261,
+    idle: { key: 'wraith_hover_01_contact_a', originY: 0.950125, scale: 0.294 },
+    walkFrames: WRAITH_WALK_FRAMES,
+    walk: { originY: 0.950125, scale: 0.294 }
+  },
+  hushling: {
+    baseFacing: 'left',
+    sizeMul: 400 / 261,
+    idle: { key: 'hushling_stomp_01_contact_a', originY: 0.947456, scale: 0.294 },
+    walkFrames: HUSHLING_WALK_FRAMES,
+    walk: { originY: 0.947456, scale: 0.294 }
   }
 });
 
@@ -259,9 +313,7 @@ export default class TacticalScene extends Phaser.Scene {
     this.load.image('portrait_auryi', './assets/ui/portrait_auryi.png');
     this.load.image('portrait_wraith', './assets/ui/portrait_wraith_v34.png');
     this.load.image('portrait_hushling', './assets/ui/portrait_hushling_v34.png');
-    // Hero map tokens — existing battle-pose art plus the validated
-    // walk-cycle sets (see CHARACTER_TOKEN_ART above). Enemies still use
-    // procedural tokens, no load needed for those.
+    // Hero map tokens — walk-cycle sets (see CHARACTER_TOKEN_ART above).
     PRISMEL_WALK_FRAMES.forEach(key => {
       this.load.image(key, `./assets/prismel/walk/map_icons/${key}_mapicon.png`);
       this.load.image(`${key}_silhouette`, `./assets/prismel/walk/map_icons/${key}_silhouette.png`);
@@ -273,6 +325,17 @@ export default class TacticalScene extends Phaser.Scene {
     KINEZA_WALK_FRAMES.forEach(key => {
       this.load.image(key, `./assets/kineza/movement/map_icons/${key}_mapicon.png`);
       this.load.image(`${key}_silhouette`, `./assets/kineza/movement/map_icons/${key}_silhouette.png`);
+    });
+    // v0.5E — enemy map tokens, same walk-cycle shape as the heroes
+    // (see ENEMY_TOKEN_ART above). Previously enemies had no illustrated
+    // tactical art at all, only the procedural circle.
+    WRAITH_WALK_FRAMES.forEach(key => {
+      this.load.image(key, `./assets/enemy/veil_wraith/movement/map_icons/${key}_mapicon.png`);
+      this.load.image(`${key}_silhouette`, `./assets/enemy/veil_wraith/movement/map_icons/${key}_silhouette.png`);
+    });
+    HUSHLING_WALK_FRAMES.forEach(key => {
+      this.load.image(key, `./assets/enemy/hushling/movement/map_icons/${key}_mapicon.png`);
+      this.load.image(`${key}_silhouette`, `./assets/enemy/hushling/movement/map_icons/${key}_silhouette.png`);
     });
     Object.values(HERO_HIT_SFX).forEach(({ key, path }) => this.load.audio(key, path));
     // v0.5C Tactical Hero HUD — Master A is the sole geometry authority
@@ -513,16 +576,19 @@ export default class TacticalScene extends Phaser.Scene {
   // (ONSCREEN_W/ONSCREEN_H below, derived from CHARACTER_TOKEN_ART's
   // scale) so nothing semi-transparent in the art ever has tile detail
   // behind it to blend with — solid accent color instead.
-  _buildCharacterToken(charKey) {
-    const art = CHARACTER_TOKEN_ART[charKey];
+  _buildCharacterToken(charKey, artTable = CHARACTER_TOKEN_ART) {
+    const art = artTable[charKey];
     const container = this.add.container(0, 0).setDepth(10);
 
     // Small grounded contact shadow — subtle, dark, at the feet. Not
     // accent-colored: a shadow, not a team-color plate. Sized off this
-    // hero's own scale relative to Prismel's baseline (0.294), not the
-    // flat ONSCREEN_W/H constants, so a visibly bigger Auryi doesn't
-    // stand on the same tiny shadow as everyone else.
-    const shadowMul = art.idle.scale / 0.294;
+    // character's own sizeMul (relative content height vs Prismel's
+    // baseline), not the flat ONSCREEN_W/H constants, so a visibly
+    // bigger character (Auryi, or either enemy) doesn't stand on the
+    // same tiny shadow as everyone else. Runtime `scale` itself is flat
+    // 0.294 across every character now, so it carries no size signal —
+    // sizeMul is the one that does.
+    const shadowMul = art.sizeMul || 1;
     const shadow = this.add.ellipse(0, -3, ONSCREEN_W * 0.56 * shadowMul, ONSCREEN_H * 0.1 * shadowMul, 0x000000, 0.35);
 
     // Character-following outline: a slightly-larger, near-black copy of
@@ -609,15 +675,30 @@ export default class TacticalScene extends Phaser.Scene {
     return hero;
   }
 
+  // v0.5E: mirrors _buildHero()'s exact "art if present, else the plain
+  // procedural token" branch — same generic onStep/onMoveEnd wiring, just
+  // against ENEMY_TOKEN_ART/ENEMY_STATS instead of the hero tables.
   _buildEnemy(e) {
     const stats = ENEMY_STATS[e.type];
-    const sprite = this._buildUnitToken(stats.accent, stats.label, false);
-    return {
+    const art = ENEMY_TOKEN_ART[e.type];
+    let sprite, onStep = null, onMoveEnd = null;
+    if (art) {
+      const token = this._buildCharacterToken(e.type, ENEMY_TOKEN_ART);
+      sprite = token.container;
+      onStep = token.onStep;
+      onMoveEnd = token.onMoveEnd;
+    } else {
+      sprite = this._buildUnitToken(stats.accent, stats.label, false);
+    }
+    const enemy = {
       id: e.id, type: e.type, x: e.x, y: e.y,
       hp: stats.hp, maxHp: stats.hp, atk: stats.atk, range: stats.range,
       name: stats.name, ability: stats.ability, portraitKey: stats.cinematicKey,
       alive: true, isHero: false, sprite, spriteYOffset: 0
     };
+    if (onStep) enemy.onStep = onStep;
+    if (onMoveEnd) enemy.onMoveEnd = onMoveEnd;
+    return enemy;
   }
 
   // Called on create() and every resize. World geometry never changes
