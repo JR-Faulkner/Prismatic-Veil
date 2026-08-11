@@ -67,7 +67,10 @@ const HERO_HIT_SFX = Object.freeze({
 // same ambiguous art.
 const HERO_HUD_GEOMETRY = Object.freeze({
   aspect: 1252 / 453,
-  title: { leftX: 340 / 1252, rightX: 1030 / 1252, y: 66 / 453 },
+  // y nudged down ~10% of card height from the original 66/453 —
+  // reported directly against a real device as needing to sit lower,
+  // not just eyeballed off a screenshot.
+  title: { leftX: 340 / 1252, rightX: 1030 / 1252, y: 111 / 453 },
   hp: { wellX: 100 / 1252, wellY: 205 / 453, barX0: 172 / 1252, barX1: 678 / 1252, barY: 205 / 453, barH: 34 / 453 },
   rp: { wellX: 100 / 1252, wellY: 297 / 453, barX0: 172 / 1252, barX1: 678 / 1252, barY: 297 / 453, barH: 34 / 453 },
   wellDiameter: 130 / 1252,
@@ -788,8 +791,13 @@ export default class TacticalScene extends Phaser.Scene {
 
     card.name.setPosition(width * g.title.leftX, height * g.title.y)
       .setFontSize(Math.round(height * 0.13));
+    // Reported as possibly too large to fit its strip — checked directly
+    // rather than assumed: "Momentum Born" (the longest title) measured
+    // only ~8px/11% of margin against the strip's available width at the
+    // original 0.1 multiplier. Sized down for real headroom instead of
+    // leaving it that tight.
     card.title.setPosition(width * g.title.rightX, height * g.title.y)
-      .setFontSize(Math.round(height * 0.1));
+      .setFontSize(Math.round(height * 0.088));
 
     const wellD = width * g.wellDiameter;
     card.hpIcon.setPosition(width * g.hp.wellX, height * g.hp.wellY).setDisplaySize(wellD, wellD);
