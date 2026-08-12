@@ -444,7 +444,15 @@ export default class TacticalScene extends Phaser.Scene {
     this.turn = 1;
     this.phase = 'player';
     this.inputLocked = false;
-    this.message = 'Restore all three sound nodes. Defeating every enemy is optional.';
+    // Reported directly: the plain narration line under the ornate Goal
+    // plate duplicated the plate's own text word-for-word. It only showed
+    // on Turn 1 — startPlayerPhase() (every turn after) already sets a
+    // real "Player Phase. Select a hero." message, but that method only
+    // runs starting Turn 2, so this initial seed value was the one thing
+    // actually visible for the whole first turn until a hero got selected.
+    // Matches startPlayerPhase()'s own wording instead of repeating the
+    // goal text a second time.
+    this.message = 'Player Phase. Select a hero.';
     this.victory = false;
     this.defeat = false;
 
