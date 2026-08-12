@@ -14,7 +14,7 @@ import TacticalActionConsole from './TacticalActionConsole.js?v=52';
 // Too Quiet Cinematic Batch 01 — presentation-only environment adapter.
 // TacticalGrid stays authoritative for geometry/occupancy/pathing; this
 // only owns how the battlefield and sound nodes are drawn.
-import TacticalEnvironmentLayer from './TacticalEnvironmentLayer.js?v=1';
+import TacticalEnvironmentLayer from './TacticalEnvironmentLayer.js?v=2';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.

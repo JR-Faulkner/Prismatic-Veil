@@ -1,77 +1,508 @@
-// Too Quiet Cinematic Environment Layer — Batch 01
+// Too Quiet Cinematic Environment Layer — Batch 02A
 //
-// Presentation-only. TacticalGrid remains the source of truth for movement,
-// occupancy, hit testing, terrain, pathfinding, and line of sight.
+// Procedural suburban layout prototype.
 //
-// This first batch deliberately ships without new runtime environment art.
-// It removes the permanent grid-carpet read now, creates environment-aware
-// sound-node motifs, and establishes the insertion point for future layered
-// backyard masters without forcing a rewrite of TacticalScene.
+// This remains presentation-only. TacticalGrid is still the source of truth
+// for movement, occupancy, hit testing, terrain, pathfinding, line of sight,
+// node coordinates, and all combat rules.
+//
+// Batch 02A's purpose is to prove the authored backyard composition inside the
+// real Tactical camera before replacing these procedural shapes with final
+// illustrated PNG layers. It deliberately uses normal suburban objects rather
+// than fantasy architecture.
 export default class TacticalEnvironmentLayer {
   constructor(scene, grid, mapData) {
     this.scene = scene;
     this.grid = grid;
     this.mapData = mapData;
+
     this.nodeObjects = [];
+    this.sceneryObjects = [];
+
+    this.backScenery = null;
+    this.midScenery = null;
+    this.ambientOverlay = null;
+    this.frontScenery = null;
   }
 
-  // One continuous lawn plane replaces 120 individually-outlined visible
-  // grid cells. Terrain exceptions remain as quiet local cues.
-  drawBattlefield(g) {
-    g.clear();
+  // ---------------------------------------------------------------------
+  // Lifecycle
+  // ---------------------------------------------------------------------
 
+  _worldGraphics(depth) {
+    const g = this.scene.add.graphics().setDepth(depth);
+    this.scene.worldAdd(g);
+    this.sceneryObjects.push(g);
+    return g;
+  }
+
+  _ensureSceneryLayers() {
+    if (!this.backScenery) this.backScenery = this._worldGraphics(-5);
+    if (!this.midScenery) this.midScenery = this._worldGraphics(1);
+    if (!this.ambientOverlay) this.ambientOverlay = this._worldGraphics(7.2);
+
+    // A very restrained front-occlusion layer. It sits above ordinary units
+    // (their dynamic depth is ~10.xx) only where individual front props are
+    // explicitly drawn with their own object depth; this shared graphics
+    // layer therefore stays below units and is safe by default.
+    if (!this.frontScenery) this.frontScenery = this._worldGraphics(8.7);
+  }
+
+  destroy() {
+    this.clearNodes();
+    this.sceneryObjects.forEach(o => {
+      if (o && o.destroy) o.destroy();
+    });
+    this.sceneryObjects = [];
+    this.backScenery = null;
+    this.midScenery = null;
+    this.ambientOverlay = null;
+    this.frontScenery = null;
+  }
+
+  // ---------------------------------------------------------------------
+  // Geometry helpers
+  // ---------------------------------------------------------------------
+
+  p(x, y) {
+    return this.grid.toScreen(x, y);
+  }
+
+  lerpPoint(a, b, t) {
+    return {
+      x: a.x + (b.x - a.x) * t,
+      y: a.y + (b.y - a.y) * t
+    };
+  }
+
+  drawQuad(g, pts, fill, alpha = 1, stroke, strokeAlpha = 1, strokeWidth = 1) {
+    g.fillStyle(fill, alpha);
+    g.beginPath();
+    g.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) g.lineTo(pts[i].x, pts[i].y);
+    g.closePath();
+    g.fillPath();
+    if (stroke !== undefined) {
+      g.lineStyle(strokeWidth, stroke, strokeAlpha);
+      g.strokePath();
+    }
+  }
+
+  boardCorners() {
     const hw = this.grid.tileHalfW;
     const hh = this.grid.tileHalfH;
-    const top = this.grid.toScreen(0, 0);
-    const right = this.grid.toScreen(this.grid.columns - 1, 0);
-    const bottom = this.grid.toScreen(this.grid.columns - 1, this.grid.rows - 1);
-    const left = this.grid.toScreen(0, this.grid.rows - 1);
+    const top = this.p(0, 0);
+    const right = this.p(this.grid.columns - 1, 0);
+    const bottom = this.p(this.grid.columns - 1, this.grid.rows - 1);
+    const left = this.p(0, this.grid.rows - 1);
+    return {
+      top: { x: top.x, y: top.y - hh },
+      right: { x: right.x + hw, y: right.y },
+      bottom: { x: bottom.x, y: bottom.y + hh },
+      left: { x: left.x - hw, y: left.y }
+    };
+  }
 
-    // Night lawn / suburban ground foundation.
-    g.fillStyle(0x172719, 0.96);
+  // ---------------------------------------------------------------------
+  // Battlefield
+  // ---------------------------------------------------------------------
+
+  drawBattlefield(g) {
+    this._ensureSceneryLayers();
+
+    g.clear();
+    this.backScenery.clear();
+    this.midScenery.clear();
+    this.ambientOverlay.clear();
+    this.frontScenery.clear();
+
+    this._drawGround(g);
+    this._drawFarNeighborhood(this.backScenery);
+    this._drawFence(this.backScenery);
+    this._drawHouseAndDeck(this.backScenery);
+    this._drawPool(this.midScenery);
+    this._drawPatioSocialArea(this.midScenery);
+    this._drawDogArea(this.midScenery);
+    this._drawBackyardProps(this.midScenery);
+    this._drawTerrainHints(this.midScenery);
+    this._drawVeilCorruption(this.ambientOverlay);
+    this._drawForegroundAccents(this.frontScenery);
+  }
+
+  _drawGround(g) {
+    const c = this.boardCorners();
+
+    // One continuous lawn plane. The grid exists underneath but is not the
+    // visual identity of the battlefield.
+    this.drawQuad(
+      g,
+      [c.top, c.right, c.bottom, c.left],
+      0x18331f,
+      0.98,
+      0x243c31,
+      0.45,
+      1
+    );
+
+    // Broad night wash with a cooler back-yard/top edge.
+    const topA = this.lerpPoint(c.left, c.top, 0.22);
+    const topB = this.lerpPoint(c.top, c.right, 0.78);
+    const lowerB = this.lerpPoint(c.right, c.bottom, 0.48);
+    const lowerA = this.lerpPoint(c.bottom, c.left, 0.48);
+    this.drawQuad(g, [topA, topB, lowerB, lowerA], 0x20364d, 0.12);
+
+    // Patchy lawn texture without turning into tile outlines.
+    g.fillStyle(0x284a2d, 0.16);
+    [
+      [2, 5, 24, 8], [4, 3, 18, 5], [7, 7, 26, 7],
+      [8, 4, 16, 5], [5, 8, 22, 6]
+    ].forEach(([x, y, w, h]) => {
+      const p = this.p(x, y);
+      g.fillEllipse(p.x, p.y, w, h);
+    });
+  }
+
+  _drawFarNeighborhood(g) {
+    const top = this.p(0, 0);
+    const right = this.p(this.grid.columns - 1, 0);
+
+    // Neighbor houses: low-contrast silhouettes, clearly modern residential.
+    const houses = [
+      { x: top.x - 120, y: top.y - 126, w: 104, h: 58, roof: 28 },
+      { x: top.x + 15, y: top.y - 153, w: 125, h: 66, roof: 32 },
+      { x: right.x + 72, y: right.y - 118, w: 110, h: 60, roof: 28 }
+    ];
+
+    houses.forEach((h, i) => {
+      g.fillStyle(i === 1 ? 0x17202a : 0x111820, 0.92);
+      g.fillRect(h.x - h.w / 2, h.y - h.h / 2, h.w, h.h);
+
+      g.fillStyle(0x0c1118, 0.96);
+      g.beginPath();
+      g.moveTo(h.x - h.w * 0.58, h.y - h.h / 2);
+      g.lineTo(h.x, h.y - h.h / 2 - h.roof);
+      g.lineTo(h.x + h.w * 0.58, h.y - h.h / 2);
+      g.closePath();
+      g.fillPath();
+
+      // A few believable warm windows, no fantasy glow.
+      g.fillStyle(0xd3a86b, 0.35);
+      g.fillRect(h.x - h.w * 0.30, h.y - 10, 13, 12);
+      g.fillRect(h.x + h.w * 0.14, h.y - 8, 14, 13);
+    });
+
+    // Trees framing the property.
+    [
+      { x: top.x - 215, y: top.y - 98, s: 1.15 },
+      { x: top.x - 63, y: top.y - 118, s: 0.85 },
+      { x: right.x + 185, y: right.y - 88, s: 1.10 }
+    ].forEach(t => {
+      g.fillStyle(0x09120e, 0.92);
+      g.fillRect(t.x - 4 * t.s, t.y, 8 * t.s, 65 * t.s);
+      g.fillStyle(0x0c1d16, 0.98);
+      g.fillCircle(t.x, t.y - 5, 27 * t.s);
+      g.fillCircle(t.x - 20 * t.s, t.y + 4, 20 * t.s);
+      g.fillCircle(t.x + 20 * t.s, t.y + 3, 22 * t.s);
+    });
+
+    // Utility pole + lines, one of the little suburban tells from the master.
+    const poleX = right.x + 125;
+    const poleTopY = right.y - 165;
+    g.lineStyle(4, 0x111316, 0.95);
     g.beginPath();
-    g.moveTo(top.x, top.y - hh);
-    g.lineTo(right.x + hw, right.y);
-    g.lineTo(bottom.x, bottom.y + hh);
-    g.lineTo(left.x - hw, left.y);
+    g.moveTo(poleX, poleTopY);
+    g.lineTo(poleX, right.y + 45);
+    g.strokePath();
+
+    g.lineStyle(1.2, 0x17191c, 0.90);
+    g.beginPath();
+    g.moveTo(top.x - 210, poleTopY + 12);
+    g.lineTo(poleX + 20, poleTopY + 5);
+    g.strokePath();
+    g.beginPath();
+    g.moveTo(top.x - 160, poleTopY + 24);
+    g.lineTo(poleX + 25, poleTopY + 17);
+    g.strokePath();
+  }
+
+  _drawFence(g) {
+    const backLeft = this.p(0, 1);
+    const backRight = this.p(10, 0);
+    const sideRight = this.p(11, 7);
+
+    // Back fence follows the board's far projected edge.
+    g.lineStyle(7, 0x4b3d31, 0.96);
+    g.beginPath();
+    g.moveTo(backLeft.x - 35, backLeft.y - 26);
+    g.lineTo(backRight.x + 30, backRight.y - 27);
+    g.strokePath();
+
+    g.lineStyle(2, 0x76604b, 0.75);
+    for (let i = 0; i <= 12; i++) {
+      const t = i / 12;
+      const x = backLeft.x - 35 + (backRight.x + 65 - backLeft.x) * t;
+      const y = backLeft.y - 27 + (backRight.y - backLeft.y - 1) * t;
+      g.beginPath();
+      g.moveTo(x, y - 21);
+      g.lineTo(x, y + 10);
+      g.strokePath();
+    }
+
+    // Right-side property fence.
+    g.lineStyle(7, 0x46382d, 0.92);
+    g.beginPath();
+    g.moveTo(backRight.x + 30, backRight.y - 27);
+    g.lineTo(sideRight.x + 31, sideRight.y + 8);
+    g.strokePath();
+
+    g.lineStyle(1.5, 0x765f4a, 0.68);
+    for (let i = 0; i <= 8; i++) {
+      const t = i / 8;
+      const x = backRight.x + 30 + (sideRight.x + 1 - backRight.x) * t;
+      const y = backRight.y - 27 + (sideRight.y + 35 - backRight.y) * t;
+      g.beginPath();
+      g.moveTo(x, y - 18);
+      g.lineTo(x, y + 9);
+      g.strokePath();
+    }
+  }
+
+  _drawHouseAndDeck(g) {
+    // Main family house occupies the far-left/back portion without covering
+    // the whole playable board.
+    const a = this.p(0, 0);
+    const b = this.p(5, 0);
+
+    const houseX = (a.x + b.x) / 2 - 36;
+    const houseY = (a.y + b.y) / 2 - 88;
+    const w = 235;
+    const h = 98;
+
+    // House body.
+    g.fillStyle(0x5a5b5b, 0.98);
+    g.fillRect(houseX - w / 2, houseY - h / 2, w, h);
+
+    // Roof.
+    g.fillStyle(0x24252a, 1);
+    g.beginPath();
+    g.moveTo(houseX - w * 0.58, houseY - h / 2);
+    g.lineTo(houseX - 30, houseY - h / 2 - 55);
+    g.lineTo(houseX + w * 0.55, houseY - h / 2);
     g.closePath();
     g.fillPath();
 
-    // Soft moonlit wash to keep the center readable.
-    g.fillStyle(0x28364b, 0.16);
+    // Back door and windows.
+    g.fillStyle(0x1f262b, 0.95);
+    g.fillRect(houseX + 38, houseY - 15, 35, 59);
+    g.fillStyle(0xc9945a, 0.43);
+    g.fillRect(houseX - 82, houseY - 20, 39, 31);
+    g.fillRect(houseX - 22, houseY - 20, 39, 31);
+    g.fillRect(houseX + 92, houseY - 19, 31, 30);
+
+    // Warm porch light.
+    g.fillStyle(0xffd58e, 0.68);
+    g.fillCircle(houseX + 58, houseY - 26, 4);
+    g.fillStyle(0xffd58e, 0.07);
+    g.fillCircle(houseX + 58, houseY - 26, 25);
+
+    // Deck / patio boards.
+    const d0 = this.p(2, 2);
+    const d1 = this.p(6, 2);
+    const d2 = this.p(6, 4);
+    const d3 = this.p(2, 4);
+    this.drawQuad(g, [d0, d1, d2, d3], 0x5b4b3a, 0.82, 0x836b50, 0.55, 1);
+
+    // Deck rail.
+    g.lineStyle(2, 0xa17e58, 0.62);
+    const railA = this.lerpPoint(d0, d1, 0.12);
+    const railB = this.lerpPoint(d0, d1, 0.88);
     g.beginPath();
-    g.moveTo(top.x, top.y - hh * 0.7);
-    g.lineTo(right.x + hw * 0.75, right.y);
-    g.lineTo(bottom.x, bottom.y + hh * 0.55);
-    g.lineTo(left.x - hw * 0.75, left.y);
+    g.moveTo(railA.x, railA.y - 18);
+    g.lineTo(railB.x, railB.y - 18);
+    g.strokePath();
+  }
+
+  _drawPool(g) {
+    // Pool objective is data-anchored at (2,9). The pool itself is larger
+    // than the node marker and reads as an actual backyard feature.
+    const c = this.p(2, 9);
+
+    g.fillStyle(0x8e979b, 0.95);
+    g.fillEllipse(c.x, c.y + 3, 112, 47);
+
+    g.fillStyle(0x143d55, 0.98);
+    g.fillEllipse(c.x, c.y + 2, 98, 37);
+
+    // Normal water highlight.
+    g.lineStyle(1.2, 0x6f9fb8, 0.48);
+    g.strokeEllipse(c.x, c.y + 2, 86, 29);
+
+    // Pool ladder.
+    g.lineStyle(2, 0xb4b9bc, 0.65);
+    g.beginPath();
+    g.moveTo(c.x + 38, c.y - 12);
+    g.lineTo(c.x + 46, c.y + 5);
+    g.moveTo(c.x + 45, c.y - 13);
+    g.lineTo(c.x + 53, c.y + 3);
+    g.strokePath();
+  }
+
+  _drawPatioSocialArea(g) {
+    // Backyard Laughter lives at (9,8), so the social space surrounds that
+    // coordinate: table, chairs, small play item.
+    const c = this.p(9, 8);
+
+    // Patio slab.
+    g.fillStyle(0x6b6b67, 0.40);
+    g.fillEllipse(c.x, c.y + 4, 118, 52);
+
+    // Table.
+    g.fillStyle(0x383736, 0.95);
+    g.fillEllipse(c.x - 4, c.y - 6, 44, 17);
+    g.fillRect(c.x - 6, c.y - 5, 4, 23);
+
+    // Chairs.
+    const chairs = [
+      [c.x - 34, c.y - 5], [c.x + 30, c.y - 3], [c.x - 5, c.y + 19]
+    ];
+    chairs.forEach(([x, y]) => {
+      g.fillStyle(0x4a4741, 0.94);
+      g.fillRect(x - 7, y - 7, 14, 12);
+      g.lineStyle(2, 0x403d38, 0.95);
+      g.beginPath();
+      g.moveTo(x - 5, y + 5);
+      g.lineTo(x - 7, y + 16);
+      g.moveTo(x + 5, y + 5);
+      g.lineTo(x + 7, y + 16);
+      g.strokePath();
+    });
+
+    // Children's ball / play object.
+    g.fillStyle(0xb44f4d, 0.75);
+    g.fillCircle(c.x + 47, c.y + 10, 5);
+    g.lineStyle(1, 0xe0b26c, 0.55);
+    g.strokeCircle(c.x + 47, c.y + 10, 5);
+  }
+
+  _drawDogArea(g) {
+    const c = this.p(2, 2);
+
+    // Doghouse, fence-adjacent.
+    g.fillStyle(0x5a3828, 0.95);
+    g.fillRect(c.x - 36, c.y - 28, 39, 29);
+    g.fillStyle(0x3c241b, 0.98);
+    g.beginPath();
+    g.moveTo(c.x - 43, c.y - 28);
+    g.lineTo(c.x - 17, c.y - 48);
+    g.lineTo(c.x + 10, c.y - 28);
     g.closePath();
     g.fillPath();
+    g.fillStyle(0x111317, 0.92);
+    g.fillCircle(c.x - 17, c.y - 10, 8);
 
+    // Dog bowl grounds the location in ordinary domestic life.
+    g.fillStyle(0x777f83, 0.80);
+    g.fillEllipse(c.x + 12, c.y + 2, 15, 5);
+  }
+
+  _drawBackyardProps(g) {
+    // Grill near deck.
+    const grill = this.p(6, 4);
+    g.fillStyle(0x24272a, 0.98);
+    g.fillEllipse(grill.x + 14, grill.y - 11, 25, 13);
+    g.fillRect(grill.x + 3, grill.y - 10, 22, 15);
+    g.lineStyle(2, 0x1e2022, 0.95);
+    g.beginPath();
+    g.moveTo(grill.x + 7, grill.y + 4);
+    g.lineTo(grill.x + 3, grill.y + 20);
+    g.moveTo(grill.x + 22, grill.y + 4);
+    g.lineTo(grill.x + 26, grill.y + 20);
+    g.strokePath();
+
+    // Small plastic toy bin / yard clutter.
+    const toy = this.p(7, 7);
+    g.fillStyle(0x31598b, 0.72);
+    g.fillRect(toy.x - 10, toy.y - 5, 20, 11);
+    g.fillStyle(0xe1ad49, 0.75);
+    g.fillCircle(toy.x + 15, toy.y + 2, 4);
+
+    // Hose reel near house edge.
+    const hose = this.p(5, 3);
+    g.lineStyle(2, 0x2d5d43, 0.68);
+    g.strokeCircle(hose.x - 16, hose.y - 8, 7);
+    g.beginPath();
+    g.moveTo(hose.x - 9, hose.y - 5);
+    g.lineTo(hose.x + 5, hose.y + 4);
+    g.strokePath();
+  }
+
+  _drawTerrainHints(g) {
+    // Difficult/barrier/resonance still come from map data. These cues are
+    // intentionally tiny and material-like, never full-cell borders.
     for (let y = 0; y < this.grid.rows; y++) {
       for (let x = 0; x < this.grid.columns; x++) {
         const type = this.grid.terrainAt(x, y);
         if (type === 'open') continue;
 
+        const p = this.p(x, y);
+
         if (type === 'difficult') {
-          // Subtle disturbed-earth / clutter patch.
-          this.grid.drawDiamond(g, x, y, 0x5b4a34, 0.23);
+          g.fillStyle(0x433b2d, 0.18);
+          g.fillEllipse(p.x, p.y + 4, 26, 9);
+          g.fillStyle(0x6b5940, 0.20);
+          g.fillCircle(p.x - 8, p.y + 1, 2);
+          g.fillCircle(p.x + 7, p.y + 5, 2);
         } else if (type === 'barrier') {
-          // Barrier logic stays exact, but the rendering is a quiet
-          // shadowed footprint rather than an obvious "blocked tile".
-          this.grid.drawDiamond(g, x, y, 0x090b11, 0.34);
-        } else if (type === 'resonance') {
-          this._drawResonanceCrack(g, x, y);
+          // Quiet grounding shadow only. Collision remains logical.
+          g.fillStyle(0x06080b, 0.18);
+          g.fillEllipse(p.x, p.y + 5, 31, 10);
         }
       }
     }
   }
 
-  _drawResonanceCrack(g, x, y) {
-    const p = this.grid.toScreen(x, y);
-    const hw = this.grid.tileHalfW;
-    const hh = this.grid.tileHalfH;
+  _drawVeilCorruption(g) {
+    // Localized corruption around resonance cells and objectives. It invades
+    // the backyard; it does not transform the backyard into a temple.
+    for (let y = 0; y < this.grid.rows; y++) {
+      for (let x = 0; x < this.grid.columns; x++) {
+        if (this.grid.terrainAt(x, y) === 'resonance') {
+          this._drawResonanceCrack(g, x, y, 1);
+        }
+      }
+    }
 
-    g.lineStyle(5, 0x8a45ff, 0.08);
+    // Sparse extra hairline fractures.
+    [
+      [4.7, 6.2, 0.75],
+      [7.6, 3.3, 0.65],
+      [10.0, 5.7, 0.55]
+    ].forEach(([x, y, mul]) => {
+      const p = this.p(Math.round(x), Math.round(y));
+      this._drawFreeCrack(g, p.x + (x % 1) * 20, p.y + (y % 1) * 10, mul);
+    });
+
+    // A few tiny crystalline protrusions at the periphery only.
+    const crystals = [
+      { p: this.p(0, 7), dx: -18, dy: 1, s: 0.65 },
+      { p: this.p(10, 1), dx: 19, dy: -9, s: 0.55 },
+      { p: this.p(11, 8), dx: 14, dy: 2, s: 0.60 }
+    ];
+    crystals.forEach(c => this._drawCrystalCluster(g, c.p.x + c.dx, c.p.y + c.dy, c.s));
+
+    // Pool gets a faint impossible violet reflection separate from the node
+    // ripple itself.
+    const pool = this.p(2, 9);
+    g.fillStyle(0x874dff, 0.09);
+    g.fillEllipse(pool.x + 7, pool.y + 1, 68, 19);
+  }
+
+  _drawResonanceCrack(g, x, y, mul = 1) {
+    const p = this.p(x, y);
+    const hw = this.grid.tileHalfW * mul;
+    const hh = this.grid.tileHalfH * mul;
+
+    g.lineStyle(5, 0x8a45ff, 0.07);
     g.beginPath();
     g.moveTo(p.x - hw * 0.45, p.y + hh * 0.10);
     g.lineTo(p.x - hw * 0.10, p.y - hh * 0.18);
@@ -79,7 +510,7 @@ export default class TacticalEnvironmentLayer {
     g.lineTo(p.x + hw * 0.46, p.y - hh * 0.25);
     g.strokePath();
 
-    g.lineStyle(1.5, 0xc8a8ff, 0.55);
+    g.lineStyle(1.3, 0xc8a8ff, 0.50);
     g.beginPath();
     g.moveTo(p.x - hw * 0.45, p.y + hh * 0.10);
     g.lineTo(p.x - hw * 0.10, p.y - hh * 0.18);
@@ -88,8 +519,57 @@ export default class TacticalEnvironmentLayer {
     g.strokePath();
   }
 
+  _drawFreeCrack(g, x, y, mul) {
+    g.lineStyle(1.1, 0xab7dff, 0.34);
+    g.beginPath();
+    g.moveTo(x - 15 * mul, y + 2);
+    g.lineTo(x - 4 * mul, y - 5 * mul);
+    g.lineTo(x + 3 * mul, y + 2 * mul);
+    g.lineTo(x + 14 * mul, y - 6 * mul);
+    g.strokePath();
+  }
+
+  _drawCrystalCluster(g, x, y, s) {
+    const shards = [
+      { dx: 0, h: 20, w: 6 },
+      { dx: -7, h: 12, w: 5 },
+      { dx: 8, h: 15, w: 5 }
+    ];
+    shards.forEach(sh => {
+      const h = sh.h * s;
+      const w = sh.w * s;
+      g.fillStyle(0x7952c8, 0.52);
+      g.beginPath();
+      g.moveTo(x + sh.dx, y - h);
+      g.lineTo(x + sh.dx + w, y);
+      g.lineTo(x + sh.dx - w, y);
+      g.closePath();
+      g.fillPath();
+      g.lineStyle(1, 0xd3b8ff, 0.42);
+      g.strokePath();
+    });
+  }
+
+  _drawForegroundAccents(g) {
+    // Only a couple of low garden-edge silhouettes near the front corners.
+    // We intentionally avoid large occluders until the illustrated layer
+    // pass, because touch/readability matters more than decorative density.
+    const left = this.p(0, 9);
+    const right = this.p(11, 9);
+
+    g.fillStyle(0x0c1710, 0.72);
+    g.fillEllipse(left.x - 16, left.y + 10, 42, 14);
+    g.fillEllipse(right.x + 15, right.y + 8, 38, 12);
+  }
+
+  // ---------------------------------------------------------------------
+  // Sound nodes
+  // ---------------------------------------------------------------------
+
   clearNodes() {
-    this.nodeObjects.forEach(o => o.destroy());
+    this.nodeObjects.forEach(o => {
+      if (o && o.destroy) o.destroy();
+    });
     this.nodeObjects = [];
   }
 
@@ -100,20 +580,18 @@ export default class TacticalEnvironmentLayer {
   }
 
   _addNodeObject(obj) {
-    obj.setDepth(4);
+    obj.setDepth(7.5);
     this.scene.worldAdd(obj);
     this.nodeObjects.push(obj);
     return obj;
   }
 
   _buildNode(node) {
-    const p = this.grid.toScreen(node.x, node.y);
+    const p = this.p(node.x, node.y);
     const restored = !!node.restored;
     const main = restored ? 0xffd56a : 0x9f78ff;
     const soft = restored ? 0xfff3c8 : 0xc8a8ff;
 
-    // Each objective has its own environmental visual language. These are
-    // intentionally not three interchangeable floating crystals.
     if (node.id === 'dogs') {
       this._buildDogsNode(p, main, soft, restored);
     } else if (node.id === 'pool') {
@@ -121,26 +599,25 @@ export default class TacticalEnvironmentLayer {
     } else if (node.id === 'laughter') {
       this._buildLaughterNode(p, main, soft, restored);
     } else {
-      const fallback = this.scene.add.circle(p.x, p.y - 4, 6, main, 0.18)
-        .setStrokeStyle(1.5, soft, 0.55);
+      const fallback = this.scene.add.circle(p.x, p.y - 4, 6, main, 0.14)
+        .setStrokeStyle(1.2, soft, 0.45);
       this._addNodeObject(fallback);
     }
   }
 
   _buildDogsNode(p, main, soft, restored) {
     const g = this.scene.add.graphics();
-    g.lineStyle(1.5, soft, restored ? 0.78 : 0.44);
+    g.lineStyle(1.35, soft, restored ? 0.74 : 0.38);
 
-    // Fence/air vibration: three short wave arcs biased to one side.
+    // Disturbed air/fence vibration. No floating objective crystal.
     for (let i = 0; i < 3; i++) {
       const r = 7 + i * 5;
       g.beginPath();
-      g.arc(p.x - 5, p.y - 5, r, -0.72, 0.72, false);
+      g.arc(p.x - 4, p.y - 6, r, -0.70, 0.70, false);
       g.strokePath();
     }
 
-    // A grounded pulse at the fence-line location.
-    g.lineStyle(1, main, restored ? 0.7 : 0.28);
+    g.lineStyle(1, main, restored ? 0.65 : 0.23);
     g.beginPath();
     g.moveTo(p.x - 18, p.y + 5);
     g.lineTo(p.x + 17, p.y + 5);
@@ -152,14 +629,16 @@ export default class TacticalEnvironmentLayer {
   _buildPoolNode(p, main, soft, restored) {
     const g = this.scene.add.graphics();
 
-    // Unnatural silent-water ripples, flattened to feel embedded in a pool
-    // surface rather than hovering above the battlefield.
+    // Silent-water ripples live inside the actual pool.
     for (let i = 0; i < 3; i++) {
-      const w = 16 + i * 11;
-      const h = 5 + i * 3;
-      g.lineStyle(i === 0 ? 1.7 : 1, i === 0 ? soft : main,
-        restored ? (0.82 - i * 0.15) : (0.48 - i * 0.10));
-      g.strokeEllipse(p.x, p.y - 2, w, h);
+      const w = 20 + i * 12;
+      const h = 6 + i * 3;
+      g.lineStyle(
+        i === 0 ? 1.6 : 1,
+        i === 0 ? soft : main,
+        restored ? (0.80 - i * 0.14) : (0.44 - i * 0.09)
+      );
+      g.strokeEllipse(p.x, p.y + 1, w, h);
     }
 
     this._addNodeObject(g);
@@ -168,30 +647,33 @@ export default class TacticalEnvironmentLayer {
   _buildLaughterNode(p, main, soft, restored) {
     const g = this.scene.add.graphics();
 
-    // Harmonic echo around the social/play area: broken arcs plus a few
-    // quiet suspended motes, deliberately different from Dogs Barking.
-    g.lineStyle(1.25, soft, restored ? 0.75 : 0.38);
+    // Harmonic echo around table/chairs/play items.
+    g.lineStyle(1.15, soft, restored ? 0.70 : 0.34);
     for (let i = 0; i < 3; i++) {
-      const r = 7 + i * 6;
+      const r = 8 + i * 6;
       g.beginPath();
-      g.arc(p.x, p.y - 4, r, Math.PI * 1.08, Math.PI * 1.82, false);
+      g.arc(p.x, p.y - 5, r, Math.PI * 1.08, Math.PI * 1.82, false);
       g.strokePath();
     }
 
-    g.fillStyle(main, restored ? 0.65 : 0.30);
-    g.fillCircle(p.x - 11, p.y - 13, 1.5);
-    g.fillCircle(p.x + 8, p.y - 17, 1.2);
-    g.fillCircle(p.x + 14, p.y - 9, 1.0);
+    g.fillStyle(main, restored ? 0.58 : 0.26);
+    g.fillCircle(p.x - 11, p.y - 14, 1.4);
+    g.fillCircle(p.x + 8, p.y - 18, 1.1);
+    g.fillCircle(p.x + 14, p.y - 10, 0.9);
 
     this._addNodeObject(g);
   }
 
-  // Future art hook. Once the approved environment is separated into
-  // clean PNG layers, TacticalScene can call this without changing any
-  // gameplay code. Objects returned here should use world depths below
-  // units (roughly 0-9) or explicit foreground occluder depths above them.
+  // ---------------------------------------------------------------------
+  // Final-art insertion hook
+  // ---------------------------------------------------------------------
+
+  // Once final environment-only PNG masters exist, the procedural scenery
+  // above can be replaced layer-by-layer. This helper intentionally remains
+  // compatible with Batch 01's contract.
   attachTextureLayer(textureKey, depth, options = {}) {
     if (!this.scene.textures.exists(textureKey)) return null;
+
     const img = this.scene.add.image(
       options.x || 0,
       options.y || 0,
@@ -203,6 +685,7 @@ export default class TacticalEnvironmentLayer {
 
     if (options.scale !== undefined) img.setScale(options.scale);
     if (options.alpha !== undefined) img.setAlpha(options.alpha);
+
     this.scene.worldAdd(img);
     return img;
   }
