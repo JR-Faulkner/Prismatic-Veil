@@ -1,9 +1,10 @@
 // Tactical Field Foundation v2 — TacticalGrid.
+// Too Quiet Cinematic Batch 01: grid logic remains authoritative, while
+// visible feedback is reduced to contextual tactical cues.
+//
 // Owns coordinate conversion (isometric diamond projection), bounds,
-// occupancy queries, tile selection, and overlay drawing (reachable tiles,
-// route preview, attack range). Terrain lookup delegates to TerrainRegistry;
-// pathing delegates to TacticalPathfinder — this module only knows geometry
-// and who's standing where.
+// occupancy queries, tile selection, and overlay drawing. Terrain lookup
+// delegates to TerrainRegistry; pathing delegates to TacticalPathfinder.
 export default class TacticalGrid {
   constructor(scene, mapData, terrainRegistry) {
     this.scene = scene;
@@ -83,9 +84,6 @@ export default class TacticalGrid {
     return this.occupancy.get(this.key(x, y)) || null;
   }
 
-  // A tile counts as occupied against `ignoreUnit` only if the occupant is
-  // someone else — lets a unit's own starting tile stay "free" while it's
-  // mid-selection, per the spec's explicit exception for the moving unit.
   isOccupied(x, y, ignoreUnit) {
     const o = this.occupantAt(x, y);
     return !!o && o !== ignoreUnit;
@@ -110,7 +108,7 @@ export default class TacticalGrid {
     };
   }
 
-  // --- Overlays ---
+  // --- Contextual overlays ---
 
   ensureOverlays() {
     if (!this.tileOverlay) this.tileOverlay = this.w(this.scene.add.graphics().setDepth(5));
@@ -126,16 +124,21 @@ export default class TacticalGrid {
     ];
   }
 
-  drawDiamond(g, x, y, fillColor, alpha, strokeColor, strokeAlpha) {
+  _traceDiamond(g, x, y) {
     const p = this.toScreen(x, y);
     const pts = this._diamondPoints(p.x, p.y);
-    g.fillStyle(fillColor, alpha);
     g.beginPath();
     g.moveTo(pts[0], pts[1]);
     g.lineTo(pts[2], pts[3]);
     g.lineTo(pts[4], pts[5]);
     g.lineTo(pts[6], pts[7]);
     g.closePath();
+    return p;
+  }
+
+  drawDiamond(g, x, y, fillColor, alpha, strokeColor, strokeAlpha) {
+    this._traceDiamond(g, x, y);
+    g.fillStyle(fillColor, alpha);
     g.fillPath();
     if (strokeColor !== undefined) {
       g.lineStyle(1, strokeColor, strokeAlpha === undefined ? 1 : strokeAlpha);
@@ -143,13 +146,25 @@ export default class TacticalGrid {
     }
   }
 
-  // reachableDist: Map<"x,y", cost> from TacticalPathfinder.reachable().dist
+  // Reachability is now a restrained prismatic ground response rather
+  // than a carpet of opaque blue diamonds. The logical reachable set is
+  // unchanged; only its presentation changes.
   showReachable(reachableDist) {
     this.ensureOverlays();
     this.tileOverlay.clear();
+
     reachableDist.forEach((cost, k) => {
       const [x, y] = k.split(',').map(Number);
-      this.drawDiamond(this.tileOverlay, x, y, 0x67c8ff, 0.28, 0x9fe0ff, 0.6);
+      const p = this._traceDiamond(this.tileOverlay, x, y);
+      this.tileOverlay.fillStyle(0x67c8ff, 0.045);
+      this.tileOverlay.fillPath();
+      this.tileOverlay.lineStyle(1, 0x9fe0ff, 0.24);
+      this.tileOverlay.strokePath();
+
+      // Tiny ground glint breaks up the "tile overlay" read while keeping
+      // every reachable destination discoverable on touch.
+      this.tileOverlay.fillStyle(0xbfeaff, 0.16);
+      this.tileOverlay.fillCircle(p.x, p.y, 1.6);
     });
   }
 
@@ -157,21 +172,57 @@ export default class TacticalGrid {
     if (this.tileOverlay) this.tileOverlay.clear();
   }
 
+  // Targeting keeps a restrained red/violet edge language with almost no
+  // fill, so enemy threat/attack feedback does not obscure the battlefield.
   showAttackRange(tiles) {
     this.ensureOverlays();
     this.tileOverlay.clear();
     tiles.forEach(t => {
-      this.drawDiamond(this.tileOverlay, t.x, t.y, 0xff503c, 0.24, 0xffb3a8, 0.55);
+      this._traceDiamond(this.tileOverlay, t.x, t.y);
+      this.tileOverlay.fillStyle(0xff503c, 0.025);
+      this.tileOverlay.fillPath();
+      this.tileOverlay.lineStyle(1.25, 0xd878ff, 0.42);
+      this.tileOverlay.strokePath();
     });
   }
 
+  // Path preview is a narrow Resonance thread through tile centers with a
+  // clear destination sigil. No permanent or filled path diamonds.
   showPath(path) {
     this.ensureOverlays();
     this.pathOverlay.clear();
-    if (!path) return;
-    path.forEach(t => {
-      this.drawDiamond(this.pathOverlay, t.x, t.y, 0xffe8a0, 0.35, 0xffe8a0, 0.85);
-    });
+    if (!path || path.length === 0) return;
+
+    const points = path.map(t => this.toScreen(t.x, t.y));
+
+    if (points.length > 1) {
+      // Soft under-thread.
+      this.pathOverlay.lineStyle(7, 0x6b7dff, 0.10);
+      this.pathOverlay.beginPath();
+      this.pathOverlay.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        this.pathOverlay.lineTo(points[i].x, points[i].y);
+      }
+      this.pathOverlay.strokePath();
+
+      // Crisp Resonance core.
+      this.pathOverlay.lineStyle(2.4, 0x9fe0ff, 0.82);
+      this.pathOverlay.beginPath();
+      this.pathOverlay.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        this.pathOverlay.lineTo(points[i].x, points[i].y);
+      }
+      this.pathOverlay.strokePath();
+    }
+
+    // Destination marker, separate from the selected-unit sigil.
+    const d = points[points.length - 1];
+    this.pathOverlay.lineStyle(2, 0xffe8a0, 0.88);
+    this.pathOverlay.strokeCircle(d.x, d.y, Math.max(6, this.tileHalfH * 0.42));
+    this.pathOverlay.lineStyle(1, 0xc8a8ff, 0.62);
+    this.pathOverlay.strokeCircle(d.x, d.y, Math.max(10, this.tileHalfH * 0.68));
+    this.pathOverlay.fillStyle(0xffe8a0, 0.38);
+    this.pathOverlay.fillCircle(d.x, d.y, 2.2);
   }
 
   clearPath() {

@@ -5,12 +5,16 @@
 // decides *when* those things happen.
 import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=50';
 import TerrainRegistry from './TerrainRegistry.js?v=49';
-import TacticalGrid from './TacticalGrid.js?v=49';
+import TacticalGrid from './TacticalGrid.js?v=50';
 import TacticalPathfinder from './TacticalPathfinder.js?v=49';
 import TacticalCamera from './TacticalCamera.js?v=49';
-import UnitController from './UnitController.js?v=49';
+import UnitController from './UnitController.js?v=50';
 import BattleCinematic from './BattleCinematic.js?v=53';
 import TacticalActionConsole from './TacticalActionConsole.js?v=52';
+// Too Quiet Cinematic Batch 01 — presentation-only environment adapter.
+// TacticalGrid stays authoritative for geometry/occupancy/pathing; this
+// only owns how the battlefield and sound nodes are drawn.
+import TacticalEnvironmentLayer from './TacticalEnvironmentLayer.js?v=1';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -293,13 +297,6 @@ const ENEMY_TOKEN_ART = Object.freeze({
   }
 });
 
-const TERRAIN_COLORS = Object.freeze({
-  open: 0x25203f,
-  barrier: 0x120b28,
-  difficult: 0x4a3a2a,
-  resonance: 0x3b215c
-});
-
 export default class TacticalScene extends Phaser.Scene {
   constructor() {
     super('TacticalScene');
@@ -465,6 +462,11 @@ export default class TacticalScene extends Phaser.Scene {
     // visible, which is the opposite of how Phaser cameras are meant to
     // work here.
     this.grid.setOrigin(0, 0, TILE.baseHalfW, TILE.baseHalfH);
+
+    // Presentation-only cinematic environment adapter. TacticalGrid remains
+    // authoritative for geometry, hit testing, pathing, terrain, and
+    // occupancy — this only decides how the battlefield/nodes are drawn.
+    this.environment = new TacticalEnvironmentLayer(this, this.grid, mapData);
 
     this.buildHUD();
     this.heroes.forEach(u => this._placeUnitSprite(u));
@@ -725,30 +727,35 @@ export default class TacticalScene extends Phaser.Scene {
   _placeUnitSprite(u) {
     const p = this.grid.toScreen(u.x, u.y);
     u.sprite.setPosition(p.x, p.y);
+    this.syncUnitDepth(u, p.y);
+  }
+
+  // 2.5D depth cue only. Unit logic still lives entirely on the 12x10 grid.
+  // A unit farther "down" the projected backyard renders in front of one
+  // farther "up", which gives the fixed three-quarter view physical depth
+  // without converting Tactical into a 3D game. worldAdd() only sorts at
+  // add-time, not when an existing object's own depth changes later, so
+  // this needs its own explicit sort() every time a unit's depth updates.
+  syncUnitDepth(u, projectedY) {
+    if (!u || !u.sprite) return;
+    const y = projectedY === undefined ? this.grid.toScreen(u.x, u.y).y : projectedY;
+    u.sprite.setDepth(10 + y * 0.001);
+    if (this.world) this.world.sort('depth');
   }
 
   drawBoard() {
-    this.tileLayer.clear();
-    for (let y = 0; y < GRID.rows; y++) {
-      for (let x = 0; x < GRID.columns; x++) {
-        const type = this.grid.terrainAt(x, y);
-        this.grid.drawDiamond(this.tileLayer, x, y, TERRAIN_COLORS[type] || TERRAIN_COLORS.open, 0.92, 0x0a0716, 0.5);
-      }
-    }
+    // Too Quiet Cinematic Batch 01 removes the permanent full-grid carpet
+    // (120 individually-outlined diamonds). TacticalGrid is untouched;
+    // only the visible battlefield treatment moves to the environment
+    // presentation layer.
+    this.environment.drawBattlefield(this.tileLayer);
   }
 
   drawNodes() {
-    this.nodeMarkers.forEach(m => m.destroy());
-    this.nodeMarkers = [];
-    this.nodes.forEach(n => {
-      const p = this.grid.toScreen(n.x, n.y);
-      const marker = this.add.circle(p.x, p.y - 6, 7,
-        n.restored ? 0xffd56a : 0x8a45ff, n.restored ? 0.95 : 0.55)
-        .setStrokeStyle(2, n.restored ? 0xfff3c8 : 0xc8a8ff, 0.9)
-        .setDepth(4);
-      this.worldAdd(marker);
-      this.nodeMarkers.push(marker);
-    });
+    // Dogs Barking, Pool Splash, and Backyard Laughter each get a distinct
+    // environment-integrated visual language instead of three
+    // interchangeable floating magical circles.
+    this.nodeMarkers = this.environment.drawNodes(this.nodes);
   }
 
   // --- HUD ---------------------------------------------------------------

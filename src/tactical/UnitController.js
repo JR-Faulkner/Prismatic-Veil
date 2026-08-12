@@ -1,7 +1,6 @@
 // Tactical Field Foundation v2 — UnitController.
-// Owns selection, movement state, action completion, occupancy updates,
-// and path animation. Does not decide turn order or AI — TacticalScene
-// drives when a unit gets to act; this module carries out the act.
+// Too Quiet Cinematic Batch 01 adds presentation-only depth sorting hooks.
+// Movement rules, pathing, occupancy, and action state are unchanged.
 export default class UnitController {
   constructor(scene, grid, pathfinder) {
     this.scene = scene;
@@ -31,10 +30,6 @@ export default class UnitController {
     this.grid.clearAllOverlays();
   }
 
-  // Returns the previewed route (or null if the tile isn't reachable) and
-  // draws it. Doesn't move anything — that's confirmMove()'s job, kept
-  // separate so a tap can preview before a second tap commits, matching
-  // the spec's "preview route → move or remain in place" turn sequence.
   previewRouteTo(x, y) {
     if (!this.selected || !this.reachable) { this.previewPath = null; return null; }
     this.previewPath = this.pathfinder.routeTo(this.selected.x, this.selected.y, x, y, this.reachable);
@@ -48,14 +43,6 @@ export default class UnitController {
     return cost === undefined ? null : this.selected.move - cost;
   }
 
-  // Animates the unit tile-by-tile along `path` (path[0] is the unit's
-  // current tile). Occupancy is cleared at the start and re-claimed only
-  // once the unit reaches its final tile, so mid-move it doesn't block its
-  // own old or new tile against a concurrent query.
-  // `unit.onStep(from, to)` and `unit.onMoveEnd()` are optional hooks a
-  // unit can implement for its own presentation (walk-frame cycling,
-  // facing flips) without this controller knowing anything character-
-  // specific — same generic-interface pattern as the enemy views.
   animateMove(unit, path, stepMs) {
     return new Promise(resolve => {
       if (!path || path.length < 2) { resolve(); return; }
@@ -66,12 +53,22 @@ export default class UnitController {
         if (i >= path.length) {
           this.grid.setOccupant(unit.x, unit.y, unit);
           if (unit.onMoveEnd) unit.onMoveEnd();
+          if (this.scene.syncUnitDepth) this.scene.syncUnitDepth(unit);
           resolve();
           return;
         }
+
         const tile = path[i];
         if (unit.onStep) unit.onStep({ x: unit.x, y: unit.y }, tile);
         const screen = this.grid.toScreen(tile.x, tile.y);
+
+        // Depth is presentation only. Sorting to the destination y before
+        // each tile tween prevents front/back overlaps from reading flat
+        // while preserving the exact movement route and timing.
+        if (this.scene.syncUnitDepth) {
+          this.scene.syncUnitDepth(unit, screen.y);
+        }
+
         this.scene.tweens.add({
           targets: unit.sprite,
           x: screen.x,
