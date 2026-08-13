@@ -1,6 +1,6 @@
-// Too Quiet Cinematic Environment Layer — Batch 02A
+// Too Quiet Cinematic Environment Layer — Batch 02B
 //
-// Procedural suburban layout prototype.
+// Premium layered-art runtime pass with validated 02A procedural fallback.
 //
 // This remains presentation-only. TacticalGrid is still the source of truth
 // for movement, occupancy, hit testing, terrain, pathfinding, line of sight,
@@ -23,6 +23,12 @@ export default class TacticalEnvironmentLayer {
     this.midScenery = null;
     this.ambientOverlay = null;
     this.frontScenery = null;
+
+    // Batch 02B aligned environment masters. All six PNGs share a
+    // 1536x1024 transparent canvas. One shared transform preserves
+    // registration across the entire environment stack.
+    this.artObjects = [];
+    this.artReady = null;
   }
 
   // ---------------------------------------------------------------------
@@ -50,6 +56,7 @@ export default class TacticalEnvironmentLayer {
 
   destroy() {
     this.clearNodes();
+    this._clearArt();
     this.sceneryObjects.forEach(o => {
       if (o && o.destroy) o.destroy();
     });
@@ -104,10 +111,118 @@ export default class TacticalEnvironmentLayer {
   }
 
   // ---------------------------------------------------------------------
+  // Batch 02B illustrated environment
+  // ---------------------------------------------------------------------
+
+  _hasArtTextures() {
+    const keys = [
+      'too_quiet_far_backyards',
+      'too_quiet_house_fence',
+      'too_quiet_ground_pool',
+      'too_quiet_props_back',
+      'too_quiet_veil_corruption',
+      'too_quiet_props_front'
+    ];
+    return keys.every(key => this.scene.textures.exists(key));
+  }
+
+  _clearArt() {
+    this.artObjects.forEach(o => {
+      if (o && o.destroy) o.destroy();
+    });
+    this.artObjects = [];
+    this.artReady = null;
+  }
+
+  _artTransform() {
+    const b = this.grid.screenBounds();
+    const boardW = b.maxX - b.minX;
+    const boardH = b.maxY - b.minY;
+
+    // Art intentionally extends beyond the logical board so the house,
+    // fence, neighboring homes, trees, and foreground patio can breathe.
+    // Reported directly: at desktop width the art left bare black canvas
+    // exposed on the right edge. The original 1.30 factor was sized only
+    // against the board's own logical width, not against how far the
+    // camera can actually zoom out at a wide viewport (TacticalCamera's
+    // defaultZoomFor() goes as low as 0.62) — same class of gap already
+    // fixed once before in Battle Presentation's own background layers
+    // (coverage tied to a fixed multiplier instead of the camera's real
+    // possible view). Bumped with real headroom rather than just enough
+    // to patch the one observed case.
+    const worldW = boardW * 2.0;
+    const scale = worldW / 1536;
+
+    return {
+      x: (b.minX + b.maxX) / 2,
+      y: (b.minY + b.maxY) / 2 - boardH * 0.22,
+      scale
+    };
+  }
+
+  _attachAlignedArt(textureKey, depth, alpha = 1) {
+    const t = this._artTransform();
+    const img = this.scene.add.image(t.x, t.y, textureKey)
+      .setOrigin(0.5)
+      .setScale(t.scale)
+      // The generated stack places the large pool on image-right while
+      // the validated logical Too Quiet map places Pool Splash toward the
+      // front-left. Mirror the WHOLE stack, never individual layers.
+      .setFlipX(true)
+      .setAlpha(alpha)
+      .setDepth(depth);
+
+    this.scene.worldAdd(img);
+    this.artObjects.push(img);
+    return img;
+  }
+
+  _ensureArt() {
+    if (this.artReady === true && this.artObjects.length === 6) return true;
+    if (!this._hasArtTextures()) {
+      this.artReady = false;
+      return false;
+    }
+
+    this._clearArt();
+
+    this._attachAlignedArt('too_quiet_far_backyards', -8, 1.00);
+    this._attachAlignedArt('too_quiet_house_fence', -6, 1.00);
+    this._attachAlignedArt('too_quiet_ground_pool', -4, 1.00);
+    this._attachAlignedArt('too_quiet_props_back', 2.5, 0.92);
+    this._attachAlignedArt('too_quiet_veil_corruption', 7.0, 0.67);
+    // Reported directly and confirmed by sampling this texture's own
+    // alpha against every board tile: at the spec'd depth 12 (above
+    // units' ~10.xx), the patio-couch cluster alone is near-fully-opaque
+    // (alpha 238-253) across ~13% of the board (roughly columns 9-11),
+    // and a unit standing there is almost entirely hidden — a direct hit
+    // on this package's own checklist item 7 ("foreground props do not
+    // hide full units"), not a hypothetical edge case. Held below units
+    // (matching Batch 02A's already-proven-safe front layer) as an
+    // interim mitigation rather than shipping the confirmed regression;
+    // the "walk behind furniture" depth effect this depth was meant to
+    // buy is the one visual trade-off, not full unit visibility.
+    this._attachAlignedArt('too_quiet_props_front', 8.8, 0.88);
+
+    this.artReady = true;
+    return true;
+  }
+
+  // ---------------------------------------------------------------------
   // Battlefield
   // ---------------------------------------------------------------------
 
   drawBattlefield(g) {
+    // Prefer the premium common-canvas stack. If any texture is missing,
+    // retain the already-validated 02A procedural backyard as a safe fallback.
+    if (this._ensureArt()) {
+      g.clear();
+      [this.backScenery, this.midScenery, this.ambientOverlay, this.frontScenery]
+        .filter(Boolean)
+        .forEach(layer => layer.clear());
+      return;
+    }
+
     this._ensureSceneryLayers();
 
     g.clear();

@@ -14,7 +14,7 @@ import TacticalActionConsole from './TacticalActionConsole.js?v=52';
 // Too Quiet Cinematic Batch 01 — presentation-only environment adapter.
 // TacticalGrid stays authoritative for geometry/occupancy/pathing; this
 // only owns how the battlefield and sound nodes are drawn.
-import TacticalEnvironmentLayer from './TacticalEnvironmentLayer.js?v=2';
+import TacticalEnvironmentLayer from './TacticalEnvironmentLayer.js?v=4';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -304,6 +304,14 @@ export default class TacticalScene extends Phaser.Scene {
 
   preload() {
     this.load.json('tacticalMap', './data/tactical_map_v2.json');
+    // Too Quiet Cinematic Batch 02B — aligned 1536x1024 environment masters.
+    // TacticalEnvironmentLayer owns their one shared world transform/depth stack.
+    this.load.image('too_quiet_far_backyards', './assets/tactical/too_quiet/environment/too_quiet_far_backyards.png');
+    this.load.image('too_quiet_house_fence', './assets/tactical/too_quiet/environment/too_quiet_house_fence.png');
+    this.load.image('too_quiet_ground_pool', './assets/tactical/too_quiet/environment/too_quiet_ground_pool.png');
+    this.load.image('too_quiet_props_back', './assets/tactical/too_quiet/environment/too_quiet_props_back.png');
+    this.load.image('too_quiet_veil_corruption', './assets/tactical/too_quiet/environment/too_quiet_veil_corruption.png');
+    this.load.image('too_quiet_props_front', './assets/tactical/too_quiet/environment/too_quiet_props_front.png');
     // Real portrait art, used only for the cinematic cut-in.
     this.load.image('portrait_prismel', './assets/ui/portrait_prismel.png');
     this.load.image('portrait_kineza', './assets/ui/portrait_kineza.png');
