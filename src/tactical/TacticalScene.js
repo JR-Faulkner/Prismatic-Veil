@@ -15,6 +15,16 @@ import TacticalActionConsole from './TacticalActionConsole.js?v=52';
 // TacticalGrid stays authoritative for geometry/occupancy/pathing; this
 // only owns how the battlefield and sound nodes are drawn.
 import TacticalEnvironmentLayer from './TacticalEnvironmentLayer.js?v=4';
+// Dream View — opt-in, query-param-gated presentation QA sandboxes.
+// Each is a no-op (returns false from apply()) unless its own ?dreamview=
+// value is present; normal Tactical keeps the plain recenter(0) path.
+// None of the six ever writes combat/turn/node state — see create().
+import DreamViewPrototype from './DreamViewPrototype.js?v=1';
+import DreamViewCalibrationSandbox from './DreamViewCalibrationSandbox.js?v=1';
+import DreamViewStaging from './DreamViewStaging.js?v=1';
+import DreamViewTacticalFeedback from './DreamViewTacticalFeedback.js?v=1';
+import SoundNodeRestorationPrototype from './SoundNodeRestorationPrototype.js?v=1';
+import TooQuietVictoryPrototype from './TooQuietVictoryPrototype.js?v=1';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -511,7 +521,25 @@ export default class TacticalScene extends Phaser.Scene {
     this._uiCamResizeHandler = size => this.uiCam.setSize(size.width, size.height);
     this.scale.on('resize', this._uiCamResizeHandler, this);
 
-    this.time.delayedCall(60, () => this.tacticalCamera.recenter(0));
+    // Dream View sandboxes are mutually exclusive (each keys off a distinct
+    // ?dreamview= value) and each is a pure no-op when its own value isn't
+    // present, so chaining them is safe — first one whose apply() returns
+    // true wins; normal Tactical falls through to the original recenter.
+    this.dreamViewPrototype = new DreamViewPrototype(this);
+    this.dreamViewCalibration = new DreamViewCalibrationSandbox(this);
+    this.dreamViewStaging = new DreamViewStaging(this);
+    this.dreamViewFeedback = new DreamViewTacticalFeedback(this);
+    this.soundNodeRestorationPrototype = new SoundNodeRestorationPrototype(this);
+    this.tooQuietVictoryPrototype = new TooQuietVictoryPrototype(this);
+    this.time.delayedCall(60, () => {
+      const applied = this.dreamViewPrototype.apply()
+        || this.dreamViewCalibration.apply()
+        || this.dreamViewStaging.apply()
+        || this.dreamViewFeedback.apply()
+        || this.soundNodeRestorationPrototype.apply()
+        || this.tooQuietVictoryPrototype.apply();
+      if (!applied) this.tacticalCamera.recenter(0);
+    });
 
     // Title music used to keep playing straight into Tactical because
     // Tactical had no theme of its own yet (only ever dipped in volume
