@@ -322,6 +322,29 @@ A `sizeMul` field (content height relative to Prismel's 261px baseline) was adde
 
 Auryi's new masters are authored right-facing (this package's own `LOCKED_MOVEMENT_FORMULA.md` specifies "a consistent right-facing tactical three-quarter profile" for future humanoid movement masters), unlike her old left-facing set — `baseFacing` flips to `'right'` to match, the same convention Prismel and Kineza already use. Both enemies' source art faces left, matching the project's existing enemy-faces-left convention (Battle Presentation's own Wraith/Hushling views already use it) — this package's own docs don't state an enemy facing convention explicitly, so that match was inferred rather than spec'd.
 
+### Linked presentation layer — Consolidated 03A-04E + Dream View sandboxes
+`tactical-field-v2.html` now boots through `IntegratedTacticalScene.js`/`IntegratedVeilBattleScene.js` instead of `TacticalScene.js`/`VeilBattleScene.js` directly. Both are thin subclasses — they call `super.create()`/`super.enterLinkedBattle()`/`super.returnToTactical()` and layer presentation on top, so gameplay/state authority stays exactly where `CLAUDE.md`'s Round Flow section already says it lives; the two base classes are otherwise untouched. What the wrapper adds:
+
+- **Tactical Encounter HUD** (`TacticalEncounterHUD.js`) — replaces the old centered Goal plate with an upper-left objective panel (goal + per-node restored state) and upper-right enemy cards (portrait/name/HP), fed live `nodes`/`enemies` each `refreshHUD()`.
+- **Linked Battle Transition** (`LinkedBattleTransition.js`) — a Veil-fracture curtain/seam effect (Phaser geometry/tweens only, no art) that plays on the way into a linked BP round and on the way back, replacing a bare scene pause/launch with an actual transition.
+- **Fast enemy attack cinematics** (`EnemyAttackCinematic.js`) — Hushling/Wraith get distinct, auto-resolving (no tap gate) cut-in profiles, tuned so an Enemy Phase with several attackers doesn't become a tap marathon.
+- **Linked BP pacing/identity/cleanup** (in `IntegratedVeilBattleScene.js`) — ATTACK reuses RESONART's approved poses at a materially faster cadence and displays as "Attack" rather than the hero's signature technique name; only the final damage/result line is tap-gated, everything else auto-advances; RP preview reflects Tactical's actual authorized `resourceDelta` instead of BattleController's standalone prototype animation; and linked BP hides the title/hint text, command console, RP bar, turn text, and Attunement facets it doesn't need as a cinematic chamber rather than another command screen.
+
+A layout bug surfaced during integration testing: the hero-card drawer's open position was still anchored off the narration text's y-coordinate, which predates the new objective panel and no longer cleared it on landscape/desktop — opening STATUS drew the cards on top of the panel. Fixed in `IntegratedTacticalScene.layoutHUD()` by taking the taller of that anchor and the objective panel's own measured bottom edge. See `CLAUDE.md`'s traps list.
+
+Also new: six **Dream View** presentation-QA sandboxes, each an opt-in, query-param-gated, no-op-by-default `apply()` chained in `TacticalScene.create()` (first one whose param matches wins; normal boot falls through to the original `recenter(0)`) — none of them ever mutates combat/turn/node state, verified by construction (each locks input and only touches rendered containers/camera) and by grep audit before integration:
+
+| URL | What it shows |
+|---|---|
+| `?dreamview=prismel` | Real Prismel tactical art alone against the Too Quiet environment, chrome hidden |
+| `?dreamview=calibrate&focus=…&scale=…&zoom=…` | Runtime-tunable composition sandbox across all five combatants |
+| `?dreamview=stage&preset=prismel\|party\|enemies\|fullEncounter` | Named staging presets (container offsets only — grid/occupancy untouched) |
+| `?dreamview=feedback&hero=…&nodeState=…` | Selection sigil, reachable/path/attack-range overlays, node dormant/restored language, driven off the real pathfinder |
+| `?dreamview=restore&node=dogs\|pool\|laughter\|all` | Sound Node restoration presentation beats |
+| `?dreamview=victory` | Objective-resolution sequence (resonance cascade → Veil release → `RESONANCE RESTORED`) |
+
+`DreamViewTacticalFeedback.js` (Prototype 04) shipped with three real bugs, all found by actually loading the mode rather than reading the code: it passed `TacticalPathfinder.reachable()`'s whole `{dist, from}` result to `TacticalGrid.showReachable()` and to `.has()`/`.keys()`/`.size` where only the `.dist` Map is valid; it called a `pathfinder.findPath()` that has never existed (silently no-opping the path preview, since it was guarded behind an `if`); and it called `Graphics.quadraticBezierTo()`, a method that only exists on the unrelated `Curves.Path` class. All three fixed — see `CLAUDE.md`'s traps list for the full story of each.
+
 ---
 
 ## Running locally
