@@ -4,7 +4,7 @@
 // remains untouched; only Tactical-linked rounds receive the cinematic
 // transition, streamlined HUD, one-meaningful-tap pacing, action identity,
 // and Tactical-authoritative RP preview.
-import VeilBattleScene from './VeilBattleScene.js?v=47';
+import VeilBattleScene from './VeilBattleScene.js?v=48';
 import LinkedBattleTransition from './LinkedBattleTransition.js?v=1';
 
 const DEFAULT_POSE_TIMING = Object.freeze({
@@ -145,12 +145,10 @@ export default class IntegratedVeilBattleScene extends VeilBattleScene {
     if (this.titleText) this.titleText.setVisible(false);
     if (this.hintText) this.hintText.setVisible(false);
 
-    if (this.commandConsole) {
-      if (this.commandConsole.container) {
-        try { this.commandConsole.container.destroy(); } catch (err) {}
-      }
-      this.commandConsole = null;
-    }
+    // 05A (base VeilBattleScene) now never constructs CommandConsole in
+    // linked mode at all — this used to build the full six-button console
+    // every linked round just to destroy it a moment later. Nothing left
+    // to clean up here.
 
     if (this.hud) {
       if (this.hud.bars && this.hud.bars.heroRp && this.hud.bars.heroRp.g) {
