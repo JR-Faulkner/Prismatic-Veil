@@ -5,7 +5,7 @@
 // decides *when* those things happen.
 import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=50';
 import TerrainRegistry from './TerrainRegistry.js?v=49';
-import TacticalGrid from './TacticalGrid.js?v=50';
+import TacticalGrid from './TacticalGrid.js?v=51';
 import TacticalPathfinder from './TacticalPathfinder.js?v=49';
 import TacticalCamera from './TacticalCamera.js?v=49';
 import UnitController from './UnitController.js?v=50';
@@ -1299,6 +1299,16 @@ export default class TacticalScene extends Phaser.Scene {
         c.veilshiftGlow.setAlpha(0);
       }
     });
+
+    // 05C-1: the selected-hero sigil is a standing fact of selection state,
+    // not a one-off event — refreshHUD() already runs after every place
+    // selection changes (select, move, cancel, finish action, enemy phase),
+    // so redrawing it here instead of at each call site can't miss one.
+    if (selected && selected.alive) {
+      this.grid.showSelectedSigil(selected);
+    } else {
+      this.grid.clearSelectedSigil();
+    }
   }
 
   setMessage(msg) {

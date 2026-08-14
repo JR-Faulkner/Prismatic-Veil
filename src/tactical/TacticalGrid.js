@@ -113,6 +113,10 @@ export default class TacticalGrid {
   ensureOverlays() {
     if (!this.tileOverlay) this.tileOverlay = this.w(this.scene.add.graphics().setDepth(5));
     if (!this.pathOverlay) this.pathOverlay = this.w(this.scene.add.graphics().setDepth(6));
+    // Sits below the reachable-tile glow (depth 5) — "who's selected" is a
+    // standing fact, not a transient targeting cue, so it stays out from
+    // under the brighter path/target overlays without competing with them.
+    if (!this.sigilOverlay) this.sigilOverlay = this.w(this.scene.add.graphics().setDepth(4));
   }
 
   _diamondPoints(cx, cy) {
@@ -172,8 +176,36 @@ export default class TacticalGrid {
     if (this.tileOverlay) this.tileOverlay.clear();
   }
 
+  // 05C-1: a standing "who's active" mark, independent of the transient
+  // reachable/path/target overlays above it — a thin antique-gold rim with
+  // a faint inner shimmer, not a filled tile, so it never competes with
+  // terrain or the unit's own feet for read.
+  showSelectedSigil(unit) {
+    this.ensureOverlays();
+    this.sigilOverlay.clear();
+    if (!unit) return;
+    const p = this.toScreen(unit.x, unit.y);
+    const rw = this.tileHalfW * 0.62;
+    const rh = this.tileHalfH * 1.05;
+
+    this.sigilOverlay.lineStyle(1.6, 0xc6a45a, 0.6);
+    this.sigilOverlay.strokeEllipse(p.x, p.y, rw, rh);
+    this.sigilOverlay.lineStyle(1, 0x9f78ff, 0.32);
+    this.sigilOverlay.strokeEllipse(p.x, p.y, rw * 1.3, rh * 1.3);
+    this.sigilOverlay.fillStyle(0xffe8a0, 0.14);
+    this.sigilOverlay.fillEllipse(p.x, p.y, rw * 0.7, rh * 0.7);
+  }
+
+  clearSelectedSigil() {
+    if (this.sigilOverlay) this.sigilOverlay.clear();
+  }
+
   // Targeting keeps a restrained red/violet edge language with almost no
   // fill, so enemy threat/attack feedback does not obscure the battlefield.
+  // 05C-1 adds a per-enemy target ring on top, for whichever alive enemies
+  // actually occupy an in-range tile — drawn on the same tileOverlay the
+  // range diamonds use, so it lives and clears with them automatically
+  // rather than needing its own lifecycle.
   showAttackRange(tiles) {
     this.ensureOverlays();
     this.tileOverlay.clear();
@@ -183,7 +215,38 @@ export default class TacticalGrid {
       this.tileOverlay.fillPath();
       this.tileOverlay.lineStyle(1.25, 0xd878ff, 0.42);
       this.tileOverlay.strokePath();
+
+      const occupant = this.occupantAt(t.x, t.y);
+      if (occupant && !occupant.isHero && occupant.alive) {
+        this._traceTargetRing(occupant);
+      }
     });
+  }
+
+  // Wraith reads narrow/tall (spectral hover); Hushling reads broad/flat
+  // (mass) — the same silhouette language BattleFX already gives them in
+  // Battle Presentation, just as a ground ring instead of a portrait cut-in.
+  // Both enemies render noticeably larger than a hero token on the map
+  // (ENEMY_TOKEN_ART's sizeMul in TacticalScene.js: Wraith ~1.38x, Hushling
+  // ~1.53x a hero's own baseline) — a ring sized off the flat tile alone
+  // gets lost under their own feet/robe hem, so this scales the base
+  // ellipse up to roughly match rather than just skewing its aspect.
+  // Unrecognized/future enemy types fall back to a neutral round ring
+  // rather than silently drawing nothing.
+  _traceTargetRing(enemy) {
+    const p = this.toScreen(enemy.x, enemy.y);
+    const baseW = this.tileHalfW * 1.3;
+    const baseH = this.tileHalfH * 2.4;
+    const shape = enemy.type === 'veil_wraith' ? { w: 1.0, h: 1.3 }
+      : enemy.type === 'hushling' ? { w: 1.3, h: 1.0 }
+      : { w: 1.1, h: 1.1 };
+    const rw = baseW * shape.w;
+    const rh = baseH * shape.h;
+
+    this.tileOverlay.lineStyle(1.6, 0xff503c, 0.55);
+    this.tileOverlay.strokeEllipse(p.x, p.y, rw, rh);
+    this.tileOverlay.lineStyle(1, 0xd878ff, 0.36);
+    this.tileOverlay.strokeEllipse(p.x, p.y, rw * 1.15, rh * 1.15);
   }
 
   // Path preview is a narrow Resonance thread through tile centers with a
