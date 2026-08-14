@@ -14,7 +14,7 @@ import TacticalActionConsole from './TacticalActionConsole.js?v=52';
 // Too Quiet Cinematic Batch 01 — presentation-only environment adapter.
 // TacticalGrid stays authoritative for geometry/occupancy/pathing; this
 // only owns how the battlefield and sound nodes are drawn.
-import TacticalEnvironmentLayer from './TacticalEnvironmentLayer.js?v=4';
+import TacticalEnvironmentLayer from './TacticalEnvironmentLayer.js?v=5';
 // Dream View — opt-in, query-param-gated presentation QA sandboxes.
 // Each is a no-op (returns false from apply()) unless its own ?dreamview=
 // value is present; normal Tactical keeps the plain recenter(0) path.
@@ -1673,12 +1673,30 @@ export default class TacticalScene extends Phaser.Scene {
     this.checkVictoryDefeat();
   }
 
-  resonateNode(hero) {
+  // 05C-2: promotes SoundNodeRestorationPrototype.js's per-node presentation
+  // into real ATTUNE. inputLocked is set synchronously, before the first
+  // await, so a second tap during the ~0.7-1s event can't double-fire this
+  // (same guard onActionMenuChoice() already relies on everywhere else).
+  // node.restored is still set in exactly one place, after the event
+  // finishes and before the marker redraw/victory check — unchanged from
+  // the prior instant version, just later.
+  async resonateNode(hero) {
     const node = this.nodes.find(n => n.x === hero.x && n.y === hero.y && !n.restored);
     if (!node) { this.setMessage('No silenced node here to resonate with.'); return; }
+
+    this.inputLocked = true;
+    this.actionMenu.container.setVisible(false);
+    this.zoomControls.container.setVisible(false);
+    this.setMessage(`${hero.name} attunes to ${node.label}...`);
+
+    this.tacticalCamera.focusOn(node.x, node.y, 260);
+    await this.environment.playNodeRestoration(node);
+
     node.restored = true;
     this.drawNodes();
     this.setMessage(`${node.label} is restored!`);
+
+    this.inputLocked = false;
     this.finishHeroAction(hero);
     this.checkVictoryDefeat();
   }

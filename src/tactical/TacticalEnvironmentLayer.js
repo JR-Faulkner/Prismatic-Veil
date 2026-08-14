@@ -780,6 +780,208 @@ export default class TacticalEnvironmentLayer {
   }
 
   // ---------------------------------------------------------------------
+  // 05C-2: production restoration event
+  // ---------------------------------------------------------------------
+  // Promoted from SoundNodeRestorationPrototype.js (Dream View), same
+  // node-specific presentation language, but production-safe: mutates
+  // nothing itself (TacticalScene.resonateNode() still owns the one
+  // node.restored = true write), doesn't hide HUD/units, plays exactly
+  // once, and every temporary object self-destroys on its own tween
+  // completion rather than persisting for a later destroy() sweep — this
+  // runs mid-session, not at scene teardown, so nothing here should
+  // outlive its ~1s effect. Returns a Promise so the caller can await the
+  // full event before committing state and finishing the hero's turn.
+
+  playNodeRestoration(node) {
+    if (!node) return Promise.resolve();
+    if (node.id === 'dogs') return this._playDogsRestoration(node);
+    if (node.id === 'pool') return this._playPoolRestoration(node);
+    if (node.id === 'laughter') return this._playLaughterRestoration(node);
+    return this._playGenericRestoration(node);
+  }
+
+  _burstBase(p, color = 0xffe8a0, duration = 720) {
+    return new Promise(resolve => {
+      const ring = this.scene.add.ellipse(p.x, p.y, 22, 8, 0x000000, 0)
+        .setStrokeStyle(2, color, 0.88).setDepth(8.1);
+      this.scene.worldAdd(ring);
+      this.scene.tweens.add({
+        targets: ring,
+        scaleX: 4.8,
+        scaleY: 3.6,
+        alpha: 0,
+        duration,
+        ease: 'Cubic.easeOut',
+        onComplete: () => { ring.destroy(); resolve(); }
+      });
+    });
+  }
+
+  // A dark-violet local stain shrinks/fades away — "the Veil lets go HERE"
+  // without pretending to modify terrain art.
+  _veilRetreat(p, radiusX = 82, radiusY = 30, duration = 820) {
+    return new Promise(resolve => {
+      const stain = this.scene.add.ellipse(p.x, p.y + 1, radiusX, radiusY, 0x6f3dcc, 0.14)
+        .setDepth(7.55).setBlendMode(Phaser.BlendModes.ADD);
+      this.scene.worldAdd(stain);
+      this.scene.tweens.add({
+        targets: stain,
+        scaleX: 0.28,
+        scaleY: 0.28,
+        alpha: 0,
+        duration,
+        ease: 'Sine.easeInOut',
+        onComplete: () => { stain.destroy(); resolve(); }
+      });
+    });
+  }
+
+  _playDogsRestoration(node) {
+    const s = this.scene;
+    const p = this.p(node.x, node.y);
+    const g = s.add.graphics().setDepth(8.0);
+    s.worldAdd(g);
+
+    // Fence/dog-area wake-up: compressed vibration expands outward, plus a
+    // brief warm resonance along the ordinary fence rail.
+    const wave = new Promise(resolve => {
+      const driver = { v: 0 };
+      s.tweens.add({
+        targets: driver,
+        v: 1,
+        duration: 720,
+        ease: 'Cubic.easeOut',
+        onUpdate: () => {
+          g.clear();
+          const alpha = 0.70 * (1 - driver.v);
+          g.lineStyle(1.4, 0xffe8a0, alpha);
+          for (let i = 0; i < 3; i++) {
+            const r = 8 + i * 6 + driver.v * 18;
+            g.beginPath();
+            g.arc(p.x - 4, p.y - 6, r, -0.82, 0.82, false);
+            g.strokePath();
+          }
+          g.lineStyle(1, 0xffd56a, 0.50 * (1 - driver.v));
+          g.beginPath();
+          g.moveTo(p.x - 28, p.y + 5);
+          g.lineTo(p.x + 24, p.y + 5);
+          g.strokePath();
+        },
+        onComplete: () => { g.clear(); g.destroy(); resolve(); }
+      });
+    });
+
+    return Promise.all([
+      wave,
+      this._burstBase(p, 0xffe8a0),
+      this._veilRetreat(p, 76, 26)
+    ]);
+  }
+
+  _playPoolRestoration(node) {
+    const s = this.scene;
+    const p = this.p(node.x, node.y);
+    const g = s.add.graphics().setDepth(8.0);
+    s.worldAdd(g);
+
+    // Water wakes from unnatural stillness — ripples widen and cool back
+    // toward ordinary moonlit water, with a restrained gold/prismatic cue.
+    const ripples = new Promise(resolve => {
+      const driver = { v: 0 };
+      s.tweens.add({
+        targets: driver,
+        v: 1,
+        duration: 900,
+        ease: 'Sine.easeOut',
+        onUpdate: () => {
+          g.clear();
+          for (let i = 0; i < 4; i++) {
+            const phase = Math.max(0, driver.v - i * 0.08);
+            const w = 22 + phase * 70 + i * 10;
+            const h = 6 + phase * 18 + i * 2;
+            const a = Math.max(0, 0.72 - phase * 0.58 - i * 0.10);
+            g.lineStyle(i === 0 ? 1.7 : 1.1, i === 0 ? 0xbfeaff : 0xffe8a0, a);
+            g.strokeEllipse(p.x, p.y + 1, w, h);
+          }
+        },
+        onComplete: () => { g.clear(); g.destroy(); resolve(); }
+      });
+    });
+
+    const sheen = new Promise(resolve => {
+      const s2 = this.scene.add.ellipse(p.x + 5, p.y + 1, 46, 11, 0x9fe0ff, 0.10)
+        .setDepth(7.9).setBlendMode(Phaser.BlendModes.ADD);
+      this.scene.worldAdd(s2);
+      this.scene.tweens.add({
+        targets: s2,
+        scaleX: 1.8,
+        alpha: 0,
+        duration: 980,
+        ease: 'Quad.easeOut',
+        onComplete: () => { s2.destroy(); resolve(); }
+      });
+    });
+
+    return Promise.all([
+      ripples,
+      sheen,
+      this._burstBase(p, 0xbfeaff),
+      this._veilRetreat(p, 96, 30)
+    ]);
+  }
+
+  _playLaughterRestoration(node) {
+    const s = this.scene;
+    const p = this.p(node.x, node.y);
+    const g = s.add.graphics().setDepth(8.0);
+    s.worldAdd(g);
+
+    // Harmonics return around the table/chairs/play area, not a floating
+    // crystal — three arcs rise and separate, then vanish into the yard.
+    const arcs = new Promise(resolve => {
+      const driver = { v: 0 };
+      s.tweens.add({
+        targets: driver,
+        v: 1,
+        duration: 820,
+        ease: 'Cubic.easeOut',
+        onUpdate: () => {
+          g.clear();
+          const a = 0.72 * (1 - driver.v);
+          g.lineStyle(1.3, 0xffe8a0, a);
+          for (let i = 0; i < 3; i++) {
+            const r = 9 + i * 7 + driver.v * 16;
+            g.beginPath();
+            g.arc(p.x, p.y - 5 - driver.v * 6, r, Math.PI * 1.08, Math.PI * 1.82, false);
+            g.strokePath();
+          }
+          g.fillStyle(0xc8a8ff, 0.45 * (1 - driver.v));
+          [[-13, -16], [8, -20], [16, -11]].forEach(([dx, dy], i) => {
+            g.fillCircle(p.x + dx * (1 + driver.v * 0.15), p.y + dy - driver.v * (5 + i * 2), 1.3);
+          });
+        },
+        onComplete: () => { g.clear(); g.destroy(); resolve(); }
+      });
+    });
+
+    return Promise.all([
+      arcs,
+      this._burstBase(p, 0xffe8a0),
+      this._veilRetreat(p, 80, 28)
+    ]);
+  }
+
+  // Unrecognized/future node ids still get a restrained restoration beat
+  // instead of silently doing nothing.
+  _playGenericRestoration(node) {
+    const p = this.p(node.x, node.y);
+    return Promise.all([
+      this._burstBase(p, 0xffe8a0),
+      this._veilRetreat(p, 70, 24)
+    ]);
+  }
+
+  // ---------------------------------------------------------------------
   // Final-art insertion hook
   // ---------------------------------------------------------------------
 

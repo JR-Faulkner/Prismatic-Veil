@@ -4,7 +4,7 @@
 // Keeps the gameplay/state authority in TacticalScene.js untouched while
 // layering the new encounter HUD, linked battle transition, and fast enemy
 // attack presentation on top.
-import TacticalScene from './TacticalScene.js?v=78';
+import TacticalScene from './TacticalScene.js?v=79';
 import TacticalEncounterHUD from './TacticalEncounterHUD.js?v=1';
 import EnemyAttackCinematic from './EnemyAttackCinematic.js?v=1';
 import LinkedBattleTransition from '../LinkedBattleTransition.js?v=1';
