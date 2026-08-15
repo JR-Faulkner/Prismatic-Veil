@@ -25,6 +25,7 @@ import DreamViewStaging from './DreamViewStaging.js?v=1';
 import DreamViewTacticalFeedback from './DreamViewTacticalFeedback.js?v=1';
 import SoundNodeRestorationPrototype from './SoundNodeRestorationPrototype.js?v=1';
 import TooQuietVictoryPrototype from './TooQuietVictoryPrototype.js?v=1';
+import DreamViewBattleMode from './DreamViewBattleMode.js?v=1';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -531,13 +532,15 @@ export default class TacticalScene extends Phaser.Scene {
     this.dreamViewFeedback = new DreamViewTacticalFeedback(this);
     this.soundNodeRestorationPrototype = new SoundNodeRestorationPrototype(this);
     this.tooQuietVictoryPrototype = new TooQuietVictoryPrototype(this);
+    this.dreamViewBattleMode = new DreamViewBattleMode(this);
     this.time.delayedCall(60, () => {
       const applied = this.dreamViewPrototype.apply()
         || this.dreamViewCalibration.apply()
         || this.dreamViewStaging.apply()
         || this.dreamViewFeedback.apply()
         || this.soundNodeRestorationPrototype.apply()
-        || this.tooQuietVictoryPrototype.apply();
+        || this.tooQuietVictoryPrototype.apply()
+        || this.dreamViewBattleMode.apply();
       if (!applied) this.tacticalCamera.recenter(0);
     });
 
