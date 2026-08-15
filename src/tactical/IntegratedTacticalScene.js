@@ -8,6 +8,7 @@ import TacticalScene from './TacticalScene.js?v=80';
 import TacticalEncounterHUD from './TacticalEncounterHUD.js?v=1';
 import EnemyAttackCinematic from './EnemyAttackCinematic.js?v=1';
 import LinkedBattleTransition from '../LinkedBattleTransition.js?v=1';
+import ActiveTurnBattleSlice from './ActiveTurnBattleSlice.js?v=1';
 
 const HERO_HIT_SFX_KEY = Object.freeze({
   prismel: 'sfx_impact',
@@ -21,6 +22,12 @@ export default class IntegratedTacticalScene extends TacticalScene {
 
     this.linkedBattleTransition = new LinkedBattleTransition(this);
     this.enemyCinematic = new EnemyAttackCinematic(this);
+    // 05E: gated behind its own battleslice=1 param (never dreamview=,
+    // since that namespace is a project-wide guarantee of zero state
+    // mutation this deliberately breaks). Absent the param, shouldIntercept()
+    // is always false and enterLinkedBattle() below runs byte-for-byte as
+    // it already did.
+    this.activeTurnBattleSlice = new ActiveTurnBattleSlice(this);
 
     // 03A: replace the old centered Goal plate visually without rewriting
     // TacticalScene's proven HUD construction. Hidden legacy objects stay
@@ -102,6 +109,17 @@ export default class IntegratedTacticalScene extends TacticalScene {
   // 04A: form the Veil fracture over the still-live Tactical battlefield,
   // then let the validated base bridge pause/hide Tactical and launch BP.
   async enterLinkedBattle(hero, target, actionKind) {
+    // 05E: Prismel-vs-Hushling test slice intercepts here, before any of
+    // the real bridge's own work starts — same entry point tryAttack()
+    // already validated range/LOS through, so nothing about selection or
+    // targeting needs to be re-checked. Everything below this branch is
+    // completely unreached when the slice doesn't apply, which is the
+    // normal case for every real player and every other Dream View pass.
+    if (this.activeTurnBattleSlice && this.activeTurnBattleSlice.shouldIntercept(hero, target)) {
+      await this.activeTurnBattleSlice.run(hero, target);
+      return;
+    }
+
     const oldAbility = hero.ability;
     if (actionKind === 'attack') hero.ability = hero.basicAttackName || 'Attack';
 
