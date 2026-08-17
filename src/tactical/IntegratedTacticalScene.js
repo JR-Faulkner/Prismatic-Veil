@@ -8,7 +8,7 @@ import TacticalScene from './TacticalScene.js?v=80';
 import TacticalEncounterHUD from './TacticalEncounterHUD.js?v=1';
 import EnemyAttackCinematic from './EnemyAttackCinematic.js?v=1';
 import LinkedBattleTransition from '../LinkedBattleTransition.js?v=1';
-import ActiveTurnBattleSlice from './ActiveTurnBattleSlice.js?v=1';
+import ActiveTurnBattleSlice, { PRISMEL_READY_FRAMES, PRISMEL_ATTACK_FRAMES } from './ActiveTurnBattleSlice.js?v=3';
 
 const HERO_HIT_SFX_KEY = Object.freeze({
   prismel: 'sfx_impact',
@@ -17,6 +17,13 @@ const HERO_HIT_SFX_KEY = Object.freeze({
 });
 
 export default class IntegratedTacticalScene extends TacticalScene {
+  preload() {
+    super.preload();
+    [...PRISMEL_READY_FRAMES, ...PRISMEL_ATTACK_FRAMES].forEach(key => {
+      this.load.image(key, `./assets/poses/prismel_active_turn/${key}.png`);
+    });
+  }
+
   create() {
     super.create();
 

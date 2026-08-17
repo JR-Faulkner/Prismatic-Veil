@@ -1,4 +1,4 @@
-// Active-Turn Battle Slice — 05E
+// Active-Turn Battle Slice — 05E / 05E-2
 //
 // The first STATEFUL promotion out of the Dream View battle-mode sandbox
 // (05D-1). Unlike every dreamview=* sandbox, this intentionally mutates
@@ -18,6 +18,31 @@
 // (TacticalScene.tryAttack() -> enterLinkedBattle()), so range/LOS
 // validation is inherited for free and this never launches VeilBattleScene
 // — everything happens inside the live Tactical scene.
+//
+// 05E-2 correction: the first pass approximated the attack with Graphics
+// primitives and kept the underlying Tactical map token at its normal
+// tiny map-icon scale — user QA (on the unmodified linked-BP path, not
+// this slice) asked for a visibly new experience, and DAI's follow-up
+// brief made the requirement explicit regardless: the approved Prismel
+// keyframe sheets must actually appear on screen, and the camera/framing
+// change must be unmistakable. This version shows a large, dominant
+// foreground cutin (PRISMEL_READY_FRAMES then PRISMEL_ATTACK_FRAMES,
+// cycled as real sprite frames on the UI layer) alongside a much tighter
+// camera push on the live Tactical battlefield, and a mobile-first HUD
+// rebuild (see _layout()).
+//
+// The two frame arrays below are extracted from the approved
+// prismel_staff_materialization_6f.png / prismel_signature_attack_6f.png
+// keyframe sheets (background-matted + trimmed offline, not sliced live —
+// see FAI_FEEDBACK_05E2 for the extraction method). A dedicated asset
+// family under assets/poses/prismel_active_turn/, kept separate from both
+// the tactical map-icon set and the existing BattleCinematic pose set per
+// this project's own "different asset libraries" rule. IntegratedTacticalScene
+// imports these same two arrays for its preload() step, so the texture
+// keys used there and here can never drift out of sync.
+export const PRISMEL_READY_FRAMES = ['prismel_ready_1', 'prismel_ready_2', 'prismel_ready_3', 'prismel_ready_4', 'prismel_ready_5', 'prismel_ready_6'];
+export const PRISMEL_ATTACK_FRAMES = ['prismel_attack_1', 'prismel_attack_2', 'prismel_attack_3', 'prismel_attack_4', 'prismel_attack_5', 'prismel_attack_6'];
+
 export default class ActiveTurnBattleSlice {
   // Non-lethal on purpose: Hushling's 10 HP stays above zero after this
   // fixed hit, so defeat/victory flow (an explicit 05E non-goal) never
@@ -97,49 +122,168 @@ export default class ActiveTurnBattleSlice {
     return wash;
   }
 
-  // Approximates the supplied Prismel signature-attack keyframe sheet
-  // (staff-ready swirl -> shard launch -> impact burst) using the same
-  // Graphics-primitive language the rest of Tactical's presentation
-  // already speaks, rather than importing the reference sheet itself —
-  // ASSET_MANIFEST is explicit these are keyframe/likeness authorities,
-  // not final runtime sprites, and slicing them into real game assets is
-  // its own pipeline (alpha work, resizing, frame timing) this slice
-  // doesn't need to prove.
+  // Single source of truth for every panel's geometry, returning explicit
+  // top-left rects so nothing can drift out of sync (the pre-05E-2 version
+  // anchored each panel independently and collided). Two distinct layouts:
+  //
+  //  - Portrait / desktop (tall enough): a vertical stack — target strip
+  //    across the top under the turn banner, the Prismel cutin filling the
+  //    middle, hero row + action panel across the bottom.
+  //
+  //  - Landscape phone (short, wide): the vertical stack physically can't
+  //    fit under the wide centred turn banner in ~390px of height, so
+  //    MOBILE_HUD_ACCEPTANCE.md's landscape hierarchy applies instead —
+  //    live view centre, hero card bottom-left, actions bottom-right,
+  //    target HP a thin strip up top, and the cutin as the centre
+  //    foreground between the two bottom cards.
+  _layoutMetrics() {
+    const s = this.scene;
+    const w = s.scale.width, h = s.scale.height;
+    const compact = w < 560 || h < 520;
+    const landscape = w > h && h < 520;
+    const margin = compact ? 10 : 16;
+    const phaseFrameH = s.phaseFrame ? s.phaseFrame.displayHeight : 70;
+    const bannerBottom = margin + phaseFrameH;
+
+    if (landscape) {
+      const stripY = bannerBottom + 6;
+      const stripH = 46;
+      const target = { x: margin, y: stripY, w: w - margin * 2, h: stripH };
+
+      const cardW = Math.min(Math.round(w * 0.31), 300);
+      const heroH = 92;
+      const hero = { x: margin, y: h - margin - heroH, w: cardW, h: heroH };
+      const actionH = 128;
+      const action = { x: w - margin - cardW, y: h - margin - actionH, w: cardW, h: actionH };
+
+      const cutinX = hero.x + hero.w + 12;
+      const cutinBottomY = h - margin;
+      const cutinTop = stripY + stripH + 8;
+      return {
+        w, h, compact, landscape, margin, target, hero, action,
+        cutin: {
+          x: cutinX, bottomY: cutinBottomY,
+          maxW: Math.max(120, action.x - cutinX - 12),
+          maxH: Math.max(120, cutinBottomY - cutinTop)
+        }
+      };
+    }
+
+    // Portrait / desktop vertical stack.
+    const stripTop = bannerBottom + 8;
+    const stripH = compact ? 60 : 72;
+    const target = { x: margin, y: stripTop, w: w - margin * 2, h: stripH };
+
+    const panelW = Math.min(w - margin * 2, 460);
+    const panelH = compact ? 132 : 150;
+    const panelX = (w - panelW) / 2;
+    const action = { x: panelX, y: h - margin - panelH, w: panelW, h: panelH };
+
+    const heroH = compact ? 104 : 118;
+    const hero = { x: panelX, y: action.y - 8 - heroH, w: panelW, h: heroH };
+
+    const cutinTop = target.y + target.h + 10;
+    return {
+      w, h, compact, landscape, margin, target, hero, action,
+      cutin: {
+        x: margin, bottomY: hero.y - 6,
+        maxW: w * (compact ? 0.62 : 0.46),
+        maxH: Math.max(140, (hero.y - 6) - cutinTop)
+      }
+    };
+  }
+
+  _ensureCutin() {
+    if (this._cutinImage) return this._cutinImage;
+    const s = this.scene;
+    const img = s.add.image(0, 0, PRISMEL_READY_FRAMES[0])
+      .setOrigin(0, 1)
+      .setDepth(9400)
+      .setAlpha(0);
+    this._uiObject(img);
+    this._cutinImage = img;
+    return img;
+  }
+
+  _layoutCutin() {
+    const img = this._cutinImage;
+    if (!img) return;
+    const c = this._layoutMetrics().cutin;
+    const tex = img.texture.getSourceImage();
+    const srcW = tex && tex.width ? tex.width : 1;
+    const srcH = tex && tex.height ? tex.height : 1;
+    let dispH = Math.min(c.maxH, srcH);
+    let dispW = dispH * (srcW / srcH);
+    if (dispW > c.maxW) {
+      dispW = c.maxW;
+      dispH = dispW * (srcH / srcW);
+    }
+    img.setDisplaySize(dispW, dispH);
+    img.setPosition(c.x, c.bottomY);
+  }
+
+  // Cycles the cutin through a frame sequence at a fixed cadence, awaiting
+  // the full sequence. setTexture() per frame (not a Phaser AnimationManager
+  // asset) — twelve one-off frames across two beats don't need a registered
+  // animation, and this keeps _layoutCutin()'s per-frame native-size read
+  // (frames have different trimmed aspect ratios) trivially correct.
+  async _cycleFrames(frameKeys, frameMs) {
+    const img = this._ensureCutin();
+    for (const key of frameKeys) {
+      img.setTexture(key);
+      this._layoutCutin();
+      await this._delay(frameMs);
+    }
+  }
+
+  // Prismel is present as the dominant foreground cutin for the WHOLE
+  // active turn (matching too_quiet_active_turn_prismel_mock.png), not
+  // just during the attack — so the staff-materialization ready sequence
+  // plays as the turn opens, alongside the HUD fade-in, and then holds on
+  // the fully-materialized ready pose while the player decides. The
+  // approved authored art is on screen from the first beat, which is
+  // BUILD_BRIEF 05E-2's hard visual requirement.
+  async _introCutin() {
+    const img = this._ensureCutin();
+    img.setTexture(PRISMEL_READY_FRAMES[0]);
+    this._layoutCutin();
+    this.scene.tweens.add({ targets: img, alpha: 1, duration: 220, ease: 'Sine.easeOut' });
+    await this._cycleFrames(PRISMEL_READY_FRAMES, 120);
+    // Hold on the last ready frame (staff fully materialized) — set
+    // explicitly so a later re-layout keeps the right texture.
+    img.setTexture(PRISMEL_READY_FRAMES[PRISMEL_READY_FRAMES.length - 1]);
+    this._layoutCutin();
+  }
+
+  // Real authored keyframes drive this instead of a Graphics
+  // approximation — the signature attack (charge -> release -> recover),
+  // per BUILD_BRIEF 05E-2's hard visual requirement. The cutin is already
+  // visible (from _introCutin), so this just cycles the attack frames.
+  // The thread/impact Graphics accents stay as supplementary particles/
+  // lighting around the real character art, which the brief still allows.
   async _playAttackPresentation(hero, target) {
+    this._ensureCutin();
+    await this._cycleFrames(PRISMEL_ATTACK_FRAMES.slice(0, 4), 100);
+
+    // The shard-launch beat (last two attack frames) races the actual
+    // projectile graphic toward the target so the real impact and the
+    // authored release pose land together.
     const s = this.scene;
     const a = s.grid.toScreen(hero.x, hero.y);
     const b = s.grid.toScreen(target.x, target.y);
     const g = this._worldGraphics(8.2);
-
-    // Charge: a small prismatic swirl gathers at the hero's hand.
-    await new Promise(resolve => {
+    const launch = new Promise(resolve => {
       const driver = { v: 0 };
       s.tweens.add({
-        targets: driver, v: 1, duration: 360, ease: 'Sine.easeOut',
-        onUpdate: () => {
-          g.clear();
-          g.lineStyle(1.6, 0x9fe0ff, 0.7 * driver.v);
-          g.strokeCircle(a.x + 10, a.y - 20, 6 + driver.v * 6);
-          g.fillStyle(0xffe8a0, 0.6 * driver.v);
-          g.fillCircle(a.x + 10, a.y - 20, 2 + driver.v * 1.5);
-        },
-        onComplete: resolve
-      });
-    });
-
-    // Launch: the shard streaks from hero to target along the thread.
-    await new Promise(resolve => {
-      const driver = { v: 0 };
-      s.tweens.add({
-        targets: driver, v: 1, duration: 260, ease: 'Cubic.easeIn',
+        targets: driver, v: 1, duration: 240, ease: 'Cubic.easeIn',
         onUpdate: () => {
           g.clear();
           const t = driver.v;
           const x = a.x + 10 + (b.x - (a.x + 10)) * t;
           const y = (a.y - 20) + (b.y - 18 - (a.y - 20)) * t;
           g.fillStyle(0xffe8a0, 0.9);
-          g.fillCircle(x, y, 3);
-          g.lineStyle(2, 0x9fe0ff, 0.5 * (1 - t * 0.4));
+          g.fillCircle(x, y, 4);
+          g.lineStyle(2.4, 0x9fe0ff, 0.55 * (1 - t * 0.4));
           g.beginPath();
           g.moveTo(a.x + 10, a.y - 20);
           g.lineTo(x, y);
@@ -148,6 +292,7 @@ export default class ActiveTurnBattleSlice {
         onComplete: resolve
       });
     });
+    await Promise.all([this._cycleFrames(PRISMEL_ATTACK_FRAMES.slice(4), 110), launch]);
 
     g.clear();
     g.destroy();
@@ -168,136 +313,149 @@ export default class ActiveTurnBattleSlice {
     s.cameras.main.shake(140, 0.004);
   }
 
+  // 05E-2 mobile HUD correction: MOBILE_HUD_ACCEPTANCE.md's hard requirement
+  // is a dedicated mobile layout, not the desktop HUD proportionally
+  // shrunk — "no scaling a pre-rendered HUD texture/canvas that causes
+  // blur." This was never actually baked-texture blur (every element here
+  // is a live Text/Rectangle/Circle primitive, and the project's own
+  // per-object `resolution: devicePixelRatio` patch on add.text() already
+  // keeps text pixel-sharp at any size) — the real issue was font sizes
+  // and button targets simply too small at real phone viewing distance,
+  // plus the target card competing for the same bottom cluster as the
+  // hero card and action panel. Portrait hierarchy now follows the brief
+  // exactly: target+HP at the top (below the existing turn banner, which
+  // already doubles as the compact turn-order element), the live battle
+  // view + Prismel cutin in the middle, hero HP/RP + large actions at the
+  // bottom.
   _buildHud(hero, target) {
     const s = this.scene;
-    const w = s.scale.width, h = s.scale.height;
-    const compact = w < 560 || h < 520;
-
+    const m = this._layoutMetrics();
     const c = s.add.container(0, 0).setDepth(9500).setAlpha(0);
+    const parts = [];
 
-    // Every panel anchors relative to the action panel's own position
-    // instead of independently to the viewport — the earlier version
-    // pinned the hero panel to viewport-bottom and the target panel to
-    // viewport-top separately from the action panel, which worked by
-    // coincidence on a wide/short landscape phone (side-by-side, no
-    // overlap) but genuinely collided on a narrow/tall portrait phone
-    // (confirmed directly: hero panel and action panel overlapped by
-    // ~100px, target panel overlapped the turn banner). Stacking
-    // everything bottom-up off one shared anchor is correct regardless
-    // of aspect ratio, and keeps this entirely clear of the existing
-    // top-of-screen HUD (turn banner, objective panel, enemy roster)
-    // rather than competing with it for the same space.
-    const margin = compact ? 10 : 16;
-    const panelW = Math.min(w - margin * 2, 420);
-    const panelH = compact ? 116 : 136;
-    const px = w / 2;
-    const py = h - margin - panelH / 2;
-    const panelTop = py - panelH / 2;
+    const tgt = this._buildTargetStrip(m, target, parts);
+    const hp = this._buildHeroCard(m, hero, parts);
+    const act = this._buildActionPanel(m, hero, parts);
 
-    const rowGap = 8;
-    const rowH = compact ? 92 : 108;
-    const rowTop = panelTop - rowGap - rowH;
-    const cardGap = 8;
-    const cardW = (panelW - cardGap) / 2;
-    const heroX = px - panelW / 2;
-    const heroY = rowTop;
-    const heroW = cardW;
-    const heroH = rowH;
-    const tgtX = heroX + cardW + cardGap;
-    const tgtY = rowTop;
-    const tgtW = cardW;
-    const tgtH = rowH;
-
-    // Hero card, bottom-left of the row — mirrors TacticalEncounterHUD's
-    // portrait card language (circular framed portrait, HP/RP bars)
-    // rather than introducing a third HUD visual style.
-    const heroBg = s.add.rectangle(heroX, heroY, heroW, heroH, 0x090816, 0.90)
-      .setOrigin(0, 0).setStrokeStyle(1.4, 0xc6a45a, 0.85);
-    const portraitD = heroH - 16;
-    const heroPortraitFrame = s.add.circle(heroX + 8 + portraitD / 2, heroY + heroH / 2, portraitD / 2, 0x111326, 0.95)
-      .setStrokeStyle(1.4, 0x67c8ff, 0.85);
-    const heroPortrait = s.add.image(heroPortraitFrame.x, heroPortraitFrame.y, hero.portraitKey);
-    const hTex = heroPortrait.texture.getSourceImage();
-    const hTarget = portraitD * 0.92;
-    const hSrcW = hTex && hTex.width ? hTex.width : 1;
-    const hSrcH = hTex && hTex.height ? hTex.height : 1;
-    heroPortrait.setDisplaySize(
-      hSrcW >= hSrcH ? hTarget : hTarget * (hSrcW / hSrcH),
-      hSrcH >= hSrcW ? hTarget : hTarget * (hSrcH / hSrcW)
-    );
-
-    const contentX = heroX + 12 + portraitD;
-    const heroName = s.add.text(contentX, heroY + 10, hero.name, {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold',
-      fontSize: compact ? '13px' : '16px', color: '#FFE8A0'
-    }).setOrigin(0, 0);
-
-    const hpBarW = Math.max(30, heroX + heroW - 10 - contentX);
-    const hpTrack = s.add.rectangle(contentX, heroY + 36, hpBarW, 9, 0x24121c, 0.95).setOrigin(0, 0);
-    const hpFill = s.add.rectangle(contentX, heroY + 36, hpBarW, 9, 0x71ff88, 1).setOrigin(0, 0);
-    const hpText = s.add.text(contentX, heroY + 49, `HP ${hero.hp}/${hero.maxHp}`, {
-      fontFamily: 'Georgia, serif', fontSize: compact ? '9px' : '11px', color: '#F4E7C0'
-    }).setOrigin(0, 0);
-
-    const rpTrack = s.add.rectangle(contentX, heroY + 66, hpBarW, 7, 0x121a2c, 0.95).setOrigin(0, 0);
-    const rpFill = s.add.rectangle(contentX, heroY + 66, hpBarW, 7, 0x67c8ff, 1).setOrigin(0, 0);
-    const rpText = s.add.text(contentX, heroY + 77, `RP ${hero.rp}/${hero.maxRp}`, {
-      fontFamily: 'Georgia, serif', fontSize: compact ? '9px' : '11px', color: '#C8DFFF'
-    }).setOrigin(0, 0);
-
-    // Target card, bottom-right of the row.
-    const tgtBg = s.add.rectangle(tgtX, tgtY, tgtW, tgtH, 0x090816, 0.90)
-      .setOrigin(0, 0).setStrokeStyle(1.4, 0xd878ff, 0.7);
-    const tgtName = s.add.text(tgtX + 12, tgtY + 10, target.name, {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold',
-      fontSize: compact ? '13px' : '16px', color: '#FF8B9A'
-    }).setOrigin(0, 0);
-    const tgtHpBarW = tgtW - 24;
-    const tgtHpTrack = s.add.rectangle(tgtX + 12, tgtY + 40, tgtHpBarW, 10, 0x24121c, 0.95).setOrigin(0, 0);
-    const tgtHpFill = s.add.rectangle(tgtX + 12, tgtY + 40, tgtHpBarW, 10, 0xa8243f, 1).setOrigin(0, 0);
-    const tgtHpText = s.add.text(tgtX + tgtW / 2, tgtY + 55, `${target.hp}/${target.maxHp}`, {
-      fontFamily: 'Georgia, serif', fontSize: compact ? '10px' : '12px', color: '#FFFFFF'
-    }).setOrigin(0.5, 0);
-
-    // Action panel, bottom-most — attack name, fixed damage readout, confirm/back.
-    const panelBg = s.add.rectangle(px, py, panelW, panelH, 0x090816, 0.92)
-      .setStrokeStyle(1.5, 0xffe8a0, 0.55);
-    const abilityName = s.add.text(px, py - panelH * 0.32, hero.ability, {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold',
-      fontSize: compact ? '15px' : '18px', color: '#9FE0FF'
-    }).setOrigin(0.5);
-    const dmgText = s.add.text(px, py - panelH * 0.06, `Damage: ${ActiveTurnBattleSlice.FIXED_DAMAGE}`, {
-      fontFamily: 'Georgia, serif', fontSize: compact ? '13px' : '15px', color: '#F7E8B6'
-    }).setOrigin(0.5);
-
-    const btnW = compact ? 120 : 140, btnH = compact ? 36 : 42;
-    const confirmBg = s.add.rectangle(px - btnW / 2 - 8, py + panelH * 0.30, btnW, btnH, 0x1a3a1e, 0.95)
-      .setStrokeStyle(1.4, 0x71ff88, 0.85).setInteractive({ useHandCursor: true });
-    const confirmText = s.add.text(confirmBg.x, confirmBg.y, 'CONFIRM', {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold',
-      fontSize: compact ? '13px' : '15px', color: '#D8FFD8'
-    }).setOrigin(0.5);
-
-    const backBg = s.add.rectangle(px + btnW / 2 + 8, py + panelH * 0.30, btnW, btnH, 0x3a1a1e, 0.95)
-      .setStrokeStyle(1.4, 0xff8b8b, 0.85).setInteractive({ useHandCursor: true });
-    const backText = s.add.text(backBg.x, backBg.y, 'BACK', {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold',
-      fontSize: compact ? '13px' : '15px', color: '#FFD8D8'
-    }).setOrigin(0.5);
-
-    c.add([
-      heroBg, heroPortraitFrame, heroPortrait, heroName,
-      hpTrack, hpFill, hpText, rpTrack, rpFill, rpText,
-      tgtBg, tgtName, tgtHpTrack, tgtHpFill, tgtHpText,
-      panelBg, abilityName, dmgText,
-      confirmBg, confirmText, backBg, backText
-    ]);
+    c.add(parts);
     this._uiObject(c);
 
     return {
-      container: c, hpFill, hpText, tgtHpFill, tgtHpText, hpBarW, tgtHpBarW,
-      confirmBg, backBg
+      container: c,
+      hpFill: hp.hpFill, hpText: hp.hpText, hpBarW: hp.hpBarW,
+      tgtHpFill: tgt.hpFill, tgtHpText: tgt.hpText, tgtHpBarW: tgt.hpBarW,
+      confirmBg: act.confirmBg, backBg: act.backBg
     };
+  }
+
+  // Target HP: a full-width strip in portrait/desktop, the same strip
+  // shape (just thinner) up top in landscape. Name left, HP value centred
+  // on the bar.
+  _buildTargetStrip(m, target, parts) {
+    const s = this.scene;
+    const r = m.target;
+    const big = !m.compact;
+    const bg = s.add.rectangle(r.x, r.y, r.w, r.h, 0x090816, 0.90)
+      .setOrigin(0, 0).setStrokeStyle(1.6, 0xd878ff, 0.75);
+    const name = s.add.text(r.x + 14, r.y + (m.landscape ? 6 : 8), target.name, {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold',
+      fontSize: big ? '24px' : (m.landscape ? '17px' : '20px'), color: '#FF8B9A'
+    }).setOrigin(0, 0);
+    const barH = big ? 16 : 14;
+    const barW = r.w - 28;
+    const barY = r.y + r.h - (m.landscape ? 20 : (big ? 24 : 22));
+    const track = s.add.rectangle(r.x + 14, barY, barW, barH, 0x24121c, 0.95).setOrigin(0, 0);
+    const fill = s.add.rectangle(r.x + 14, barY, barW, barH, 0xa8243f, 1).setOrigin(0, 0);
+    const text = s.add.text(r.x + 14 + barW / 2, barY + barH / 2, `${target.hp} / ${target.maxHp}`, {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: big ? '15px' : '13px', color: '#FFFFFF'
+    }).setOrigin(0.5);
+    parts.push(bg, name, track, fill, text);
+    return { hpFill: fill, hpText: text, hpBarW: barW };
+  }
+
+  // Always portrait-left / content-right (name + two bars stacked to the
+  // right of the circular portrait) — the same internal layout for every
+  // orientation, so the only thing that changes per-orientation is the
+  // outer card rect from _layoutMetrics(). An earlier landscape-specific
+  // stack put the name below the portrait, which overflowed the short
+  // (~92px) landscape card and pushed the bars off-screen.
+  _buildHeroCard(m, hero, parts) {
+    const s = this.scene;
+    const r = m.hero;
+    const big = !m.compact;
+    const bg = s.add.rectangle(r.x, r.y, r.w, r.h, 0x090816, 0.90)
+      .setOrigin(0, 0).setStrokeStyle(1.6, 0xc6a45a, 0.85);
+    const portraitD = Math.min(r.h - 18, r.w * 0.34);
+    const frame = s.add.circle(r.x + 9 + portraitD / 2, r.y + r.h / 2, portraitD / 2, 0x111326, 0.95)
+      .setStrokeStyle(1.6, 0x67c8ff, 0.85);
+    const portrait = s.add.image(frame.x, frame.y, hero.portraitKey);
+    const tex = portrait.texture.getSourceImage();
+    const sz = portraitD * 0.92;
+    const sw = tex && tex.width ? tex.width : 1;
+    const sh = tex && tex.height ? tex.height : 1;
+    portrait.setDisplaySize(sw >= sh ? sz : sz * (sw / sh), sh >= sw ? sz : sz * (sh / sw));
+
+    const contentX = r.x + 14 + portraitD;
+    const contentW = r.x + r.w - 12 - contentX;
+    const name = s.add.text(contentX, r.y + (big ? 10 : 8), hero.name, {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold',
+      fontSize: big ? '22px' : (m.landscape ? '16px' : '18px'), color: '#FFE8A0'
+    }).setOrigin(0, 0);
+
+    const barH = big ? 20 : (m.landscape ? 15 : 18);
+    const hpBarW = Math.max(50, contentW);
+    const hpBarY = r.y + (big ? 48 : (m.landscape ? 34 : 40));
+    const hpTrack = s.add.rectangle(contentX, hpBarY, hpBarW, barH, 0x24121c, 0.95).setOrigin(0, 0);
+    const hpFill = s.add.rectangle(contentX, hpBarY, hpBarW, barH, 0x71ff88, 1).setOrigin(0, 0);
+    const hpText = s.add.text(contentX + hpBarW / 2, hpBarY + barH / 2, `HP ${hero.hp}/${hero.maxHp}`, {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: big ? '15px' : '13px', color: '#0a1a0e'
+    }).setOrigin(0.5);
+
+    const rpBarY = hpBarY + barH + (big ? 10 : 6);
+    const rpTrack = s.add.rectangle(contentX, rpBarY, hpBarW, barH, 0x121a2c, 0.95).setOrigin(0, 0);
+    const rpFill = s.add.rectangle(contentX, rpBarY, hpBarW, barH, 0x67c8ff, 1).setOrigin(0, 0);
+    const rpText = s.add.text(contentX + hpBarW / 2, rpBarY + barH / 2, `RP ${hero.rp}/${hero.maxRp}`, {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: big ? '15px' : '13px', color: '#0a1420'
+    }).setOrigin(0.5);
+
+    parts.push(bg, frame, portrait, name, hpTrack, hpFill, hpText, rpTrack, rpFill, rpText);
+    return { hpFill, hpText, hpBarW };
+  }
+
+  _buildActionPanel(m, hero, parts) {
+    const s = this.scene;
+    const r = m.action;
+    const big = !m.compact;
+    const cx = r.x + r.w / 2;
+    const bg = s.add.rectangle(r.x, r.y, r.w, r.h, 0x090816, 0.92)
+      .setOrigin(0, 0).setStrokeStyle(1.8, 0xffe8a0, 0.6);
+    const abilityName = s.add.text(cx, r.y + r.h * 0.18, hero.ability, {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold',
+      fontSize: big ? '22px' : (m.landscape ? '17px' : '19px'), color: '#9FE0FF'
+    }).setOrigin(0.5);
+    const dmgText = s.add.text(cx, r.y + r.h * 0.44, `Damage: ${ActiveTurnBattleSlice.FIXED_DAMAGE}`, {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold',
+      fontSize: big ? '18px' : (m.landscape ? '14px' : '16px'), color: '#F7E8B6'
+    }).setOrigin(0.5);
+
+    const btnW = Math.min(big ? 158 : 138, (r.w - 30) / 2);
+    const btnH = m.landscape ? 40 : (big ? 54 : 48);
+    const btnY = r.y + r.h - btnH / 2 - 12;
+    const confirmBg = s.add.rectangle(cx - btnW / 2 - 8, btnY, btnW, btnH, 0x1a3a1e, 0.95)
+      .setStrokeStyle(1.8, 0x71ff88, 0.9).setInteractive({ useHandCursor: true });
+    const confirmText = s.add.text(confirmBg.x, confirmBg.y, 'CONFIRM', {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold',
+      fontSize: m.landscape ? '15px' : (big ? '19px' : '17px'), color: '#D8FFD8'
+    }).setOrigin(0.5);
+    const backBg = s.add.rectangle(cx + btnW / 2 + 8, btnY, btnW, btnH, 0x3a1a1e, 0.95)
+      .setStrokeStyle(1.8, 0xff8b8b, 0.9).setInteractive({ useHandCursor: true });
+    const backText = s.add.text(backBg.x, backBg.y, 'BACK', {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold',
+      fontSize: m.landscape ? '15px' : (big ? '19px' : '17px'), color: '#FFD8D8'
+    }).setOrigin(0.5);
+
+    parts.push(bg, abilityName, dmgText, confirmBg, confirmText, backBg, backText);
+    return { confirmBg, backBg };
   }
 
   _updateHudHp(hud, hero, target) {
@@ -306,7 +464,7 @@ export default class ActiveTurnBattleSlice {
     hud.hpText.setText(`HP ${hero.hp}/${hero.maxHp}`);
     const tFrac = Phaser.Math.Clamp(target.hp / target.maxHp, 0, 1);
     hud.tgtHpFill.setSize(Math.max(1, hud.tgtHpBarW * tFrac), hud.tgtHpFill.height);
-    hud.tgtHpText.setText(`${Math.max(0, target.hp)}/${target.maxHp}`);
+    hud.tgtHpText.setText(`${Math.max(0, target.hp)} / ${target.maxHp}`);
   }
 
   _teardownVisuals() {
@@ -314,6 +472,10 @@ export default class ActiveTurnBattleSlice {
     this.timers = [];
     this.layers.forEach(o => { if (o && o.destroy) { try { o.destroy(); } catch (err) {} } });
     this.layers = [];
+    // _cutinImage is destroyed above (it's in `layers`, via _ensureCutin's
+    // _uiObject() call) — the reference itself must also clear here, or a
+    // second run() would hand _ensureCutin() a dead object to reuse.
+    this._cutinImage = null;
   }
 
   // Mirrors onActionMenuChoice('cancel')'s cleanup exactly, but called
@@ -331,6 +493,30 @@ export default class ActiveTurnBattleSlice {
     s.refreshHUD();
   }
 
+  // 05E-2 "HUD duplication cleanup": the objective panel and enemy roster
+  // cards (TacticalEncounterHUD) show the same target HP the active-turn
+  // strip now owns — leaving both up competes for the same information
+  // and the same screen space. Hidden for the slice's duration only,
+  // restored the moment control returns to Tactical (both the Confirm and
+  // Back exits go through here, same as every other piece of state this
+  // slice touches).
+  _hideBackgroundHud() {
+    const s = this.scene;
+    if (s.encounterHUD && s.encounterHUD.container) s.encounterHUD.container.setVisible(false);
+    // messageText is the base scene's floating narration ("Prismel: choose
+    // a target in range.") — stale and distracting once the active-turn
+    // HUD owns the screen. finishHeroAction()/refreshHUD() on return
+    // repaints it from this.message, so hiding it here is safe; the final
+    // "suffers N damage!" line still shows on the restored overview.
+    if (s.messageText) s.messageText.setVisible(false);
+  }
+
+  _restoreBackgroundHud() {
+    const s = this.scene;
+    if (s.encounterHUD && s.encounterHUD.container) s.encounterHUD.container.setVisible(true);
+    if (s.messageText) s.messageText.setVisible(true);
+  }
+
   async run(hero, target) {
     if (this._running) return;
     this._running = true;
@@ -339,20 +525,46 @@ export default class ActiveTurnBattleSlice {
     const s = this.scene;
     s.inputLocked = true;
     s.grid.clearAllOverlays();
+    this._hideBackgroundHud();
 
     s.tacticalCamera.saveCinematicState();
     s.grid.showAttackRange([{ x: target.x, y: target.y }]);
     this._drawResonanceThread(hero, target);
     this._vignettePulse();
 
-    const focusX = hero.x + (target.x - hero.x) * 0.32;
-    const focusY = hero.y + (target.y - hero.y) * 0.32;
-    s.tacticalCamera.setZoom(Math.min(s.tacticalCamera.zoomMax, 1.4));
-    s.tacticalCamera.focusOn(focusX, focusY, 420);
-    await this._delay(460);
+    // 05E-2: the prior pass's push to 1.4 (and even the config's own 1.6
+    // zoomMax) wasn't visibly obvious enough — user QA and the brief both
+    // flag the camera change as the thing that must be unmistakable, with
+    // a phone recording as the acceptance proof. The tactical camera
+    // clamps every focusOn() update to zoomMax, so a bigger push means
+    // temporarily raising that ceiling for the slice's duration and
+    // restoring it on exit (saved cinematic zoom is 0.95, well inside the
+    // original bounds, so restoreCinematicState() is unaffected either
+    // way). The map tokens stay a clean downscale even at 2.0x (their
+    // pre-processed content heights are 230-400px, still larger than the
+    // on-screen size at this zoom), so nothing upscales/softens.
+    //
+    // Focus lands on the TARGET, not the midpoint: the approved mock frames
+    // Prismel as the big foreground cutin (the persistent ready pose, shown
+    // from turn-open by _introCutin) while the live camera keeps the target
+    // enemy centred and readable ahead. Biasing 0.85 toward the target
+    // (rather than dead-on) keeps a little of the space between them in
+    // frame so the shard's travel path reads, while still framing the
+    // target clearly rather than parking it at a screen edge.
+    this._savedZoomMax = s.tacticalCamera.zoomMax;
+    s.tacticalCamera.zoomMax = 2.0;
+    const focusX = hero.x + (target.x - hero.x) * 0.85;
+    const focusY = hero.y + (target.y - hero.y) * 0.85;
+    s.tacticalCamera.setZoom(2.0);
+    s.tacticalCamera.focusOn(focusX, focusY, 520);
+    await this._delay(560);
 
+    // Prismel ready-up cutin + HUD come up together — the approved art is
+    // on screen from the start of the active turn, not just on confirm.
+    const introDone = this._introCutin();
     const hud = this._buildHud(hero, target);
     s.tweens.add({ targets: hud.container, alpha: 1, duration: 240, ease: 'Sine.easeOut' });
+    await introDone;
 
     // Wait for a real tap on either button — this is the one beat in the
     // whole slice that must not auto-advance, since Confirm is the exact
@@ -371,6 +583,8 @@ export default class ActiveTurnBattleSlice {
       });
       this._teardownVisuals();
       await s.tacticalCamera.restoreCinematicState(360);
+      s.tacticalCamera.zoomMax = this._savedZoomMax;
+      this._restoreBackgroundHud();
       this._cancelToTacticalSelection();
       s.inputLocked = false;
       this._running = false;
@@ -406,6 +620,8 @@ export default class ActiveTurnBattleSlice {
 
     this._teardownVisuals();
     await s.tacticalCamera.restoreCinematicState(380);
+    s.tacticalCamera.zoomMax = this._savedZoomMax;
+    this._restoreBackgroundHud();
 
     s.grid.clearAllOverlays();
     s.finishHeroAction(hero);
