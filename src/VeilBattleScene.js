@@ -251,8 +251,17 @@ export default class VeilBattleScene extends Phaser.Scene {
 
     // Alpha v1.0 interaction layer. The console is UI (never zooms); the
     // reticle is a battlefield visual and registers through worldAdd().
-    this.commandConsole = new CommandConsole(this, this.battleConfig);
-    this.commandConsole.create();
+    // 05A linked-HUD lifecycle cleanup: in linked Tactical -> BP rounds,
+    // Tactical already selected the action and BattleController skips the
+    // console. Do not construct a CommandConsole only to immediately
+    // suppress or destroy it; leaving it null avoids wasted UI work and
+    // eliminates any one-frame flash risk.
+    if (this.linkedMode) {
+      this.commandConsole = null;
+    } else {
+      this.commandConsole = new CommandConsole(this, this.battleConfig);
+      this.commandConsole.create();
+    }
     this.reticle = new TargetReticle(this);
 
     // Battle entrance sweep, then the first round begins.

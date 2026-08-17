@@ -5,12 +5,27 @@
 // decides *when* those things happen.
 import { GRID, TILE, ZOOM, TIMING, BREAKPOINTS, INPUT } from './TacticalConfig.js?v=50';
 import TerrainRegistry from './TerrainRegistry.js?v=49';
-import TacticalGrid from './TacticalGrid.js?v=49';
+import TacticalGrid from './TacticalGrid.js?v=51';
 import TacticalPathfinder from './TacticalPathfinder.js?v=49';
 import TacticalCamera from './TacticalCamera.js?v=49';
-import UnitController from './UnitController.js?v=49';
+import UnitController from './UnitController.js?v=50';
 import BattleCinematic from './BattleCinematic.js?v=53';
 import TacticalActionConsole from './TacticalActionConsole.js?v=52';
+// Too Quiet Cinematic Batch 01 — presentation-only environment adapter.
+// TacticalGrid stays authoritative for geometry/occupancy/pathing; this
+// only owns how the battlefield and sound nodes are drawn.
+import TacticalEnvironmentLayer from './TacticalEnvironmentLayer.js?v=5';
+// Dream View — opt-in, query-param-gated presentation QA sandboxes.
+// Each is a no-op (returns false from apply()) unless its own ?dreamview=
+// value is present; normal Tactical keeps the plain recenter(0) path.
+// None of the six ever writes combat/turn/node state — see create().
+import DreamViewPrototype from './DreamViewPrototype.js?v=1';
+import DreamViewCalibrationSandbox from './DreamViewCalibrationSandbox.js?v=1';
+import DreamViewStaging from './DreamViewStaging.js?v=1';
+import DreamViewTacticalFeedback from './DreamViewTacticalFeedback.js?v=1';
+import SoundNodeRestorationPrototype from './SoundNodeRestorationPrototype.js?v=1';
+import TooQuietVictoryPrototype from './TooQuietVictoryPrototype.js?v=1';
+import DreamViewBattleMode from './DreamViewBattleMode.js?v=1';
 
 // Placeholder combat stats — this pass is engineering foundation, not
 // balance. DECISION_LOG.md explicitly defers balance testing to later.
@@ -293,13 +308,6 @@ const ENEMY_TOKEN_ART = Object.freeze({
   }
 });
 
-const TERRAIN_COLORS = Object.freeze({
-  open: 0x25203f,
-  barrier: 0x120b28,
-  difficult: 0x4a3a2a,
-  resonance: 0x3b215c
-});
-
 export default class TacticalScene extends Phaser.Scene {
   constructor() {
     super('TacticalScene');
@@ -307,6 +315,14 @@ export default class TacticalScene extends Phaser.Scene {
 
   preload() {
     this.load.json('tacticalMap', './data/tactical_map_v2.json');
+    // Too Quiet Cinematic Batch 02B — aligned 1536x1024 environment masters.
+    // TacticalEnvironmentLayer owns their one shared world transform/depth stack.
+    this.load.image('too_quiet_far_backyards', './assets/tactical/too_quiet/environment/too_quiet_far_backyards.png');
+    this.load.image('too_quiet_house_fence', './assets/tactical/too_quiet/environment/too_quiet_house_fence.png');
+    this.load.image('too_quiet_ground_pool', './assets/tactical/too_quiet/environment/too_quiet_ground_pool.png');
+    this.load.image('too_quiet_props_back', './assets/tactical/too_quiet/environment/too_quiet_props_back.png');
+    this.load.image('too_quiet_veil_corruption', './assets/tactical/too_quiet/environment/too_quiet_veil_corruption.png');
+    this.load.image('too_quiet_props_front', './assets/tactical/too_quiet/environment/too_quiet_props_front.png');
     // Real portrait art, used only for the cinematic cut-in.
     this.load.image('portrait_prismel', './assets/ui/portrait_prismel.png');
     this.load.image('portrait_kineza', './assets/ui/portrait_kineza.png');
@@ -474,6 +490,11 @@ export default class TacticalScene extends Phaser.Scene {
     // work here.
     this.grid.setOrigin(0, 0, TILE.baseHalfW, TILE.baseHalfH);
 
+    // Presentation-only cinematic environment adapter. TacticalGrid remains
+    // authoritative for geometry, hit testing, pathing, terrain, and
+    // occupancy — this only decides how the battlefield/nodes are drawn.
+    this.environment = new TacticalEnvironmentLayer(this, this.grid, mapData);
+
     this.buildHUD();
     this.heroes.forEach(u => this._placeUnitSprite(u));
     this.enemies.forEach(u => this._placeUnitSprite(u));
@@ -501,7 +522,27 @@ export default class TacticalScene extends Phaser.Scene {
     this._uiCamResizeHandler = size => this.uiCam.setSize(size.width, size.height);
     this.scale.on('resize', this._uiCamResizeHandler, this);
 
-    this.time.delayedCall(60, () => this.tacticalCamera.recenter(0));
+    // Dream View sandboxes are mutually exclusive (each keys off a distinct
+    // ?dreamview= value) and each is a pure no-op when its own value isn't
+    // present, so chaining them is safe — first one whose apply() returns
+    // true wins; normal Tactical falls through to the original recenter.
+    this.dreamViewPrototype = new DreamViewPrototype(this);
+    this.dreamViewCalibration = new DreamViewCalibrationSandbox(this);
+    this.dreamViewStaging = new DreamViewStaging(this);
+    this.dreamViewFeedback = new DreamViewTacticalFeedback(this);
+    this.soundNodeRestorationPrototype = new SoundNodeRestorationPrototype(this);
+    this.tooQuietVictoryPrototype = new TooQuietVictoryPrototype(this);
+    this.dreamViewBattleMode = new DreamViewBattleMode(this);
+    this.time.delayedCall(60, () => {
+      const applied = this.dreamViewPrototype.apply()
+        || this.dreamViewCalibration.apply()
+        || this.dreamViewStaging.apply()
+        || this.dreamViewFeedback.apply()
+        || this.soundNodeRestorationPrototype.apply()
+        || this.tooQuietVictoryPrototype.apply()
+        || this.dreamViewBattleMode.apply();
+      if (!applied) this.tacticalCamera.recenter(0);
+    });
 
     // Title music used to keep playing straight into Tactical because
     // Tactical had no theme of its own yet (only ever dipped in volume
@@ -733,30 +774,35 @@ export default class TacticalScene extends Phaser.Scene {
   _placeUnitSprite(u) {
     const p = this.grid.toScreen(u.x, u.y);
     u.sprite.setPosition(p.x, p.y);
+    this.syncUnitDepth(u, p.y);
+  }
+
+  // 2.5D depth cue only. Unit logic still lives entirely on the 12x10 grid.
+  // A unit farther "down" the projected backyard renders in front of one
+  // farther "up", which gives the fixed three-quarter view physical depth
+  // without converting Tactical into a 3D game. worldAdd() only sorts at
+  // add-time, not when an existing object's own depth changes later, so
+  // this needs its own explicit sort() every time a unit's depth updates.
+  syncUnitDepth(u, projectedY) {
+    if (!u || !u.sprite) return;
+    const y = projectedY === undefined ? this.grid.toScreen(u.x, u.y).y : projectedY;
+    u.sprite.setDepth(10 + y * 0.001);
+    if (this.world) this.world.sort('depth');
   }
 
   drawBoard() {
-    this.tileLayer.clear();
-    for (let y = 0; y < GRID.rows; y++) {
-      for (let x = 0; x < GRID.columns; x++) {
-        const type = this.grid.terrainAt(x, y);
-        this.grid.drawDiamond(this.tileLayer, x, y, TERRAIN_COLORS[type] || TERRAIN_COLORS.open, 0.92, 0x0a0716, 0.5);
-      }
-    }
+    // Too Quiet Cinematic Batch 01 removes the permanent full-grid carpet
+    // (120 individually-outlined diamonds). TacticalGrid is untouched;
+    // only the visible battlefield treatment moves to the environment
+    // presentation layer.
+    this.environment.drawBattlefield(this.tileLayer);
   }
 
   drawNodes() {
-    this.nodeMarkers.forEach(m => m.destroy());
-    this.nodeMarkers = [];
-    this.nodes.forEach(n => {
-      const p = this.grid.toScreen(n.x, n.y);
-      const marker = this.add.circle(p.x, p.y - 6, 7,
-        n.restored ? 0xffd56a : 0x8a45ff, n.restored ? 0.95 : 0.55)
-        .setStrokeStyle(2, n.restored ? 0xfff3c8 : 0xc8a8ff, 0.9)
-        .setDepth(4);
-      this.worldAdd(marker);
-      this.nodeMarkers.push(marker);
-    });
+    // Dogs Barking, Pool Splash, and Backyard Laughter each get a distinct
+    // environment-integrated visual language instead of three
+    // interchangeable floating magical circles.
+    this.nodeMarkers = this.environment.drawNodes(this.nodes);
   }
 
   // --- HUD ---------------------------------------------------------------
@@ -1256,6 +1302,16 @@ export default class TacticalScene extends Phaser.Scene {
         c.veilshiftGlow.setAlpha(0);
       }
     });
+
+    // 05C-1: the selected-hero sigil is a standing fact of selection state,
+    // not a one-off event — refreshHUD() already runs after every place
+    // selection changes (select, move, cancel, finish action, enemy phase),
+    // so redrawing it here instead of at each call site can't miss one.
+    if (selected && selected.alive) {
+      this.grid.showSelectedSigil(selected);
+    } else {
+      this.grid.clearSelectedSigil();
+    }
   }
 
   setMessage(msg) {
@@ -1620,12 +1676,30 @@ export default class TacticalScene extends Phaser.Scene {
     this.checkVictoryDefeat();
   }
 
-  resonateNode(hero) {
+  // 05C-2: promotes SoundNodeRestorationPrototype.js's per-node presentation
+  // into real ATTUNE. inputLocked is set synchronously, before the first
+  // await, so a second tap during the ~0.7-1s event can't double-fire this
+  // (same guard onActionMenuChoice() already relies on everywhere else).
+  // node.restored is still set in exactly one place, after the event
+  // finishes and before the marker redraw/victory check — unchanged from
+  // the prior instant version, just later.
+  async resonateNode(hero) {
     const node = this.nodes.find(n => n.x === hero.x && n.y === hero.y && !n.restored);
     if (!node) { this.setMessage('No silenced node here to resonate with.'); return; }
+
+    this.inputLocked = true;
+    this.actionMenu.container.setVisible(false);
+    this.zoomControls.container.setVisible(false);
+    this.setMessage(`${hero.name} attunes to ${node.label}...`);
+
+    this.tacticalCamera.focusOn(node.x, node.y, 260);
+    await this.environment.playNodeRestoration(node);
+
     node.restored = true;
     this.drawNodes();
     this.setMessage(`${node.label} is restored!`);
+
+    this.inputLocked = false;
     this.finishHeroAction(hero);
     this.checkVictoryDefeat();
   }
