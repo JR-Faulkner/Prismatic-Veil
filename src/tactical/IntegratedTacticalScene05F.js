@@ -3,11 +3,11 @@
 // Prismel-vs-Hushling active-turn presentation for 05F.
 
 import IntegratedTacticalSceneV3B from './IntegratedTacticalSceneV3B.js?v=2';
-import ActiveTurnBattleSlice05F from './ActiveTurnBattleSlice05F.js?v=1';
+import ActiveTurnBattleSlice05FPatched from './ActiveTurnBattleSlice05FPatched.js?v=1';
 
 export default class IntegratedTacticalScene05F extends IntegratedTacticalSceneV3B {
   create() {
     super.create();
-    this.activeTurnBattleSlice = new ActiveTurnBattleSlice05F(this);
+    this.activeTurnBattleSlice = new ActiveTurnBattleSlice05FPatched(this);
   }
 }
