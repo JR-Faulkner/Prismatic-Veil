@@ -12,6 +12,18 @@
   "sheets": {
     "auorb": {"asset":"assets/sequences/qa/auryi_auorb.webp","cols":3,"rows":2}
   },
+  "motionProfile": {
+    "style": "float",
+    "axis": "y",
+    "direction": 1,
+    "minBlendMs": 128,
+    "blendScale": 1.30,
+    "travelPx": 7,
+    "enterScale": 0.985,
+    "overlap": 0.78,
+    "settleMs": 110,
+    "settleScale": 1.004
+  },
   "frames": [
     {"id":"auryi_auorb_1","sheet":"auorb","sheetIndex":0,"label":"Calm / Ready","holdMs":220,"blendMs":42,"scale":1.0,"x":0,"y":0},
     {"id":"auryi_auorb_2","sheet":"auorb","sheetIndex":1,"label":"Crown Aura","holdMs":260,"blendMs":46,"scale":1.0,"x":0,"y":0,"cue":"crownAppears"},
