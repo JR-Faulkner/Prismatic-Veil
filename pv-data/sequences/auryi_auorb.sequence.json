@@ -25,14 +25,14 @@
     "settleScale": 1.004
   },
   "continuityGate": {
-    "heightPct": 0.12,
-    "widthPct": 0.27,
-    "baselinePct": 0.055,
-    "centerPct": 0.075,
-    "lowerAnchorPct": 0.10,
-    "areaPct": 0.36,
-    "silhouetteDistance": 0.84,
-    "passScore": 78,
+    "heightPct": 0.11,
+    "widthPct": 0.25,
+    "baselinePct": 0.050,
+    "centerPct": 0.070,
+    "lowerAnchorPct": 0.095,
+    "areaPct": 0.34,
+    "silhouetteDistance": 0.82,
+    "passScore": 82,
     "bridgeScore": 52
   },
   "frames": [
