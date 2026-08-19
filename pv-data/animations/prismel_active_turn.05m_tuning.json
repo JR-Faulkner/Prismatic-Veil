@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "prismel_active_turn_05m_tuning",
+  "baseRegistration": "pv-data/animations/prismel_active_turn.registration.json",
+  "status": "qa-tuning",
+  "source": "2026-08-19 iPhone screen-recording review",
+  "notes": "05M isolates the remaining ready_6 -> attack_1..3 pose-footprint shift without rewriting the canonical 05L registration. Promote into canonical data only after phone QA approval.",
+  "frameOverrides": {
+    "prismel_attack_1": { "scale": 1.028, "x": -2, "y": -2 },
+    "prismel_attack_2": { "scale": 1.026, "x": -1, "y": -2 },
+    "prismel_attack_3": { "scale": 1.022, "x": 0, "y": -1 },
+    "prismel_attack_4": { "scale": 1.014, "x": 1, "y": 0 },
+    "prismel_attack_5": { "scale": 1.008, "x": 1, "y": 0 },
+    "prismel_attack_6": { "scale": 1.003, "x": 0, "y": 0 }
+  },
+  "materialization": {
+    "frameHoldMs": [145, 175, 205, 285, 320, 400],
+    "cueFrames": {
+      "shimmer": 2,
+      "staffEmerges": 3,
+      "staffDraw": 4,
+      "staffLock": 6
+    }
+  },
+  "transition": {
+    "readyToAttackHoldMs": 145,
+    "attackStartFrameMs": 184,
+    "attackReleaseFrameMs": 160
+  }
+}
