@@ -10,6 +10,7 @@ const CANON = Object.freeze({
   auryi: {
     entranceSheet: 'auryi_auorb_entrance_master_a',
     attackSheet: 'auryi_attack_master_a',
+    attackLabel: 'ATTACK',
     entranceHolds: [220, 260, 300, 340, 360, 400],
     attackHolds: [150, 125, 115, 110, 150, 190],
     attackRegistration: [
@@ -24,6 +25,7 @@ const CANON = Object.freeze({
   kineza: {
     entranceSheet: 'kineza_gauntlet_ignition_master_a',
     attackSheet: 'kineza_attack_master_a',
+    attackLabel: 'ATTACK',
     entranceHolds: [220, 180, 220, 180, 260, 320],
     attackHolds: [145, 115, 95, 105, 145, 190],
     attackRegistration: [
@@ -63,9 +65,6 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     if (!spec) return super._ensureCutin();
     if (this._cutinImage && this._cutinImage.active) return this._cutinImage;
 
-    // Sprite is intentional here. Auryi/Kineza use real spritesheets and
-    // change frame + texture during one presentation; Sprite keeps that
-    // contract explicit instead of relying on Image.setTexture(key, frame).
     const img = this.scene.add.sprite(0, 0, spec.entranceSheet, 0)
       .setOrigin(0.5, 1)
       .setDepth(9400)
@@ -127,13 +126,27 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     this._assertSheetFrame06A(sheet, index);
     this._activeFrame06A = { phase, index };
 
-    // Two-step handoff is deliberate. The phone recording showed the first
-    // entrance->attack transition crashing inside _playAttackPresentation.
-    // Change texture and frame independently so Phaser never has to resolve a
-    // cross-spritesheet frame during setTexture().
     if (img.texture.key !== sheet) img.setTexture(sheet);
     img.setFrame(index).setAlpha(1);
     this._layoutCutin();
+  }
+
+  _buildActionPanel(m, hero, parts) {
+    const spec = this._canonSpec06A();
+    if (!spec || !hero) return super._buildActionPanel(m, hero, parts);
+
+    // The base presenter was authored for Prismel and reads hero.ability.
+    // On the Auryi phone test that leaked PRISMATIC SHARD into her card.
+    // Keep gameplay data untouched and override only the temporary display
+    // label for the ATTACK slice until each hero's final basic-attack naming
+    // is deliberately canonized.
+    const oldAbility = hero.ability;
+    hero.ability = spec.attackLabel;
+    try {
+      return super._buildActionPanel(m, hero, parts);
+    } finally {
+      hero.ability = oldAbility;
+    }
   }
 
   async _introCutin() {
@@ -157,9 +170,6 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     const spec = this._canonSpec06A();
     if (!spec) return super._playAttackPresentation(hero, target);
 
-    // Validate the full attack sheet before changing the visible texture.
-    // A bad runtime frame contract now fails with the exact sheet/frame name,
-    // instead of a Safari stack that only says _playAttackPresentation().
     for (let i = 0; i < 6; i++) this._assertSheetFrame06A(spec.attackSheet, i);
 
     for (let i = 0; i < 6; i++) {
