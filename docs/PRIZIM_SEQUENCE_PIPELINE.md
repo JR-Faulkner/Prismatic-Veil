@@ -27,7 +27,7 @@ The approved source sheets are 1536x1024 with six 512x512 cells in reading order
 
 ## QA proxy rule
 
-Current Sequence Lab v0.2.2 uses lightweight WebP QA proxies under `assets/sequences/qa/`.
+Current Sequence Lab v0.2.3 uses lightweight WebP QA proxies under `assets/sequences/qa/`.
 
 - QA proxies preserve the approved sheet composition and frame order.
 - Production masters remain unchanged and authoritative.
@@ -84,15 +84,40 @@ v0.2.1 therefore changed presentation only:
 
 ### v0.2.2 visibility correction
 
-Phone feedback after v0.2.1 still reported materially dark character presentation. v0.2.2 intentionally makes the QA view much brighter rather than continuing small adjustments.
+Phone feedback after v0.2.1 still reported materially dark character presentation. v0.2.2 intentionally made the QA view much brighter rather than continuing small adjustments.
 
-- canvas brightness is raised to approximately 1.55x;
-- display contrast is reduced to approximately 0.94 to open shadow detail;
-- the stage center and overall stage midtones are significantly lighter;
-- guide/grid prominence is reduced again;
-- sequence timing, registration, manifests, and canonical assets remain unchanged.
+- canvas brightness was raised to approximately 1.55x;
+- display contrast was reduced to approximately 0.94 to open shadow detail;
+- the stage center and overall stage midtones were significantly lighter;
+- guide/grid prominence was reduced again;
+- sequence timing, registration, manifests, and canonical assets remained unchanged.
 
-If v0.2.2 still appears materially dark, inspect the QA proxy encoding itself before altering canonical art, timing, or registration. This is the preferred order of operations for future readability problems: fix the QA presentation first, then diagnose proxy encoding, and only then consider source-art changes if evidence requires them.
+### v0.2.3 root-cause correction
+
+The v0.2.2 screenshot proved the darkness was not primarily a sprite or proxy-exposure problem because even the HTML stage title and baseline label were dimmed.
+
+Root cause: the loading overlay remained visually mounted after loading completed. `setLoading('')` cleared its text and set the `hidden` attribute, but the authored `.loading { display:grid; ... }` rule kept the empty overlay rendered above the stage. Because the overlay had a dark semi-opaque background and `z-index:20`, it dimmed the character canvases, stage background, title, guides, and labels together.
+
+v0.2.3 fixes the actual cause:
+
+- `.loading[hidden]{display:none!important}` explicitly removes the overlay after loading;
+- emergency canvas brightness is reduced from 1.55x to a normal QA correction near 1.18x;
+- contrast returns to neutral;
+- the stage remains bright enough for inspection;
+- sequence timing, registration, manifests, QA proxies, and canonical art remain unchanged.
+
+### Loading-overlay guardrail
+
+A cleared loading message is not proof that a loading layer has been removed.
+
+For PriZim QA interfaces:
+
+1. loading overlays must have an explicit hidden-state CSS rule such as `.loading[hidden]{display:none!important}`;
+2. verify overlay removal by checking content outside the sprite itself, such as headings, guides, and stage background;
+3. if both DOM text and canvas art are dimmed together, inspect stacking/overlay state before changing assets, exposure, registration, or timing;
+4. do not diagnose proxy darkness from a screenshot until UI layers above the canvas have been ruled out.
+
+This is now a permanent debugging guardrail.
 
 ## Registration philosophy
 
@@ -157,4 +182,6 @@ The v0.2 baseline includes:
 
 v0.2.1 added the brighter phone-readable inspection presentation without changing sequence data.
 
-v0.2.2 adds the aggressive visibility pass for shadow-heavy QA proxies, still without changing sequence data or canonical art.
+v0.2.2 added the aggressive visibility experiment that exposed the real stage-layer problem.
+
+v0.2.3 removes the stale loading overlay and restores normal QA exposure while preserving all sequence data and canonical art.
