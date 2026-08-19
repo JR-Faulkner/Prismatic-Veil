@@ -2,9 +2,10 @@
   "tool": "PriZim Tactical Executable Gate",
   "syntax": "success",
   "browser_setup": "success",
-  "local_active_turn_smoke": "success",
-  "phone_active_turn_smoke": "success",
+  "local_phone_hud_smoke": "success",
+  "phone_delivery_hud_smoke": "success",
   "delivery_surface": "github-pages",
-  "build_marker": "TACTICAL-HUD-PHONE-05",
+  "build_marker": "TACTICAL-HUD-PHONE-06",
+  "legacy_action_ui_blocked": true,
   "legacy_bp_blocked": true
 }

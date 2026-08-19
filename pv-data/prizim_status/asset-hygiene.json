@@ -55,6 +55,7 @@
     "src/tactical/IntegratedTacticalScene05F.js",
     "src/tactical/SoundNodeRestorationPrototype.js",
     "src/tactical/ActiveTurnBattleSlice05J.js",
+    "src/tactical/IntegratedTacticalScene06G.js",
     "src/tactical/IntegratedTacticalScene06E.js",
     "src/tactical/IntegratedTacticalScene05M.js",
     "src/tactical/ActiveTurnBattleSlice.js",
