@@ -1,6 +1,7 @@
 // 06B — Tactical View Flavor Audition.
 // Keeps the proven tactical rules while auditioning presentation on phone.
-// 06B inherits the current 06A three-hero canon active-turn stack.
+// 06B now inherits the current 06A active-turn stack so RUN BATTLE does not
+// fall through to the legacy Battle Presentation scene.
 
 import IntegratedTacticalScene06A from './IntegratedTacticalScene06A.js?v=8';
 
@@ -27,29 +28,40 @@ export default class IntegratedTacticalViewFlavor06B extends IntegratedTacticalS
     return this.scale.width>this.scale.height?cfg.landscapeZoom:cfg.portraitZoom;
   }
 
-  _applyFlavorProjection06B(key,{announce=true,refocus=true}={}){
-    const cfg=FLAVORS[key]||FLAVORS.shallow;
-    this._viewFlavorKey06B=key;
-    this._viewFlavor06B=cfg;
-    if(this.grid){
-      this.grid.tileHalfW=cfg.halfW;
-      this.grid.tileHalfH=cfg.halfH;
-      if(this.grid.rebuildVisuals)this.grid.rebuildVisuals();
-    }
-    if(this.tacticalCamera){
-      this.tacticalCamera.setZoom(this._flavorZoom06B(cfg));
-      if(refocus)this.tacticalCamera.focusOn(8.7,6.2,0);
-    }
-    if(announce&&this.setMessage)this.setMessage(`06B • ${cfg.label}`);
+  defaultZoomFor(w,h){
+    const cfg=this._viewFlavor06B||FLAVORS.shallow;
+    return w>h?cfg.landscapeZoom:cfg.portraitZoom;
+  }
+
+  _refreshProjection06B(){
+    const cfg=this._viewFlavor06B;
+    this.grid.setOrigin(0,0,cfg.halfW,cfg.halfH);
+    this.grid.clearAllOverlays();
+    if(this.environment&&typeof this.environment._clearArt==='function') this.environment._clearArt();
+    this.heroes.forEach(u=>this._placeUnitSprite(u));
+    this.enemies.forEach(u=>this._placeUnitSprite(u));
+    this.drawBoard();
+    this.drawNodes();
+    this.tacticalCamera.computeBounds(220);
+    this.tacticalCamera.defaultZoom=this._flavorZoom06B(cfg);
+    this.tacticalCamera.setZoom(this._flavorZoom06B(cfg));
+    this.tacticalCamera.focusOn(8.7,6.2,0);
+    this.refreshHUD();
+    this.setMessage(`06B VIEW • ${cfg.label} • 06A ACTIVE TURN`);
+  }
+
+  selectHero(hero){
+    super.selectHero(hero);
+    if(!hero||this._viewFlavorKey06B!=='hybrid') return;
+    const base=this._flavorZoom06B();
+    this.cameras.main.zoomTo(Math.min(1.35,base+this._viewFlavor06B.focusPush),230,'Sine.easeOut',true);
+    this.tacticalCamera.focusOn(hero.x,hero.y,230);
   }
 
   create(){
+    this._viewFlavorKey06B=this._readFlavor06B();
+    this._viewFlavor06B=FLAVORS[this._viewFlavorKey06B];
     super.create();
-    const key=this._readFlavor06B();
-    this._applyFlavorProjection06B(key,{announce:false,refocus:false});
-    this.time.delayedCall(180,()=>{
-      this._applyFlavorProjection06B(key,{announce:true,refocus:true});
-      this.refreshHUD();
-    });
+    this.time.delayedCall(180,()=>this._refreshProjection06B());
   }
 }
