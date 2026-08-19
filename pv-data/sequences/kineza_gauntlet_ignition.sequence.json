@@ -4,10 +4,11 @@
   "character": "kineza",
   "displayName": "Kineza",
   "sequenceName": "Gauntlet Ignition",
-  "status": "bootstrap-ready",
+  "status": "signature-source-found-awaiting-repo-import",
   "signatureReady": false,
+  "sourceLocated": true,
   "accent": "kinetic-green",
-  "notes": "The canonical six-beat stomp-to-gauntlet ignition sequence is locked in project canon, but those six dedicated frame assets are not currently present in the repository. Sequence Lab uses the existing locked Kineza battle poses only as bootstrap references.",
+  "notes": "The exact approved six-frame gauntlet-ignition signature sheet was located in the project File Library on 2026-08-19, but its binary is not yet present in the repository. Sequence Lab uses the existing locked Kineza battle poses only as bootstrap references until the approved sheet is imported; these preview poses are not replacements for the signature strip.",
   "signaturePlan": [
     {"frame":1,"beat":"Ready","asset":null,"referenceAsset":"assets/poses/kineza/Kineza01_Idle_LOCKED.png"},
     {"frame":2,"beat":"Stomp","asset":null,"referenceAsset":"assets/poses/kineza/Kineza02_Step_LOCKED.png"},
