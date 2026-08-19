@@ -7,20 +7,13 @@
   "status": "signature-ready-qa",
   "signatureReady": true,
   "accent": "prismatic",
-  "sheets": {
-    "materialization": {
-      "asset": "assets/sequences/qa/prismel_materialization_authority.jpg",
-      "cols": 3,
-      "rows": 2,
-      "backgroundKey": "edge-white"
-    }
-  },
+  "notes": "Uses the canonical six per-frame materialization PNGs already present in the repository. The uploaded 3x2 authority sheet remains the visual reference, but no additional binary transport is required for Lab playback.",
   "frames": [
-    {"id":"prismel_materialize_1","sheet":"materialization","cell":1,"label":"Reach","holdMs":145,"blendMs":42},
-    {"id":"prismel_materialize_2","sheet":"materialization","cell":2,"label":"Summon Light","holdMs":175,"blendMs":42,"cue":"shimmer"},
-    {"id":"prismel_materialize_3","sheet":"materialization","cell":3,"label":"Staff Emerges","holdMs":205,"blendMs":42,"cue":"staffEmerges"},
-    {"id":"prismel_materialize_4","sheet":"materialization","cell":4,"label":"Draw","holdMs":285,"blendMs":36,"cue":"staffDraw"},
-    {"id":"prismel_materialize_5","sheet":"materialization","cell":5,"label":"Settle","holdMs":320,"blendMs":34},
-    {"id":"prismel_materialize_6","sheet":"materialization","cell":6,"label":"Staff Lock","holdMs":400,"blendMs":28,"cue":"staffLock"}
+    {"id":"prismel_materialize_1","asset":"assets/poses/prismel_active_turn/prismel_ready_1.png","label":"Reach","holdMs":145,"blendMs":42,"scale":1.000,"x":0,"y":0},
+    {"id":"prismel_materialize_2","asset":"assets/poses/prismel_active_turn/prismel_ready_2.png","label":"Summon Light","holdMs":175,"blendMs":42,"scale":1.000,"x":-1,"y":0,"cue":"shimmer"},
+    {"id":"prismel_materialize_3","asset":"assets/poses/prismel_active_turn/prismel_ready_3.png","label":"Staff Emerges","holdMs":205,"blendMs":42,"scale":0.998,"x":-1,"y":0,"cue":"staffEmerges"},
+    {"id":"prismel_materialize_4","asset":"assets/poses/prismel_active_turn/prismel_ready_4.png","label":"Draw","holdMs":285,"blendMs":36,"scale":0.999,"x":0,"y":0,"cue":"staffDraw"},
+    {"id":"prismel_materialize_5","asset":"assets/poses/prismel_active_turn/prismel_ready_5.png","label":"Settle","holdMs":320,"blendMs":34,"scale":1.000,"x":0,"y":0},
+    {"id":"prismel_materialize_6","asset":"assets/poses/prismel_active_turn/prismel_ready_6.png","label":"Staff Lock","holdMs":400,"blendMs":28,"scale":1.000,"x":0,"y":0,"cue":"staffLock"}
   ]
 }
