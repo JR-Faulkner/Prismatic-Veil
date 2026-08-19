@@ -7,10 +7,10 @@
   "status": "signature-ready-qa",
   "signatureReady": true,
   "accent": "prismatic",
-  "notes": "Uses the approved six-frame Prismatic Shard authority sheet. The Sequence Lab crops the 3x2 authority layout before white-field removal, alpha-bound normalization, registration tuning, and authored blend timing.",
+  "notes": "Uses the approved six-frame Prismatic Shard authority QA sheet already present on the v0.2 branch. Sequence Lab crops the 3x2 layout before edge-white removal, alpha-bound normalization, 05M registration tuning, and authored blend timing.",
   "sheets": {
     "attack": {
-      "asset": "assets/sequences/qa/prismel_attack_authority.jpg",
+      "asset": "assets/sequences/qa/probe-1e8a.jpg",
       "cols": 3,
       "rows": 2,
       "backgroundKey": "edge-white"
