@@ -273,9 +273,13 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
   }
 
   async _playAttackPresentation(hero, target) {
-    if (hero && hero.id === 'prismel') return super._playAttackPresentation(hero, target);
+    // 05F owns the validated run loop and deliberately invokes the presenter
+    // with no arguments. 06A already stores the active hero for the full run,
+    // so resolve from that state instead of assuming a method argument exists.
+    const active = hero || this._activeHero06A;
+    if (!active || active.id === 'prismel') return super._playAttackPresentation();
 
-    const cfg = HERO_SEQUENCE[hero.id] || HERO_SEQUENCE.prismel;
+    const cfg = HERO_SEQUENCE[active.id] || HERO_SEQUENCE.prismel;
     const img = this._ensureCutin();
     img.setTexture(cfg.intro[cfg.intro.length - 1]).setAlpha(1);
     this._layoutCutin();
@@ -285,7 +289,7 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     }
     await this._delay(110);
 
-    if (hero.id === 'auryi') await this._releaseOrb();
+    if (active.id === 'auryi') await this._releaseOrb();
     else await this._kineticRelease();
   }
 
