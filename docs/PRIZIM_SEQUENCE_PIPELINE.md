@@ -27,7 +27,7 @@ The approved source sheets are 1536x1024 with six 512x512 cells in reading order
 
 ## QA proxy rule
 
-Current Sequence Lab v0.2.1 uses lightweight WebP QA proxies under `assets/sequences/qa/`.
+Current Sequence Lab v0.2.2 uses lightweight WebP QA proxies under `assets/sequences/qa/`.
 
 - QA proxies preserve the approved sheet composition and frame order.
 - Production masters remain unchanged and authoritative.
@@ -64,23 +64,35 @@ Sequence Lab is a QA instrument, not a cinematic grading pass. Character art mus
 - Do not dim sprites to fit the UI.
 - Keep baseline and center guides visually subordinate to the art.
 - Normalize visible bounds before registration tuning.
-- Apply display brightness compensation to QA proxies when dark costume values are lost on phone screens.
+- QA exposure may be raised aggressively when a transport proxy crushes shadow detail.
+- Lower display contrast when needed to reveal dark costume structure without rewriting the underlying art.
 - Prefer lifting the inspection stage and sprite presentation before altering canonical art or sequence registration.
+- A brighter QA render is an inspection aid only and must never be treated as production color grading.
 
 ### v0.2.1 phone-QA correction
 
 The 2026-08-19 iPhone recording showed that the correct Auryi and Kineza authority sequences were playing, but both characters remained underexposed in the Lab. Auryi's lavender/ivory read was especially suppressed, while Kineza's dark armor depended too heavily on green effects for readability.
 
-v0.2.1 therefore changes presentation only:
+v0.2.1 therefore changed presentation only:
 
-- lifts the inspection-stage midtones;
-- increases post-normalization canvas brightness;
-- keeps contrast close to neutral to avoid crushing shadow detail;
-- slightly preserves saturation so character accents remain readable;
-- reduces guide/grid prominence;
-- does not change frame timing, registration, manifests, or canonical assets.
+- lifted the inspection-stage midtones;
+- increased post-normalization canvas brightness;
+- kept contrast close to neutral to avoid crushing shadow detail;
+- slightly preserved saturation so character accents remained readable;
+- reduced guide/grid prominence;
+- did not change frame timing, registration, manifests, or canonical assets.
 
-This is the preferred order of operations for future readability problems: fix the QA presentation before changing character art or motion data.
+### v0.2.2 visibility correction
+
+Phone feedback after v0.2.1 still reported materially dark character presentation. v0.2.2 intentionally makes the QA view much brighter rather than continuing small adjustments.
+
+- canvas brightness is raised to approximately 1.55x;
+- display contrast is reduced to approximately 0.94 to open shadow detail;
+- the stage center and overall stage midtones are significantly lighter;
+- guide/grid prominence is reduced again;
+- sequence timing, registration, manifests, and canonical assets remain unchanged.
+
+If v0.2.2 still appears materially dark, inspect the QA proxy encoding itself before altering canonical art, timing, or registration. This is the preferred order of operations for future readability problems: fix the QA presentation first, then diagnose proxy encoding, and only then consider source-art changes if evidence requires them.
 
 ## Registration philosophy
 
@@ -143,4 +155,6 @@ The v0.2 baseline includes:
 - authority-aware manifest validation
 - cache-versioned browser loading
 
-v0.2.1 adds the brighter phone-readable inspection presentation without changing sequence data.
+v0.2.1 added the brighter phone-readable inspection presentation without changing sequence data.
+
+v0.2.2 adds the aggressive visibility pass for shadow-heavy QA proxies, still without changing sequence data or canonical art.
