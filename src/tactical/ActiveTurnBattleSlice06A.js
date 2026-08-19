@@ -63,7 +63,10 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     if (!spec) return super._ensureCutin();
     if (this._cutinImage && this._cutinImage.active) return this._cutinImage;
 
-    const img = this.scene.add.image(0, 0, spec.entranceSheet, 0)
+    // Sprite is intentional here. Auryi/Kineza use real spritesheets and
+    // change frame + texture during one presentation; Sprite keeps that
+    // contract explicit instead of relying on Image.setTexture(key, frame).
+    const img = this.scene.add.sprite(0, 0, spec.entranceSheet, 0)
       .setOrigin(0.5, 1)
       .setDepth(9400)
       .setAlpha(0);
@@ -102,13 +105,34 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
       );
   }
 
+  _assertSheetFrame06A(sheet, index) {
+    const textures = this.scene && this.scene.textures;
+    if (!textures || !textures.exists(sheet)) {
+      throw new Error(`PriZim runtime asset missing: ${sheet}`);
+    }
+    const texture = textures.get(sheet);
+    const frame = texture && texture.get ? texture.get(index) : null;
+    if (!frame) {
+      throw new Error(`PriZim runtime frame missing: ${sheet}#${index}`);
+    }
+    return frame;
+  }
+
   _setCanonFrame06A(phase, index) {
     const spec = this._canonSpec06A();
     const img = this._ensureCutin();
     if (!spec || !img) return;
+
     const sheet = phase === 'attack' ? spec.attackSheet : spec.entranceSheet;
+    this._assertSheetFrame06A(sheet, index);
     this._activeFrame06A = { phase, index };
-    img.setTexture(sheet, index).setAlpha(1);
+
+    // Two-step handoff is deliberate. The phone recording showed the first
+    // entrance->attack transition crashing inside _playAttackPresentation.
+    // Change texture and frame independently so Phaser never has to resolve a
+    // cross-spritesheet frame during setTexture().
+    if (img.texture.key !== sheet) img.setTexture(sheet);
+    img.setFrame(index).setAlpha(1);
     this._layoutCutin();
   }
 
@@ -133,12 +157,14 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     const spec = this._canonSpec06A();
     if (!spec) return super._playAttackPresentation(hero, target);
 
+    // Validate the full attack sheet before changing the visible texture.
+    // A bad runtime frame contract now fails with the exact sheet/frame name,
+    // instead of a Safari stack that only says _playAttackPresentation().
+    for (let i = 0; i < 6; i++) this._assertSheetFrame06A(spec.attackSheet, i);
+
     for (let i = 0; i < 6; i++) {
       this._setCanonFrame06A('attack', i);
 
-      // Kineza's approved punch has the larger entrance->attack displacement.
-      // Keep PriZim's deterministic registration authoritative and use only a
-      // tiny presentation bridge so the travel reads as intent, not a pop.
       if (hero.id === 'kineza' && i > 0 && this._cutinImage && this._cutinImage.active) {
         const img = this._cutinImage;
         this.scene.tweens.add({
@@ -149,10 +175,10 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
         });
       }
 
-      if (hero.id === 'auryi' && i === 4) {
+      if (hero.id === 'auryi' && i === 4 && this.scene.cameras && this.scene.cameras.main) {
         this.scene.cameras.main.shake(90, 0.0025);
       }
-      if (hero.id === 'kineza' && i === 3) {
+      if (hero.id === 'kineza' && i === 3 && this.scene.cameras && this.scene.cameras.main) {
         this.scene.cameras.main.shake(120, 0.0045);
       }
 
