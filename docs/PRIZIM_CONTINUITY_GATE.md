@@ -1,7 +1,7 @@
 # PriZim Continuity Gate
 
 Status: active QA / generation-prep guidance  
-Version: v0.3  
+Version: v0.3.1  
 Updated: 2026-08-19
 
 ## Purpose
@@ -18,7 +18,7 @@ The sequence pipeline becomes:
 
 ### PASS
 
-The measured handoff is within the character's continuity tolerances. Do not generate new character art. Improve playback only if phone QA still reports a motion problem.
+The measured handoff is within the character's continuity tolerances and is visually clean enough to be considered shippable geometry for the current sequence. PASS must not mean merely "nothing exceeded a generous maximum." Do not generate new character art for a true PASS. Improve playback only if phone QA still reports a motion problem.
 
 ### TUNE
 
@@ -32,7 +32,7 @@ A bridge is created only after phone QA and the measured Gate result agree that 
 
 ## Measurements in v0.3
 
-Continuity Gate v0.3 measures each adjacent authority-frame pair using the alpha-visible subject after PriZim edge-white cleanup.
+Continuity Gate measures each adjacent authority-frame pair using the alpha-visible subject after PriZim edge-white cleanup.
 
 Current measurements:
 
@@ -54,9 +54,23 @@ This is required because legitimate motion has different geometry:
 
 - Prismel uses tighter controlled tolerances because staff materialization and casting should preserve a planted sorcerer read.
 - Auryi permits more silhouette and visible-mass expansion because crown, robes, hair, and Auorb energy legitimately bloom around her.
-- Kineza permits the largest temporary mass/width changes because stomp impacts, kinetic cracks, arm spread, and emerald ignition are intentionally explosive.
+- Kineza permits temporary mass/width changes because stomp impacts, kinetic cracks, arm spread, and emerald ignition are intentionally explosive, but body stance and lower-anchor drift must still be judged strictly enough to catch visible character discontinuity.
 
 PriZim should never use one universal threshold set for every hero or every action.
+
+## v0.3.1 phone-QA calibration
+
+The first phone test showed the Gate was useful but slightly too generous with PASS, especially on Kineza. Visual review showed real discontinuity in Kineza's stance, cape footprint, leg spread, torso lean, and lower-body anchor even where the original profile still allowed a PASS.
+
+v0.3.1 therefore recalibrates the manifest data rather than rewriting the Gate engine:
+
+- PASS thresholds are raised across all three heroes so PASS means closer to shippable continuity rather than merely acceptable tolerance;
+- Prismel receives slightly tighter height, width, baseline, center, lower-anchor, visible-mass, and silhouette allowances;
+- Auryi remains the most forgiving where aura/robe/hair expansion is legitimate, but her PASS score is raised and several geometry tolerances are tightened slightly;
+- Kineza receives the strongest correction: width tolerance drops from 32% to 25%, lower-anchor tolerance from 12% to 8.5%, visible-mass tolerance from 42% to 34%, silhouette tolerance from 0.88 to 0.78, and PASS rises from 76 to 84;
+- BRIDGE remains deliberately harder to trigger than TUNE so the Gate does not over-prescribe new art.
+
+Calibration rule: when phone QA and Gate output disagree, prefer changing the smallest data layer first. Do not change the renderer, canonical art, or generation policy merely to make the score agree with the eye.
 
 ## Bridge specification
 
@@ -108,9 +122,9 @@ Do not use whole-character optical flow across large pose changes when it produc
 
 Generation should repair the smallest region necessary.
 
-## What v0.3 does not yet prove
+## What v0.3.1 does not yet prove
 
-Continuity Gate v0.3 is deliberately conservative about its claims.
+Continuity Gate remains deliberately conservative about its claims.
 
 It does not yet automatically validate:
 
@@ -131,17 +145,18 @@ A high Gate score therefore means geometric continuity is strong. It does not me
 - A generated bridge never replaces either endpoint.
 - Gate thresholds are data, not hard-coded character assumptions.
 - Runtime Motion Bridge gets a chance before new art.
+- PASS must correlate with phone-visible quality, not only numeric tolerance.
 - One bridge frame is preferred over a new full sequence when one bridge solves the measured gap.
 - If multiple adjacent handoffs fail for different reasons, analyze each separately rather than generating a blanket in-between strip.
 - Phone recording remains final motion-quality authority.
 
-## v0.3 success condition
+## v0.3.1 success condition
 
 Continuity Gate proves its worth when it can turn a vague complaint such as "this part jumps" into:
 
 - the exact failing handoff;
 - the specific geometry that changed too much;
-- a PASS / TUNE / BRIDGE CANDIDATE recommendation;
+- a PASS / TUNE / BRIDGE CANDIDATE recommendation that agrees reasonably well with phone review;
 - a constrained bridge specification that reduces generation freedom;
 - a measurable post-generation acceptance target.
 
