@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "kineza_gauntlet_ignition_v02",
+  "character": "kineza",
+  "displayName": "Kineza",
+  "sequenceName": "Gauntlet Ignition",
+  "status": "signature-ready-qa",
+  "signatureReady": true,
+  "accent": "kinetic-green",
+  "sheets": {"authority":{"asset":"assets/sequences/qa/kineza_gauntlet_ignition_authority.jpg","cols":3,"rows":2,"backgroundKey":"edge-white"}},
+  "frames": [
+    {"id":"kineza_ignite_1","sheet":"authority","cell":1,"label":"Ready","holdMs":250,"blendMs":40},
+    {"id":"kineza_ignite_2","sheet":"authority","cell":2,"label":"Stomp","holdMs":230,"blendMs":34,"cue":"stomp"},
+    {"id":"kineza_ignite_3","sheet":"authority","cell":3,"label":"Kinetic Cracks","holdMs":300,"blendMs":36,"cue":"kineticCracks"},
+    {"id":"kineza_ignite_4","sheet":"authority","cell":4,"label":"Gauntlet Snap","holdMs":280,"blendMs":32,"cue":"gauntletSnap"},
+    {"id":"kineza_ignite_5","sheet":"authority","cell":5,"label":"Emerald Ignition","holdMs":340,"blendMs":34,"cue":"ignite"},
+    {"id":"kineza_ignite_6","sheet":"authority","cell":6,"label":"Combat Ready","holdMs":390,"blendMs":28,"cue":"lock"}
+  ]
+}
