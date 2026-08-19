@@ -4,24 +4,24 @@
   "character": "auryi",
   "displayName": "Auryi",
   "sequenceName": "Auorb Materialization",
-  "status": "signature-source-found-awaiting-repo-import",
-  "signatureReady": false,
-  "sourceLocated": true,
+  "status": "signature-ready-qa",
+  "signatureReady": true,
   "accent": "gold-lavender",
-  "notes": "The exact approved six-frame Auorb signature sheet was located in the project File Library on 2026-08-19, but its binary is not yet present in the repository. Sequence Lab therefore uses existing locked Auryi battle poses only as bootstrap references until the approved sheet is imported; these preview poses are not replacements for the signature strip.",
-  "signaturePlan": [
-    {"frame":1,"beat":"Calm / ready","asset":null,"referenceAsset":"assets/poses/auryi/Pose01_BattleReady_BattleMasterA_LOCKED.png"},
-    {"frame":2,"beat":"Crown-like aura appears","asset":null,"referenceAsset":"assets/poses/auryi/Pose01_BattleReady_BattleMasterA_LOCKED.png"},
-    {"frame":3,"beat":"Crown orbits and expands","asset":null,"referenceAsset":"assets/poses/auryi/Pose02_VeilStep_LOCKED.png"},
-    {"frame":4,"beat":"Gold + lavender energy spirals to hand","asset":null,"referenceAsset":"assets/poses/auryi/Pose03_OrbGather_LOCKED.png"},
-    {"frame":5,"beat":"Energy condenses into Auorb","asset":null,"referenceAsset":"assets/poses/auryi/Pose03_OrbGather_LOCKED.png"},
-    {"frame":6,"beat":"Auorb solid and luminous; crown absorbed","asset":null,"referenceAsset":"assets/poses/auryi/Pose05_Recompose_LOCKED.png"}
-  ],
-  "previewFrames": [
-    {"id":"auryi_pose_1","asset":"assets/poses/auryi/Pose01_BattleReady_BattleMasterA_LOCKED.png","label":"Battle Ready","holdMs":320,"blendMs":54},
-    {"id":"auryi_pose_2","asset":"assets/poses/auryi/Pose02_VeilStep_LOCKED.png","label":"Veil Step","holdMs":260,"blendMs":48},
-    {"id":"auryi_pose_3","asset":"assets/poses/auryi/Pose03_OrbGather_LOCKED.png","label":"Orb Gather","holdMs":360,"blendMs":58,"cue":"orbGather"},
-    {"id":"auryi_pose_4","asset":"assets/poses/auryi/Pose04_Attack_VeilPulse_POSE_LOCKED.png","label":"Veil Pulse","holdMs":260,"blendMs":42},
-    {"id":"auryi_pose_5","asset":"assets/poses/auryi/Pose05_Recompose_LOCKED.png","label":"Recompose","holdMs":360,"blendMs":58}
+  "notes": "Uses the exact approved six-frame Auorb authority sheet. Sequence Lab v0.2 crops the 3x2 sheet and removes only edge-connected white background before alpha-bound normalization.",
+  "sheets": {
+    "auorb": {
+      "asset": "assets/sequences/qa/auryi_auorb_authority.jpg",
+      "cols": 3,
+      "rows": 2,
+      "backgroundKey": "edge-white"
+    }
+  },
+  "frames": [
+    {"id":"auryi_auorb_1","sheet":"auorb","cell":1,"label":"Calm / Ready","holdMs":260,"blendMs":42,"scale":1.000,"x":0,"y":0},
+    {"id":"auryi_auorb_2","sheet":"auorb","cell":2,"label":"Crown Appears","holdMs":300,"blendMs":46,"scale":1.000,"x":0,"y":0,"cue":"crownAppears"},
+    {"id":"auryi_auorb_3","sheet":"auorb","cell":3,"label":"Crown Orbit","holdMs":330,"blendMs":46,"scale":1.000,"x":0,"y":0,"cue":"crownOrbit"},
+    {"id":"auryi_auorb_4","sheet":"auorb","cell":4,"label":"Spiral to Hand","holdMs":360,"blendMs":44,"scale":1.000,"x":0,"y":0,"cue":"energySpiral"},
+    {"id":"auryi_auorb_5","sheet":"auorb","cell":5,"label":"Auorb Condenses","holdMs":380,"blendMs":42,"scale":1.000,"x":0,"y":0,"cue":"auorbCondense"},
+    {"id":"auryi_auorb_6","sheet":"auorb","cell":6,"label":"Auorb Locked","holdMs":420,"blendMs":40,"scale":1.000,"x":0,"y":0,"cue":"auorbLock"}
   ]
 }
