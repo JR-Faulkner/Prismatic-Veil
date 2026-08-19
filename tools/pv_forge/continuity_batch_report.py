@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a headless PriZim continuity report for all active authority sequences."""
+"""Generate a headless PriZim render-space continuity report for authority sequences."""
 from __future__ import annotations
 
 import argparse
@@ -18,6 +18,14 @@ EXPECTED = (
     "auryi_auorb.sequence.json",
     "kineza_gauntlet_ignition.sequence.json",
 )
+
+# Canonical CSS-space reference used only for headless ranking. Sequence Lab is responsive,
+# but its normalization ratios are stable; this reference lets authored x/y offsets participate.
+REFERENCE_STAGE_WIDTH = 360.0
+REFERENCE_STAGE_HEIGHT = 420.0
+TARGET_VISIBLE_HEIGHT = 0.72
+TARGET_VISIBLE_WIDTH = 0.68
+BASELINE_RATIO = 0.875
 
 DEFAULT_THRESHOLDS = {
     "heightPct": 0.12,
@@ -126,19 +134,28 @@ def frame_image(manifest: dict[str, Any], frame: dict[str, Any]) -> Image.Image:
     return remove_edge_white(crop)
 
 
-def make_mask(alpha: Image.Image, size: int = 72) -> list[int]:
-    width, height = alpha.size
+def make_bbox_mask(
+    alpha: Image.Image,
+    left: int,
+    top: int,
+    right: int,
+    bottom: int,
+    size: int = 72,
+) -> list[int]:
+    """Normalize the visible bbox before silhouette comparison so source padding is irrelevant."""
     src = alpha.load()
+    bbox_w = max(1, right - left + 1)
+    bbox_h = max(1, bottom - top + 1)
     mask: list[int] = []
     for my in range(size):
-        sy0 = math.floor(my * height / size)
-        sy1 = max(sy0 + 1, math.floor((my + 1) * height / size))
+        sy0 = top + math.floor(my * bbox_h / size)
+        sy1 = top + max(math.floor((my + 1) * bbox_h / size), math.floor(my * bbox_h / size) + 1)
         for mx in range(size):
-            sx0 = math.floor(mx * width / size)
-            sx1 = max(sx0 + 1, math.floor((mx + 1) * width / size))
+            sx0 = left + math.floor(mx * bbox_w / size)
+            sx1 = left + max(math.floor((mx + 1) * bbox_w / size), math.floor(mx * bbox_w / size) + 1)
             visible = False
-            for y in range(sy0, min(sy1, height)):
-                for x in range(sx0, min(sx1, width)):
+            for y in range(sy0, min(sy1, bottom + 1)):
+                for x in range(sx0, min(sx1, right + 1)):
                     if src[x, y] > 18:
                         visible = True
                         break
@@ -148,7 +165,7 @@ def make_mask(alpha: Image.Image, size: int = 72) -> list[int]:
     return mask
 
 
-def metrics(image: Image.Image) -> dict[str, Any]:
+def source_metrics(image: Image.Image) -> dict[str, Any]:
     alpha = image.getchannel("A")
     px = alpha.load()
     width, height = alpha.size
@@ -199,7 +216,31 @@ def metrics(image: Image.Image) -> dict[str, Any]:
         "fill": area / max(1, bbox_w * bbox_h),
         "sourceWidth": width,
         "sourceHeight": height,
-        "mask": make_mask(alpha),
+        "mask": make_bbox_mask(alpha, left, top, right, bottom),
+    }
+
+
+def render_metrics(raw: dict[str, Any], frame: dict[str, Any]) -> dict[str, Any]:
+    """Mirror SequenceLab.drawNormalized in a fixed reference CSS stage."""
+    base_scale = min(
+        REFERENCE_STAGE_HEIGHT * TARGET_VISIBLE_HEIGHT / max(1.0, raw["height"]),
+        REFERENCE_STAGE_WIDTH * TARGET_VISIBLE_WIDTH / max(1.0, raw["width"]),
+    )
+    scale = base_scale * float(frame.get("scale", 1.0))
+    bbox_center_x = raw["left"] + raw["width"] / 2.0
+    draw_x = REFERENCE_STAGE_WIDTH / 2.0 - bbox_center_x * scale + float(frame.get("x", 0.0))
+    draw_y = REFERENCE_STAGE_HEIGHT * BASELINE_RATIO - raw["bottom"] * scale + float(frame.get("y", 0.0))
+
+    return {
+        "width": raw["width"] * scale,
+        "height": raw["height"] * scale,
+        "bottom": draw_y + raw["bottom"] * scale,
+        "centerX": draw_x + raw["centerX"] * scale,
+        "lowerAnchorX": draw_x + raw["lowerAnchorX"] * scale,
+        "area": raw["area"] * scale * scale,
+        "sourceWidth": REFERENCE_STAGE_WIDTH,
+        "sourceHeight": REFERENCE_STAGE_HEIGHT,
+        "mask": raw["mask"],
     }
 
 
@@ -239,12 +280,17 @@ def compare_pair(
     source_height = max(1.0, mean(a["sourceHeight"], b["sourceHeight"]))
     source_width = max(1.0, mean(a["sourceWidth"], b["sourceWidth"]))
 
+    signed = {
+        "baselinePx": b["bottom"] - a["bottom"],
+        "centerPx": b["centerX"] - a["centerX"],
+        "lowerAnchorPx": b["lowerAnchorX"] - a["lowerAnchorX"],
+    }
     values = {
         "heightPct": abs(b["height"] - a["height"]) / avg_height,
         "widthPct": abs(b["width"] - a["width"]) / avg_width,
-        "baselinePct": abs(b["bottom"] - a["bottom"]) / source_height,
-        "centerPct": abs(b["centerX"] - a["centerX"]) / source_width,
-        "lowerAnchorPct": abs(b["lowerAnchorX"] - a["lowerAnchorX"]) / source_width,
+        "baselinePct": abs(signed["baselinePx"]) / source_height,
+        "centerPct": abs(signed["centerPx"]) / source_width,
+        "lowerAnchorPct": abs(signed["lowerAnchorPx"]) / source_width,
         "areaPct": abs(b["area"] - a["area"]) / avg_area,
         "silhouetteDistance": silhouette_distance(a["mask"], b["mask"]),
     }
@@ -281,6 +327,7 @@ def compare_pair(
         "status": status,
         "score": score,
         "recommendation": recommendation,
+        "signedRenderDeltaPx": {key: round(value, 3) for key, value in signed.items()},
         "reasons": [
             {
                 "metric": LABELS[item["key"]],
@@ -297,7 +344,11 @@ def compare_pair(
 
 def analyze_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
     frames = manifest["frames"] if manifest.get("signatureReady") else manifest["previewFrames"]
-    loaded = [(frame, metrics(frame_image(manifest, frame))) for frame in frames]
+    loaded = []
+    for frame in frames:
+        raw = source_metrics(frame_image(manifest, frame))
+        loaded.append((frame, render_metrics(raw, frame)))
+
     handoffs = [
         compare_pair(manifest, loaded[i][0], loaded[i + 1][0], loaded[i][1], loaded[i + 1][1], i)
         for i in range(len(loaded) - 1)
@@ -323,6 +374,7 @@ def markdown_report(report: dict[str, Any]) -> str:
         "# PriZim Continuity Batch Report",
         "",
         "Generated headlessly from current sequence manifests and QA authority proxies.",
+        "Scoring mirrors Sequence Lab visible-bound normalization before ranking handoffs.",
         "Phone QA remains the final motion-quality authority.",
         "",
     ]
@@ -346,7 +398,11 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"{reason['metric']} {reason['value']:.3f}/{reason['threshold']:.3f}"
                 for reason in item["reasons"]
             )
-            lines.append(f"- **{item['fromLabel']} → {item['toLabel']}**: {item['status']} {item['score']} · {reasons}")
+            delta = item["signedRenderDeltaPx"]
+            lines.append(
+                f"- **{item['fromLabel']} → {item['toLabel']}**: {item['status']} {item['score']} · "
+                f"{reasons} · render Δ center {delta['centerPx']:+.1f}px / lower {delta['lowerAnchorPx']:+.1f}px / baseline {delta['baselinePx']:+.1f}px"
+            )
         lines.append("")
     return "\n".join(lines) + "\n"
 
@@ -358,7 +414,13 @@ def main() -> int:
     args = parser.parse_args()
 
     sequences = [analyze_manifest(load_json(SEQUENCE_DIR / filename)) for filename in EXPECTED]
-    report = {"schemaVersion": 1, "generator": "PriZim Continuity Batch Report", "sequences": sequences}
+    report = {
+        "schemaVersion": 2,
+        "generator": "PriZim Continuity Batch Report",
+        "analysisSpace": "SequenceLab normalized render space",
+        "referenceStage": {"width": REFERENCE_STAGE_WIDTH, "height": REFERENCE_STAGE_HEIGHT},
+        "sequences": sequences,
+    }
 
     out_json = ROOT / args.out_json
     out_md = ROOT / args.out_md
