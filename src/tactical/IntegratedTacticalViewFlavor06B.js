@@ -3,7 +3,7 @@
 // 06B now inherits the current 06A active-turn stack so RUN BATTLE does not
 // fall through to the legacy Battle Presentation scene.
 
-import IntegratedTacticalScene06A from './IntegratedTacticalScene06A.js?v=9';
+import IntegratedTacticalScene06A from './IntegratedTacticalScene06A.js?v=10';
 
 const FLAVORS = Object.freeze({
   classic: Object.freeze({ label:'CLASSIC ISO', halfW:34, halfH:17, landscapeZoom:0.95, portraitZoom:0.68, focusPush:0 }),
