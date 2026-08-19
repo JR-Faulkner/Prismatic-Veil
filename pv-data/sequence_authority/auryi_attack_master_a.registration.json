@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "auryi_attack_master_a",
   "character": "auryi",
-  "status": "canon-approved-pending-binary-ingestion",
+  "status": "canon-approved-runtime-wired",
   "authority": "Auryi Attack Master A",
   "sourceSheet": {
     "width": 1536,
@@ -41,6 +41,10 @@
     "entranceToAttackCenterDeltaPx": 7.51,
     "entranceToAttackNormalizedIoU": 0.821,
     "assessment": "Healthy seam. Use deterministic registration and motion tuning; no regeneration indicated."
+  },
+  "runtime": {
+    "binary": "assets/sequences/production/auryi_attack_master_a.png",
+    "presenter": "src/tactical/ActiveTurnBattleSlice06A.js"
   },
   "assetPolicy": "Approved source art is canon. Cleanup/transparency/registration are runtime derivatives only."
 }
