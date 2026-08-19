@@ -7,7 +7,7 @@
 // proven to waste screen space. Existing HUD art/state logic remains intact;
 // this wrapper changes registration, scale, and menu topology only.
 
-import IntegratedTacticalViewFlavor06B from './IntegratedTacticalViewFlavor06B.js?v=8';
+import IntegratedTacticalViewFlavor06B from './IntegratedTacticalViewFlavor06B.js?v=9';
 
 export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFlavor06B {
   constructor() {
