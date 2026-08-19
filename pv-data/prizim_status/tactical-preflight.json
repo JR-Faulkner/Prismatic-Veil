@@ -110,6 +110,16 @@
       "detail": "Auryi deterministic registration and Kineza normalization profiles are wired"
     },
     {
+      "name": "runtime spritesheet handoff guard",
+      "status": "PASS",
+      "detail": "06A validates all attack frames and uses explicit Sprite texture/frame handoff"
+    },
+    {
+      "name": "mobile runtime diagnostics",
+      "status": "PASS",
+      "detail": "phone harness preserves readable error message + wrapped stack diagnostics"
+    },
+    {
       "name": "temporary canon block removed",
       "status": "PASS",
       "detail": "06D no longer blocks Auryi/Kineza from their production presenter"
