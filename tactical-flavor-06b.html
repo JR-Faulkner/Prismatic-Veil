@@ -19,7 +19,7 @@
   <button type="button" data-flavor="hybrid">HYBRID</button>
 </nav>
 <script type="module">
-import TacticalScene from './src/tactical/IntegratedTacticalViewFlavor06B.js?v=2';
+import TacticalScene from './src/tactical/IntegratedTacticalViewFlavor06B.js?v=3';
 import VeilBattleScene from './src/IntegratedVeilBattleScene.js?v=2';
 
 const boot=document.getElementById('loading');
@@ -27,13 +27,17 @@ const params=new URLSearchParams(location.search);
 const allowed=new Set(['classic','shallow','hybrid']);
 let flavor=params.get('flavor')||'shallow';
 if(!allowed.has(flavor))flavor='shallow';
-if(params.get('flavor')!==flavor){params.set('flavor',flavor);history.replaceState(null,'',`${location.pathname}?${params.toString()}`)}
+let changed=false;
+if(params.get('flavor')!==flavor){params.set('flavor',flavor);changed=true}
+if(params.get('battleslice')!=='1'){params.set('battleslice','1');changed=true}
+if(changed)history.replaceState(null,'',`${location.pathname}?${params.toString()}`);
 
 document.querySelectorAll('[data-flavor]').forEach(btn=>{
   btn.classList.toggle('active',btn.dataset.flavor===flavor);
   btn.addEventListener('click',()=>{
     const next=new URLSearchParams(location.search);
     next.set('flavor',btn.dataset.flavor);
+    next.set('battleslice','1');
     next.set('cb',String(Date.now()));
     location.search=next.toString();
   });
