@@ -7,7 +7,7 @@
 // slice internally so this page can never silently fall through to legacy BP
 // because a query parameter was omitted or stripped by the browser.
 
-import IntegratedTacticalScene06C from './IntegratedTacticalScene06C.js?v=10';
+import IntegratedTacticalScene06C from './IntegratedTacticalScene06C.js?v=11';
 
 export default class IntegratedTacticalScene06D extends IntegratedTacticalScene06C {
   _suppressLegacyEncounterHUD06D() {
@@ -35,8 +35,6 @@ export default class IntegratedTacticalScene06D extends IntegratedTacticalScene0
 
     this._moveUnitForQa(auryi, 7, 5);
     this._moveUnitForQa(prismel, 8, 6);
-    // Shallow ISO projects (8,7) down-left toward the pool edge. Keep Kineza
-    // on the right-side lawn cluster while preserving adjacent range-1 access.
     this._moveUnitForQa(kineza, 9, 6);
     this._moveUnitForQa(h1, 9, 5);
     this._moveUnitForQa(h2, 10, 6);
@@ -88,9 +86,6 @@ export default class IntegratedTacticalScene06D extends IntegratedTacticalScene0
   }
 
   async enterLinkedBattle(hero, target, actionKind) {
-    // Reassert the QA harness gate immediately before delegation. 06A now owns
-    // canon Prismel, Auryi, and Kineza presentation and keeps all three inside
-    // the same validated active-turn state path.
     this._forceActiveTurnHarness06D();
     return super.enterLinkedBattle(hero, target, actionKind);
   }
