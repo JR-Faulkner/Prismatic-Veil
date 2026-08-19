@@ -16,13 +16,13 @@
     "style": "impact",
     "axis": "y",
     "direction": -1,
-    "minBlendMs": 84,
-    "blendScale": 0.95,
-    "travelPx": 8,
-    "enterScale": 0.972,
-    "overlap": 0.34,
-    "settleMs": 76,
-    "settleScale": 1.012
+    "minBlendMs": 72,
+    "blendScale": 0.90,
+    "travelPx": 5,
+    "enterScale": 0.988,
+    "overlap": 0.26,
+    "settleMs": 60,
+    "settleScale": 1.006
   },
   "continuityGate": {
     "heightPct": 0.11,
