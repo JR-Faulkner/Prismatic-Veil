@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
 
 const url = process.env.PRIZIM_TACTICAL_URL || 'http://127.0.0.1:4173/tactical-shell-06d-clean.html';
+const expectedMarker = process.env.PRIZIM_BUILD_MARKER || '';
 const failures = [];
 let browser;
 
@@ -38,6 +39,13 @@ try {
   const canvasCount = await page.locator('canvas').count();
   if (canvasCount < 1) record('boot', 'Phaser canvas was not created');
 
+  if (expectedMarker) {
+    const actualMarker = await page.evaluate(() => window.PRIZIM_BUILD_MARKER || '');
+    if (actualMarker !== expectedMarker) {
+      record('delivery', `build marker mismatch: expected ${expectedMarker}, received ${actualMarker || '<none>'}`);
+    }
+  }
+
   const loadingState = await page.locator('#loading').evaluate(el => ({
     display: getComputedStyle(el).display,
     text: el.textContent || '',
@@ -61,6 +69,7 @@ try {
   } else {
     console.log('PriZim Tactical Boot Smoke: PASS');
     console.log(`Booted ${url} at 844x390, DPR 3, touch enabled.`);
+    if (expectedMarker) console.log(`Verified deployed marker ${expectedMarker}.`);
   }
 } catch (error) {
   record('runner', error);
