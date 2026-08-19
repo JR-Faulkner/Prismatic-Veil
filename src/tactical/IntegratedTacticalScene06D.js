@@ -2,6 +2,10 @@
 // Purpose: expose the compact HUD without the legacy encounter slab,
 // preserve the proven lawn-side quick-start staging, and prevent deprecated
 // Auryi/Kineza substitute pose sequences from presenting themselves as canon.
+//
+// IMPORTANT: 06D is a dedicated QA harness. It force-enables the active-turn
+// slice internally so this page can never silently fall through to legacy BP
+// because a query parameter was omitted or stripped by the browser.
 
 import IntegratedTacticalScene06C from './IntegratedTacticalScene06C.js?v=8';
 
@@ -10,6 +14,13 @@ export default class IntegratedTacticalScene06D extends IntegratedTacticalScene0
     if (this.encounterHUD && this.encounterHUD.container) {
       this.encounterHUD.container.setVisible(false);
     }
+  }
+
+  _forceActiveTurnHarness06D() {
+    if (!this.activeTurnBattleSlice) return;
+    // Harness-local override only. Production gating remains untouched in the
+    // base ActiveTurnBattleSlice implementation.
+    this.activeTurnBattleSlice.isEnabled = () => true;
   }
 
   _stageLawnSideQuickStart06D() {
@@ -24,8 +35,6 @@ export default class IntegratedTacticalScene06D extends IntegratedTacticalScene0
     const h3 = byEnemy('hushling_3');
     if (!prismel || !auryi || !kineza || !h1 || !h2 || !h3) return;
 
-    // Proven 06A lawn-side QA cluster, deliberately away from Pool Splash
-    // and shifted toward the right-hand side of the backyard.
     this._moveUnitForQa(auryi, 7, 5);
     this._moveUnitForQa(prismel, 8, 6);
     this._moveUnitForQa(kineza, 8, 7);
@@ -38,8 +47,6 @@ export default class IntegratedTacticalScene06D extends IntegratedTacticalScene0
     }
     if (this.grid) this.grid.clearAllOverlays();
 
-    // PriZim 06D: detail stays available on demand, but battlefield view is
-    // the default. The drawer should not open as a giant first impression.
     this.hudExpanded = false;
     if (this.heroCardsDrawer) {
       this.heroCardsDrawer.x = -(this._hudDrawerHiddenOffset || 280);
@@ -58,10 +65,12 @@ export default class IntegratedTacticalScene06D extends IntegratedTacticalScene0
 
   create() {
     super.create();
+    this._forceActiveTurnHarness06D();
     this._suppressLegacyEncounterHUD06D();
     this._stageLawnSideQuickStart06D();
 
     this.time.delayedCall(260, () => {
+      this._forceActiveTurnHarness06D();
       this._suppressLegacyEncounterHUD06D();
       this.layoutHUD();
       this.refreshHUD();
@@ -79,14 +88,16 @@ export default class IntegratedTacticalScene06D extends IntegratedTacticalScene0
   }
 
   async enterLinkedBattle(hero, target, actionKind) {
-    // Deprecated high-res pose substitutions are not canon entrances/attacks.
-    // Refuse to present them until the approved production entrance + Attack
-    // Master A assets are ingested.
+    // Canon guard: until the real production entrance + Attack Master A assets
+    // are ingested, Auryi/Kineza must never fall through to old pose substitutes
+    // or the legacy BP bridge.
     if (hero && (hero.id === 'auryi' || hero.id === 'kineza')) {
       this.setMessage(`${hero.name.toUpperCase()} • CANON ENTRANCE + ATTACK QUEUED`);
       return;
     }
 
+    // Prismel must stay inside the active-turn slice in this harness.
+    this._forceActiveTurnHarness06D();
     return super.enterLinkedBattle(hero, target, actionKind);
   }
 }
