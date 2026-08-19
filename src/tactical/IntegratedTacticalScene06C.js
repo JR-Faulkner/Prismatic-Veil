@@ -26,8 +26,6 @@ export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFl
       Math.max(230, Math.round(w * (landscape ? 0.35 : 0.72)))
     );
 
-    // Detail/status remains available, but no longer arrives as a nearly
-    // full-width wall. The existing hero-card geometry remains authoritative.
     let cardY = margin + (landscape ? 52 : 70);
     this.heroCards.forEach(card => {
       this._layoutHeroCard(card, statusW);
@@ -75,8 +73,6 @@ export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFl
     const menuY = h - margin - totalH;
     this.actionMenu.container.setPosition(menuX, menuY);
 
-    // Zoom is useful while planning, but competing controls add noise while a
-    // hero command surface is open. Visibility is refreshed again on selection.
     if (this.actionMenu.container.visible) this.zoomControls.container.setVisible(false);
   }
 
@@ -89,16 +85,12 @@ export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFl
     const compact = w < 560 || h < 520;
     const margin = compact ? 8 : 12;
 
-    // Micro phase badge. Keep the approved phase-frame art, just stop asking it
-    // to behave like a full-width banner.
     const phaseW = landscape ? 148 : Math.min(142, w * 0.38);
     const phaseH = Math.round(phaseW * (100 / 555));
     this.phaseFrame.setDisplaySize(phaseW, phaseH).setPosition(margin + phaseW * 0.5, margin);
     this.turnText.setPosition(margin + phaseW * 0.5, margin + phaseH * 0.5)
       .setFontSize(landscape ? 10 : 9);
 
-    // The giant goal plate is redundant once the player understands the map.
-    // Preserve its information as a one-line instrument ribbon instead.
     this.goalFrame.setVisible(false);
     this.goalSecondaryText.setVisible(false);
     this.goalPrimaryText
@@ -111,8 +103,6 @@ export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFl
         margin + phaseH * 0.5
       );
 
-    // Narration is telemetry, not architecture. Small, centered, and clear of
-    // the active battlefield instead of reserving another permanent panel.
     this.messageText
       .setFontSize(landscape ? 10 : 9)
       .setWordWrapWidth(w * (landscape ? 0.52 : 0.84))
@@ -121,8 +111,6 @@ export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFl
     this._layoutCompactStatus06C(w, h, compact, margin);
     this._layoutCommandGrid06C(w, h, compact, margin);
 
-    // Planning controls tuck into the bottom-right/top-right edge and stay
-    // visually subordinate to commands.
     if (!this.actionMenu.container.visible) {
       this.zoomControls.container.setVisible(true);
       const y = landscape ? margin + 20 : h - margin - 18;
@@ -150,7 +138,7 @@ export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFl
     super.create();
     this.time.delayedCall(220, () => {
       this.layoutHUD();
-      this.setMessage('06C PRIЯIM SHELL • shallow tactical • compact command grid');
+      this.setMessage('06C PRIZIM SHELL • shallow tactical • compact command grid');
       this.refreshHUD();
     });
   }
