@@ -27,7 +27,7 @@ The approved source sheets are 1536x1024 with six 512x512 cells in reading order
 
 ## QA proxy rule
 
-Current Sequence Lab v0.2.3 uses lightweight WebP QA proxies under `assets/sequences/qa/`.
+Current Sequence Lab v0.2.4 uses lightweight WebP QA proxies under `assets/sequences/qa/`.
 
 - QA proxies preserve the approved sheet composition and frame order.
 - Production masters remain unchanged and authoritative.
@@ -135,9 +135,32 @@ For Prismel, `ready_6 -> attack_1 -> attack_2 -> attack_3` remains a perceptual 
 
 Cross-dissolve is not automatically desirable.
 
-- Large silhouette changes should use short or zero blend.
+- Large silhouette changes should use short or low-overlap blends.
 - Similar adjacent poses may use softer blending.
 - Judge motion on phone recording, not screenshots alone.
+- Blend duration is not the whole animation. Translation, scale settling, easing, and overlap shape are separate motion concerns.
+
+## Motion Bridge rule
+
+Sequence Lab v0.2.4 introduces the PriZim Motion Bridge layer. Its purpose is to extract the best possible animation read from locked canon frames before requesting new bridge art.
+
+Motion Bridge rules:
+
+1. Playback timing must use `requestAnimationFrame` for active transitions and frame holds rather than relying on CSS opacity transitions plus `sleep()` as the primary animation clock.
+2. Canon frames remain untouched. Motion Bridge only changes how approved frames travel, overlap, ease, and settle between authored poses.
+3. Per-frame registration remains authoritative for final pose placement. Motion Bridge may interpolate toward that placement, but must settle on the authored x/y/scale values.
+4. Crossfade overlap is character- and transition-specific. Heavy silhouette changes should reduce simultaneous double-image time instead of increasing blur.
+5. A short settle phase may add controlled overshoot or float without changing the source frame.
+6. Motion behavior belongs in neutral manifest data, not scattered magic numbers in the renderer.
+7. If Motion Bridge cannot make a specific handoff read naturally on phone, PriZim may recommend one or two bridge poses. It must not automatically generate or request them before the existing authority sequence has been measured and tested.
+
+### Current motion profiles
+
+- Prismel: `controlled` profile. Horizontal micro-travel, restrained scale change, medium-low overlap, short settle. Goal: deliberate sorcerer control without ghosting the staff handoff.
+- Auryi: `float` profile. Vertical rise, softer easing, high overlap, long settle. Goal: hovering, aura-driven continuity rather than hard pose switching.
+- Kineza: `impact` profile. Vertical landing motion, lower overlap, stronger scale settle, fast ease-out. Goal: kinetic weight and snap without mushy double silhouettes.
+
+`tools/pv_forge/sequence_check.py` validates Motion Bridge profile ranges so an invalid QA profile cannot silently enter the tester.
 
 ## Asset transfer rule
 
@@ -185,3 +208,5 @@ v0.2.1 added the brighter phone-readable inspection presentation without changin
 v0.2.2 added the aggressive visibility experiment that exposed the real stage-layer problem.
 
 v0.2.3 removes the stale loading overlay and restores normal QA exposure while preserving all sequence data and canonical art.
+
+v0.2.4 replaces CSS/sleep-driven pose swapping with the data-driven PriZim Motion Bridge: requestAnimationFrame timing, eased translation/scale interpolation, selective overlap, and character-specific settle behavior. No new character art is introduced in this pass.
