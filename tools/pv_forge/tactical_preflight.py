@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """PriZim Tactical Preflight.
 
-Static production guard for phone-test harnesses. This checker exists to catch
-repeat regressions before human QA: disabled active-turn slices, legacy BP
-fallback exposure, missing lawn-side staging, legacy HUD slabs, stale module
-chains, and deprecated pose authority leaking into the current harness.
+Static production guard for phone-test harnesses. Catches repeat regressions
+before human QA: disabled active-turn slices, legacy BP fallback exposure,
+missing lawn staging, legacy HUD slabs, stale module chains, missing canon
+masters, and deprecated asset authority leaking into Tactical runtime.
 
 PASS = invariant verified
 WARN = known debt, test may proceed
@@ -27,7 +27,15 @@ SCENE_06D = ROOT / "src" / "tactical" / "IntegratedTacticalScene06D.js"
 SCENE_06C = ROOT / "src" / "tactical" / "IntegratedTacticalScene06C.js"
 SCENE_06B = ROOT / "src" / "tactical" / "IntegratedTacticalViewFlavor06B.js"
 SCENE_06A = ROOT / "src" / "tactical" / "IntegratedTacticalScene06A.js"
+SLICE_06A = ROOT / "src" / "tactical" / "ActiveTurnBattleSlice06A.js"
 SLICE_BASE = ROOT / "src" / "tactical" / "ActiveTurnBattleSlice.js"
+
+PRODUCTION_MASTERS = [
+    ROOT / "assets/sequences/production/auryi_auorb_entrance_master_a.png",
+    ROOT / "assets/sequences/production/auryi_attack_master_a.png",
+    ROOT / "assets/sequences/production/kineza_gauntlet_ignition_master_a.png",
+    ROOT / "assets/sequences/production/kineza_attack_master_a.png",
+]
 
 
 @dataclass
@@ -58,8 +66,9 @@ def main() -> int:
         "06D": SCENE_06D,
         "06C": SCENE_06C,
         "06B": SCENE_06B,
-        "06A": SCENE_06A,
-        "slice": SLICE_BASE,
+        "06A scene": SCENE_06A,
+        "06A slice": SLICE_06A,
+        "base slice": SLICE_BASE,
     }
     texts = {k: read(v) for k, v in files.items()}
     results: list[Check] = []
@@ -76,37 +85,35 @@ def main() -> int:
     d = texts["06D"]
     c = texts["06C"]
     b = texts["06B"]
-    a = texts["06A"]
-    base = texts["slice"]
+    scene_a = texts["06A scene"]
+    slice_a = texts["06A slice"]
+    base = texts["base slice"]
 
-    # Entry chain and cache-bust invariants.
     results.append(check(
         "06D harness entry",
         "IntegratedTacticalScene06D.js?v=" in harness,
-        "phone harness imports 06D with explicit module version",
+        "phone harness imports versioned 06D",
         "phone harness is not pinned to a versioned 06D module",
     ))
 
-    chain = [("06D→06C", d), ("06C→06B", c), ("06B→06A", b)]
+    chain = [("06D→06C", d), ("06C→06B", c), ("06B→06A", b), ("06A scene→06A slice", scene_a)]
     for label, text in chain:
-        rel = versioned_imports(text)
-        ok = bool(rel) and all("?v=" in p for p in rel)
+        rels = versioned_imports(text)
+        ok = bool(rels) and all("?v=" in p for p in rels)
         results.append(check(
             f"versioned import chain {label}",
             ok,
             f"{label} relative imports are cache-versioned",
-            f"{label} contains an unversioned relative import: {rel}",
+            f"{label} contains an unversioned relative import: {rels}",
         ))
 
-    # Tactical view authority.
     results.append(check(
         "shallow tactical lock",
         "return 'shallow'" in c and "halfH:13" in b,
-        "06C locks shallow presentation and 06B defines shallow half-height 13",
+        "06C locks shallow and 06B defines half-height 13",
         "shallow presentation is not deterministically locked",
     ))
 
-    # Human-QA staging invariant.
     required_moves = [
         "_moveUnitForQa(auryi, 7, 5)",
         "_moveUnitForQa(prismel, 8, 6)",
@@ -124,7 +131,6 @@ def main() -> int:
         f"quick-start staging drifted; missing: {missing_moves}",
     ))
 
-    # Compact HUD must suppress inherited encounter slab.
     suppress_ok = (
         "_suppressLegacyEncounterHUD06D" in d
         and "encounterHUD.container.setVisible(false)" in d
@@ -133,81 +139,92 @@ def main() -> int:
     results.append(check(
         "legacy encounter HUD suppression",
         suppress_ok,
-        "06D suppresses the inherited TacticalEncounterHUD during create/layout/refresh",
-        "legacy TacticalEncounterHUD can reappear over the compact shell",
+        "06D suppresses TacticalEncounterHUD during create/layout/refresh",
+        "legacy TacticalEncounterHUD can reappear over compact shell",
     ))
 
-    # The active-turn base is intentionally query-gated in production.
     gate_exists = "params.get('battleslice')" in base and "isEnabled()" in base
     results.append(check(
         "production active-turn gate documented",
         gate_exists,
-        "base active-turn slice remains explicitly battleslice-gated",
+        "base active-turn slice remains battleslice-gated",
         "active-turn production gate cannot be verified",
     ))
 
-    # Dedicated QA harness must defeat the missing-query regression internally.
     force_ok = (
         "_forceActiveTurnHarness06D" in d
         and "this.activeTurnBattleSlice.isEnabled = () => true" in d
-        and "this._forceActiveTurnHarness06D();" in d
+        and "return super.enterLinkedBattle(hero, target, actionKind);" in d
     )
     results.append(check(
         "QA active-turn force-enable",
         force_ok,
-        "06D force-enables active-turn locally; URL query omission cannot disable the slice",
-        "06D can silently fall through because active-turn enablement depends on URL state",
+        "06D reasserts active-turn before inherited battle entry",
+        "06D can silently fall through to legacy BP",
     ))
 
-    # Canon guard: Auryi/Kineza may not reach inherited substitute poses or BP.
-    canon_guard_ok = (
-        "hero.id === 'auryi' || hero.id === 'kineza'" in d
-        and "CANON ENTRANCE + ATTACK QUEUED" in d
-        and re.search(r"if \(hero && \(hero\.id === 'auryi' \|\| hero\.id === 'kineza'\)\) \{[\s\S]*?return;", d)
+    intercept_ok = all(x in slice_a for x in ["'prismel'", "'auryi'", "'kineza'", "shouldIntercept"])
+    results.append(check(
+        "three-hero active-turn interception",
+        intercept_ok,
+        "06A active-turn slice intercepts Prismel, Auryi, and Kineza",
+        "06A does not prove all three heroes stay inside active-turn",
+    ))
+
+    master_names = [p.stem for p in PRODUCTION_MASTERS]
+    missing_files = [p.relative_to(ROOT).as_posix() for p in PRODUCTION_MASTERS if not p.exists()]
+    results.append(check(
+        "production master binaries",
+        not missing_files,
+        "all four Auryi/Kineza production masters exist",
+        f"missing production masters: {missing_files}",
+    ))
+
+    missing_preloads = [name for name in master_names if name not in scene_a]
+    results.append(check(
+        "production master preload wiring",
+        not missing_preloads,
+        "06A preloads all four production masters as 512x512 spritesheets",
+        f"06A preload missing: {missing_preloads}",
+    ))
+
+    registration_ok = (
+        "attackRegistration" in slice_a
+        and "0.98869" in slice_a
+        and "0.94027" in slice_a
+        and "_registration06A" in slice_a
     )
     results.append(check(
-        "Auryi/Kineza false-canon guard",
-        bool(canon_guard_ok),
-        "06D blocks Auryi/Kineza before inherited substitute presentation or legacy BP",
-        "Auryi/Kineza can reach deprecated substitute presentation or BP fallback",
+        "PriZim registration applied",
+        registration_ok,
+        "Auryi deterministic registration and Kineza normalization profiles are wired",
+        "PriZim attack registration profiles are not wired into 06A",
     ))
 
-    # Prismel must force the slice immediately before delegating to inherited bridge.
-    prismel_guard_ok = (
-        "this._forceActiveTurnHarness06D();\n    return super.enterLinkedBattle" in d
-        or "this._forceActiveTurnHarness06D();\r\n    return super.enterLinkedBattle" in d
-    )
+    temporary_block_absent = "CANON ENTRANCE + ATTACK QUEUED" not in d
     results.append(check(
-        "Prismel BP fallback guard",
-        prismel_guard_ok,
-        "06D reasserts active-turn enablement immediately before inherited battle entry",
-        "Prismel can delegate to inherited battle entry without reasserting active-turn",
+        "temporary canon block removed",
+        temporary_block_absent,
+        "06D no longer blocks Auryi/Kineza from their production presenter",
+        "06D still contains the temporary Auryi/Kineza block",
     ))
 
-    # Known debt is surfaced rather than hidden: deprecated pose assets still exist in 06A.
-    deprecated_refs = [
-        "Pose01_BattleReady_BattleMasterA_LOCKED.png",
-        "Kineza01_Idle_LOCKED.png",
-    ]
-    old_present = any(x in a for x in deprecated_refs)
+    deprecated_refs = ["Pose01_BattleReady_BattleMasterA_LOCKED.png", "Kineza01_Idle_LOCKED.png"]
+    old_present = any(x in slice_a or x in scene_a for x in deprecated_refs)
     results.append(check(
         "deprecated substitute assets isolated",
         not old_present,
-        "deprecated Auryi/Kineza substitute pose assets are absent from inherited 06A",
-        "deprecated substitute pose assets still exist in 06A; 06D runtime guards must remain until production masters are ingested",
-        warn=True,
+        "deprecated Auryi/Kineza substitute pose assets are absent from current 06A wiring",
+        "deprecated substitute pose assets leaked back into current 06A wiring",
     ))
 
-    # Production canon ingestion is not complete yet. Make that explicit every run.
-    attack_master_refs = (
-        "auryi_attack_master" in a.lower() and "kineza_attack_master" in a.lower()
-    )
+    qa_proxy_refs = ["auryi_auorb.webp", "kineza_gauntlet_ignition.webp"]
+    proxy_leak = any(x in slice_a or x in scene_a or x in d for x in qa_proxy_refs)
     results.append(check(
-        "Attack Master A production ingestion",
-        attack_master_refs,
-        "Auryi and Kineza Attack Master A runtime assets are referenced in active-turn wiring",
-        "Auryi/Kineza Attack Master A production binaries are not yet referenced by 06A",
-        warn=True,
+        "QA proxies excluded from Tactical runtime",
+        not proxy_leak,
+        "Tactical runtime references production masters only",
+        "QA proxy asset leaked into Tactical runtime",
     ))
 
     failures = [r for r in results if r.status == "FAIL"]
