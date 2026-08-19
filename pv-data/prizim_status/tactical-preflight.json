@@ -1,0 +1,128 @@
+{
+  "tool": "PriZim Tactical Preflight",
+  "summary": "PASS",
+  "failures": 0,
+  "warnings": 0,
+  "checks": [
+    {
+      "name": "required file: harness",
+      "status": "PASS",
+      "detail": "tactical-shell-06d-clean.html exists"
+    },
+    {
+      "name": "required file: 06D",
+      "status": "PASS",
+      "detail": "src/tactical/IntegratedTacticalScene06D.js exists"
+    },
+    {
+      "name": "required file: 06C",
+      "status": "PASS",
+      "detail": "src/tactical/IntegratedTacticalScene06C.js exists"
+    },
+    {
+      "name": "required file: 06B",
+      "status": "PASS",
+      "detail": "src/tactical/IntegratedTacticalViewFlavor06B.js exists"
+    },
+    {
+      "name": "required file: 06A scene",
+      "status": "PASS",
+      "detail": "src/tactical/IntegratedTacticalScene06A.js exists"
+    },
+    {
+      "name": "required file: 06A slice",
+      "status": "PASS",
+      "detail": "src/tactical/ActiveTurnBattleSlice06A.js exists"
+    },
+    {
+      "name": "required file: base slice",
+      "status": "PASS",
+      "detail": "src/tactical/ActiveTurnBattleSlice.js exists"
+    },
+    {
+      "name": "06D harness entry",
+      "status": "PASS",
+      "detail": "phone harness imports versioned 06D"
+    },
+    {
+      "name": "versioned import chain 06D\u219206C",
+      "status": "PASS",
+      "detail": "06D\u219206C relative imports are cache-versioned"
+    },
+    {
+      "name": "versioned import chain 06C\u219206B",
+      "status": "PASS",
+      "detail": "06C\u219206B relative imports are cache-versioned"
+    },
+    {
+      "name": "versioned import chain 06B\u219206A",
+      "status": "PASS",
+      "detail": "06B\u219206A relative imports are cache-versioned"
+    },
+    {
+      "name": "versioned import chain 06A scene\u219206A slice",
+      "status": "PASS",
+      "detail": "06A scene\u219206A slice relative imports are cache-versioned"
+    },
+    {
+      "name": "shallow tactical lock",
+      "status": "PASS",
+      "detail": "06C locks shallow and 06B defines half-height 13"
+    },
+    {
+      "name": "lawn-side quick-start staging",
+      "status": "PASS",
+      "detail": "approved lawn-side QA cluster and camera focus are present"
+    },
+    {
+      "name": "legacy encounter HUD suppression",
+      "status": "PASS",
+      "detail": "06D suppresses TacticalEncounterHUD during create/layout/refresh"
+    },
+    {
+      "name": "production active-turn gate documented",
+      "status": "PASS",
+      "detail": "base active-turn slice remains battleslice-gated"
+    },
+    {
+      "name": "QA active-turn force-enable",
+      "status": "PASS",
+      "detail": "06D reasserts active-turn before inherited battle entry"
+    },
+    {
+      "name": "three-hero active-turn interception",
+      "status": "PASS",
+      "detail": "06A active-turn slice intercepts Prismel, Auryi, and Kineza"
+    },
+    {
+      "name": "production master binaries",
+      "status": "PASS",
+      "detail": "all four Auryi/Kineza production masters exist"
+    },
+    {
+      "name": "production master preload wiring",
+      "status": "PASS",
+      "detail": "06A preloads all four production masters as 512x512 spritesheets"
+    },
+    {
+      "name": "PriZim registration applied",
+      "status": "PASS",
+      "detail": "Auryi deterministic registration and Kineza normalization profiles are wired"
+    },
+    {
+      "name": "temporary canon block removed",
+      "status": "PASS",
+      "detail": "06D no longer blocks Auryi/Kineza from their production presenter"
+    },
+    {
+      "name": "deprecated substitute assets isolated",
+      "status": "PASS",
+      "detail": "deprecated Auryi/Kineza substitute pose assets are absent from current 06A wiring"
+    },
+    {
+      "name": "QA proxies excluded from Tactical runtime",
+      "status": "PASS",
+      "detail": "Tactical runtime references production masters only"
+    }
+  ]
+}

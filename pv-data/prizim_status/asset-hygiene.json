@@ -1,0 +1,184 @@
+{
+  "tool": "PriZim Asset Hygiene",
+  "result": "PASS",
+  "scope": "Too Quiet Tactical runtime",
+  "runtime_files_scanned": [
+    "src/BattleController.js",
+    "src/BattleFXDirector.js",
+    "src/BattleAtmosphere.js",
+    "src/EnemyHushlingView.js",
+    "src/AmbientBattlefieldDirector.js",
+    "src/TargetReticle.js",
+    "src/EnemyAudioDirector.js",
+    "src/UiAudio.js",
+    "src/KitFrame.js",
+    "src/BattleConfig.js",
+    "src/EnemyViewFactory.js",
+    "src/BattleFX.js",
+    "src/EnemyWraithView.js",
+    "src/VeilBattleScene.js",
+    "src/ActorPortrait.js",
+    "src/IntegratedVeilBattleScene.js",
+    "src/LinkedBattleTransition.js",
+    "src/BattleHUD.js",
+    "src/EnemyCatalog.js",
+    "src/BattleFeedback.js",
+    "src/HudFrame.js",
+    "src/BattleCamera.js",
+    "src/CommandConsole.js",
+    "src/BattleFeel.js",
+    "src/VeilFracture.js",
+    "src/Timeline.js",
+    "src/HeroPoseView.js",
+    "src/tactical/TacticalCamera.js",
+    "src/tactical/IntegratedTacticalScene06D.js",
+    "src/tactical/IntegratedTacticalScene06C.js",
+    "src/tactical/EnemyAttackCinematic.js",
+    "src/tactical/IntegratedTacticalScene05H.js",
+    "src/tactical/TacticalEncounterHUD.js",
+    "src/tactical/IntegratedTacticalSceneV3.js",
+    "src/tactical/DreamViewPrototype.js",
+    "src/tactical/IntegratedTacticalScene05L.js",
+    "src/tactical/ActiveTurnBattleSlice05M1.js",
+    "src/tactical/IntegratedTacticalScene06A.js",
+    "src/tactical/UnitController.js",
+    "src/tactical/TacticalScene.js",
+    "src/tactical/IntegratedTacticalScene05G.js",
+    "src/tactical/TacticalPathfinder.js",
+    "src/tactical/TacticalGrid.js",
+    "src/tactical/TacticalEnvironmentLayer.js",
+    "src/tactical/IntegratedTacticalScene.js",
+    "src/tactical/ActiveTurnBattleSliceV3B.js",
+    "src/tactical/ActiveTurnBattleSlice05K.js",
+    "src/tactical/IntegratedTacticalScene05I.js",
+    "src/tactical/BattleCinematic.js",
+    "src/tactical/IntegratedTacticalScene05F.js",
+    "src/tactical/SoundNodeRestorationPrototype.js",
+    "src/tactical/ActiveTurnBattleSlice05J.js",
+    "src/tactical/IntegratedTacticalScene05M.js",
+    "src/tactical/ActiveTurnBattleSlice.js",
+    "src/tactical/IntegratedTacticalSceneV3B.js",
+    "src/tactical/ActiveTurnBattleSliceV3.js",
+    "src/tactical/ActiveTurnBattleSlice05G.js",
+    "src/tactical/ActiveTurnBattleSlice05F.js",
+    "src/tactical/ActiveTurnBattleSlice06A.js",
+    "src/tactical/IntegratedTacticalScene05K.js",
+    "src/tactical/DreamViewTacticalFeedback.js",
+    "src/tactical/IntegratedTacticalViewFlavor06B.js",
+    "src/tactical/ActiveTurnBattleSlice05M.js",
+    "src/tactical/DreamViewBattleMode.js",
+    "src/tactical/ActiveTurnBattleSlice05L.js",
+    "src/tactical/DreamViewStaging.js",
+    "src/tactical/IntroCrawlScene.js",
+    "src/tactical/TooQuietVictoryPrototype.js",
+    "src/tactical/ActiveTurnBattleSlice05H.js",
+    "src/tactical/TitleScene.js",
+    "src/tactical/IntegratedTacticalScene05J.js",
+    "src/tactical/TerrainRegistry.js",
+    "src/tactical/ActiveTurnBattleSlice05I.js",
+    "src/tactical/TacticalConfig.js",
+    "src/tactical/IntegratedTacticalScene05M1.js",
+    "src/tactical/DreamViewCalibrationSandbox.js",
+    "src/tactical/ActiveTurnBattleSlice05FPatched.js",
+    "src/tactical/TacticalActionConsole.js",
+    "src/prizim/ContinuityGate.js",
+    "src/prizim/SequenceLab.js",
+    "src/generated/prismelActiveTurnRegistration.js",
+    "src/generated/prismelActiveTurn05M1Transition.js",
+    "src/generated/prismelActiveTurn05MTuning.js",
+    "tactical-field-05j.html",
+    "tactical-shell-06c-fresh.html",
+    "tactical-flavor-06b.html",
+    "tactical-field-05g.html",
+    "tactical-field-05e3b.html",
+    "tactical-field-05f.html",
+    "tactical-prototype.html",
+    "tactical-shell-06c.html",
+    "tactical-field-05l.html",
+    "tactical-field-v2.html",
+    "tactical-field-05k.html",
+    "tactical-shell-06d-clean.html",
+    "tactical-field-05m.html",
+    "tactical-field-06a.html",
+    "tactical-field-05e3.html",
+    "tactical-field-05i.html"
+  ],
+  "failures": [],
+  "rows": [
+    {
+      "asset": "prismel",
+      "class": "KEEP",
+      "detail": "active production authority"
+    },
+    {
+      "asset": "auryi",
+      "class": "KEEP",
+      "detail": "active production authority"
+    },
+    {
+      "asset": "kineza",
+      "class": "KEEP",
+      "detail": "active production authority"
+    },
+    {
+      "asset": "assets/poses/auryi/Pose04_Attack_VeilPulse_POSE_LOCKED.png",
+      "class": "ARCHIVE",
+      "detail": "Older high-resolution battle-pose set. Not canonical entrance/attack continuation for current active-turn Tactical."
+    },
+    {
+      "asset": "assets/poses/auryi/Pose01_BattleReady_BattleMasterA_LOCKED.png",
+      "class": "ARCHIVE",
+      "detail": "Older high-resolution battle-pose set. Not canonical entrance/attack continuation for current active-turn Tactical."
+    },
+    {
+      "asset": "assets/poses/auryi/Pose02_VeilStep_LOCKED.png",
+      "class": "ARCHIVE",
+      "detail": "Older high-resolution battle-pose set. Not canonical entrance/attack continuation for current active-turn Tactical."
+    },
+    {
+      "asset": "assets/poses/auryi/Pose05_Recompose_LOCKED.png",
+      "class": "ARCHIVE",
+      "detail": "Older high-resolution battle-pose set. Not canonical entrance/attack continuation for current active-turn Tactical."
+    },
+    {
+      "asset": "assets/poses/auryi/Pose03_OrbGather_LOCKED.png",
+      "class": "ARCHIVE",
+      "detail": "Older high-resolution battle-pose set. Not canonical entrance/attack continuation for current active-turn Tactical."
+    },
+    {
+      "asset": "assets/poses/kineza/Kineza01_Idle_LOCKED.png",
+      "class": "ARCHIVE",
+      "detail": "Older Idle/Step/Coil/Strike/Recover pose set. Not canonical entrance/attack continuation for current active-turn Tactical."
+    },
+    {
+      "asset": "assets/poses/kineza/Kineza04_Strike_LOCKED.png",
+      "class": "ARCHIVE",
+      "detail": "Older Idle/Step/Coil/Strike/Recover pose set. Not canonical entrance/attack continuation for current active-turn Tactical."
+    },
+    {
+      "asset": "assets/poses/kineza/Kineza05_Recover_LOCKED.png",
+      "class": "ARCHIVE",
+      "detail": "Older Idle/Step/Coil/Strike/Recover pose set. Not canonical entrance/attack continuation for current active-turn Tactical."
+    },
+    {
+      "asset": "assets/poses/kineza/Kineza03_Coil_LOCKED.png",
+      "class": "ARCHIVE",
+      "detail": "Older Idle/Step/Coil/Strike/Recover pose set. Not canonical entrance/attack continuation for current active-turn Tactical."
+    },
+    {
+      "asset": "assets/poses/kineza/Kineza02_Step_LOCKED.png",
+      "class": "ARCHIVE",
+      "detail": "Older Idle/Step/Coil/Strike/Recover pose set. Not canonical entrance/attack continuation for current active-turn Tactical."
+    },
+    {
+      "asset": "assets/sequences/qa/auryi_auorb.webp",
+      "class": "ARCHIVE",
+      "detail": "Sequence Lab QA transport proxy only. Never production combat art."
+    },
+    {
+      "asset": "assets/sequences/qa/kineza_gauntlet_ignition.webp",
+      "class": "ARCHIVE",
+      "detail": "Sequence Lab QA transport proxy only. Never production combat art."
+    }
+  ]
+}
