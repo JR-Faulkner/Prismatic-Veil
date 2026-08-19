@@ -72,7 +72,7 @@
     {
       "name": "lawn-side quick-start staging",
       "status": "PASS",
-      "detail": "approved lawn-side QA cluster and camera focus are present"
+      "detail": "approved lawn-side QA cluster and corrected Kineza right-side start are present"
     },
     {
       "name": "legacy encounter HUD suppression",
