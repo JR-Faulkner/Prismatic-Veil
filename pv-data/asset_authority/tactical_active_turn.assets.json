@@ -15,7 +15,8 @@
       "authority": "pv-data/sequences/prismel_active_turn.sequence.json"
     },
     "auryi": {
-      "status": "pending_binary_ingestion",
+      "status": "active",
+      "runtime": "src/tactical/ActiveTurnBattleSlice06A.js",
       "entrance": {
         "name": "Auryi Auorb Materialization",
         "frames": 6,
@@ -32,7 +33,8 @@
       }
     },
     "kineza": {
-      "status": "pending_binary_ingestion",
+      "status": "active",
+      "runtime": "src/tactical/ActiveTurnBattleSlice06A.js",
       "entrance": {
         "name": "Kineza Gauntlet Ignition",
         "frames": 6,
