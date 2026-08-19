@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "kineza_attack_master_a",
+  "character": "kineza",
+  "status": "canon-approved-pending-binary-ingestion",
+  "authority": "Kineza Attack Master A",
+  "sourceSheet": {
+    "width": 1536,
+    "height": 1024,
+    "cols": 3,
+    "rows": 2,
+    "cellWidth": 512,
+    "cellHeight": 512
+  },
+  "continuationFrom": "kineza_gauntlet_ignition.sequence.json#frame-6",
+  "beats": [
+    "Ignited Ready",
+    "Chamber",
+    "Drive",
+    "Impact Punch",
+    "Kinetic Release",
+    "Recovery / Ready"
+  ],
+  "runtimeRegistration": {
+    "reference": "approved gauntlet-ignition entrance frame 6",
+    "targetBodyHeightPx": 425,
+    "targetBaselinePx": 463,
+    "centerMotionPreservation": 0.50,
+    "frames": [
+      {"frame":1,"scale":0.94027,"x":-49.53,"y":-11.83},
+      {"frame":2,"scale":0.99532,"x":-58.12,"y":-12.76},
+      {"frame":3,"scale":1.02163,"x":-68.02,"y":-17.17},
+      {"frame":4,"scale":1.01432,"x":-73.30,"y":-19.82},
+      {"frame":5,"scale":1.03659,"x":-84.66,"y":-27.30},
+      {"frame":6,"scale":0.97254,"x":-50.06,"y":-10.63}
+    ]
+  },
+  "priZimNotes": {
+    "entranceToAttackHeightDeltaPct": 6.35,
+    "entranceToAttackBaselineDeltaPx": 42,
+    "entranceToAttackCenterDeltaPx": 63.80,
+    "entranceToAttackNormalizedIoU": 0.610,
+    "assessment": "Choreography is approved but the entrance-to-attack seam needs deterministic registration. Do not regenerate. Runtime normalization should correct apparent size/baseline first, then Motion Bridge handles the punch travel."
+  },
+  "assetPolicy": "Approved source art is canon. Cleanup/transparency/registration are runtime derivatives only."
+}
