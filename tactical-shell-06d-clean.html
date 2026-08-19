@@ -11,11 +11,11 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;backgrou
 <script src="./phaser.min.js"></script>
 </head>
 <body>
-<div id="loading">✦ Loading 06D FRAME-HANDOFF FIX ✦</div>
+<div id="loading">✦ Loading 06D LAWN START FIX ✦</div>
 <div id="game-container"></div>
-<div class="qa">06D • SHALLOW • FRAME HANDOFF</div>
+<div class="qa">06D • SHALLOW • LAWN START FIX</div>
 <script type="module">
-import TacticalScene from './src/tactical/IntegratedTacticalScene06D.js?v=5';
+import TacticalScene from './src/tactical/IntegratedTacticalScene06D.js?v=6';
 import VeilBattleScene from './src/IntegratedVeilBattleScene.js?v=4';
 const boot=document.getElementById('loading');
 function fail(error){console.error(error);boot.style.display='grid';const message=error?.message||String(error);const stack=error?.stack||'';boot.textContent='Boot Error\n\n'+message+(stack?'\n\n'+stack:'')}
