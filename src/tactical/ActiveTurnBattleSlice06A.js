@@ -13,6 +13,11 @@ const CANON = Object.freeze({
     attackLabel: 'ATTACK',
     entranceHolds: [220, 260, 300, 340, 360, 400],
     attackHolds: [150, 125, 115, 110, 150, 190],
+    // Stage authority is separate from frame registration. Auryi remains a
+    // ranged hover caster: slightly left of the shared cut-in center and lifted
+    // off the ground line. Attack travel is deliberately restrained.
+    stage: { xFrac: -0.045, yFrac: -0.060, scale: 0.94 },
+    attackTravel: [0.000, 0.000, 0.010, 0.020, 0.015, 0.000],
     attackRegistration: [
       { scale: 0.98869, x: -5.07, y: 0.70 },
       { scale: 0.98869, x: -13.66, y: 0.70 },
@@ -28,6 +33,11 @@ const CANON = Object.freeze({
     attackLabel: 'ATTACK',
     entranceHolds: [220, 180, 220, 180, 260, 320],
     attackHolds: [145, 115, 95, 105, 145, 190],
+    // Kineza is the close-range bruiser. His whole presentation stage sits
+    // nearer the target, then advances deterministically across punch frames.
+    // This replaces the old per-frame tween shove that was reset by layout.
+    stage: { xFrac: 0.155, yFrac: 0.012, scale: 0.92 },
+    attackTravel: [0.000, 0.035, 0.075, 0.115, 0.145, 0.035],
     attackRegistration: [
       // Frame 1 is the entrance seam, not punch travel. PriZim measured the
       // raw entrance→attack delta at ~63.8px center / 42px baseline. Fully
@@ -56,11 +66,24 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     } finally {
       this._activeHero06A = null;
       this._activeFrame06A = null;
+      this._stageSnapshot06A = null;
     }
   }
 
   _canonSpec06A() {
     return this._activeHero06A ? CANON[this._activeHero06A.id] : null;
+  }
+
+  // PriZim-readable contract for presentation QA. This intentionally exposes
+  // authored staging values, not mutable runtime objects.
+  stageContract06A(heroId) {
+    const spec = CANON[heroId];
+    if (!spec) return null;
+    return {
+      heroId,
+      stage: { ...spec.stage },
+      attackTravel: [...spec.attackTravel]
+    };
   }
 
   _ensureCutin() {
@@ -85,6 +108,21 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     return spec.attackRegistration[frame.index] || { scale: 1, x: 0, y: 0 };
   }
 
+  _stage06A() {
+    const spec = this._canonSpec06A();
+    const frame = this._activeFrame06A;
+    if (!spec) return { xFrac: 0, yFrac: 0, scale: 1, travelFrac: 0 };
+    const travelFrac = frame?.phase === 'attack'
+      ? (spec.attackTravel[frame.index] || 0)
+      : 0;
+    return {
+      xFrac: spec.stage.xFrac,
+      yFrac: spec.stage.yFrac,
+      scale: spec.stage.scale,
+      travelFrac
+    };
+  }
+
   _layoutCutin() {
     const spec = this._canonSpec06A();
     if (!spec) return super._layoutCutin();
@@ -92,19 +130,37 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     const img = this._cutinImage;
     if (!img || !img.active) return;
 
-    const c = this._layoutMetrics().cutin;
+    const metrics = this._layoutMetrics();
+    const c = metrics.cutin;
     const reg = this._registration06A();
+    const stage = this._stage06A();
     const cell = 512;
     const baseScale = Math.min(c.maxW / cell, c.maxH / cell);
-    const finalScale = baseScale * reg.scale;
+    const finalScale = baseScale * reg.scale * stage.scale;
+    const centerX = c.x + c.maxW / 2;
+    const x = centerX
+      + (stage.xFrac + stage.travelFrac) * c.maxW
+      + reg.x * baseScale;
+    const y = c.bottomY
+      + stage.yFrac * c.maxH
+      + reg.y * baseScale;
 
     img
       .setOrigin(0.5, 1)
       .setScale(finalScale)
-      .setPosition(
-        c.x + c.maxW / 2 + reg.x * baseScale,
-        c.bottomY + reg.y * baseScale
-      );
+      .setPosition(x, y);
+
+    this._stageSnapshot06A = {
+      heroId: this._activeHero06A?.id || '',
+      phase: this._activeFrame06A?.phase || '',
+      index: this._activeFrame06A?.index ?? -1,
+      x,
+      y,
+      centerX,
+      enemyX: metrics.enemy?.x ?? null,
+      stageXFrac: stage.xFrac,
+      travelFrac: stage.travelFrac
+    };
   }
 
   _assertSheetFrame06A(sheet, index) {
@@ -177,16 +233,6 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
 
     for (let i = 0; i < 6; i++) {
       this._setCanonFrame06A('attack', i);
-
-      if (activeHero.id === 'kineza' && i > 0 && this._cutinImage && this._cutinImage.active) {
-        const img = this._cutinImage;
-        this.scene.tweens.add({
-          targets: img,
-          x: img.x + (i < 4 ? 5 : -3),
-          duration: Math.min(90, spec.attackHolds[i]),
-          ease: 'Sine.easeOut'
-        });
-      }
 
       if (activeHero.id === 'auryi' && i === 4 && this.scene.cameras && this.scene.cameras.main) {
         this.scene.cameras.main.shake(90, 0.0025);
