@@ -39,8 +39,8 @@
     {"id":"kineza_ignition_1","sheet":"ignition","sheetIndex":0,"label":"Ready","holdMs":220,"blendMs":38,"scale":1.0,"x":0,"y":0},
     {"id":"kineza_ignition_2","sheet":"ignition","sheetIndex":1,"label":"Stomp","holdMs":180,"blendMs":30,"scale":1.0,"x":0,"y":0,"cue":"stomp"},
     {"id":"kineza_ignition_3","sheet":"ignition","sheetIndex":2,"label":"Kinetic Cracks","holdMs":220,"blendMs":34,"scale":1.0,"x":0,"y":0,"cue":"cracks"},
-    {"id":"kineza_ignition_4","sheet":"ignition","sheetIndex":3,"label":"Gauntlet Snap","holdMs":180,"blendMs":30,"scale":1.0,"x":0,"y":0,"cue":"gauntletSnap"},
-    {"id":"kineza_ignition_5","sheet":"ignition","sheetIndex":4,"label":"Emerald Ignition","holdMs":260,"blendMs":38,"scale":1.0,"x":0,"y":0,"cue":"ignition"},
-    {"id":"kineza_ignition_6","sheet":"ignition","sheetIndex":5,"label":"Combat Ready","holdMs":320,"blendMs":42,"scale":1.0,"x":0,"y":0,"cue":"lock"}
+    {"id":"kineza_ignition_4","sheet":"ignition","sheetIndex":3,"label":"Gauntlet Snap","holdMs":180,"blendMs":96,"scale":1.0,"x":0,"y":0,"cue":"gauntletSnap"},
+    {"id":"kineza_ignition_5","sheet":"ignition","sheetIndex":4,"label":"Emerald Ignition","holdMs":260,"blendMs":110,"scale":1.0,"x":0,"y":0,"cue":"ignition"},
+    {"id":"kineza_ignition_6","sheet":"ignition","sheetIndex":5,"label":"Combat Ready","holdMs":320,"blendMs":96,"scale":1.0,"x":0,"y":0,"cue":"lock"}
   ]
 }
