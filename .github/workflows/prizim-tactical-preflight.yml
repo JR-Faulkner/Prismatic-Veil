@@ -33,6 +33,9 @@ on:
       - 'tools/pv_forge/tactical_preflight.py'
       - '.github/workflows/prizim-tactical-preflight.yml'
 
+permissions:
+  contents: write
+
 jobs:
   tactical-preflight:
     runs-on: ubuntu-latest
@@ -42,8 +45,12 @@ jobs:
         with:
           python-version: '3.12'
       - name: Run PriZim Tactical Preflight
+        id: preflight
+        continue-on-error: true
         run: python tools/pv_forge/tactical_preflight.py
       - name: Run PriZim Asset Hygiene
+        id: hygiene
+        continue-on-error: true
         run: python tools/pv_forge/asset_hygiene.py
       - name: Publish preflight reports
         if: always()
@@ -52,6 +59,25 @@ jobs:
           for f in build/prizim/tactical-preflight.md build/prizim/asset-hygiene.md; do
             if [ -f "$f" ]; then cat "$f" >> "$GITHUB_STEP_SUMMARY"; echo >> "$GITHUB_STEP_SUMMARY"; fi
           done
+      - name: Persist PriZim gate receipt
+        if: always() && github.event_name == 'push'
+        shell: bash
+        run: |
+          mkdir -p pv-data/prizim_status
+          cp build/prizim/tactical-preflight.json pv-data/prizim_status/tactical-preflight.json
+          cp build/prizim/asset-hygiene.json pv-data/prizim_status/asset-hygiene.json
+          git config user.name "PriZim Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add pv-data/prizim_status
+          if git diff --cached --quiet; then
+            echo "PriZim status receipt unchanged."
+          else
+            git commit -m "PriZim publish Tactical gate receipt"
+            git push
+          fi
+      - name: Enforce gate result
+        if: steps.preflight.outcome != 'success' || steps.hygiene.outcome != 'success'
+        run: exit 1
       - name: Upload PriZim Tactical reports
         if: always()
         uses: actions/upload-artifact@v4
