@@ -1,0 +1,6 @@
+{
+  "tool": "PriZim Tactical Executable Gate",
+  "syntax": "success",
+  "browser_setup": "success",
+  "boot_smoke": "success"
+}
