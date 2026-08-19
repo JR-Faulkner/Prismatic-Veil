@@ -1,6 +1,6 @@
 // 06C — PriZim phone-first Tactical HUD shell.
 //
-// This layer now owns the phone composition rather than trying to compress the
+// This layer owns the phone composition rather than trying to compress the
 // legacy desktop-shaped HUD. Tactical rules, targeting, combat state, camera,
 // and the active-turn bridge remain inherited and untouched.
 //
@@ -24,23 +24,23 @@ export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFl
     // Detail is secondary on phone. Keep the drawer available, but make its
     // footprint much smaller than the old 300px slab.
     const statusW = landscape
-      ? Math.min(210, Math.max(180, Math.round(w * 0.235)))
-      : Math.min(230, Math.max(190, Math.round(w * 0.58)));
+      ? Math.min(214, Math.max(190, Math.round(w * 0.24)))
+      : Math.min(238, Math.max(204, Math.round(w * 0.61)));
 
-    let cardY = margin + (landscape ? 38 : 52);
+    let cardY = margin + (landscape ? 42 : 58);
     this.heroCards.forEach(card => {
       this._layoutHeroCard(card, statusW);
       card.container.setPosition(margin, cardY);
-      cardY += card.cardH + 3;
+      cardY += card.cardH + 4;
     });
 
     this._hudDrawerHiddenOffset = margin + statusW + 5;
     if (this.hudHandle && this.hudHandle.bg) {
-      const tabW = landscape ? 24 : 26;
-      const tabH = landscape ? 72 : 82;
+      const tabW = landscape ? 26 : 28;
+      const tabH = landscape ? 76 : 86;
       this.hudHandle.bg.setDisplaySize(tabW, tabH);
     }
-    this.hudHandle.container.setPosition(0, Math.min(h - 52, Math.max(82, cardY * 0.5)));
+    this.hudHandle.container.setPosition(0, Math.min(h - 54, Math.max(86, cardY * 0.5)));
 
     if (!this.tweens.isTweening(this.heroCardsDrawer)) {
       this.heroCardsDrawer.x = this.hudExpanded ? 0 : -this._hudDrawerHiddenOffset;
@@ -49,14 +49,14 @@ export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFl
 
   _layoutCommandDock06C(w, h, margin) {
     const landscape = w > h;
-    // Maintain the 44px touch floor even when the visible art is slightly
-    // slimmer. TacticalActionConsole owns the invisible hit target.
-    const barHeight = landscape ? 38 : 40;
+    // Phone pass: the art itself now reaches the touch floor instead of
+    // relying on a larger invisible hit target around a visually tiny control.
+    const barHeight = landscape ? 44 : 46;
     const { barW } = this.actionConsole.layout(barHeight, 0);
     const cols = landscape ? 3 : 2;
     const rows = Math.ceil(this.actionConsole.entries.length / cols);
-    const colGap = 4;
-    const rowGap = 4;
+    const colGap = landscape ? 5 : 6;
+    const rowGap = landscape ? 5 : 6;
     const gridW = cols * barW + (cols - 1) * colGap;
     const gridH = rows * barHeight + (rows - 1) * rowGap;
 
@@ -67,16 +67,24 @@ export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFl
         col * (barW + colGap) + barW * 0.5,
         row * (barHeight + rowGap) + barHeight * 0.5
       );
+      if (entry.labelText) {
+        entry.labelText
+          .setColor('#FFF0BE')
+          .setShadow(0, 1, '#050914', 3, true, true);
+      }
     });
 
-    // Cancel becomes a compact corner control inside the same visual cluster,
-    // not an extra seventh row hanging below the commands.
-    const cancelW = 72;
-    const cancelH = 28;
+    // Cancel stays in the command cluster, but is large enough to read and tap
+    // without competing with the six primary commands.
+    const cancelW = 82;
+    const cancelH = 32;
     this.actionMenu.cancelBg.setDisplaySize(cancelW, cancelH);
-    this.actionMenu.cancelBg.setPosition(gridW - cancelW * 0.5, -cancelH * 0.5 - 4);
+    this.actionMenu.cancelBg.setPosition(gridW - cancelW * 0.5, -cancelH * 0.5 - 5);
     if (this.actionMenu.cancelText) {
-      this.actionMenu.cancelText.setPosition(gridW - cancelW * 0.5, -cancelH * 0.5 - 4);
+      this.actionMenu.cancelText
+        .setPosition(gridW - cancelW * 0.5, -cancelH * 0.5 - 5)
+        .setFontSize(11)
+        .setShadow(0, 1, '#050914', 2, true, true);
     }
 
     const menuX = landscape
@@ -91,17 +99,19 @@ export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFl
   _layoutTopTelemetry06C(w, h, margin) {
     const landscape = w > h;
 
-    // Phase becomes a micro-chip rather than a top banner.
-    const phaseW = landscape ? 112 : 106;
-    const phaseH = landscape ? 24 : 23;
+    // Phase is still compact, but no longer microscopically typeset on phone.
+    const phaseW = landscape ? 126 : 118;
+    const phaseH = landscape ? 29 : 28;
     this.phaseFrame
       .setVisible(true)
-      .setAlpha(0.88)
+      .setAlpha(0.92)
       .setDisplaySize(phaseW, phaseH)
       .setPosition(margin + phaseW * 0.5, margin);
     this.turnText
       .setPosition(margin + phaseW * 0.5, margin + phaseH * 0.5)
-      .setFontSize(landscape ? 9 : 8);
+      .setFontSize(landscape ? 11 : 10)
+      .setColor('#FFF0BE')
+      .setShadow(0, 1, '#050914', 2, true, true);
 
     // Retire the giant goal plate. The objective is persistent but quiet.
     this.goalFrame.setVisible(false);
@@ -111,21 +121,24 @@ export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFl
       .setText('RESTORE 3 SOUND NODES')
       .setFontFamily('-apple-system, BlinkMacSystemFont, "SF Pro Text", Arial, sans-serif')
       .setFontStyle('bold')
-      .setColor('#EBD995')
-      .setFontSize(landscape ? 10 : 9)
-      .setWordWrapWidth(landscape ? 220 : Math.max(150, w - phaseW - margin * 4))
+      .setColor('#F3DFA1')
+      .setFontSize(landscape ? 12 : 11)
+      .setShadow(0, 1, '#050914', 2, true, true)
+      .setWordWrapWidth(landscape ? 236 : Math.max(158, w - phaseW - margin * 4))
       .setPosition(
-        landscape ? w * 0.5 : w - margin - Math.max(76, (w - phaseW - margin * 4) * 0.5),
+        landscape ? w * 0.5 : w - margin - Math.max(80, (w - phaseW - margin * 4) * 0.5),
         margin + phaseH * 0.5
       );
 
-    // One telemetry line, no narration block.
+    // One telemetry line, raised to real phone-reading size. Keep copy concise;
+    // this is status, not a narration panel.
     this.messageText
       .setFontFamily('-apple-system, BlinkMacSystemFont, "SF Pro Text", Arial, sans-serif')
-      .setColor('#CDBEE6')
-      .setFontSize(landscape ? 9 : 8)
-      .setWordWrapWidth(w * (landscape ? 0.50 : 0.82))
-      .setPosition(w * 0.5, margin + phaseH + 3);
+      .setColor('#DED1F2')
+      .setFontSize(landscape ? 11 : 10)
+      .setShadow(0, 1, '#050914', 2, true, true)
+      .setWordWrapWidth(w * (landscape ? 0.52 : 0.84))
+      .setPosition(w * 0.5, margin + phaseH + 5);
   }
 
   layoutHUD() {
@@ -135,7 +148,7 @@ export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFl
     const h = this.scale.height;
     const landscape = w > h;
     const compact = w < 700 || h < 540;
-    const margin = compact ? 7 : 10;
+    const margin = compact ? 8 : 11;
 
     this._layoutTopTelemetry06C(w, h, margin);
     this._layoutStatusRail06C(w, h, margin);
@@ -146,8 +159,8 @@ export default class IntegratedTacticalScene06C extends IntegratedTacticalViewFl
     // active.
     if (!this.actionMenu.container.visible) {
       this.zoomControls.container.setVisible(true);
-      this.zoomControls.container.setScale(landscape ? 0.82 : 0.88);
-      this.zoomControls.container.setPosition(w - margin - 50, margin + 16);
+      this.zoomControls.container.setScale(landscape ? 0.84 : 0.9);
+      this.zoomControls.container.setPosition(w - margin - 52, margin + 18);
     } else {
       this.zoomControls.container.setVisible(false);
     }
