@@ -48,7 +48,7 @@ export default class IntegratedTacticalScene06A extends IntegratedTacticalScene0
 
     this._moveUnitForQa(auryi, 7, 5);
     this._moveUnitForQa(prismel, 8, 6);
-    this._moveUnitForQa(kineza, 8, 7);
+    this._moveUnitForQa(kineza, 9, 6);
     this._moveUnitForQa(h1, 9, 5);
     this._moveUnitForQa(h2, 10, 6);
     this._moveUnitForQa(h3, 9, 7);
