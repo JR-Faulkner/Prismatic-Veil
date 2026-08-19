@@ -6,12 +6,18 @@ on:
       - 'pv-data/sequences/**'
       - 'tools/pv_forge/sequence_check.py'
       - 'assets/poses/**'
+      - 'assets/sequences/**'
+      - 'src/prizim/SequenceLab.js'
+      - 'sequence-lab.html'
       - '.github/workflows/prizim-sequence-check.yml'
   pull_request:
     paths:
       - 'pv-data/sequences/**'
       - 'tools/pv_forge/sequence_check.py'
       - 'assets/poses/**'
+      - 'assets/sequences/**'
+      - 'src/prizim/SequenceLab.js'
+      - 'sequence-lab.html'
       - '.github/workflows/prizim-sequence-check.yml'
 
 jobs:
