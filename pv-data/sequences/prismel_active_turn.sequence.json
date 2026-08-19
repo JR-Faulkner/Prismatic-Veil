@@ -13,6 +13,18 @@
     "materialization": {"asset":"assets/sequences/qa/prismel_materialization.webp","cols":3,"rows":2},
     "attack": {"asset":"assets/sequences/qa/prismel_attack.webp","cols":3,"rows":2}
   },
+  "motionProfile": {
+    "style": "controlled",
+    "axis": "x",
+    "direction": -1,
+    "minBlendMs": 92,
+    "blendScale": 1.15,
+    "travelPx": 4,
+    "enterScale": 0.994,
+    "overlap": 0.46,
+    "settleMs": 64,
+    "settleScale": 1.002
+  },
   "frames": [
     {"id":"prismel_ready_1","sheet":"materialization","sheetIndex":0,"label":"Reach","holdMs":145,"blendMs":42,"scale":1.000,"x":0,"y":0},
     {"id":"prismel_ready_2","sheet":"materialization","sheetIndex":1,"label":"Energy Gathers","holdMs":175,"blendMs":42,"scale":1.000,"x":-1,"y":0,"cue":"shimmer"},
