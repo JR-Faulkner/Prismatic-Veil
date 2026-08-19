@@ -4,7 +4,8 @@
 Static production guard for phone-test harnesses. Catches repeat regressions
 before human QA: disabled active-turn slices, legacy BP fallback exposure,
 missing lawn staging, legacy HUD slabs, stale module chains, missing canon
-masters, and deprecated asset authority leaking into Tactical runtime.
+masters, unsafe spritesheet handoffs, and deprecated asset authority leaking
+into Tactical runtime.
 
 PASS = invariant verified
 WARN = known debt, test may proceed
@@ -183,9 +184,9 @@ def main() -> int:
     missing_preloads = [name for name in master_names if name not in scene_a]
     results.append(check(
         "production master preload wiring",
-        not missing_preloads,
+        not missing_preloads and "frameWidth: 512" in scene_a and "frameHeight: 512" in scene_a,
         "06A preloads all four production masters as 512x512 spritesheets",
-        f"06A preload missing: {missing_preloads}",
+        f"06A preload/frame contract missing: {missing_preloads}",
     ))
 
     registration_ok = (
@@ -199,6 +200,37 @@ def main() -> int:
         registration_ok,
         "Auryi deterministic registration and Kineza normalization profiles are wired",
         "PriZim attack registration profiles are not wired into 06A",
+    ))
+
+    # Learned from 2026-08-19 iPhone recording: existence/preload checks were
+    # insufficient. Auryi reached her approved entrance, then crashed exactly
+    # at CONFIRM during entrance-sheet -> attack-sheet handoff. Preserve the
+    # safer runtime contract permanently.
+    handoff_ok = all(x in slice_a for x in [
+        "this.scene.add.sprite",
+        "_assertSheetFrame06A",
+        "textures.exists(sheet)",
+        "img.setTexture(sheet)",
+        "img.setFrame(index)",
+        "this._assertSheetFrame06A(spec.attackSheet, i)",
+    ]) and "img.setTexture(sheet, index)" not in slice_a
+    results.append(check(
+        "runtime spritesheet handoff guard",
+        handoff_ok,
+        "06A validates all attack frames and uses explicit Sprite texture/frame handoff",
+        "06A can regress to an unvalidated cross-spritesheet setTexture(key, frame) handoff",
+    ))
+
+    diagnostics_ok = (
+        "overflow-wrap:anywhere" in harness
+        and "error?.message" in harness
+        and "error?.stack" in harness
+    )
+    results.append(check(
+        "mobile runtime diagnostics",
+        diagnostics_ok,
+        "phone harness preserves readable error message + wrapped stack diagnostics",
+        "phone runtime errors can collapse back into clipped stack-only output",
     ))
 
     temporary_block_absent = "CANON ENTRANCE + ATTACK QUEUED" not in d
