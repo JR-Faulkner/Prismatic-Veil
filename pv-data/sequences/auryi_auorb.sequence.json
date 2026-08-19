@@ -24,6 +24,17 @@
     "settleMs": 110,
     "settleScale": 1.004
   },
+  "continuityGate": {
+    "heightPct": 0.12,
+    "widthPct": 0.27,
+    "baselinePct": 0.055,
+    "centerPct": 0.075,
+    "lowerAnchorPct": 0.10,
+    "areaPct": 0.36,
+    "silhouetteDistance": 0.84,
+    "passScore": 78,
+    "bridgeScore": 52
+  },
   "frames": [
     {"id":"auryi_auorb_1","sheet":"auorb","sheetIndex":0,"label":"Calm / Ready","holdMs":220,"blendMs":42,"scale":1.0,"x":0,"y":0},
     {"id":"auryi_auorb_2","sheet":"auorb","sheetIndex":1,"label":"Crown Aura","holdMs":260,"blendMs":46,"scale":1.0,"x":0,"y":0,"cue":"crownAppears"},
