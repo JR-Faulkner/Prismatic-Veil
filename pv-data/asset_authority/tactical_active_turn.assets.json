@@ -20,14 +20,14 @@
         "name": "Auryi Auorb Materialization",
         "frames": 6,
         "layout": "3x2",
-        "expected_path": "assets/sequences/production/auryi_auorb_master_a.jpg",
+        "expected_path": "assets/sequences/production/auryi_auorb_entrance_master_a.png",
         "authority": "pv-data/sequences/auryi_auorb.sequence.json"
       },
       "attack": {
         "name": "Auryi Attack Master A",
         "frames": 6,
         "layout": "3x2",
-        "expected_path": "assets/sequences/production/auryi_attack_master_a.jpg",
+        "expected_path": "assets/sequences/production/auryi_attack_master_a.png",
         "authority": "pv-data/sequence_authority/auryi_attack_master_a.registration.json"
       }
     },
@@ -37,14 +37,14 @@
         "name": "Kineza Gauntlet Ignition",
         "frames": 6,
         "layout": "3x2",
-        "expected_path": "assets/sequences/production/kineza_gauntlet_ignition_master_a.jpg",
+        "expected_path": "assets/sequences/production/kineza_gauntlet_ignition_master_a.png",
         "authority": "pv-data/sequences/kineza_gauntlet_ignition.sequence.json"
       },
       "attack": {
         "name": "Kineza Attack Master A",
         "frames": 6,
         "layout": "3x2",
-        "expected_path": "assets/sequences/production/kineza_attack_master_a.jpg",
+        "expected_path": "assets/sequences/production/kineza_attack_master_a.png",
         "authority": "pv-data/sequence_authority/kineza_attack_master_a.registration.json"
       }
     }
