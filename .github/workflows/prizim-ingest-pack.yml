@@ -4,11 +4,6 @@ on:
   push:
     paths:
       - 'prizim-inbox/*.zip'
-      - 'tools/pv_forge/ingest_pack.py'
-      - 'tools/pv_forge/asset_hygiene.py'
-      - 'tools/pv_forge/tactical_preflight.py'
-      - 'pv-data/asset_authority/**'
-      - '.github/workflows/prizim-ingest-pack.yml'
   workflow_dispatch:
 
 permissions:
