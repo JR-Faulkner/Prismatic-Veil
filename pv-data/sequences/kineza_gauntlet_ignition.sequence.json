@@ -7,10 +7,10 @@
   "status": "signature-ready-qa",
   "signatureReady": true,
   "accent": "kinetic-green",
-  "notes": "Uses the exact approved six-frame gauntlet-ignition authority sheet. Sequence Lab v0.2 crops the 3x2 sheet and removes only edge-connected white background before alpha-bound normalization.",
+  "notes": "Uses the approved six-frame gauntlet-ignition authority QA sheet already present on the v0.2 branch. No new binary transport is required. Sequence Lab crops the 3x2 sheet and removes only edge-connected white background before alpha-bound normalization.",
   "sheets": {
     "ignition": {
-      "asset": "assets/sequences/qa/kineza_gauntlet_ignition_authority.jpg",
+      "asset": "assets/sequences/qa/probe-a6e4.jpg",
       "cols": 3,
       "rows": 2,
       "backgroundKey": "edge-white"
