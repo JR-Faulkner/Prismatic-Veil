@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "prismel_materialization",
+  "character": "prismel",
+  "displayName": "Prismel",
+  "sequenceName": "Staff Materialization",
+  "status": "signature-ready-qa",
+  "signatureReady": true,
+  "accent": "prismatic",
+  "sheets": {
+    "materialization": {
+      "asset": "assets/sequences/qa/prismel_materialization_authority.jpg",
+      "cols": 3,
+      "rows": 2,
+      "backgroundKey": "edge-white"
+    }
+  },
+  "frames": [
+    {"id":"prismel_materialize_1","sheet":"materialization","cell":1,"label":"Reach","holdMs":145,"blendMs":42},
+    {"id":"prismel_materialize_2","sheet":"materialization","cell":2,"label":"Summon Light","holdMs":175,"blendMs":42,"cue":"shimmer"},
+    {"id":"prismel_materialize_3","sheet":"materialization","cell":3,"label":"Staff Emerges","holdMs":205,"blendMs":42,"cue":"staffEmerges"},
+    {"id":"prismel_materialize_4","sheet":"materialization","cell":4,"label":"Draw","holdMs":285,"blendMs":36,"cue":"staffDraw"},
+    {"id":"prismel_materialize_5","sheet":"materialization","cell":5,"label":"Settle","holdMs":320,"blendMs":34},
+    {"id":"prismel_materialize_6","sheet":"materialization","cell":6,"label":"Staff Lock","holdMs":400,"blendMs":28,"cue":"staffLock"}
+  ]
+}
