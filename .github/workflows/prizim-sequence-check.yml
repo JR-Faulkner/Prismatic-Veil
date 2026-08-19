@@ -1,0 +1,26 @@
+name: PriZim Sequence Check
+
+on:
+  push:
+    paths:
+      - 'pv-data/sequences/**'
+      - 'tools/pv_forge/sequence_check.py'
+      - 'assets/poses/**'
+      - '.github/workflows/prizim-sequence-check.yml'
+  pull_request:
+    paths:
+      - 'pv-data/sequences/**'
+      - 'tools/pv_forge/sequence_check.py'
+      - 'assets/poses/**'
+      - '.github/workflows/prizim-sequence-check.yml'
+
+jobs:
+  validate-sequences:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate PriZim sequence manifests
+        run: python tools/pv_forge/sequence_check.py
