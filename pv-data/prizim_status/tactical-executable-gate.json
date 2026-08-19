@@ -3,5 +3,7 @@
   "syntax": "success",
   "browser_setup": "success",
   "local_boot_smoke": "success",
-  "phone_delivery_smoke": "failure"
+  "phone_delivery_smoke": "success",
+  "delivery_surface": "github-pages",
+  "build_marker": "TACTICAL-HUD-PHONE-01"
 }
