@@ -1,16 +1,38 @@
-// 06A canon-safe Too Quiet tactical wrapper.
+// 06A canon Too Quiet tactical wrapper.
 //
-// Keeps the validated 05M/05I tactical stack, installs the Prismel-only
+// Keeps the validated 05M/05I tactical stack, installs the three-hero
 // active-turn bridge, and preserves the proven lawn-side QA staging.
-//
-// Auryi/Kineza entrance and Attack Master A art are already locked in PriZim
-// authority data, but are intentionally not substituted with unrelated pose
-// assets while production binaries are pending ingestion.
 
 import IntegratedTacticalScene05M from './IntegratedTacticalScene05M.js?v=2';
-import ActiveTurnBattleSlice06A from './ActiveTurnBattleSlice06A.js?v=5';
+import ActiveTurnBattleSlice06A from './ActiveTurnBattleSlice06A.js?v=6';
 
 export default class IntegratedTacticalScene06A extends IntegratedTacticalScene05M {
+  preload() {
+    super.preload();
+
+    const sheet = { frameWidth: 512, frameHeight: 512 };
+    this.load.spritesheet(
+      'auryi_auorb_entrance_master_a',
+      './assets/sequences/production/auryi_auorb_entrance_master_a.png',
+      sheet
+    );
+    this.load.spritesheet(
+      'auryi_attack_master_a',
+      './assets/sequences/production/auryi_attack_master_a.png',
+      sheet
+    );
+    this.load.spritesheet(
+      'kineza_gauntlet_ignition_master_a',
+      './assets/sequences/production/kineza_gauntlet_ignition_master_a.png',
+      sheet
+    );
+    this.load.spritesheet(
+      'kineza_attack_master_a',
+      './assets/sequences/production/kineza_attack_master_a.png',
+      sheet
+    );
+  }
+
   _stageThreeHeroQaStart() {
     if (!this._battleSliceEnabled()) return;
 
@@ -41,7 +63,7 @@ export default class IntegratedTacticalScene06A extends IntegratedTacticalScene0
       const compact = this.scale.width < 560 || this.scale.height < 520;
       this.tacticalCamera.setZoom(compact ? 0.88 : 0.96);
       this.tacticalCamera.focusOn(8.7, 6.2, 0);
-      this.setMessage('06A QA • lawn-side cluster • Prismel active-turn validated');
+      this.setMessage('06A QA • lawn-side cluster • three-hero canon active-turn');
       this.refreshHUD();
     });
   }
