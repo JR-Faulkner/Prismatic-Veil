@@ -11,6 +11,10 @@ on:
       - 'src/tactical/IntegratedTacticalScene06A.js'
       - 'src/tactical/ActiveTurnBattleSlice.js'
       - 'src/tactical/ActiveTurnBattleSlice06A.js'
+      - 'assets/sequences/production/**'
+      - 'pv-data/asset_authority/**'
+      - 'pv-data/sequence_authority/**'
+      - 'tools/pv_forge/asset_hygiene.py'
       - 'tools/pv_forge/tactical_preflight.py'
       - '.github/workflows/prizim-tactical-preflight.yml'
   pull_request:
@@ -22,6 +26,10 @@ on:
       - 'src/tactical/IntegratedTacticalScene06A.js'
       - 'src/tactical/ActiveTurnBattleSlice.js'
       - 'src/tactical/ActiveTurnBattleSlice06A.js'
+      - 'assets/sequences/production/**'
+      - 'pv-data/asset_authority/**'
+      - 'pv-data/sequence_authority/**'
+      - 'tools/pv_forge/asset_hygiene.py'
       - 'tools/pv_forge/tactical_preflight.py'
       - '.github/workflows/prizim-tactical-preflight.yml'
 
@@ -35,10 +43,16 @@ jobs:
           python-version: '3.12'
       - name: Run PriZim Tactical Preflight
         run: python tools/pv_forge/tactical_preflight.py
-      - name: Publish preflight report
+      - name: Run PriZim Asset Hygiene
+        run: python tools/pv_forge/asset_hygiene.py
+      - name: Publish preflight reports
         if: always()
-        run: cat build/prizim/tactical-preflight.md >> "$GITHUB_STEP_SUMMARY"
-      - name: Upload PriZim Tactical Preflight report
+        shell: bash
+        run: |
+          for f in build/prizim/tactical-preflight.md build/prizim/asset-hygiene.md; do
+            if [ -f "$f" ]; then cat "$f" >> "$GITHUB_STEP_SUMMARY"; echo >> "$GITHUB_STEP_SUMMARY"; fi
+          done
+      - name: Upload PriZim Tactical reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -46,3 +60,5 @@ jobs:
           path: |
             build/prizim/tactical-preflight.json
             build/prizim/tactical-preflight.md
+            build/prizim/asset-hygiene.json
+            build/prizim/asset-hygiene.md
