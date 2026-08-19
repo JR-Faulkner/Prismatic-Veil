@@ -30,10 +30,8 @@ const CANON = Object.freeze({
     attackHolds: [145, 115, 95, 105, 145, 190],
     attackRegistration: [
       // Frame 1 is the entrance seam, not punch travel. PriZim measured the
-      // raw entrance→attack delta at ~63.8px center / 42px baseline. The
-      // previous partial correction preserved too much of that displacement,
-      // so Kineza visibly jumped before the attack began. Fully normalize the
-      // starting handoff here; frames 2–6 own the authored forward motion.
+      // raw entrance→attack delta at ~63.8px center / 42px baseline. Fully
+      // normalize the starting handoff; frames 2–6 own authored motion.
       { scale: 0.94027, x: -63.80, y: -33.00 },
       { scale: 0.99532, x: -58.12, y: -12.76 },
       { scale: 1.02163, x: -68.02, y: -17.17 },
@@ -140,9 +138,6 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     const spec = this._canonSpec06A();
     if (!spec || !hero) return super._buildActionPanel(m, hero, parts);
 
-    // The base presenter was authored for Prismel and reads hero.ability.
-    // Keep gameplay data untouched and override only the temporary display
-    // label for Auryi/Kineza ATTACK until final basic-attack names are locked.
     const oldAbility = hero.ability;
     hero.ability = spec.attackLabel;
     try {
@@ -170,15 +165,20 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
   }
 
   async _playAttackPresentation(hero, target) {
+    // Inherited 05M invokes this method with no positional args. The active
+    // hero stored by run() is the contract authority. Optional args are only
+    // tolerated for compatibility with direct callers.
+    const activeHero = hero || this._activeHero06A;
     const spec = this._canonSpec06A();
     if (!spec) return super._playAttackPresentation(hero, target);
+    if (!activeHero) throw new Error('PriZim active-turn hero missing during attack presentation');
 
     for (let i = 0; i < 6; i++) this._assertSheetFrame06A(spec.attackSheet, i);
 
     for (let i = 0; i < 6; i++) {
       this._setCanonFrame06A('attack', i);
 
-      if (hero.id === 'kineza' && i > 0 && this._cutinImage && this._cutinImage.active) {
+      if (activeHero.id === 'kineza' && i > 0 && this._cutinImage && this._cutinImage.active) {
         const img = this._cutinImage;
         this.scene.tweens.add({
           targets: img,
@@ -188,10 +188,10 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
         });
       }
 
-      if (hero.id === 'auryi' && i === 4 && this.scene.cameras && this.scene.cameras.main) {
+      if (activeHero.id === 'auryi' && i === 4 && this.scene.cameras && this.scene.cameras.main) {
         this.scene.cameras.main.shake(90, 0.0025);
       }
-      if (hero.id === 'kineza' && i === 3 && this.scene.cameras && this.scene.cameras.main) {
+      if (activeHero.id === 'kineza' && i === 3 && this.scene.cameras && this.scene.cameras.main) {
         this.scene.cameras.main.shake(120, 0.0045);
       }
 
