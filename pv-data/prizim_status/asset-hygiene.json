@@ -69,6 +69,7 @@
     "src/tactical/ActiveTurnBattleSlice05M.js",
     "src/tactical/DreamViewBattleMode.js",
     "src/tactical/ActiveTurnBattleSlice05L.js",
+    "src/tactical/IntegratedTacticalScene06F.js",
     "src/tactical/DreamViewStaging.js",
     "src/tactical/IntroCrawlScene.js",
     "src/tactical/TooQuietVictoryPrototype.js",
