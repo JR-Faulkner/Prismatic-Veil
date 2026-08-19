@@ -5,7 +5,21 @@
 
 import IntegratedTacticalScene06E from './IntegratedTacticalScene06E.js?v=1';
 
+const PORTRAIT_FIT_06F = Object.freeze({
+  prismel: { hero: 42, chip: 23, y: 0 },
+  auryi:   { hero: 34, chip: 19, y: 2 },
+  kineza:  { hero: 40, chip: 22, y: 1 }
+});
+
 export default class IntegratedTacticalScene06F extends IntegratedTacticalScene06E {
+  _fitPortrait06F(image, heroId, slot = 'hero') {
+    if (!image) return;
+    const fit = PORTRAIT_FIT_06F[heroId] || PORTRAIT_FIT_06F.prismel;
+    const size = slot === 'chip' ? fit.chip : fit.hero;
+    image.setDisplaySize(size, size);
+    if (slot === 'hero') image.y = 11 + 24 + fit.y;
+  }
+
   _layoutPhoneDeck06E(w, h) {
     if (!this._phoneDeck06E) return;
     if (w > h) return super._layoutPhoneDeck06E(w, h);
@@ -36,7 +50,9 @@ export default class IntegratedTacticalScene06F extends IntegratedTacticalScene0
     d.heroBg.setSize(panelW, panelH);
     const portraitSize = 48;
     d.heroPortraitFrame.setPosition(6, 11).setSize(portraitSize, portraitSize);
-    d.heroPortrait.setPosition(6 + portraitSize / 2, 11 + portraitSize / 2).setDisplaySize(42, 42);
+    d.heroPortrait.setPosition(6 + portraitSize / 2, 11 + portraitSize / 2);
+    const activeHero = this.unitController?.selected;
+    this._fitPortrait06F(d.heroPortrait, activeHero?.id || 'prismel', 'hero');
     const heroTextX = 6 + portraitSize + (panelW - portraitSize - 8) / 2;
     d.heroName.setPosition(heroTextX, 14).setFontSize(12);
     d.heroHp.setPosition(heroTextX, 31).setFontSize(10);
@@ -66,7 +82,8 @@ export default class IntegratedTacticalScene06F extends IntegratedTacticalScene0
       const cx = chipStart + chipW * i + chipW / 2 + i * 2;
       c.chip.setPosition(cx, ribbonH / 2);
       c.bg.setSize(chipW, ribbonH - 8);
-      c.portrait.setPosition(-chipW / 2 + 15, 0).setDisplaySize(23, 23);
+      c.portrait.setPosition(-chipW / 2 + 15, PORTRAIT_FIT_06F[c.hero.id]?.y || 0);
+      this._fitPortrait06F(c.portrait, c.hero.id, 'chip');
       c.label.setPosition(9, 0).setFontSize(7);
       c.hit.setSize(chipW, ribbonH - 4);
       c.hit.input.hitArea.setTo(0, 0, chipW, ribbonH - 4);
@@ -120,6 +137,14 @@ export default class IntegratedTacticalScene06F extends IntegratedTacticalScene0
       return this._layoutCommandDeck06FPortrait(w, h, metrics);
     }
     return super._layoutCommandDeck06E(w, h, metrics);
+  }
+
+  _refreshPhoneDeck06E() {
+    super._refreshPhoneDeck06E();
+    if (!this._phoneDeck06E) return;
+    const selected = this.unitController?.selected;
+    if (selected?.alive) this._fitPortrait06F(this._phoneDeck06E.heroPortrait, selected.id, 'hero');
+    this._phoneDeck06E.heroChips.forEach(c => this._fitPortrait06F(c.portrait, c.hero.id, 'chip'));
   }
 
   layoutHUD() {
