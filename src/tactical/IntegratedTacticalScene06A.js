@@ -4,7 +4,7 @@
 // active-turn bridge, and preserves the proven lawn-side QA staging.
 
 import IntegratedTacticalScene05M from './IntegratedTacticalScene05M.js?v=2';
-import ActiveTurnBattleSlice06A from './ActiveTurnBattleSlice06A.js?v=7';
+import ActiveTurnBattleSlice06A from './ActiveTurnBattleSlice06A.js?v=8';
 
 export default class IntegratedTacticalScene06A extends IntegratedTacticalScene05M {
   preload() {
