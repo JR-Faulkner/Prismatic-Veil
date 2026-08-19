@@ -10,7 +10,10 @@
 // Normal Tactical coordinates are untouched when battleslice is absent.
 
 import IntegratedTacticalScene05M from './IntegratedTacticalScene05M.js?v=2';
-import ActiveTurnBattleSlice06A from './ActiveTurnBattleSlice06A.js?v=1';
+// v=2 is deliberate: the first 06A presenter had a runtime-only impact bug.
+// Bust the nested module URL so Safari cannot reuse that older presenter even
+// when the outer HTML receives a fresh cache-buster.
+import ActiveTurnBattleSlice06A from './ActiveTurnBattleSlice06A.js?v=2';
 
 export default class IntegratedTacticalScene06A extends IntegratedTacticalScene05M {
   preload() {
@@ -91,28 +94,29 @@ export default class IntegratedTacticalScene06A extends IntegratedTacticalScene0
     const h3 = byEnemy('hushling_3');
     if (!prismel || !auryi || !kineza || !h1 || !h2 || !h3) return;
 
-    // Open terrain in tactical_map_v2. Each lane starts immediately legal:
-    // Auryi range 1-2: (3,7) -> (5,7)
-    // Prismel range 2-4: (3,8) -> (5,8)
-    // Kineza range 1:   (3,9) -> (4,9)
-    this._moveUnitForQa(auryi, 3, 7);
-    this._moveUnitForQa(prismel, 3, 8);
-    this._moveUnitForQa(kineza, 3, 9);
-    this._moveUnitForQa(h1, 5, 7);
-    this._moveUnitForQa(h2, 5, 8);
-    this._moveUnitForQa(h3, 4, 9);
+    // Lawn-side QA cluster, deliberately moved away from Pool Splash (2,9).
+    // Every occupied tile below is logical "open" terrain in tactical_map_v2.
+    // Auryi range 1-2: (7,5) -> (9,5)
+    // Prismel range 2-4: (8,6) -> (10,6)
+    // Kineza range 1:   (8,7) -> (9,7)
+    this._moveUnitForQa(auryi, 7, 5);
+    this._moveUnitForQa(prismel, 8, 6);
+    this._moveUnitForQa(kineza, 8, 7);
+    this._moveUnitForQa(h1, 9, 5);
+    this._moveUnitForQa(h2, 10, 6);
+    this._moveUnitForQa(h3, 9, 7);
 
     if (this.unitController && this.unitController.clearSelection) this.unitController.clearSelection();
     this.grid.clearAllOverlays();
     this.refreshHUD();
 
-    // Run after 05E-3B's own delayed Prismel-only QA recenter so this cluster
+    // Run after 05E-3B's own delayed Prismel-only QA recenter so this lawn
     // framing wins deterministically.
     this.time.delayedCall(150, () => {
       const compact = this.scale.width < 560 || this.scale.height < 520;
       this.tacticalCamera.setZoom(compact ? 0.88 : 0.96);
-      this.tacticalCamera.focusOn(4, 8, 0);
-      this.setMessage('06A QA: all three heroes begin in immediate attack range.');
+      this.tacticalCamera.focusOn(8.7, 6.2, 0);
+      this.setMessage('06A QA: all three heroes begin on the lawn in immediate attack range.');
       this.refreshHUD();
     });
   }
