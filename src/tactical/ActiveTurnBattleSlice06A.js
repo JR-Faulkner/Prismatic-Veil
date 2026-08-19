@@ -29,7 +29,12 @@ const CANON = Object.freeze({
     entranceHolds: [220, 180, 220, 180, 260, 320],
     attackHolds: [145, 115, 95, 105, 145, 190],
     attackRegistration: [
-      { scale: 0.94027, x: -49.53, y: -11.83 },
+      // Frame 1 is the entrance seam, not punch travel. PriZim measured the
+      // raw entrance→attack delta at ~63.8px center / 42px baseline. The
+      // previous partial correction preserved too much of that displacement,
+      // so Kineza visibly jumped before the attack began. Fully normalize the
+      // starting handoff here; frames 2–6 own the authored forward motion.
+      { scale: 0.94027, x: -63.80, y: -33.00 },
       { scale: 0.99532, x: -58.12, y: -12.76 },
       { scale: 1.02163, x: -68.02, y: -17.17 },
       { scale: 1.01432, x: -73.30, y: -19.82 },
@@ -136,10 +141,8 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     if (!spec || !hero) return super._buildActionPanel(m, hero, parts);
 
     // The base presenter was authored for Prismel and reads hero.ability.
-    // On the Auryi phone test that leaked PRISMATIC SHARD into her card.
     // Keep gameplay data untouched and override only the temporary display
-    // label for the ATTACK slice until each hero's final basic-attack naming
-    // is deliberately canonized.
+    // label for Auryi/Kineza ATTACK until final basic-attack names are locked.
     const oldAbility = hero.ability;
     hero.ability = spec.attackLabel;
     try {
