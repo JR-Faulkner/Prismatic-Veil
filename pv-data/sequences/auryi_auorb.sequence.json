@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "auryi_auorb",
+  "character": "auryi",
+  "displayName": "Auryi",
+  "sequenceName": "Auorb Materialization",
+  "status": "bootstrap-ready",
+  "signatureReady": false,
+  "accent": "gold-lavender",
+  "notes": "The canonical six-beat Auorb signature sequence is locked in project canon, but those six dedicated frame assets are not currently present in the repository. Sequence Lab therefore uses existing locked Auryi battle poses only as bootstrap references, never as replacements for the signature strip.",
+  "signaturePlan": [
+    {"frame":1,"beat":"Calm / ready","asset":null,"referenceAsset":"assets/poses/auryi/Pose01_BattleReady_BattleMasterA_LOCKED.png"},
+    {"frame":2,"beat":"Crown-like aura appears","asset":null,"referenceAsset":"assets/poses/auryi/Pose01_BattleReady_BattleMasterA_LOCKED.png"},
+    {"frame":3,"beat":"Crown orbits and expands","asset":null,"referenceAsset":"assets/poses/auryi/Pose02_VeilStep_LOCKED.png"},
+    {"frame":4,"beat":"Gold + lavender energy spirals to hand","asset":null,"referenceAsset":"assets/poses/auryi/Pose03_OrbGather_LOCKED.png"},
+    {"frame":5,"beat":"Energy condenses into Auorb","asset":null,"referenceAsset":"assets/poses/auryi/Pose03_OrbGather_LOCKED.png"},
+    {"frame":6,"beat":"Auorb solid and luminous; crown absorbed","asset":null,"referenceAsset":"assets/poses/auryi/Pose05_Recompose_LOCKED.png"}
+  ],
+  "previewFrames": [
+    {"id":"auryi_pose_1","asset":"assets/poses/auryi/Pose01_BattleReady_BattleMasterA_LOCKED.png","label":"Battle Ready","holdMs":320,"blendMs":54},
+    {"id":"auryi_pose_2","asset":"assets/poses/auryi/Pose02_VeilStep_LOCKED.png","label":"Veil Step","holdMs":260,"blendMs":48},
+    {"id":"auryi_pose_3","asset":"assets/poses/auryi/Pose03_OrbGather_LOCKED.png","label":"Orb Gather","holdMs":360,"blendMs":58,"cue":"orbGather"},
+    {"id":"auryi_pose_4","asset":"assets/poses/auryi/Pose04_Attack_VeilPulse_POSE_LOCKED.png","label":"Veil Pulse","holdMs":260,"blendMs":42},
+    {"id":"auryi_pose_5","asset":"assets/poses/auryi/Pose05_Recompose_LOCKED.png","label":"Recompose","holdMs":360,"blendMs":58}
+  ]
+}
