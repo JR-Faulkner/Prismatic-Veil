@@ -1,17 +1,14 @@
-// 06A — Three-hero active-turn wiring.
+// 06A.3 — Three-hero active-turn wiring using production-quality locked PNGs.
 //
-// Production goal: move the best current signature-sequence work out of
-// Sequence Lab and back into the real Too Quiet tactical loop without
-// pretending Auryi/Kineza already have finished attack strips.
+// The earlier 06A prototype proved the three-hero state/presentation path but
+// temporarily reused small Sequence Lab WebP proxy sheets for Auryi/Kineza.
+// Those assets are QA transport only and looked blurry / paper-like when blown
+// up in Tactical. 06A.3 removes that path from live combat entirely.
 //
-// Prismel keeps the validated 05M materialization + Prismatic Shard path.
-// Auryi uses the approved six-beat Auorb materialization as her turn-open
-// signature, followed by a simple gold/lavender release beat.
-// Kineza uses the approved six-beat gauntlet ignition as his turn-open
-// signature, followed by a simple kinetic impact beat.
-//
-// Combat authority remains inherited from ActiveTurnBattleSlice. This class
-// changes presentation and expands the battleslice=1 interception gate only.
+// Prismel keeps the current 05M materialization + Prismatic Shard sequence.
+// Auryi and Kineza use their existing locked high-resolution battle-pose PNG
+// sequences already in assets/poses/. No runtime sheet slicing, no white-edge
+// flood removal, and no QA proxy backgrounds are used here.
 
 import ActiveTurnBattleSlice05M from './ActiveTurnBattleSlice05M.js?v=2';
 import {
@@ -19,14 +16,14 @@ import {
   PRISMEL_ATTACK_FRAMES
 } from './ActiveTurnBattleSlice.js?v=3';
 
-export const AURYI_AUORB_FRAMES = Object.freeze([
-  'auryi_auorb_tactical_1', 'auryi_auorb_tactical_2', 'auryi_auorb_tactical_3',
-  'auryi_auorb_tactical_4', 'auryi_auorb_tactical_5', 'auryi_auorb_tactical_6'
+export const AURYI_BATTLE_FRAMES = Object.freeze([
+  'auryi_battle_1', 'auryi_battle_2', 'auryi_battle_3',
+  'auryi_battle_4', 'auryi_battle_5'
 ]);
 
-export const KINEZA_IGNITION_FRAMES = Object.freeze([
-  'kineza_ignition_tactical_1', 'kineza_ignition_tactical_2', 'kineza_ignition_tactical_3',
-  'kineza_ignition_tactical_4', 'kineza_ignition_tactical_5', 'kineza_ignition_tactical_6'
+export const KINEZA_BATTLE_FRAMES = Object.freeze([
+  'kineza_battle_1', 'kineza_battle_2', 'kineza_battle_3',
+  'kineza_battle_4', 'kineza_battle_5'
 ]);
 
 const HERO_SEQUENCE = Object.freeze({
@@ -38,16 +35,16 @@ const HERO_SEQUENCE = Object.freeze({
     accent: 0xc58cff
   }),
   auryi: Object.freeze({
-    intro: AURYI_AUORB_FRAMES,
-    holds: [220, 260, 300, 340, 360, 400],
-    label: 'AUORB • ATTACK',
+    intro: AURYI_BATTLE_FRAMES,
+    holds: [220, 210, 250, 270, 230],
+    label: 'VEIL PULSE • ATTACK',
     colour: 0xffdc72,
     accent: 0xcba7ff
   }),
   kineza: Object.freeze({
-    intro: KINEZA_IGNITION_FRAMES,
-    holds: [220, 180, 220, 180, 260, 320],
-    label: 'GAUNTLET IGNITION • ATTACK',
+    intro: KINEZA_BATTLE_FRAMES,
+    holds: [210, 180, 210, 250, 220],
+    label: 'MOMENTUM FIST',
     colour: 0x62ff98,
     accent: 0x18c86b
   })
@@ -59,7 +56,7 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
   constructor(scene) {
     super(scene);
     this._activeHero06A = null;
-    this._qaMetricsCache = new Map();
+    this._frameMetricsCache06A = new Map();
   }
 
   shouldIntercept(hero, target) {
@@ -86,31 +83,39 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     return !this._activeHero06A || this._activeHero06A.id === 'prismel';
   }
 
-  _qaMetrics(key) {
-    if (this._qaMetricsCache.has(key)) return this._qaMetricsCache.get(key);
+  // High-res locked PNGs have different transparent-canvas sizes. Measure the
+  // actual visible subject so their canvases cannot create apparent scale pops.
+  _frameMetrics06A(key) {
+    if (this._frameMetricsCache06A.has(key)) return this._frameMetricsCache06A.get(key);
     const src = this.scene.textures.get(key).getSourceImage();
     const sw = src && src.width ? src.width : 1;
     const sh = src && src.height ? src.height : 1;
-    let result = { sw, sh, left: 0, right: sw - 1, top: 0, bottom: sh - 1, width: sw, height: sh, anchorX: sw * 0.5, anchorY: sh };
+    let out = { sw, sh, width: sw, height: sh, anchorX: sw * 0.5, anchorY: sh };
 
     try {
       if (typeof document !== 'undefined' && sw > 1 && sh > 1) {
         const canvas = document.createElement('canvas');
-        canvas.width = sw; canvas.height = sh;
+        canvas.width = sw;
+        canvas.height = sh;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         ctx.drawImage(src, 0, 0);
         const px = ctx.getImageData(0, 0, sw, sh).data;
         let left = sw, right = -1, top = sh, bottom = -1;
+
         for (let y = 0; y < sh; y++) {
           for (let x = 0; x < sw; x++) {
-            if (px[(y * sw + x) * 4 + 3] <= 18) continue;
-            left = Math.min(left, x); right = Math.max(right, x);
-            top = Math.min(top, y); bottom = Math.max(bottom, y);
+            const a = px[(y * sw + x) * 4 + 3];
+            if (a <= 18) continue;
+            if (x < left) left = x;
+            if (x > right) right = x;
+            if (y < top) top = y;
+            if (y > bottom) bottom = y;
           }
         }
+
         if (right >= left && bottom >= top) {
           const height = bottom - top + 1;
-          const lowerStart = Math.max(top, Math.floor(bottom - height * 0.17));
+          const lowerStart = Math.max(top, Math.floor(bottom - height * 0.16));
           let sumX = 0, sumW = 0;
           for (let y = lowerStart; y <= bottom; y++) {
             for (let x = left; x <= right; x++) {
@@ -118,8 +123,8 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
               if (a > 42) { sumX += x * a; sumW += a; }
             }
           }
-          result = {
-            sw, sh, left, right, top, bottom,
+          out = {
+            sw, sh,
             width: right - left + 1,
             height,
             anchorX: sumW ? sumX / sumW : (left + right) * 0.5,
@@ -128,11 +133,11 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
         }
       }
     } catch (err) {
-      // Browser-safe fallback keeps the active turn playable.
+      // Fallback leaves the presentation playable if pixel reads fail.
     }
 
-    this._qaMetricsCache.set(key, result);
-    return result;
+    this._frameMetricsCache06A.set(key, out);
+    return out;
   }
 
   _heroLayerLayout(img) {
@@ -142,10 +147,13 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     }
 
     const c = this._layoutMetrics().cutin;
-    const meta = this._qaMetrics(img.texture.key);
-    const maxVisibleW = Math.max(1, c.maxW * 0.90);
-    const maxVisibleH = Math.max(1, c.maxH * (this._activeHero06A.id === 'auryi' ? 0.82 : 0.78));
-    const scale = Math.min(maxVisibleW / Math.max(1, meta.width), maxVisibleH / Math.max(1, meta.height));
+    const meta = this._frameMetrics06A(img.texture.key);
+    const heroId = this._activeHero06A ? this._activeHero06A.id : 'auryi';
+    const heightFactor = heroId === 'auryi' ? 0.84 : 0.80;
+    const scale = Math.min(
+      (c.maxW * 0.90) / Math.max(1, meta.width),
+      (c.maxH * heightFactor) / Math.max(1, meta.height)
+    );
 
     img
       .setOrigin(meta.anchorX / meta.sw, meta.anchorY / meta.sh)
@@ -160,7 +168,9 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     const first = this._sequenceConfig().intro[0];
     if (img.texture.key !== first && String(img.texture.key).startsWith('prismel_')) {
       img.setTexture(first).setAlpha(1);
-      if (this._cutinGhost && this._cutinGhost.active) this._cutinGhost.setTexture(first).setAlpha(0);
+      if (this._cutinGhost && this._cutinGhost.active) {
+        this._cutinGhost.setTexture(first).setAlpha(0);
+      }
       this._layoutCutin();
     }
     return img;
@@ -185,8 +195,12 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     if (rig && rig.active) rig.setAlpha(0);
     this._layoutCutin();
 
-    if (this._heroGlow && this._heroGlow.active) this._heroGlow.setFillStyle(cfg.colour, 0.10);
-    if (rig && rig.active) this.scene.tweens.add({ targets: rig, alpha: 1, duration: 260, ease: 'Sine.easeOut' });
+    if (this._heroGlow && this._heroGlow.active) {
+      this._heroGlow.setFillStyle(cfg.colour, 0.10);
+    }
+    if (rig && rig.active) {
+      this.scene.tweens.add({ targets: rig, alpha: 1, duration: 240, ease: 'Sine.easeOut' });
+    }
 
     await this._cycleTimed(cfg.intro, cfg.holds);
     img.setTexture(cfg.intro[cfg.intro.length - 1]).setAlpha(1);
@@ -209,16 +223,20 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     const { start, end } = this._projectileEndpoints();
     const cfg = this._sequenceConfig();
     const trail = s.add.graphics().setDepth(9461);
-    const orb = s.add.circle(start.x, start.y, 9, cfg.colour, 0.96)
+    const orb = s.add.circle(start.x, start.y, 10, cfg.colour, 0.96)
       .setStrokeStyle(2, cfg.accent, 0.95)
       .setDepth(9462)
       .setBlendMode('ADD');
-    this._uiObject(trail); this._uiObject(orb);
+    this._uiObject(trail);
+    this._uiObject(orb);
 
     return new Promise(resolve => {
       const driver = { t: 0 };
       s.tweens.add({
-        targets: driver, t: 1, duration: 330, ease: 'Cubic.easeIn',
+        targets: driver,
+        t: 1,
+        duration: 330,
+        ease: 'Cubic.easeIn',
         onUpdate: () => {
           const t = driver.t;
           const x = start.x + (end.x - start.x) * t;
@@ -247,13 +265,22 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     this._uiObject(streak);
 
     if (this._heroRig && this._heroRig.active) {
-      s.tweens.add({ targets: this._heroRig, x: this._heroRig.x + 10, duration: 90, yoyo: true, ease: 'Quad.easeOut' });
+      s.tweens.add({
+        targets: this._heroRig,
+        x: this._heroRig.x + 10,
+        duration: 90,
+        yoyo: true,
+        ease: 'Quad.easeOut'
+      });
     }
 
     await new Promise(resolve => {
       const driver = { t: 0 };
       s.tweens.add({
-        targets: driver, t: 1, duration: 210, ease: 'Quad.easeIn',
+        targets: driver,
+        t: 1,
+        duration: 210,
+        ease: 'Quad.easeIn',
         onUpdate: () => {
           const t = driver.t;
           const x = start.x + (end.x - start.x) * t;
@@ -272,25 +299,35 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     this.layers = this.layers.filter(obj => obj !== streak);
   }
 
-  async _playAttackPresentation(hero, target) {
-    // 05F owns the validated run loop and deliberately invokes the presenter
-    // with no arguments. 06A already stores the active hero for the full run,
-    // so resolve from that state instead of assuming a method argument exists.
+  async _playAttackPresentation(hero) {
+    // 05F invokes this presenter without arguments. Resolve the active hero
+    // from the run-scoped state so every inherited caller stays compatible.
     const active = hero || this._activeHero06A;
     if (!active || active.id === 'prismel') return super._playAttackPresentation();
 
     const cfg = HERO_SEQUENCE[active.id] || HERO_SEQUENCE.prismel;
     const img = this._ensureCutin();
-    img.setTexture(cfg.intro[cfg.intro.length - 1]).setAlpha(1);
+    const strikeIndex = active.id === 'auryi' ? 3 : 3;
+    img.setTexture(cfg.intro[strikeIndex]).setAlpha(1);
     this._layoutCutin();
 
     if (this._heroGlow && this._heroGlow.active) {
-      this.scene.tweens.add({ targets: this._heroGlow, alpha: 0.24, scale: 1.5, duration: 150, yoyo: true, ease: 'Sine.easeOut' });
+      this.scene.tweens.add({
+        targets: this._heroGlow,
+        alpha: 0.24,
+        scale: 1.5,
+        duration: 150,
+        yoyo: true,
+        ease: 'Sine.easeOut'
+      });
     }
-    await this._delay(110);
+    await this._delay(90);
 
     if (active.id === 'auryi') await this._releaseOrb();
     else await this._kineticRelease();
+
+    img.setTexture(cfg.intro[cfg.intro.length - 1]).setAlpha(1);
+    this._layoutCutin();
   }
 
   _impactBurst(target) {
@@ -307,7 +344,8 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     const core = s.add.circle(end.x, end.y, 12, cfg.accent, 0.30)
       .setDepth(9471)
       .setBlendMode('ADD');
-    this._uiObject(ring); this._uiObject(core);
+    this._uiObject(ring);
+    this._uiObject(core);
 
     s.tweens.add({ targets: ring, scaleX: 3.4, scaleY: 2.5, alpha: 0, duration: 340, ease: 'Cubic.easeOut' });
     s.tweens.add({ targets: core, scale: 2.4, alpha: 0, duration: 250, ease: 'Quad.easeOut' });
