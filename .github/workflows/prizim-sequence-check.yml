@@ -1,22 +1,27 @@
 name: PriZim Sequence Check
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'pv-data/sequences/**'
       - 'tools/pv_forge/sequence_check.py'
+      - 'tools/pv_forge/continuity_batch_report.py'
       - 'assets/poses/**'
       - 'assets/sequences/**'
       - 'src/prizim/SequenceLab.js'
+      - 'src/prizim/ContinuityGate.js'
       - 'sequence-lab.html'
       - '.github/workflows/prizim-sequence-check.yml'
   pull_request:
     paths:
       - 'pv-data/sequences/**'
       - 'tools/pv_forge/sequence_check.py'
+      - 'tools/pv_forge/continuity_batch_report.py'
       - 'assets/poses/**'
       - 'assets/sequences/**'
       - 'src/prizim/SequenceLab.js'
+      - 'src/prizim/ContinuityGate.js'
       - 'sequence-lab.html'
       - '.github/workflows/prizim-sequence-check.yml'
 
@@ -28,5 +33,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install PriZim analysis dependency
+        run: python -m pip install --disable-pip-version-check Pillow
       - name: Validate PriZim sequence manifests
         run: python tools/pv_forge/sequence_check.py
+      - name: Rank continuity handoffs
+        run: python tools/pv_forge/continuity_batch_report.py
+      - name: Publish continuity report to workflow summary
+        run: cat build/prizim/continuity-report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload PriZim continuity report
+        uses: actions/upload-artifact@v4
+        with:
+          name: prizim-continuity-report
+          path: |
+            build/prizim/continuity-report.json
+            build/prizim/continuity-report.md
