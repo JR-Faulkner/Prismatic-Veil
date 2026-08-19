@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "kineza_attack_master_a",
   "character": "kineza",
-  "status": "canon-approved-pending-binary-ingestion",
+  "status": "canon-approved-runtime-wired",
   "authority": "Kineza Attack Master A",
   "sourceSheet": {
     "width": 1536,
@@ -41,6 +41,10 @@
     "entranceToAttackCenterDeltaPx": 63.80,
     "entranceToAttackNormalizedIoU": 0.610,
     "assessment": "Choreography is approved but the entrance-to-attack seam needs deterministic registration. Do not regenerate. Runtime normalization should correct apparent size/baseline first, then Motion Bridge handles the punch travel."
+  },
+  "runtime": {
+    "binary": "assets/sequences/production/kineza_attack_master_a.png",
+    "presenter": "src/tactical/ActiveTurnBattleSlice06A.js"
   },
   "assetPolicy": "Approved source art is canon. Cleanup/transparency/registration are runtime derivatives only."
 }
