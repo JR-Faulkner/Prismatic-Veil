@@ -25,6 +25,17 @@
     "settleMs": 64,
     "settleScale": 1.002
   },
+  "continuityGate": {
+    "heightPct": 0.10,
+    "widthPct": 0.22,
+    "baselinePct": 0.045,
+    "centerPct": 0.065,
+    "lowerAnchorPct": 0.085,
+    "areaPct": 0.28,
+    "silhouetteDistance": 0.74,
+    "passScore": 80,
+    "bridgeScore": 55
+  },
   "frames": [
     {"id":"prismel_ready_1","sheet":"materialization","sheetIndex":0,"label":"Reach","holdMs":145,"blendMs":42,"scale":1.000,"x":0,"y":0},
     {"id":"prismel_ready_2","sheet":"materialization","sheetIndex":1,"label":"Energy Gathers","holdMs":175,"blendMs":42,"scale":1.000,"x":-1,"y":0,"cue":"shimmer"},
