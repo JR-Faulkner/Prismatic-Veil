@@ -86,9 +86,6 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     return !this._activeHero06A || this._activeHero06A.id === 'prismel';
   }
 
-  // Auryi/Kineza QA transport cells are fixed canvases with transparent
-  // background after 06A ingestion. Measure visible subject bounds so a
-  // different amount of source padding cannot make the character pop in size.
   _qaMetrics(key) {
     if (this._qaMetricsCache.has(key)) return this._qaMetricsCache.get(key);
     const src = this.scene.textures.get(key).getSourceImage();
@@ -131,7 +128,7 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
         }
       }
     } catch (err) {
-      // Keep the slice playable if browser pixel reads are unavailable.
+      // Browser-safe fallback keeps the active turn playable.
     }
 
     this._qaMetricsCache.set(key, result);
@@ -188,12 +185,8 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     if (rig && rig.active) rig.setAlpha(0);
     this._layoutCutin();
 
-    if (this._heroGlow && this._heroGlow.active) {
-      this._heroGlow.setFillStyle(cfg.colour, 0.10);
-    }
-    if (rig && rig.active) {
-      this.scene.tweens.add({ targets: rig, alpha: 1, duration: 260, ease: 'Sine.easeOut' });
-    }
+    if (this._heroGlow && this._heroGlow.active) this._heroGlow.setFillStyle(cfg.colour, 0.10);
+    if (rig && rig.active) this.scene.tweens.add({ targets: rig, alpha: 1, duration: 260, ease: 'Sine.easeOut' });
 
     await this._cycleTimed(cfg.intro, cfg.holds);
     img.setTexture(cfg.intro[cfg.intro.length - 1]).setAlpha(1);
@@ -300,6 +293,7 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     if (this._isPrismel()) return super._impactBurst(target);
 
     const s = this.scene;
+    const active = this._activeHero06A;
     const cfg = this._sequenceConfig();
     const { end } = this._projectileEndpoints();
     const ring = s.add.ellipse(end.x, end.y, 24, 16, cfg.colour, 0.06)
@@ -313,7 +307,8 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
 
     s.tweens.add({ targets: ring, scaleX: 3.4, scaleY: 2.5, alpha: 0, duration: 340, ease: 'Cubic.easeOut' });
     s.tweens.add({ targets: core, scale: 2.4, alpha: 0, duration: 250, ease: 'Quad.easeOut' });
-    s.cameras.main.shake(hero && hero.id === 'kineza' ? 160 : 100, hero && hero.id === 'kineza' ? 0.006 : 0.003);
+    const kineza = active && active.id === 'kineza';
+    s.cameras.main.shake(kineza ? 160 : 100, kineza ? 0.006 : 0.003);
 
     this._timer(430, () => {
       [ring, core].forEach(obj => {
