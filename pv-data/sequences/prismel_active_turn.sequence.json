@@ -17,13 +17,13 @@
     "style": "controlled",
     "axis": "x",
     "direction": -1,
-    "minBlendMs": 92,
-    "blendScale": 1.15,
-    "travelPx": 4,
-    "enterScale": 0.994,
-    "overlap": 0.46,
-    "settleMs": 64,
-    "settleScale": 1.002
+    "minBlendMs": 82,
+    "blendScale": 1.00,
+    "travelPx": 3,
+    "enterScale": 0.997,
+    "overlap": 0.34,
+    "settleMs": 52,
+    "settleScale": 1.001
   },
   "continuityGate": {
     "heightPct": 0.095,
