@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>The Prismatic Veil — Tactical Shell 06D Clean</title>
+<meta name="theme-color" content="#071022">
+<style>
+html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:#071022;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Arial,sans-serif;touch-action:none}#game-container{position:fixed;inset:0}canvas{display:block}#loading{position:fixed;inset:0;z-index:3000;display:grid;place-items:center;padding:24px;text-align:center;background:radial-gradient(circle at 50% 35%,#352353,#071022 72%);color:#ead28c;font-weight:850;white-space:pre-wrap}.qa{position:fixed;right:6px;top:6px;z-index:2100;padding:4px 7px;border:1px solid rgba(234,210,140,.3);background:rgba(5,9,20,.62);color:#cabfda;font:800 7px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",Arial,sans-serif;letter-spacing:.08em;pointer-events:none}
+</style>
+<script src="./phaser.min.js"></script>
+</head>
+<body>
+<div id="loading">✦ Loading 06D CLEAN SHELL ✦</div>
+<div id="game-container"></div>
+<div class="qa">06D • SHALLOW • CLEAN HUD</div>
+<script type="module">
+import TacticalScene from './src/tactical/IntegratedTacticalScene06D.js?v=1';
+import VeilBattleScene from './src/IntegratedVeilBattleScene.js?v=4';
+const boot=document.getElementById('loading');
+function fail(error){console.error(error);boot.style.display='grid';boot.textContent='Boot Error\n\n'+(error?.stack||error?.message||String(error))}
+window.addEventListener('error',e=>fail(e.error||e.message));
+window.addEventListener('unhandledrejection',e=>fail(e.reason||e));
+if(!window.Phaser){fail('Phaser did not load.')}else{
+  const dpr=Math.min(window.devicePixelRatio||1,3);
+  const orig=Phaser.GameObjects.GameObjectFactory.prototype.text;
+  Phaser.GameObjects.GameObjectFactory.prototype.text=function(x,y,text,style){style=style||{};if(style.resolution===undefined)style.resolution=dpr;return orig.call(this,x,y,text,style)};
+  class HarnessScene extends TacticalScene{create(){boot.style.display='none';super.create()}}
+  try{
+    new Phaser.Game({type:Phaser.AUTO,parent:'game-container',width:800,height:600,backgroundColor:'#071022',scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},input:{activePointers:2},scene:[HarnessScene,VeilBattleScene]});
+  }catch(error){fail(error)}
+}
+</script>
+</body>
+</html>
