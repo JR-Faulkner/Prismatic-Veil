@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "auryi_attack_master_a",
+  "character": "auryi",
+  "status": "canon-approved-pending-binary-ingestion",
+  "authority": "Auryi Attack Master A",
+  "sourceSheet": {
+    "width": 1536,
+    "height": 1024,
+    "cols": 3,
+    "rows": 2,
+    "cellWidth": 512,
+    "cellHeight": 512
+  },
+  "continuationFrom": "auryi_auorb.sequence.json#frame-6",
+  "beats": [
+    "Auorb Ready",
+    "Draw / Charge",
+    "Compression",
+    "Cast Forward",
+    "Release",
+    "Recovery / Ready"
+  ],
+  "runtimeRegistration": {
+    "reference": "approved Auorb entrance frame 6",
+    "targetBodyHeightPx": 437,
+    "targetBaselinePx": 499,
+    "centerMotionPreservation": 0.25,
+    "frames": [
+      {"frame":1,"scale":0.98869,"x":-5.07,"y":0.70},
+      {"frame":2,"scale":0.98869,"x":-13.66,"y":0.70},
+      {"frame":3,"scale":0.98423,"x":4.09,"y":1.96},
+      {"frame":4,"scale":1.01628,"x":0.49,"y":-8.12},
+      {"frame":5,"scale":1.01628,"x":19.92,"y":-8.12},
+      {"frame":6,"scale":1.01628,"x":-5.87,"y":-8.12}
+    ]
+  },
+  "priZimNotes": {
+    "entranceToAttackHeightDeltaPct": 1.14,
+    "entranceToAttackBaselineDeltaPx": 5,
+    "entranceToAttackCenterDeltaPx": 7.51,
+    "entranceToAttackNormalizedIoU": 0.821,
+    "assessment": "Healthy seam. Use deterministic registration and motion tuning; no regeneration indicated."
+  },
+  "assetPolicy": "Approved source art is canon. Cleanup/transparency/registration are runtime derivatives only."
+}
