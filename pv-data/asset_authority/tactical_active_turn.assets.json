@@ -1,0 +1,70 @@
+{
+  "schema": "prizim.asset_authority.v1",
+  "scope": "too_quiet_active_turn",
+  "rules": {
+    "active": "May be referenced by production/runtime code.",
+    "pending_binary_ingestion": "Canon is approved and supplied, but the production binary is not yet committed. Runtime must not substitute unrelated art.",
+    "archive": "Historical/QA reference only. Must not be referenced by current production runtime.",
+    "delete_candidate": "Unreferenced duplicate/obsolete asset eligible for later purge after one clean release checkpoint."
+  },
+  "heroes": {
+    "prismel": {
+      "status": "active",
+      "entrance": "assets/poses/prismel_active_turn/",
+      "attack": "assets/poses/prismel_active_turn/",
+      "authority": "pv-data/sequences/prismel_active_turn.sequence.json"
+    },
+    "auryi": {
+      "status": "pending_binary_ingestion",
+      "entrance": {
+        "name": "Auryi Auorb Materialization",
+        "frames": 6,
+        "layout": "3x2",
+        "expected_path": "assets/sequences/production/auryi_auorb_master_a.jpg",
+        "authority": "pv-data/sequences/auryi_auorb.sequence.json"
+      },
+      "attack": {
+        "name": "Auryi Attack Master A",
+        "frames": 6,
+        "layout": "3x2",
+        "expected_path": "assets/sequences/production/auryi_attack_master_a.jpg",
+        "authority": "pv-data/sequence_authority/auryi_attack_master_a.registration.json"
+      }
+    },
+    "kineza": {
+      "status": "pending_binary_ingestion",
+      "entrance": {
+        "name": "Kineza Gauntlet Ignition",
+        "frames": 6,
+        "layout": "3x2",
+        "expected_path": "assets/sequences/production/kineza_gauntlet_ignition_master_a.jpg",
+        "authority": "pv-data/sequences/kineza_gauntlet_ignition.sequence.json"
+      },
+      "attack": {
+        "name": "Kineza Attack Master A",
+        "frames": 6,
+        "layout": "3x2",
+        "expected_path": "assets/sequences/production/kineza_attack_master_a.jpg",
+        "authority": "pv-data/sequence_authority/kineza_attack_master_a.registration.json"
+      }
+    }
+  },
+  "archive": [
+    {
+      "path": "assets/poses/auryi/",
+      "reason": "Older high-resolution battle-pose set. Not canonical entrance/attack continuation for current active-turn Tactical."
+    },
+    {
+      "path": "assets/poses/kineza/",
+      "reason": "Older Idle/Step/Coil/Strike/Recover pose set. Not canonical entrance/attack continuation for current active-turn Tactical."
+    },
+    {
+      "path": "assets/sequences/qa/auryi_auorb.webp",
+      "reason": "Sequence Lab QA transport proxy only. Never production combat art."
+    },
+    {
+      "path": "assets/sequences/qa/kineza_gauntlet_ignition.webp",
+      "reason": "Sequence Lab QA transport proxy only. Never production combat art."
+    }
+  ]
+}
