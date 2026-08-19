@@ -1,7 +1,7 @@
-// 06D — cleanup harness after PriZim Tactical Shell 06C.
+// 06D — PriZim Tactical cleanup harness.
 // Purpose: expose the compact HUD without the legacy encounter slab,
-// preserve the proven lawn-side quick-start staging, and prevent deprecated
-// Auryi/Kineza substitute pose sequences from presenting themselves as canon.
+// preserve the proven lawn-side quick-start staging, and force the validated
+// active-turn path for all three canon heroes.
 //
 // IMPORTANT: 06D is a dedicated QA harness. It force-enables the active-turn
 // slice internally so this page can never silently fall through to legacy BP
@@ -18,8 +18,6 @@ export default class IntegratedTacticalScene06D extends IntegratedTacticalScene0
 
   _forceActiveTurnHarness06D() {
     if (!this.activeTurnBattleSlice) return;
-    // Harness-local override only. Production gating remains untouched in the
-    // base ActiveTurnBattleSlice implementation.
     this.activeTurnBattleSlice.isEnabled = () => true;
   }
 
@@ -88,15 +86,9 @@ export default class IntegratedTacticalScene06D extends IntegratedTacticalScene0
   }
 
   async enterLinkedBattle(hero, target, actionKind) {
-    // Canon guard: until the real production entrance + Attack Master A assets
-    // are ingested, Auryi/Kineza must never fall through to old pose substitutes
-    // or the legacy BP bridge.
-    if (hero && (hero.id === 'auryi' || hero.id === 'kineza')) {
-      this.setMessage(`${hero.name.toUpperCase()} • CANON ENTRANCE + ATTACK QUEUED`);
-      return;
-    }
-
-    // Prismel must stay inside the active-turn slice in this harness.
+    // Reassert the QA harness gate immediately before delegation. 06A now owns
+    // canon Prismel, Auryi, and Kineza presentation and keeps all three inside
+    // the same validated active-turn state path.
     this._forceActiveTurnHarness06D();
     return super.enterLinkedBattle(hero, target, actionKind);
   }
