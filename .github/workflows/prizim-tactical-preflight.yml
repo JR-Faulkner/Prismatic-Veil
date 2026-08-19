@@ -95,15 +95,15 @@ jobs:
         continue-on-error: true
         shell: bash
         env:
-          DELIVERY_URL: https://raw.githack.com/JR-Faulkner/Prismatic-Veil/${{ github.sha }}/tactical-shell-06d-clean.html
+          DELIVERY_URL: https://rawcdn.githack.com/JR-Faulkner/Prismatic-Veil/${{ github.sha }}/tactical-shell-06d-clean.html
         run: |
           echo "Testing exact phone delivery URL: $DELIVERY_URL"
-          for attempt in 1 2 3 4 5 6; do
-            echo "Delivery smoke attempt $attempt/6"
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            echo "Delivery smoke attempt $attempt/12"
             if PRIZIM_TACTICAL_URL="$DELIVERY_URL" node tools/pv_forge/tactical_boot_smoke.mjs; then
               exit 0
             fi
-            if [ "$attempt" -lt 6 ]; then sleep 10; fi
+            if [ "$attempt" -lt 12 ]; then sleep 10; fi
           done
           exit 1
 
