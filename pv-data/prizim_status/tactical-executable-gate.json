@@ -5,6 +5,6 @@
   "local_active_turn_smoke": "success",
   "phone_active_turn_smoke": "success",
   "delivery_surface": "github-pages",
-  "build_marker": "TACTICAL-HUD-PHONE-03",
+  "build_marker": "TACTICAL-HUD-PHONE-04",
   "legacy_bp_blocked": true
 }

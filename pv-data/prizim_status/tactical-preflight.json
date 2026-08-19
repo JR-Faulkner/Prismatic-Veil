@@ -1,7 +1,7 @@
 {
   "tool": "PriZim Tactical Preflight",
   "summary": "FAIL",
-  "failures": 1,
+  "failures": 2,
   "warnings": 0,
   "checks": [
     {
@@ -41,8 +41,8 @@
     },
     {
       "name": "06D harness entry",
-      "status": "PASS",
-      "detail": "phone harness imports versioned 06D"
+      "status": "FAIL",
+      "detail": "phone harness is not pinned to a versioned 06D module"
     },
     {
       "name": "versioned import chain 06D\u219206C",
