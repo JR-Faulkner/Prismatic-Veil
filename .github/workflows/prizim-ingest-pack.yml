@@ -1,0 +1,74 @@
+name: PriZim Ingest Pack
+
+on:
+  push:
+    paths:
+      - 'prizim-inbox/*.zip'
+      - 'tools/pv_forge/ingest_pack.py'
+      - 'tools/pv_forge/asset_hygiene.py'
+      - 'tools/pv_forge/tactical_preflight.py'
+      - 'pv-data/asset_authority/**'
+      - '.github/workflows/prizim-ingest-pack.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ingest:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PriZim image dependency
+        run: python -m pip install --disable-pip-version-check Pillow
+      - name: Locate newest PriZim pack
+        id: pack
+        shell: bash
+        run: |
+          PACK=$(ls -1t prizim-inbox/*.zip 2>/dev/null | head -n 1 || true)
+          if [ -z "$PACK" ]; then
+            echo "No PriZim ZIP found."
+            exit 1
+          fi
+          echo "path=$PACK" >> "$GITHUB_OUTPUT"
+      - name: Validate and promote pack
+        run: python tools/pv_forge/ingest_pack.py "${{ steps.pack.outputs.path }}"
+      - name: Run sequence validation
+        run: python tools/pv_forge/sequence_check.py
+      - name: Run continuity report
+        run: python tools/pv_forge/continuity_batch_report.py
+      - name: Run asset hygiene
+        run: python tools/pv_forge/asset_hygiene.py
+      - name: Run Tactical Preflight
+        run: python tools/pv_forge/tactical_preflight.py
+      - name: Publish PriZim reports
+        if: always()
+        shell: bash
+        run: |
+          for f in build/prizim/ingest-report.md build/prizim/continuity-report.md build/prizim/asset-hygiene.md build/prizim/tactical-preflight.md; do
+            if [ -f "$f" ]; then cat "$f" >> "$GITHUB_STEP_SUMMARY"; echo >> "$GITHUB_STEP_SUMMARY"; fi
+          done
+      - name: Commit promoted production assets
+        shell: bash
+        run: |
+          git config user.name "PriZim Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add assets/sequences/production
+          if git diff --cached --quiet; then
+            echo "No promoted asset changes to commit."
+          else
+            git commit -m "PriZim ingest approved production masters"
+            git push
+          fi
+      - name: Upload PriZim reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prizim-ingest-report
+          path: build/prizim/
