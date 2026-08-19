@@ -16,6 +16,7 @@ on:
       - 'pv-data/sequence_authority/**'
       - 'tools/pv_forge/asset_hygiene.py'
       - 'tools/pv_forge/tactical_preflight.py'
+      - 'tools/pv_forge/tactical_boot_smoke.mjs'
       - '.github/workflows/prizim-tactical-preflight.yml'
   pull_request:
     paths:
@@ -31,6 +32,7 @@ on:
       - 'pv-data/sequence_authority/**'
       - 'tools/pv_forge/asset_hygiene.py'
       - 'tools/pv_forge/tactical_preflight.py'
+      - 'tools/pv_forge/tactical_boot_smoke.mjs'
       - '.github/workflows/prizim-tactical-preflight.yml'
 
 permissions:
@@ -44,14 +46,50 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Parse Tactical module chain
+        id: syntax
+        continue-on-error: true
+        shell: bash
+        run: |
+          node --check src/tactical/ActiveTurnBattleSlice06A.js
+          node --check src/tactical/IntegratedTacticalScene06A.js
+          node --check src/tactical/IntegratedTacticalViewFlavor06B.js
+          node --check src/tactical/IntegratedTacticalScene06C.js
+          node --check src/tactical/IntegratedTacticalScene06D.js
+
       - name: Run PriZim Tactical Preflight
         id: preflight
         continue-on-error: true
         run: python tools/pv_forge/tactical_preflight.py
+
       - name: Run PriZim Asset Hygiene
         id: hygiene
         continue-on-error: true
         run: python tools/pv_forge/asset_hygiene.py
+
+      - name: Install browser smoke dependency
+        id: browser_setup
+        continue-on-error: true
+        shell: bash
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run PriZim Tactical browser boot smoke
+        id: boot_smoke
+        continue-on-error: true
+        shell: bash
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/prizim-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          node tools/pv_forge/tactical_boot_smoke.mjs
+
       - name: Publish preflight reports
         if: always()
         shell: bash
@@ -59,6 +97,11 @@ jobs:
           for f in build/prizim/tactical-preflight.md build/prizim/asset-hygiene.md; do
             if [ -f "$f" ]; then cat "$f" >> "$GITHUB_STEP_SUMMARY"; echo >> "$GITHUB_STEP_SUMMARY"; fi
           done
+          echo "## PriZim Executable Gate" >> "$GITHUB_STEP_SUMMARY"
+          echo "- JS parse: ${{ steps.syntax.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Browser setup: ${{ steps.browser_setup.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Phone-shaped boot smoke: ${{ steps.boot_smoke.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Persist PriZim gate receipt
         if: always() && github.event_name == 'push'
         shell: bash
@@ -66,6 +109,14 @@ jobs:
           mkdir -p pv-data/prizim_status
           cp build/prizim/tactical-preflight.json pv-data/prizim_status/tactical-preflight.json
           cp build/prizim/asset-hygiene.json pv-data/prizim_status/asset-hygiene.json
+          cat > pv-data/prizim_status/tactical-executable-gate.json <<EOF
+          {
+            "tool": "PriZim Tactical Executable Gate",
+            "syntax": "${{ steps.syntax.outcome }}",
+            "browser_setup": "${{ steps.browser_setup.outcome }}",
+            "boot_smoke": "${{ steps.boot_smoke.outcome }}"
+          }
+          EOF
           git config user.name "PriZim Bot"
           git config user.email "actions@users.noreply.github.com"
           git add pv-data/prizim_status
@@ -75,9 +126,11 @@ jobs:
             git commit -m "PriZim publish Tactical gate receipt"
             git push
           fi
+
       - name: Enforce gate result
-        if: steps.preflight.outcome != 'success' || steps.hygiene.outcome != 'success'
+        if: steps.syntax.outcome != 'success' || steps.preflight.outcome != 'success' || steps.hygiene.outcome != 'success' || steps.browser_setup.outcome != 'success' || steps.boot_smoke.outcome != 'success'
         run: exit 1
+
       - name: Upload PriZim Tactical reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -88,3 +141,4 @@ jobs:
             build/prizim/tactical-preflight.md
             build/prizim/asset-hygiene.json
             build/prizim/asset-hygiene.md
+            pv-data/prizim_status/tactical-executable-gate.json
