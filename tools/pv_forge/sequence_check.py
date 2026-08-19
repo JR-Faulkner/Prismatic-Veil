@@ -54,6 +54,30 @@ def validate_motion_profile(data: dict[str, Any], context: str) -> None:
         if not isinstance(value, (int, float)) or not math.isfinite(float(value)) or not lo <= float(value) <= hi:
             raise SequenceError(f"{context}.motionProfile.{field} must be between {lo} and {hi}")
 
+def validate_continuity_gate(data: dict[str, Any], context: str) -> None:
+    gate = data.get("continuityGate")
+    if gate is None: return
+    if not isinstance(gate, dict): raise SequenceError(f"{context}.continuityGate must be an object")
+    fraction_ranges = {
+        "heightPct": (0.02, 0.50),
+        "widthPct": (0.05, 0.70),
+        "baselinePct": (0.01, 0.25),
+        "centerPct": (0.01, 0.30),
+        "lowerAnchorPct": (0.01, 0.35),
+        "areaPct": (0.05, 0.90),
+        "silhouetteDistance": (0.20, 0.98),
+    }
+    for field, (lo, hi) in fraction_ranges.items():
+        value = gate.get(field)
+        if not isinstance(value, (int, float)) or not math.isfinite(float(value)) or not lo <= float(value) <= hi:
+            raise SequenceError(f"{context}.continuityGate.{field} must be between {lo} and {hi}")
+    for field in ("passScore", "bridgeScore"):
+        value = gate.get(field)
+        if not isinstance(value, int) or not 0 <= value <= 100:
+            raise SequenceError(f"{context}.continuityGate.{field} must be an integer from 0 to 100")
+    if gate["bridgeScore"] >= gate["passScore"]:
+        raise SequenceError(f"{context}.continuityGate.bridgeScore must be lower than passScore")
+
 def validate_frame(frame: Any, context: str, sheets: dict[str, Any]) -> None:
     if not isinstance(frame, dict): raise SequenceError(f"{context}: frame must be an object")
     for field in ("id","label"):
@@ -85,6 +109,7 @@ def validate_manifest(data: dict[str, Any], filename: str) -> None:
         if not isinstance(data.get(field),str) or not data[field].strip(): raise SequenceError(f"{context}: {field} must be a non-empty string")
     if not isinstance(data.get("signatureReady"),bool): raise SequenceError(f"{context}: signatureReady must be boolean")
     validate_motion_profile(data, context)
+    validate_continuity_gate(data, context)
     sheets=validate_sheets(data,context)
     frames=data.get("frames") if data["signatureReady"] else data.get("previewFrames")
     if not isinstance(frames,list) or not frames: raise SequenceError(f"{context}: active playback frames are required")
@@ -99,7 +124,8 @@ def main()->int:
             data=load(SEQUENCE_DIR/filename); validate_manifest(data,filename)
             mode="authority-qa" if data.get("qaProxy") else ("signature" if data["signatureReady"] else "bootstrap")
             motion=(data.get("motionProfile") or {}).get("style", "default")
-            print(f"OK  {data['displayName']}: {data['sequenceName']} [{mode}/{motion}]")
+            gate="gate" if data.get("continuityGate") else "gate-default"
+            print(f"OK  {data['displayName']}: {data['sequenceName']} [{mode}/{motion}/{gate}]")
         print("PriZim Sequence Check OK"); return 0
     except SequenceError as exc:
         print(f"PriZim Sequence Check FAILED: {exc}",file=sys.stderr); return 1
