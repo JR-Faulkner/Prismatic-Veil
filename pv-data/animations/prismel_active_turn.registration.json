@@ -4,25 +4,88 @@
   "character": "prismel",
   "assetRoot": "assets/poses/prismel_active_turn",
   "referenceFrame": "prismel_ready_6",
-  "notes": "Canonical renderer-neutral registration tuning. Scale is a multiplier applied after measured visible-body normalization. x/y are local pixel nudges at the registered rig origin.",
+  "notes": "Canonical renderer-neutral registration and cadence tuning. Scale is a multiplier applied after measured visible-body normalization. x/y are local pixel nudges at the registered rig origin. Timing/cues are authored here so renderers and future audio can share the same beats.",
   "frames": {
-    "prismel_ready_1":  { "scale": 1.000, "x": 0, "y": 0 },
-    "prismel_ready_2":  { "scale": 1.000, "x": -1, "y": 0 },
-    "prismel_ready_3":  { "scale": 0.998, "x": -1, "y": 0 },
-    "prismel_ready_4":  { "scale": 0.999, "x": 0, "y": 0 },
-    "prismel_ready_5":  { "scale": 1.000, "x": 0, "y": 0 },
-    "prismel_ready_6":  { "scale": 1.000, "x": 0, "y": 0 },
-
-    "prismel_attack_1": { "scale": 1.018, "x": 0, "y": 0 },
-    "prismel_attack_2": { "scale": 1.015, "x": 1, "y": 0 },
-    "prismel_attack_3": { "scale": 1.012, "x": 2, "y": 0 },
-    "prismel_attack_4": { "scale": 1.008, "x": 2, "y": 0 },
-    "prismel_attack_5": { "scale": 1.005, "x": 1, "y": 0 },
-    "prismel_attack_6": { "scale": 1.002, "x": 0, "y": 0 }
+    "prismel_ready_1": {
+      "scale": 1.0,
+      "x": 0,
+      "y": 0
+    },
+    "prismel_ready_2": {
+      "scale": 1.0,
+      "x": -1,
+      "y": 0
+    },
+    "prismel_ready_3": {
+      "scale": 0.998,
+      "x": -1,
+      "y": 0
+    },
+    "prismel_ready_4": {
+      "scale": 0.999,
+      "x": 0,
+      "y": 0
+    },
+    "prismel_ready_5": {
+      "scale": 1.0,
+      "x": 0,
+      "y": 0
+    },
+    "prismel_ready_6": {
+      "scale": 1.0,
+      "x": 0,
+      "y": 0
+    },
+    "prismel_attack_1": {
+      "scale": 1.036,
+      "x": 0,
+      "y": 0
+    },
+    "prismel_attack_2": {
+      "scale": 1.031,
+      "x": 1,
+      "y": 0
+    },
+    "prismel_attack_3": {
+      "scale": 1.025,
+      "x": 2,
+      "y": 0
+    },
+    "prismel_attack_4": {
+      "scale": 1.015,
+      "x": 2,
+      "y": 0
+    },
+    "prismel_attack_5": {
+      "scale": 1.008,
+      "x": 1,
+      "y": 0
+    },
+    "prismel_attack_6": {
+      "scale": 1.003,
+      "x": 0,
+      "y": 0
+    }
+  },
+  "materialization": {
+    "frameHoldMs": [
+      150,
+      180,
+      210,
+      240,
+      280,
+      330
+    ],
+    "cueFrames": {
+      "shimmer": 2,
+      "staffEmerges": 3,
+      "staffDraw": 4,
+      "staffLock": 6
+    }
   },
   "transition": {
-    "readyToAttackHoldMs": 105,
-    "attackStartFrameMs": 172,
+    "readyToAttackHoldMs": 135,
+    "attackStartFrameMs": 188,
     "attackReleaseFrameMs": 165
   }
 }
