@@ -26,8 +26,9 @@
     "targetBodyHeightPx": 425,
     "targetBaselinePx": 463,
     "centerMotionPreservation": 0.50,
+    "startSeamPolicy": "Frame 1 is normalized to the entrance-ready anchor; authored punch travel begins on frame 2.",
     "frames": [
-      {"frame":1,"scale":0.94027,"x":-49.53,"y":-11.83},
+      {"frame":1,"scale":0.94027,"x":-63.80,"y":-33.00,"role":"normalized entrance seam"},
       {"frame":2,"scale":0.99532,"x":-58.12,"y":-12.76},
       {"frame":3,"scale":1.02163,"x":-68.02,"y":-17.17},
       {"frame":4,"scale":1.01432,"x":-73.30,"y":-19.82},
@@ -40,7 +41,8 @@
     "entranceToAttackBaselineDeltaPx": 42,
     "entranceToAttackCenterDeltaPx": 63.80,
     "entranceToAttackNormalizedIoU": 0.610,
-    "assessment": "Choreography is approved but the entrance-to-attack seam needs deterministic registration. Do not regenerate. Runtime normalization should correct apparent size/baseline first, then Motion Bridge handles the punch travel."
+    "assessment": "Choreography is approved. Runtime normalization corrects apparent size/baseline at the entrance-to-attack seam, then Motion Bridge carries the punch travel. Do not regenerate.",
+    "phoneQaLearning": "Partial start-frame motion preservation read as displacement. Frame 1 now prioritizes seam continuity; attack travel starts on frame 2."
   },
   "runtime": {
     "binary": "assets/sequences/production/kineza_attack_master_a.png",
