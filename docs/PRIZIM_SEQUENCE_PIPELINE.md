@@ -27,7 +27,7 @@ The approved source sheets are 1536x1024 with six 512x512 cells in reading order
 
 ## QA proxy rule
 
-Current Sequence Lab v0.2.4 uses lightweight WebP QA proxies under `assets/sequences/qa/`.
+Current Sequence Lab v0.3 uses lightweight WebP QA proxies under `assets/sequences/qa/`.
 
 - QA proxies preserve the approved sheet composition and frame order.
 - Production masters remain unchanged and authoritative.
@@ -142,7 +142,7 @@ Cross-dissolve is not automatically desirable.
 
 ## Motion Bridge rule
 
-Sequence Lab v0.2.4 introduces the PriZim Motion Bridge layer. Its purpose is to extract the best possible animation read from locked canon frames before requesting new bridge art.
+Sequence Lab v0.2.4 introduced the PriZim Motion Bridge layer. Its purpose is to extract the best possible animation read from locked canon frames before requesting new bridge art.
 
 Motion Bridge rules:
 
@@ -161,6 +161,56 @@ Motion Bridge rules:
 - Kineza: `impact` profile. Vertical landing motion, lower overlap, stronger scale settle, fast ease-out. Goal: kinetic weight and snap without mushy double silhouettes.
 
 `tools/pv_forge/sequence_check.py` validates Motion Bridge profile ranges so an invalid QA profile cannot silently enter the tester.
+
+## Continuity Gate rule
+
+Sequence Lab v0.3 adds PriZim Continuity Gate after Motion Bridge.
+
+The pipeline order is:
+
+**Authority frames → Motion Bridge → Continuity Gate → PASS / TUNE / BRIDGE CANDIDATE → constrained repair or generation only when earned → Continuity Gate again → phone QA**
+
+Continuity Gate v0.3 measures adjacent authority-frame pairs for:
+
+- visible height delta
+- silhouette width delta
+- baseline delta
+- visible-body center delta
+- lower-body anchor delta
+- visible alpha-mass delta
+- whole-cell silhouette distance
+
+Each character has its own `continuityGate` thresholds in neutral manifest data. This prevents PriZim from treating legitimate aura bloom or impact effects as the same kind of geometry change as unwanted character drift.
+
+Gate decisions:
+
+- `PASS`: do not generate new character art. Runtime motion may still be tuned if phone QA requests it.
+- `TUNE`: try registration, timing, overlap, or motion-profile correction before new art.
+- `BRIDGE CANDIDATE`: measured discontinuity is large enough to justify manual review for a surgical bridge pose.
+
+A BRIDGE CANDIDATE is not automatic permission to generate. Phone QA and the Gate result must agree that the handoff is materially distracting.
+
+### Generation handoff
+
+Continuity Gate can emit a bridge specification for any adjacent pair. The specification locks:
+
+- identity and costume
+- camera/crop/orientation
+- target baseline
+- visible center X
+- visible height and width envelopes
+- lower-body anchor
+- source-to-target prop/effect trajectory
+- a 50% interpolation target
+- post-generation acceptance score
+
+Both neighboring canon frames must be used as strict references. Generation should change only the regions required by the transition.
+
+If a generated bridge fails the Gate, repair from the nearer canon endpoint rather than recreating the whole character from scratch.
+
+The full production contract is documented in `docs/PRIZIM_CONTINUITY_GATE.md`.
+
+`tools/pv_forge/sequence_check.py` validates Continuity Gate threshold ranges and score ordering.
 
 ## Asset transfer rule
 
@@ -190,7 +240,7 @@ PriZim evolves by evidence:
 - Promote QA tuning into canonical data only after phone QA earns it.
 - Add new character art only when analysis shows the existing authority sequence cannot meet the intended motion quality.
 
-## Sequence Lab v0.2 baseline
+## Sequence Lab version history
 
 The v0.2 baseline includes:
 
@@ -210,3 +260,5 @@ v0.2.2 added the aggressive visibility experiment that exposed the real stage-la
 v0.2.3 removes the stale loading overlay and restores normal QA exposure while preserving all sequence data and canonical art.
 
 v0.2.4 replaces CSS/sleep-driven pose swapping with the data-driven PriZim Motion Bridge: requestAnimationFrame timing, eased translation/scale interpolation, selective overlap, and character-specific settle behavior. No new character art is introduced in this pass.
+
+v0.3 adds Continuity Gate: measured adjacent-frame scoring, character-specific tolerances, PASS/TUNE/BRIDGE CANDIDATE recommendations, and copyable bridge-generation specifications. Canon art remains unchanged.
