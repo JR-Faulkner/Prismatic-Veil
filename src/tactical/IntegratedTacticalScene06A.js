@@ -10,10 +10,8 @@
 // Normal Tactical coordinates are untouched when battleslice is absent.
 
 import IntegratedTacticalScene05M from './IntegratedTacticalScene05M.js?v=2';
-// v=2 is deliberate: the first 06A presenter had a runtime-only impact bug.
-// Bust the nested module URL so Safari cannot reuse that older presenter even
-// when the outer HTML receives a fresh cache-buster.
-import ActiveTurnBattleSlice06A from './ActiveTurnBattleSlice06A.js?v=2';
+// v=3 includes the inherited no-argument attack-presenter fix.
+import ActiveTurnBattleSlice06A from './ActiveTurnBattleSlice06A.js?v=3';
 
 export default class IntegratedTacticalScene06A extends IntegratedTacticalScene05M {
   preload() {
