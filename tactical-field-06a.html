@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>The Prismatic Veil — Too Quiet 06A.2</title>
+<title>The Prismatic Veil — Too Quiet 06A.3</title>
 <meta name="theme-color" content="#071022">
 <style>
 :root{--navy:#071022;--panel:rgba(7,14,31,.94);--line:rgba(229,204,130,.52);--gold:#ead28c;--cyan:#96ebff;--violet:#d3a1ff;--text:#fff7e8;--muted:#b7afbf;--hp:#66df8b;--rp:#9073ee;--red:#dc5b76}
@@ -12,12 +12,12 @@
 <script src="./phaser.min.js"></script>
 </head>
 <body>
-<div id="loading">✦ Loading Too Quiet 06A.2 ✦</div>
+<div id="loading">✦ Loading Too Quiet 06A.3 ✦</div>
 <div id="game-container"></div>
 <div id="pv-mobile-shell" class="shell" aria-hidden="true">
   <section class="turn glass"><div class="turn-no" id="pv-turn-number">01</div><div class="turn-copy"><div class="kick">ACTIVE TURN</div><div class="active" id="pv-active-label">PRISMEL</div></div></section>
   <section class="target glass"><div class="target-line"><span id="pv-target-name">HUSHLING</span><span class="target-hp" id="pv-target-hp">10 / 10</span></div><div class="bar"><i id="pv-target-fill"></i></div></section>
-  <div class="objective" id="pv-objective">TOO QUIET • THREE-HERO QA • LAWN START</div>
+  <div class="objective" id="pv-objective">TOO QUIET • THREE-HERO QA • CLEAN ART</div>
   <section class="dock glass" aria-label="Active turn controls">
     <div class="hero"><div class="hero-name" id="pv-hero-name">PRISMEL</div><div class="resource">HP <strong id="pv-hero-hp">24/24</strong> • RP <strong id="pv-hero-rp">100/100</strong></div><div style="display:none"><i id="pv-hero-hp-fill"></i><i id="pv-hero-rp-fill"></i></div></div>
     <div class="ability-block"><div class="ability" id="pv-ability-name">PRISMATIC SHARD</div><div class="meta">CONFIRM ACTIVE ATTACK</div></div>
@@ -27,7 +27,7 @@
   </section>
 </div>
 <script type="module">
-import TacticalScene from './src/tactical/IntegratedTacticalScene06A.js?v=5';
+import TacticalScene from './src/tactical/IntegratedTacticalScene06A.js?v=6';
 import VeilBattleScene from './src/IntegratedVeilBattleScene.js?v=2';
 
 const params=new URLSearchParams(location.search);
