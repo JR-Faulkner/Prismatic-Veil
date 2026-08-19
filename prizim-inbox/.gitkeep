@@ -1,0 +1,2 @@
+# PriZim Inbox
+# Drop validated PriZim ingest ZIPs in this folder. The ingest workflow promotes approved production assets and runs the full PriZim gate suite.
