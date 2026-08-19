@@ -21,12 +21,10 @@ ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "pv-data" / "asset_authority" / "tactical_active_turn.assets.json"
 OUT = ROOT / "build" / "prizim"
 
-RUNTIME_ROOTS = [ROOT / "src", ROOT]
-TEXT_SUFFIXES = {".js", ".ts", ".html", ".json"}
+RUNTIME_DIR = ROOT / "src"
+ROOT_RUNTIME_SUFFIXES = {".js", ".ts", ".html"}
+SRC_RUNTIME_SUFFIXES = {".js", ".ts", ".json"}
 ASSET_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
-NON_RUNTIME_PREFIXES = (
-    "build/", "docs/", "tools/", ".github/", "pv-data/", "prizim-inbox/"
-)
 
 
 def rel(path: Path) -> str:
@@ -42,26 +40,30 @@ def load_manifest() -> dict:
 def runtime_text() -> str:
     """Return only executable/runtime-facing text.
 
-    PriZim metadata, QA manifests, docs, tools, reports, and inbox contents are
-    deliberately excluded. Otherwise an archive path written inside the
-    authority manifest can falsely look like a live runtime reference.
+    Scan runtime source plus root entry scripts/pages. Do not recursively scan
+    asset manifests, Sequence Lab metadata, PriZim authority data, docs, tools,
+    reports, or QA support files. QA assets may be referenced by QA metadata;
+    they fail only when executable runtime code references them.
     """
     chunks: list[str] = []
-    seen: set[Path] = set()
-    for root in RUNTIME_ROOTS:
-        if not root.exists():
-            continue
-        for p in root.rglob("*"):
-            if p in seen or not p.is_file() or p.suffix.lower() not in TEXT_SUFFIXES:
+
+    if RUNTIME_DIR.exists():
+        for p in RUNTIME_DIR.rglob("*"):
+            if not p.is_file() or p.suffix.lower() not in SRC_RUNTIME_SUFFIXES:
                 continue
-            rp = rel(p)
-            if rp.startswith(NON_RUNTIME_PREFIXES):
-                continue
-            seen.add(p)
             try:
                 chunks.append(p.read_text(encoding="utf-8"))
             except UnicodeDecodeError:
                 pass
+
+    for p in ROOT.iterdir():
+        if not p.is_file() or p.suffix.lower() not in ROOT_RUNTIME_SUFFIXES:
+            continue
+        try:
+            chunks.append(p.read_text(encoding="utf-8"))
+        except UnicodeDecodeError:
+            pass
+
     return "\n".join(chunks)
 
 
