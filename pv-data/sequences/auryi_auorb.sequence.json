@@ -16,13 +16,13 @@
     "style": "float",
     "axis": "y",
     "direction": 1,
-    "minBlendMs": 128,
-    "blendScale": 1.30,
-    "travelPx": 7,
-    "enterScale": 0.985,
-    "overlap": 0.78,
-    "settleMs": 110,
-    "settleScale": 1.004
+    "minBlendMs": 112,
+    "blendScale": 1.12,
+    "travelPx": 4,
+    "enterScale": 0.992,
+    "overlap": 0.62,
+    "settleMs": 92,
+    "settleScale": 1.002
   },
   "continuityGate": {
     "heightPct": 0.11,
