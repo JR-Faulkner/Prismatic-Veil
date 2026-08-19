@@ -14,6 +14,7 @@ SEQUENCE_DIR = ROOT / "pv-data" / "sequences"
 EXPECTED = (
     "prismel_active_turn.sequence.json",
     "prismel_materialization.sequence.json",
+    "prismel_attack.sequence.json",
     "auryi_auorb.sequence.json",
     "kineza_gauntlet_ignition.sequence.json",
 )
@@ -44,7 +45,6 @@ def validate_sheets(data: dict[str, Any], context: str) -> dict[str, Any]:
     sheets = data.get("sheets", {})
     if not isinstance(sheets, dict):
         raise SequenceError(f"{context}: sheets must be an object")
-
     for name, sheet in sheets.items():
         sheet_context = f"{context}.sheets.{name}"
         if not isinstance(name, str) or not name.strip() or not isinstance(sheet, dict):
@@ -71,14 +71,12 @@ def validate_frame(frame: Any, context: str, sheets: dict[str, Any]) -> None:
     for field in ("id", "label"):
         if not isinstance(frame.get(field), str) or not frame[field].strip():
             raise SequenceError(f"{context}.{field} must be a non-empty string")
-
     asset = frame.get("asset")
     sheet_name = frame.get("sheet")
     has_asset = isinstance(asset, str) and bool(asset.strip())
     has_sheet = isinstance(sheet_name, str) and bool(sheet_name.strip())
     if has_asset == has_sheet:
         raise SequenceError(f"{context}: define exactly one of asset or sheet")
-
     if has_asset:
         asset_exists(asset, context)
     else:
@@ -89,14 +87,12 @@ def validate_frame(frame: Any, context: str, sheets: dict[str, Any]) -> None:
         max_cell = int(sheet.get("cols", 1)) * int(sheet.get("rows", 1))
         if not isinstance(cell, int) or not 1 <= cell <= max_cell:
             raise SequenceError(f"{context}.cell must be an integer from 1 to {max_cell}")
-
     hold = frame.get("holdMs")
     blend = frame.get("blendMs")
     if not isinstance(hold, (int, float)) or not 30 <= hold <= 1200:
         raise SequenceError(f"{context}.holdMs must be between 30 and 1200")
     if not isinstance(blend, (int, float)) or not 0 <= blend <= 300:
         raise SequenceError(f"{context}.blendMs must be between 0 and 300")
-
     scale = frame.get("scale", 1)
     if not isinstance(scale, (int, float)) or not math.isfinite(float(scale)) or not 0.75 <= float(scale) <= 1.25:
         raise SequenceError(f"{context}.scale must be between 0.75 and 1.25")
@@ -115,9 +111,7 @@ def validate_manifest(data: dict[str, Any], filename: str) -> None:
             raise SequenceError(f"{context}: {field} must be a non-empty string")
     if not isinstance(data.get("signatureReady"), bool):
         raise SequenceError(f"{context}: signatureReady must be boolean")
-
     sheets = validate_sheets(data, context)
-
     if data["signatureReady"]:
         frames = data.get("frames")
         if not isinstance(frames, list) or not frames:
