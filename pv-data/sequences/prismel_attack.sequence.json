@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "prismel_attack",
+  "character": "prismel",
+  "displayName": "Prismel",
+  "sequenceName": "Prismatic Shard Attack",
+  "status": "signature-ready-qa",
+  "signatureReady": true,
+  "accent": "prismatic",
+  "notes": "Uses the approved six-frame Prismatic Shard authority sheet. The Sequence Lab crops the 3x2 authority layout before white-field removal, alpha-bound normalization, registration tuning, and authored blend timing.",
+  "sheets": {
+    "attack": {
+      "asset": "assets/sequences/qa/prismel_attack_authority.jpg",
+      "cols": 3,
+      "rows": 2,
+      "backgroundKey": "edge-white"
+    }
+  },
+  "frames": [
+    {"id":"prismel_attack_1","sheet":"attack","cell":1,"label":"Ready with Staff","holdMs":184,"blendMs":20,"scale":1.028,"x":-2,"y":-2},
+    {"id":"prismel_attack_2","sheet":"attack","cell":2,"label":"Gather Energy","holdMs":184,"blendMs":24,"scale":1.026,"x":-1,"y":-2},
+    {"id":"prismel_attack_3","sheet":"attack","cell":3,"label":"Concentrate","holdMs":184,"blendMs":30,"scale":1.022,"x":0,"y":-1},
+    {"id":"prismel_attack_4","sheet":"attack","cell":4,"label":"Drive Forward","holdMs":184,"blendMs":36,"scale":1.014,"x":1,"y":0},
+    {"id":"prismel_attack_5","sheet":"attack","cell":5,"label":"Shard Launch","holdMs":160,"blendMs":40,"scale":1.008,"x":1,"y":0,"cue":"release"},
+    {"id":"prismel_attack_6","sheet":"attack","cell":6,"label":"Settle","holdMs":160,"blendMs":42,"scale":1.003,"x":0,"y":0}
+  ]
+}
