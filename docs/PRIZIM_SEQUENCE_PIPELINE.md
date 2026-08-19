@@ -14,16 +14,16 @@ PriZim Sequence Lab is the phone-first QA environment for character materializat
 3. QA tuning profile.
 4. Bootstrap battle poses only when no signature authority asset exists.
 
-Bootstrap poses must never silently replace an approved signature sequence. Once an authority sheet exists, bootstrap playback retires for that sequence.
+Bootstrap poses must never silently replace an approved signature sequence. Once an authority asset exists, bootstrap playback retires for that sequence.
 
 ## Current authority set
 
-- Prismel staff materialization: approved 6-frame 3x2 authority sheet.
+- Prismel staff materialization: approved 6-frame authority sequence; canonical per-frame PNGs already exist in-repo and are used directly for Lab playback.
 - Prismel Prismatic Shard attack: approved 6-frame 3x2 authority sheet.
 - Auryi Auorb materialization: approved 6-frame 3x2 authority sheet.
 - Kineza gauntlet ignition: approved 6-frame 3x2 authority sheet.
 
-Each authority sheet is 1536x1024, arranged as a 3x2 grid of 512x512 cells in reading order.
+The approved sheet references are 1536x1024, arranged as a 3x2 grid of 512x512 cells in reading order. QA derivatives may be lower-resolution transport copies, but they never replace the approved master as visual authority.
 
 ## Sheet ingestion
 
@@ -34,7 +34,7 @@ Sequence Lab v0.2 supports sheet-backed frames directly. A manifest may define a
 - background handling
 - frame cell index
 
-For the current authority sheets:
+For current sheet-backed sequences:
 
 - cols: 3
 - rows: 2
@@ -45,7 +45,7 @@ The Lab crops cells deterministically. Do not manually duplicate frames merely t
 
 ## White-background rule
 
-The approved authority sheets are JPEGs on white backgrounds. PriZim must not use a naive global white-key because Auryi contains ivory/white costume areas.
+Approved authority sheets may arrive as JPEGs on white backgrounds. PriZim must not use a naive global white-key because Auryi contains ivory/white costume areas.
 
 Use edge-connected white removal instead: only near-white pixels connected to a crop-cell edge are cleared. This removes the white field while preserving interior costume whites and highlights.
 
@@ -78,19 +78,33 @@ Cross-dissolve is not automatically desirable. Large pose changes can create dou
 - Similar adjacent poses: soft blend allowed.
 - Judge on phone recording, not screenshots alone.
 
-## Asset transfer lesson
+## Asset transfer rule
 
 A repo write failure and a binary attachment transfer failure are different problems.
 
 Before claiming GitHub/repo access is unavailable:
 
-1. verify the GitHub connector/write actions directly;
-2. distinguish text-file writes from binary transfer;
-3. use Git blob/tree/commit paths when binary assets cannot go through UTF-8 file actions;
-4. keep transfer probes off `main`;
-5. do not expose a tester as ready until authority files, manifests, runtime versioning, and page entry wiring all point to the same build.
+1. verify GitHub text/write actions directly;
+2. distinguish repository access from uploaded-binary transport;
+3. prefer existing in-repo assets before transporting a duplicate;
+4. if canonical per-frame assets already exist, use them directly instead of re-importing a sheet;
+5. if a QA derivative already exists in the active branch, reference it directly and record its authority mapping;
+6. for future connector-limited QA imports, prefer ordinary text-safe transport through normal file actions over raw Git blob/tree plumbing;
+7. raw Git blob probing is not part of the normal PriZim production workflow;
+8. do not expose a tester as ready until assets, manifests, runtime versioning, and page entry wiring all point to the same build.
 
-This lesson is permanent. Do not repeat the false diagnosis that repo access is lost merely because an uploaded binary cannot be passed through a text-only file action.
+This lesson is permanent. Do not repeat the false diagnosis that repo access is lost merely because an uploaded binary cannot pass through a text-only action, and do not keep fighting the blob API when existing assets or text-safe transport solve the job more cleanly.
+
+## v0.2 asset mapping
+
+For the current Sequence Lab v0.2 branch:
+
+- Prismel materialization uses `assets/poses/prismel_active_turn/prismel_ready_1.png` through `prismel_ready_6.png`.
+- Prismel Prismatic Shard QA sheet uses `assets/sequences/qa/probe-1e8a.jpg`.
+- Auryi Auorb QA sheet uses `assets/sequences/qa/probe-67c55.jpg`.
+- Kineza gauntlet ignition QA sheet uses `assets/sequences/qa/probe-a6e4.jpg`.
+
+The `probe-*` filenames are legacy transport names from the v0.2 recovery work. Their manifest mapping is authoritative for this QA build. Future cleanup may rename them, but renaming is not required for runtime correctness.
 
 ## Promotion rule
 
@@ -106,7 +120,7 @@ PriZim evolves by evidence:
 
 Sequence Lab v0.2 must provide:
 
-- correct Prismel materialization authority
+- correct Prismel materialization sequence
 - correct Prismel attack authority
 - correct Auryi Auorb authority
 - correct Kineza ignition authority
