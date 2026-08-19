@@ -25,15 +25,15 @@
     "settleScale": 1.012
   },
   "continuityGate": {
-    "heightPct": 0.13,
-    "widthPct": 0.32,
-    "baselinePct": 0.065,
-    "centerPct": 0.085,
-    "lowerAnchorPct": 0.12,
-    "areaPct": 0.42,
-    "silhouetteDistance": 0.88,
-    "passScore": 76,
-    "bridgeScore": 50
+    "heightPct": 0.11,
+    "widthPct": 0.25,
+    "baselinePct": 0.050,
+    "centerPct": 0.065,
+    "lowerAnchorPct": 0.085,
+    "areaPct": 0.34,
+    "silhouetteDistance": 0.78,
+    "passScore": 84,
+    "bridgeScore": 54
   },
   "frames": [
     {"id":"kineza_ignition_1","sheet":"ignition","sheetIndex":0,"label":"Ready","holdMs":220,"blendMs":38,"scale":1.0,"x":0,"y":0},
