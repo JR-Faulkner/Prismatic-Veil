@@ -9,16 +9,26 @@ export const PRISMEL_FRAME_REGISTRATION = Object.freeze({
   prismel_ready_4: Object.freeze({ scale: 0.999, x: 0, y: 0 }),
   prismel_ready_5: Object.freeze({ scale: 1.000, x: 0, y: 0 }),
   prismel_ready_6: Object.freeze({ scale: 1.000, x: 0, y: 0 }),
-  prismel_attack_1: Object.freeze({ scale: 1.018, x: 0, y: 0 }),
-  prismel_attack_2: Object.freeze({ scale: 1.015, x: 1, y: 0 }),
-  prismel_attack_3: Object.freeze({ scale: 1.012, x: 2, y: 0 }),
-  prismel_attack_4: Object.freeze({ scale: 1.008, x: 2, y: 0 }),
-  prismel_attack_5: Object.freeze({ scale: 1.005, x: 1, y: 0 }),
-  prismel_attack_6: Object.freeze({ scale: 1.002, x: 0, y: 0 }),
+  prismel_attack_1: Object.freeze({ scale: 1.036, x: 0, y: 0 }),
+  prismel_attack_2: Object.freeze({ scale: 1.031, x: 1, y: 0 }),
+  prismel_attack_3: Object.freeze({ scale: 1.025, x: 2, y: 0 }),
+  prismel_attack_4: Object.freeze({ scale: 1.015, x: 2, y: 0 }),
+  prismel_attack_5: Object.freeze({ scale: 1.008, x: 1, y: 0 }),
+  prismel_attack_6: Object.freeze({ scale: 1.003, x: 0, y: 0 }),
+});
+
+export const PRISMEL_MATERIALIZATION = Object.freeze({
+  frameHoldMs: Object.freeze([150, 180, 210, 240, 280, 330]),
+  cueFrames: Object.freeze({
+    shimmer: 2,
+    staffEmerges: 3,
+    staffDraw: 4,
+    staffLock: 6
+  })
 });
 
 export const PRISMEL_ATTACK_TRANSITION = Object.freeze({
-  readyToAttackHoldMs: 105,
-  attackStartFrameMs: 172,
+  readyToAttackHoldMs: 135,
+  attackStartFrameMs: 188,
   attackReleaseFrameMs: 165
 });
