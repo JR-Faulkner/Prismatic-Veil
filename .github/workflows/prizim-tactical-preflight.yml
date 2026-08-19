@@ -88,22 +88,23 @@ jobs:
           SERVER_PID=$!
           trap 'kill $SERVER_PID || true' EXIT
           sleep 1
-          node tools/pv_forge/tactical_boot_smoke.mjs
+          PRIZIM_BUILD_MARKER="TACTICAL-HUD-PHONE-01" node tools/pv_forge/tactical_boot_smoke.mjs
 
       - name: Run PriZim phone delivery smoke
         id: delivery_smoke
         continue-on-error: true
         shell: bash
         env:
-          DELIVERY_URL: https://rawcdn.githack.com/JR-Faulkner/Prismatic-Veil/${{ github.sha }}/tactical-shell-06d-clean.html
+          DELIVERY_URL: https://jr-faulkner.github.io/Prismatic-Veil/tactical-shell-06d-clean.html?prizim=TACTICAL-HUD-PHONE-01
+          BUILD_MARKER: TACTICAL-HUD-PHONE-01
         run: |
-          echo "Testing exact phone delivery URL: $DELIVERY_URL"
+          echo "Testing project phone delivery URL: $DELIVERY_URL"
           for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
-            echo "Delivery smoke attempt $attempt/12"
-            if PRIZIM_TACTICAL_URL="$DELIVERY_URL" node tools/pv_forge/tactical_boot_smoke.mjs; then
+            echo "Pages smoke attempt $attempt/12"
+            if PRIZIM_TACTICAL_URL="$DELIVERY_URL" PRIZIM_BUILD_MARKER="$BUILD_MARKER" node tools/pv_forge/tactical_boot_smoke.mjs; then
               exit 0
             fi
-            if [ "$attempt" -lt 12 ]; then sleep 10; fi
+            if [ "$attempt" -lt 12 ]; then sleep 15; fi
           done
           exit 1
 
@@ -118,7 +119,7 @@ jobs:
           echo "- JS parse: ${{ steps.syntax.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Browser setup: ${{ steps.browser_setup.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Local phone-shaped boot: ${{ steps.boot_smoke.outcome }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Commit-pinned phone delivery: ${{ steps.delivery_smoke.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- GitHub Pages phone delivery: ${{ steps.delivery_smoke.outcome }}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Persist PriZim gate receipt
         if: always() && github.event_name == 'push'
@@ -133,7 +134,9 @@ jobs:
             "syntax": "${{ steps.syntax.outcome }}",
             "browser_setup": "${{ steps.browser_setup.outcome }}",
             "local_boot_smoke": "${{ steps.boot_smoke.outcome }}",
-            "phone_delivery_smoke": "${{ steps.delivery_smoke.outcome }}"
+            "phone_delivery_smoke": "${{ steps.delivery_smoke.outcome }}",
+            "delivery_surface": "github-pages",
+            "build_marker": "TACTICAL-HUD-PHONE-01"
           }
           EOF
           git config user.name "PriZim Bot"
