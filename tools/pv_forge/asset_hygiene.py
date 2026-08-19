@@ -14,7 +14,6 @@ This script never deletes files. It reports only.
 from __future__ import annotations
 
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -25,6 +24,9 @@ OUT = ROOT / "build" / "prizim"
 RUNTIME_ROOTS = [ROOT / "src", ROOT]
 TEXT_SUFFIXES = {".js", ".ts", ".html", ".json"}
 ASSET_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
+NON_RUNTIME_PREFIXES = (
+    "build/", "docs/", "tools/", ".github/", "pv-data/", "prizim-inbox/"
+)
 
 
 def rel(path: Path) -> str:
@@ -38,6 +40,12 @@ def load_manifest() -> dict:
 
 
 def runtime_text() -> str:
+    """Return only executable/runtime-facing text.
+
+    PriZim metadata, QA manifests, docs, tools, reports, and inbox contents are
+    deliberately excluded. Otherwise an archive path written inside the
+    authority manifest can falsely look like a live runtime reference.
+    """
     chunks: list[str] = []
     seen: set[Path] = set()
     for root in RUNTIME_ROOTS:
@@ -47,7 +55,7 @@ def runtime_text() -> str:
             if p in seen or not p.is_file() or p.suffix.lower() not in TEXT_SUFFIXES:
                 continue
             rp = rel(p)
-            if rp.startswith(("build/", "docs/", "tools/", ".github/")):
+            if rp.startswith(NON_RUNTIME_PREFIXES):
                 continue
             seen.add(p)
             try:
@@ -58,8 +66,8 @@ def runtime_text() -> str:
 
 
 def referenced(path: str, text: str) -> bool:
-    name = Path(path).name
-    return path in text or name in text
+    name = Path(path.rstrip("/")).name
+    return path in text or (bool(name) and name in text)
 
 
 def main() -> int:
