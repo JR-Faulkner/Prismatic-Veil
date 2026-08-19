@@ -1,8 +1,8 @@
-// PriZim Sequence Lab v0.2
+// PriZim Sequence Lab v0.2.4
 // Phone-first motion QA for locked Prismatic Veil authority sheets.
 // Supports normal frame assets and row-major sprite-sheet frames, removes only
 // edge-connected near-white sheet backgrounds, normalizes visible bounds, and
-// previews authored timing/registration without modifying production masters.
+// adds a requestAnimationFrame motion-bridge layer without modifying masters.
 
 const MANIFEST_URLS = [
   './pv-data/sequences/prismel_active_turn.sequence.json',
@@ -10,9 +10,13 @@ const MANIFEST_URLS = [
   './pv-data/sequences/kineza_gauntlet_ignition.sequence.json'
 ];
 
-const VERSION = '2';
+const VERSION = '6';
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smoothstep = t => {
+  const x = clamp(t, 0, 1);
+  return x * x * (3 - 2 * x);
+};
 
 class SequenceLab {
   constructor(root) {
@@ -25,6 +29,7 @@ class SequenceLab {
     this.speed = 1;
     this.runToken = 0;
     this.activeCanvas = 0;
+    this.transitionTargetCanvas = null;
     this.imageCache = new Map();
     this.frameSourceCache = new Map();
     this.metricsCache = new Map();
@@ -129,7 +134,7 @@ class SequenceLab {
 
     this.els.title.textContent = `${manifest.displayName} • ${manifest.sequenceName}`;
     if (manifest.signatureReady && manifest.qaProxy) {
-      this.els.status.textContent = 'AUTHORITY • QA PROXY';
+      this.els.status.textContent = 'AUTHORITY • MOTION BRIDGE';
     } else {
       this.els.status.textContent = manifest.signatureReady ? 'SIGNATURE READY • QA' : 'BOOTSTRAP READY';
     }
@@ -145,9 +150,12 @@ class SequenceLab {
     if (manifest.signatureReady) {
       const line = document.createElement('div');
       line.className = 'lab-plan-ready';
+      const motion = manifest.motionProfile && manifest.motionProfile.style
+        ? String(manifest.motionProfile.style).toUpperCase()
+        : 'DEFAULT';
       line.textContent = manifest.qaProxy
-        ? 'Locked authority sheet loaded through a PriZim QA proxy. Production master remains unchanged.'
-        : 'Dedicated signature assets are present. Playback uses the production sequence manifest.';
+        ? `Locked authority sheet loaded through a PriZim QA proxy. Motion Bridge: ${motion}. Production master remains unchanged.`
+        : `Dedicated signature assets are present. Motion Bridge: ${motion}.`;
       this.els.plan.appendChild(line);
       return;
     }
@@ -168,6 +176,7 @@ class SequenceLab {
       canvas.height = Math.max(1, Math.round(rect.height * dpr));
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
+      canvas.style.transformOrigin = '50% 87.5%';
       const ctx = canvas.getContext('2d');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.imageSmoothingEnabled = true;
@@ -269,21 +278,38 @@ class SequenceLab {
     const width = this.sourceWidth(source);
     const height = this.sourceHeight(source);
     const canvas = document.createElement('canvas');
-    canvas.width = width; canvas.height = height;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    ctx.clearRect(0, 0, width, height); ctx.drawImage(source, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(source, 0, 0);
     const pixels = ctx.getImageData(0, 0, width, height).data;
-    let left = width, right = -1, top = height, bottom = -1;
+    let left = width;
+    let right = -1;
+    let top = height;
+    let bottom = -1;
     const alphaThreshold = 18;
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const alpha = pixels[(y * width + x) * 4 + 3];
         if (alpha <= alphaThreshold) continue;
-        if (x < left) left = x; if (x > right) right = x; if (y < top) top = y; if (y > bottom) bottom = y;
+        if (x < left) left = x;
+        if (x > right) right = x;
+        if (y < top) top = y;
+        if (y > bottom) bottom = y;
       }
     }
     if (right < left || bottom < top) throw new Error(`No visible subject found in ${key}`);
-    const metrics = { left, right, top, bottom, width:right-left+1, height:bottom-top+1, sourceWidth:width, sourceHeight:height };
+    const metrics = {
+      left,
+      right,
+      top,
+      bottom,
+      width: right - left + 1,
+      height: bottom - top + 1,
+      sourceWidth: width,
+      sourceHeight: height
+    };
     this.metricsCache.set(key, metrics);
     return metrics;
   }
@@ -302,32 +328,186 @@ class SequenceLab {
     const visibleCenterX = metrics.left + metrics.width / 2;
     const drawX = rect.width / 2 - visibleCenterX * scale + Number(frame.x || 0);
     const drawY = baselineY - metrics.bottom * scale + Number(frame.y || 0);
-    const sourceW = this.sourceWidth(source), sourceH = this.sourceHeight(source);
+    const sourceW = this.sourceWidth(source);
+    const sourceH = this.sourceHeight(source);
     ctx.save();
     ctx.filter = 'brightness(1.08) saturate(1.06) contrast(1.03)';
     ctx.drawImage(source, drawX, drawY, sourceW * scale, sourceH * scale);
     ctx.restore();
   }
 
-  async renderCurrentFrame({ immediate = false } = {}) {
+  motionProfile(manifest, previousFrame, frame) {
+    const source = manifest.motionProfile || {};
+    const profile = {
+      style: source.style || 'controlled',
+      axis: source.axis || 'x',
+      direction: Number(source.direction || 1) >= 0 ? 1 : -1,
+      minBlendMs: Number(source.minBlendMs || 84),
+      blendScale: Number(source.blendScale || 1),
+      travelPx: Number(source.travelPx || 4),
+      enterScale: Number(source.enterScale || 0.99),
+      overlap: Number(source.overlap ?? 0.45),
+      settleMs: Number(source.settleMs || 64),
+      settleScale: Number(source.settleScale || 1.002)
+    };
+
+    const sheetBreak = previousFrame && frame && previousFrame.sheet && frame.sheet && previousFrame.sheet !== frame.sheet;
+    const kineticCue = frame && ['release', 'stomp', 'gauntletSnap', 'ignition'].includes(frame.cue);
+    if (sheetBreak) {
+      profile.overlap *= 0.72;
+      profile.travelPx *= 1.12;
+    }
+    if (kineticCue) {
+      profile.overlap *= 0.78;
+      profile.minBlendMs *= 0.88;
+    }
+    profile.overlap = clamp(profile.overlap, 0.08, 0.92);
+    return profile;
+  }
+
+  easeMotion(style, t) {
+    const x = clamp(t, 0, 1);
+    if (style === 'float') return 0.5 - Math.cos(Math.PI * x) / 2;
+    if (style === 'impact') return 1 - Math.pow(1 - x, 3);
+    return smoothstep(x);
+  }
+
+  setCanvasTransform(canvas, x, y, scale) {
+    canvas.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
+  }
+
+  settleCanvases(activeIndex) {
+    this.els.canvases.forEach((canvas, index) => {
+      canvas.style.transition = 'none';
+      canvas.style.willChange = 'auto';
+      canvas.style.transform = 'none';
+      canvas.style.opacity = index === activeIndex ? '1' : '0';
+    });
+  }
+
+  animateRaf(durationMs, token, onFrame) {
+    const duration = Math.max(0, durationMs);
+    if (duration <= 0) {
+      onFrame(1);
+      return Promise.resolve(token === this.runToken);
+    }
+
+    return new Promise(resolve => {
+      let start = null;
+      const tick = now => {
+        if (token !== this.runToken) {
+          resolve(false);
+          return;
+        }
+        if (start === null) start = now;
+        const t = clamp((now - start) / duration, 0, 1);
+        onFrame(t);
+        if (t >= 1) resolve(true);
+        else requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  }
+
+  rafWait(durationMs, token) {
+    return this.animateRaf(durationMs, token, () => {});
+  }
+
+  async animateMotionBridge(outgoing, incoming, manifest, previousFrame, frame, token) {
+    const profile = this.motionProfile(manifest, previousFrame, frame);
+    const blendMs = Math.max(
+      Number(frame.blendMs || 0) * profile.blendScale,
+      profile.minBlendMs
+    ) / this.speed;
+
+    const regX = clamp((Number(previousFrame?.x || 0) - Number(frame.x || 0)) * 1.35, -6, 6);
+    const regY = clamp((Number(previousFrame?.y || 0) - Number(frame.y || 0)) * 1.35, -6, 6);
+    const axisX = profile.axis === 'x' ? profile.travelPx * profile.direction : 0;
+    const axisY = profile.axis === 'y' ? profile.travelPx * profile.direction : 0;
+    const startX = regX + axisX;
+    const startY = regY + axisY;
+    const settleX = profile.axis === 'x' ? -axisX * 0.12 : 0;
+    const settleY = profile.axis === 'y' ? -axisY * 0.12 : 0;
+    const outX = profile.axis === 'x' ? -axisX * 0.32 : 0;
+    const outY = profile.axis === 'y' ? -axisY * 0.32 : 0;
+    const fadeInStart = 0.5 - profile.overlap * 0.45;
+    const fadeOutEnd = 0.5 + profile.overlap * 0.45;
+    const outgoingScale = 1 + Math.abs(1 - profile.enterScale) * 0.34;
+
+    incoming.style.willChange = 'opacity, transform';
+    outgoing.style.willChange = 'opacity, transform';
+    incoming.style.opacity = '0';
+    outgoing.style.opacity = '1';
+    this.setCanvasTransform(incoming, startX, startY, profile.enterScale);
+    this.setCanvasTransform(outgoing, 0, 0, 1);
+
+    const completed = await this.animateRaf(blendMs, token, raw => {
+      const eased = this.easeMotion(profile.style, raw);
+      const fadeInT = smoothstep((raw - fadeInStart) / Math.max(0.001, 1 - fadeInStart));
+      const fadeOutT = smoothstep(raw / Math.max(0.001, fadeOutEnd));
+      incoming.style.opacity = String(clamp(fadeInT, 0, 1));
+      outgoing.style.opacity = String(clamp(1 - fadeOutT, 0, 1));
+      this.setCanvasTransform(
+        incoming,
+        lerp(startX, settleX, eased),
+        lerp(startY, settleY, eased),
+        lerp(profile.enterScale, profile.settleScale, eased)
+      );
+      this.setCanvasTransform(
+        outgoing,
+        lerp(0, outX, eased),
+        lerp(0, outY, eased),
+        lerp(1, outgoingScale, eased)
+      );
+    });
+
+    if (!completed || token !== this.runToken) return false;
+
+    outgoing.style.opacity = '0';
+    incoming.style.opacity = '1';
+    const settleCompleted = await this.animateRaf(profile.settleMs / this.speed, token, raw => {
+      const eased = smoothstep(raw);
+      this.setCanvasTransform(
+        incoming,
+        lerp(settleX, 0, eased),
+        lerp(settleY, 0, eased),
+        lerp(profile.settleScale, 1, eased)
+      );
+    });
+    return settleCompleted && token === this.runToken;
+  }
+
+  async renderCurrentFrame({ immediate = false, previousFrame = null } = {}) {
     const manifest = this.currentManifest();
     const frames = this.framesFor(manifest);
     const frame = frames[this.frameIndex];
     if (!frame) return;
+
     const token = this.runToken;
     const loaded = await this.loadFrameSource(manifest, frame);
     const metrics = await this.analyze(loaded.key, loaded.source);
     if (token !== this.runToken && !immediate) return;
+
     const incomingIndex = 1 - this.activeCanvas;
     const outgoing = this.els.canvases[this.activeCanvas];
     const incoming = this.els.canvases[incomingIndex];
     this.drawNormalized(incoming, loaded.source, metrics, frame);
-    const blendMs = immediate ? 0 : Math.max(0, Number(frame.blendMs || 0) / this.speed);
-    incoming.style.transition = 'none'; outgoing.style.transition = 'none'; incoming.style.opacity = '0'; outgoing.style.opacity = '1'; void incoming.offsetWidth;
-    if (blendMs <= 0) { incoming.style.opacity = '1'; outgoing.style.opacity = '0'; }
-    else { incoming.style.transition = `opacity ${blendMs}ms linear`; outgoing.style.transition = `opacity ${blendMs}ms linear`; incoming.style.opacity = '1'; outgoing.style.opacity = '0'; await sleep(blendMs + 8); }
-    this.activeCanvas = incomingIndex;
     this.updateReadout(frame, metrics);
+
+    if (immediate || !previousFrame) {
+      this.activeCanvas = incomingIndex;
+      this.transitionTargetCanvas = null;
+      this.settleCanvases(incomingIndex);
+      return;
+    }
+
+    this.transitionTargetCanvas = incomingIndex;
+    const completed = await this.animateMotionBridge(outgoing, incoming, manifest, previousFrame, frame, token);
+    if (!completed || token !== this.runToken) return;
+
+    this.activeCanvas = incomingIndex;
+    this.transitionTargetCanvas = null;
+    this.settleCanvases(incomingIndex);
   }
 
   updateReadout(frame, metrics) {
@@ -341,25 +521,53 @@ class SequenceLab {
   }
 
   async togglePlay() {
-    if (this.playing) { this.stop(); return; }
-    this.playing = true; this.els.play.textContent = 'PAUSE';
-    const token = ++this.runToken; const frames = this.framesFor();
+    if (this.playing) {
+      this.stop();
+      return;
+    }
+
+    this.playing = true;
+    this.els.play.textContent = 'PAUSE';
+    const token = ++this.runToken;
+    const frames = this.framesFor();
+
     while (this.playing && token === this.runToken) {
-      const frame = frames[this.frameIndex];
-      await this.renderCurrentFrame({ immediate:false });
-      if (!this.playing || token !== this.runToken) break;
-      await sleep(Math.max(30, Number(frame.holdMs || 160) / this.speed));
-      if (!this.playing || token !== this.runToken) break;
-      if (this.frameIndex >= frames.length - 1) { if (!this.loop) { this.stop(); break; } this.frameIndex = 0; } else this.frameIndex++;
+      const currentFrame = frames[this.frameIndex];
+      const held = await this.rafWait(Math.max(30, Number(currentFrame.holdMs || 160) / this.speed), token);
+      if (!held || !this.playing || token !== this.runToken) break;
+
+      let nextIndex = this.frameIndex + 1;
+      if (nextIndex >= frames.length) {
+        if (!this.loop) {
+          this.stop();
+          break;
+        }
+        nextIndex = 0;
+      }
+
+      const previousFrame = currentFrame;
+      this.frameIndex = nextIndex;
+      await this.renderCurrentFrame({ immediate: false, previousFrame });
     }
   }
 
-  stop() { this.playing = false; this.runToken++; this.els.play.textContent = 'PLAY'; }
+  stop() {
+    this.playing = false;
+    this.runToken++;
+    this.els.play.textContent = 'PLAY';
+    if (this.transitionTargetCanvas !== null) {
+      this.activeCanvas = this.transitionTargetCanvas;
+      this.transitionTargetCanvas = null;
+      this.settleCanvases(this.activeCanvas);
+    }
+  }
 
   async step(delta) {
-    this.stop(); const frames = this.framesFor(); if (!frames.length) return;
+    this.stop();
+    const frames = this.framesFor();
+    if (!frames.length) return;
     this.frameIndex = (this.frameIndex + delta + frames.length) % frames.length;
-    await this.renderCurrentFrame({ immediate:true });
+    await this.renderCurrentFrame({ immediate: true });
   }
 }
 
@@ -369,6 +577,9 @@ if (root) {
   lab.init().catch(error => {
     console.error(error);
     const loading = root.querySelector('[data-loading]');
-    if (loading) { loading.hidden = false; loading.textContent = `Sequence Lab Error\n${error.message || error}`; }
+    if (loading) {
+      loading.hidden = false;
+      loading.textContent = `Sequence Lab Error\n${error.message || error}`;
+    }
   });
 }
