@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "updated": "2026-08-19",
+  "authorities": [
+    {"id":"prismel_materialization","character":"prismel","frames":6,"layout":"3x2","cell":"512x512","status":"approved"},
+    {"id":"prismel_prismatic_shard","character":"prismel","frames":6,"layout":"3x2","cell":"512x512","status":"approved"},
+    {"id":"auryi_auorb","character":"auryi","frames":6,"layout":"3x2","cell":"512x512","status":"approved"},
+    {"id":"kineza_gauntlet_ignition","character":"kineza","frames":6,"layout":"3x2","cell":"512x512","status":"approved"}
+  ]
+}
