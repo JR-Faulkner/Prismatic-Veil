@@ -1,0 +1,48 @@
+name: PriZim Tactical Preflight
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tactical-shell-06d-clean.html'
+      - 'src/tactical/IntegratedTacticalScene06D.js'
+      - 'src/tactical/IntegratedTacticalScene06C.js'
+      - 'src/tactical/IntegratedTacticalViewFlavor06B.js'
+      - 'src/tactical/IntegratedTacticalScene06A.js'
+      - 'src/tactical/ActiveTurnBattleSlice.js'
+      - 'src/tactical/ActiveTurnBattleSlice06A.js'
+      - 'tools/pv_forge/tactical_preflight.py'
+      - '.github/workflows/prizim-tactical-preflight.yml'
+  pull_request:
+    paths:
+      - 'tactical-shell-06d-clean.html'
+      - 'src/tactical/IntegratedTacticalScene06D.js'
+      - 'src/tactical/IntegratedTacticalScene06C.js'
+      - 'src/tactical/IntegratedTacticalViewFlavor06B.js'
+      - 'src/tactical/IntegratedTacticalScene06A.js'
+      - 'src/tactical/ActiveTurnBattleSlice.js'
+      - 'src/tactical/ActiveTurnBattleSlice06A.js'
+      - 'tools/pv_forge/tactical_preflight.py'
+      - '.github/workflows/prizim-tactical-preflight.yml'
+
+jobs:
+  tactical-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run PriZim Tactical Preflight
+        run: python tools/pv_forge/tactical_preflight.py
+      - name: Publish preflight report
+        if: always()
+        run: cat build/prizim/tactical-preflight.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload PriZim Tactical Preflight report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prizim-tactical-preflight
+          path: |
+            build/prizim/tactical-preflight.json
+            build/prizim/tactical-preflight.md
