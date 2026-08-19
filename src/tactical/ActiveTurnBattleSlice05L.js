@@ -76,26 +76,49 @@ export default class ActiveTurnBattleSlice05L extends ActiveTurnBattleSlice05I {
 
   async _introCutin() {
     const img = this._ensureCutin();
-    img.setTexture(PRISMEL_READY_FRAMES[0]);
+    const rig = this._heroRig;
+    const ghost = this._cutinGhost;
+    const shards = this._ensureAmbientShards();
+
+    img.setTexture(PRISMEL_READY_FRAMES[0]).setAlpha(1);
+    if (ghost && ghost.active) ghost.setAlpha(0);
+    if (rig && rig.active) rig.setAlpha(0);
+    if (shards && shards.active) shards.setAlpha(0);
     this._layoutCutin();
 
-    this.scene.tweens.add({
-      targets: img,
-      alpha: 1,
-      duration: 240,
-      ease: 'Sine.easeOut'
-    });
+    // 05F owns Prismel inside a parent hero rig. 05L's custom materialization
+    // must reveal the parent rig, not only the child sprite, or the entire hero
+    // remains mathematically present but visually invisible.
+    if (rig && rig.active) {
+      this.scene.tweens.add({
+        targets: rig,
+        alpha: 1,
+        duration: 280,
+        ease: 'Sine.easeOut'
+      });
+    }
+    if (shards && shards.active) {
+      this.scene.tweens.add({
+        targets: shards,
+        alpha: 1,
+        duration: 420,
+        delay: 170,
+        ease: 'Sine.easeOut'
+      });
+    }
 
     const holds = PRISMEL_MATERIALIZATION.frameHoldMs;
     for (let i = 0; i < PRISMEL_READY_FRAMES.length; i++) {
       const frameNumber = i + 1;
-      img.setTexture(PRISMEL_READY_FRAMES[i]);
+      img.setTexture(PRISMEL_READY_FRAMES[i]).setAlpha(1);
       this._layoutCutin();
       this._emitMaterializationCue(frameNumber);
       await this._delay(holds[i] || 180);
     }
 
-    img.setTexture(PRISMEL_READY_FRAMES[PRISMEL_READY_FRAMES.length - 1]);
+    img.setTexture(PRISMEL_READY_FRAMES[PRISMEL_READY_FRAMES.length - 1]).setAlpha(1);
+    if (rig && rig.active) rig.setAlpha(1);
+    if (shards && shards.active) shards.setAlpha(1);
     this._layoutCutin();
   }
 
@@ -116,6 +139,7 @@ export default class ActiveTurnBattleSlice05L extends ActiveTurnBattleSlice05I {
 
     if (img.texture.key !== finalReady) img.setTexture(finalReady);
     img.setAlpha(1);
+    if (this._heroRig && this._heroRig.active) this._heroRig.setAlpha(1);
     this._layoutCutin();
 
     const ambient = this._ensureAmbientShards();
