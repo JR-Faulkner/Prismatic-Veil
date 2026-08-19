@@ -33,6 +33,27 @@ def validate_sheets(data: dict[str, Any], context: str) -> dict[str, Any]:
             if not isinstance(value, int) or value < 1 or value > 16: raise SequenceError(f"{sc}.{field} must be an integer from 1 to 16")
     return sheets
 
+def validate_motion_profile(data: dict[str, Any], context: str) -> None:
+    profile = data.get("motionProfile")
+    if profile is None: return
+    if not isinstance(profile, dict): raise SequenceError(f"{context}.motionProfile must be an object")
+    if profile.get("style") not in ("controlled", "float", "impact"): raise SequenceError(f"{context}.motionProfile.style must be controlled, float, or impact")
+    if profile.get("axis") not in ("x", "y"): raise SequenceError(f"{context}.motionProfile.axis must be x or y")
+    if profile.get("direction") not in (-1, 1): raise SequenceError(f"{context}.motionProfile.direction must be -1 or 1")
+    ranges = {
+        "minBlendMs": (30, 300),
+        "blendScale": (0.25, 3.0),
+        "travelPx": (0, 20),
+        "enterScale": (0.90, 1.10),
+        "overlap": (0.0, 1.0),
+        "settleMs": (0, 250),
+        "settleScale": (0.95, 1.05),
+    }
+    for field, (lo, hi) in ranges.items():
+        value = profile.get(field)
+        if not isinstance(value, (int, float)) or not math.isfinite(float(value)) or not lo <= float(value) <= hi:
+            raise SequenceError(f"{context}.motionProfile.{field} must be between {lo} and {hi}")
+
 def validate_frame(frame: Any, context: str, sheets: dict[str, Any]) -> None:
     if not isinstance(frame, dict): raise SequenceError(f"{context}: frame must be an object")
     for field in ("id","label"):
@@ -63,6 +84,7 @@ def validate_manifest(data: dict[str, Any], filename: str) -> None:
     for field in ("id","character","displayName","sequenceName","status"):
         if not isinstance(data.get(field),str) or not data[field].strip(): raise SequenceError(f"{context}: {field} must be a non-empty string")
     if not isinstance(data.get("signatureReady"),bool): raise SequenceError(f"{context}: signatureReady must be boolean")
+    validate_motion_profile(data, context)
     sheets=validate_sheets(data,context)
     frames=data.get("frames") if data["signatureReady"] else data.get("previewFrames")
     if not isinstance(frames,list) or not frames: raise SequenceError(f"{context}: active playback frames are required")
@@ -76,7 +98,8 @@ def main()->int:
         for filename in EXPECTED:
             data=load(SEQUENCE_DIR/filename); validate_manifest(data,filename)
             mode="authority-qa" if data.get("qaProxy") else ("signature" if data["signatureReady"] else "bootstrap")
-            print(f"OK  {data['displayName']}: {data['sequenceName']} [{mode}]")
+            motion=(data.get("motionProfile") or {}).get("style", "default")
+            print(f"OK  {data['displayName']}: {data['sequenceName']} [{mode}/{motion}]")
         print("PriZim Sequence Check OK"); return 0
     except SequenceError as exc:
         print(f"PriZim Sequence Check FAILED: {exc}",file=sys.stderr); return 1
