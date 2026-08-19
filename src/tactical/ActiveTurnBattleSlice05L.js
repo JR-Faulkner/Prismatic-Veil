@@ -141,9 +141,8 @@ export default class ActiveTurnBattleSlice05L extends ActiveTurnBattleSlice05I {
 
     await this._delay(PRISMEL_ATTACK_TRANSITION.readyToAttackHoldMs);
 
-    // Bypass 05K's now-stale v1 generated-data wrapper and enter the validated
-    // 05I/05H/05G presentation chain directly. 05L's _cycleFrames remains
-    // polymorphic, so the new PriZim cadence still drives the inherited attack.
-    await ActiveTurnBattleSlice05I.prototype._playAttackPresentation.call(this, hero, target);
+    // Enter the inherited 05G/05F attack chain through normal class dispatch.
+    // 05L still controls frame timing through the overridden _cycleFrames().
+    await super._playAttackPresentation(hero, target);
   }
 }
