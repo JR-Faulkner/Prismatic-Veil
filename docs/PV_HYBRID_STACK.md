@@ -1,12 +1,12 @@
-# Prismatic Veil Hybrid Stack
+# PriZim — Prismatic Veil Hybrid Stack
 
 Status: **LOCKED production direction** (2026-08-19)
 
-The project is engine-independent by design. Phaser is the current renderer, not the definition of the game.
+**PriZim** is the project’s custom hybrid development system. The project is engine-independent by design: Phaser is the current renderer, not the definition of the game.
 
 ## Stack
 
-1. **Python / PV Forge**
+1. **Python tooling**
    - asset inspection and normalization
    - animation registration/anchor analysis
    - data validation
@@ -34,6 +34,7 @@ The project is engine-independent by design. Phaser is the current renderer, not
 
 ## Rules
 
+- PriZim names the whole machine; internal parts stay practical rather than receiving unnecessary lore names.
 - New presentation UI should be phone-first and PV-specific, not generic mobile UI.
 - PV identity comes from prismatic geometry, navy/violet/gold materials, restrained spectral motion, and character-specific accents.
 - Keep world-space information in the renderer; keep reading/tapping interface in the Mobile Shell.
@@ -44,8 +45,8 @@ The project is engine-independent by design. Phaser is the current renderer, not
 
 ## First implementation
 
-`pv-data/animations/prismel_active_turn.registration.json` is the first canonical neutral animation-registration record.
+`pv-data/animations/prismel_active_turn.registration.json` is the first canonical neutral animation/presentation record.
 
 `tools/pv_forge/pv_forge.py` validates that data and generates the Phaser adapter consumed by the active-turn presenter.
 
-This lets the current Prismel registration problem improve the production pipeline at the same time.
+05L extends that record with staff-materialization cadence and future audio cue points, while refining the ready-to-attack registration handoff.
