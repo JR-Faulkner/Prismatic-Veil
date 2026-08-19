@@ -34,6 +34,7 @@
     "src/tactical/IntegratedTacticalScene06D.js",
     "src/tactical/IntegratedTacticalScene06C.js",
     "src/tactical/EnemyAttackCinematic.js",
+    "src/tactical/IntegratedTacticalScene06H.js",
     "src/tactical/IntegratedTacticalScene05H.js",
     "src/tactical/TacticalEncounterHUD.js",
     "src/tactical/IntegratedTacticalSceneV3.js",
