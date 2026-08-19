@@ -60,6 +60,14 @@ export default class IntegratedTacticalViewFlavor06B extends IntegratedTacticalS
     return landscape ? cfg.landscapeZoom : cfg.portraitZoom;
   }
 
+  // TacticalScene.layout() calls defaultZoomFor() on every resize. Keep the QA
+  // flavor stable through phone rotation instead of silently snapping back to
+  // the production baseline zoom after the first orientation change.
+  defaultZoomFor(w, h) {
+    const cfg = this._viewFlavor06B || FLAVORS.shallow;
+    return w > h ? cfg.landscapeZoom : cfg.portraitZoom;
+  }
+
   _stageCloseLawn06B() {
     const byHero = id => (this.heroes || []).find(h => h.id === id);
     const byEnemy = id => (this.enemies || []).find(e => e.id === id && e.alive);
