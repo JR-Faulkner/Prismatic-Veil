@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "auryi_auorb_v02",
+  "character": "auryi",
+  "displayName": "Auryi",
+  "sequenceName": "Auorb Materialization",
+  "status": "signature-ready-qa",
+  "signatureReady": true,
+  "accent": "gold-lavender",
+  "sheets": {"authority":{"asset":"assets/sequences/qa/auryi_auorb_authority.jpg","cols":3,"rows":2,"backgroundKey":"edge-white"}},
+  "frames": [
+    {"id":"auryi_auorb_1","sheet":"authority","cell":1,"label":"Calm / Ready","holdMs":260,"blendMs":46},
+    {"id":"auryi_auorb_2","sheet":"authority","cell":2,"label":"Crown Appears","holdMs":280,"blendMs":46,"cue":"crownAppears"},
+    {"id":"auryi_auorb_3","sheet":"authority","cell":3,"label":"Crown Orbits","holdMs":320,"blendMs":42,"cue":"crownOrbit"},
+    {"id":"auryi_auorb_4","sheet":"authority","cell":4,"label":"Energy Spirals","holdMs":360,"blendMs":40,"cue":"energySpiral"},
+    {"id":"auryi_auorb_5","sheet":"authority","cell":5,"label":"Auorb Condenses","holdMs":390,"blendMs":34,"cue":"auorbCondense"},
+    {"id":"auryi_auorb_6","sheet":"authority","cell":6,"label":"Auorb Locked","holdMs":430,"blendMs":28,"cue":"auorbLock"}
+  ]
+}
