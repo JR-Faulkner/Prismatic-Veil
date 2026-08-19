@@ -36,7 +36,6 @@ class ContinuityGate {
     }));
 
     this.tabs.addEventListener('click', this.boundTabHandler);
-    new MutationObserver(() => this.renderActive()).observe(this.plan, { childList: true });
 
     for (const manifest of this.manifests) {
       this.results.set(manifest.id, await this.analyzeManifest(manifest));
