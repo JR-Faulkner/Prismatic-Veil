@@ -1,0 +1,11 @@
+{
+  "name": "The Prismatic Veil Mobile Shell",
+  "short_name": "Prismatic Veil",
+  "start_url": "./tactical-field-05i.html?battleslice=1",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#050914",
+  "theme_color": "#050914",
+  "orientation": "landscape",
+  "description": "Phone-first QA shell for The Prismatic Veil tactical battle presentation."
+}
