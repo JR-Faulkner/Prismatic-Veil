@@ -8,15 +8,15 @@
 <style>
 html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:#071022;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Arial,sans-serif;touch-action:none}#game-container{position:fixed;inset:0}canvas{display:block}#loading{position:fixed;inset:0;z-index:3000;display:grid;place-items:center;padding:24px;text-align:center;background:radial-gradient(circle at 50% 35%,#352353,#071022 72%);color:#ead28c;font-weight:850;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;font-size:13px;line-height:1.35}.qa{position:fixed;right:6px;top:6px;z-index:2100;padding:4px 7px;border:1px solid rgba(234,210,140,.3);background:rgba(5,9,20,.62);color:#cabfda;font:800 7px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",Arial,sans-serif;letter-spacing:.08em;pointer-events:none}
 </style>
-<script>window.PRIZIM_BUILD_MARKER='TACTICAL-HUD-PHONE-02';</script>
+<script>window.PRIZIM_BUILD_MARKER='TACTICAL-HUD-PHONE-03';</script>
 <script src="./phaser.min.js"></script>
 </head>
 <body>
-<div id="loading">✦ Loading TACTICAL HUD PHONE 02 ✦</div>
+<div id="loading">✦ Loading TACTICAL HUD PHONE 03 ✦</div>
 <div id="game-container"></div>
-<div class="qa">TACTICAL HUD • PHONE 02</div>
+<div class="qa">TACTICAL HUD • PHONE 03</div>
 <script type="module">
-import TacticalScene from './src/tactical/IntegratedTacticalScene06D.js?v=9';
+import TacticalScene from './src/tactical/IntegratedTacticalScene06D.js?v=10';
 import VeilBattleScene from './src/IntegratedVeilBattleScene.js?v=4';
 const boot=document.getElementById('loading');
 function fail(error){console.error(error);boot.style.display='grid';const message=error?.message||String(error);const stack=error?.stack||'';boot.textContent='Boot Error\n\n'+message+(stack?'\n\n'+stack:'')}
@@ -28,7 +28,7 @@ if(!window.Phaser){fail('Phaser did not load.')}else{
   Phaser.GameObjects.GameObjectFactory.prototype.text=function(x,y,text,style){style=style||{};if(style.resolution===undefined)style.resolution=dpr;return orig.call(this,x,y,text,style)};
   class HarnessScene extends TacticalScene{create(){boot.style.display='none';super.create()}}
   try{
-    new Phaser.Game({type:Phaser.AUTO,parent:'game-container',width:800,height:600,backgroundColor:'#071022',scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},input:{activePointers:2},scene:[HarnessScene,VeilBattleScene]});
+    window.__PV_GAME__=new Phaser.Game({type:Phaser.AUTO,parent:'game-container',width:800,height:600,backgroundColor:'#071022',scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},input:{activePointers:2},scene:[HarnessScene,VeilBattleScene]});
   }catch(error){fail(error)}
 }
 </script>
