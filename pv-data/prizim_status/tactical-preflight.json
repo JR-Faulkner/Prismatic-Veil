@@ -1,7 +1,7 @@
 {
   "tool": "PriZim Tactical Preflight",
-  "summary": "PASS",
-  "failures": 0,
+  "summary": "FAIL",
+  "failures": 1,
   "warnings": 0,
   "checks": [
     {
@@ -86,8 +86,8 @@
     },
     {
       "name": "QA active-turn force-enable",
-      "status": "PASS",
-      "detail": "06D reasserts active-turn before inherited battle entry"
+      "status": "FAIL",
+      "detail": "06D can silently fall through to legacy BP"
     },
     {
       "name": "three-hero active-turn interception",
