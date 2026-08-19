@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """PriZim Asset Hygiene.
 
-Classifies tactical assets by authority instead of filename proximity.
+Classifies Too Quiet Tactical assets by authority instead of filename proximity.
 
 KEEP              production/runtime authority
-ARCHIVE            historical/QA reference, must not be executable from current runtime
+ARCHIVE            historical/QA reference, must not be executable from current Tactical runtime
 PENDING            approved canon with binary ingestion still outstanding
 DELETE_CANDIDATE   unreferenced file under explicitly archive-only roots
 
@@ -21,9 +21,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "pv-data" / "asset_authority" / "tactical_active_turn.assets.json"
 OUT = ROOT / "build" / "prizim"
 
-RUNTIME_DIR = ROOT / "src"
-ROOT_RUNTIME_SUFFIXES = {".js", ".ts", ".html"}
-SRC_RUNTIME_SUFFIXES = {".js", ".ts", ".json"}
+TEXT_SUFFIXES = {".js", ".ts", ".json"}
 ASSET_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
 
 
@@ -37,33 +35,37 @@ def load_manifest() -> dict:
     return json.loads(MANIFEST.read_text(encoding="utf-8"))
 
 
-def runtime_text() -> str:
-    """Return only executable/runtime-facing text.
+def tactical_runtime_files() -> list[Path]:
+    """Return executable/runtime-facing files for the Tactical product surface.
 
-    Scan runtime source plus root entry scripts/pages. Do not recursively scan
-    asset manifests, Sequence Lab metadata, PriZim authority data, docs, tools,
-    reports, or QA support files. QA assets may be referenced by QA metadata;
-    they fail only when executable runtime code references them.
+    Sequence Lab, PriZim metadata, QA manifests, docs, reports, and unrelated
+    root pages are deliberately excluded. QA proxies are allowed to remain
+    referenced by Sequence Lab; they fail only when Tactical runtime references
+    them.
     """
+    files: list[Path] = []
+    src = ROOT / "src"
+    if src.exists():
+        for p in src.rglob("*"):
+            if p.is_file() and p.suffix.lower() in TEXT_SUFFIXES:
+                files.append(p)
+
+    # This checker is intentionally Tactical-specific. Root tactical harnesses
+    # are runtime surfaces; Sequence Lab and unrelated pages are not.
+    for p in ROOT.glob("tactical*.html"):
+        if p.is_file():
+            files.append(p)
+
+    return files
+
+
+def runtime_text() -> str:
     chunks: list[str] = []
-
-    if RUNTIME_DIR.exists():
-        for p in RUNTIME_DIR.rglob("*"):
-            if not p.is_file() or p.suffix.lower() not in SRC_RUNTIME_SUFFIXES:
-                continue
-            try:
-                chunks.append(p.read_text(encoding="utf-8"))
-            except UnicodeDecodeError:
-                pass
-
-    for p in ROOT.iterdir():
-        if not p.is_file() or p.suffix.lower() not in ROOT_RUNTIME_SUFFIXES:
-            continue
+    for p in tactical_runtime_files():
         try:
             chunks.append(p.read_text(encoding="utf-8"))
         except UnicodeDecodeError:
             pass
-
     return "\n".join(chunks)
 
 
@@ -121,6 +123,8 @@ def main() -> int:
     payload = {
         "tool": "PriZim Asset Hygiene",
         "result": "FAIL" if failures else "PASS",
+        "scope": "Too Quiet Tactical runtime",
+        "runtime_files_scanned": [rel(p) for p in tactical_runtime_files()],
         "failures": failures,
         "rows": rows,
     }
@@ -130,6 +134,8 @@ def main() -> int:
         "# PriZim Asset Hygiene",
         "",
         f"**Result: {payload['result']}**",
+        "",
+        "Scope: **Too Quiet Tactical runtime**. Sequence Lab/QA references do not count as production Tactical usage.",
         "",
         "| Asset | Class | Detail |",
         "|---|---|---|",
