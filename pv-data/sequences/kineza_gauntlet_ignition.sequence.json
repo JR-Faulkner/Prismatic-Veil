@@ -4,24 +4,20 @@
   "character": "kineza",
   "displayName": "Kineza",
   "sequenceName": "Gauntlet Ignition",
-  "status": "signature-source-found-awaiting-repo-import",
-  "signatureReady": false,
-  "sourceLocated": true,
+  "status": "authority-sheet-qa",
+  "signatureReady": true,
+  "qaProxy": true,
   "accent": "kinetic-green",
-  "notes": "The exact approved six-frame gauntlet-ignition signature sheet was located in the project File Library on 2026-08-19, but its binary is not yet present in the repository. Sequence Lab uses the existing locked Kineza battle poses only as bootstrap references until the approved sheet is imported; these preview poses are not replacements for the signature strip.",
-  "signaturePlan": [
-    {"frame":1,"beat":"Ready","asset":null,"referenceAsset":"assets/poses/kineza/Kineza01_Idle_LOCKED.png"},
-    {"frame":2,"beat":"Stomp","asset":null,"referenceAsset":"assets/poses/kineza/Kineza02_Step_LOCKED.png"},
-    {"frame":3,"beat":"Green kinetic cracks spread","asset":null,"referenceAsset":"assets/poses/kineza/Kineza03_Coil_LOCKED.png"},
-    {"frame":4,"beat":"Snap / flick gauntlets","asset":null,"referenceAsset":"assets/poses/kineza/Kineza03_Coil_LOCKED.png"},
-    {"frame":5,"beat":"Emerald fire ignites","asset":null,"referenceAsset":"assets/poses/kineza/Kineza04_Strike_LOCKED.png"},
-    {"frame":6,"beat":"Controlled green flame; combat ready","asset":null,"referenceAsset":"assets/poses/kineza/Kineza05_Recover_LOCKED.png"}
-  ],
-  "previewFrames": [
-    {"id":"kineza_pose_1","asset":"assets/poses/kineza/Kineza01_Idle_LOCKED.png","label":"Idle","holdMs":300,"blendMs":48},
-    {"id":"kineza_pose_2","asset":"assets/poses/kineza/Kineza02_Step_LOCKED.png","label":"Step","holdMs":220,"blendMs":38},
-    {"id":"kineza_pose_3","asset":"assets/poses/kineza/Kineza03_Coil_LOCKED.png","label":"Coil","holdMs":320,"blendMs":46,"cue":"kineticBuild"},
-    {"id":"kineza_pose_4","asset":"assets/poses/kineza/Kineza04_Strike_LOCKED.png","label":"Strike","holdMs":210,"blendMs":30,"cue":"impact"},
-    {"id":"kineza_pose_5","asset":"assets/poses/kineza/Kineza05_Recover_LOCKED.png","label":"Recover","holdMs":330,"blendMs":52}
+  "notes": "Exact approved six-frame gauntlet-ignition authority sheet represented by a lightweight PriZim QA proxy for phone motion testing. Production master remains unchanged.",
+  "sheets": {
+    "ignition": {"asset":"assets/sequences/qa/kineza_gauntlet_ignition.webp","cols":3,"rows":2}
+  },
+  "frames": [
+    {"id":"kineza_ignition_1","sheet":"ignition","sheetIndex":0,"label":"Ready","holdMs":220,"blendMs":38,"scale":1.0,"x":0,"y":0},
+    {"id":"kineza_ignition_2","sheet":"ignition","sheetIndex":1,"label":"Stomp","holdMs":180,"blendMs":30,"scale":1.0,"x":0,"y":0,"cue":"stomp"},
+    {"id":"kineza_ignition_3","sheet":"ignition","sheetIndex":2,"label":"Kinetic Cracks","holdMs":220,"blendMs":34,"scale":1.0,"x":0,"y":0,"cue":"cracks"},
+    {"id":"kineza_ignition_4","sheet":"ignition","sheetIndex":3,"label":"Gauntlet Snap","holdMs":180,"blendMs":30,"scale":1.0,"x":0,"y":0,"cue":"gauntletSnap"},
+    {"id":"kineza_ignition_5","sheet":"ignition","sheetIndex":4,"label":"Emerald Ignition","holdMs":260,"blendMs":38,"scale":1.0,"x":0,"y":0,"cue":"ignition"},
+    {"id":"kineza_ignition_6","sheet":"ignition","sheetIndex":5,"label":"Combat Ready","holdMs":320,"blendMs":42,"scale":1.0,"x":0,"y":0,"cue":"lock"}
   ]
 }
