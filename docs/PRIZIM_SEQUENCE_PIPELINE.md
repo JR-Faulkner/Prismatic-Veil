@@ -86,20 +86,23 @@ Cross-dissolve is not automatically desirable.
 - Similar adjacent poses may use softer blending.
 - Judge motion on phone recording, not screenshots alone.
 
-## Binary-transfer lesson
+## Asset transfer rule
 
-A repo write failure and a binary attachment transfer failure are different problems.
+A repo write failure and an uploaded-binary transfer failure are different problems.
 
 Before claiming GitHub/repo access is unavailable:
 
 1. verify connector read/write actions directly;
-2. distinguish UTF-8 text writes from binary transfer limitations;
-3. use Git blob/tree/commit paths or approved QA proxy transport for binary assets;
-4. keep transfer probes off `main`;
-5. verify permanent asset paths before wiring manifests;
-6. never call a tester ready until authority assets, manifests, runtime versioning, and HTML entry wiring all resolve to the same build.
+2. distinguish UTF-8 text writes from binary-transfer limitations;
+3. prefer existing in-repo assets before transporting duplicates;
+4. prefer lightweight QA proxy conversion through ordinary supported file workflows when browser/phone testing does not require the full production master;
+5. keep temporary transfer experiments off `main`;
+6. do not use raw Git blob probing as a normal PriZim production path;
+7. never call a tester ready until authority assets, manifests, runtime versioning, and HTML entry wiring all resolve to the same build.
 
-Do not repeat the false diagnosis that repo access is lost merely because an uploaded binary cannot be passed through a text-only file action.
+If binary transport becomes unstable, change the transport strategy rather than repeatedly retrying low-level Git blob operations. The approved master remains authoritative regardless of the QA transport format.
+
+Do not repeat the false diagnosis that repo access is lost merely because an uploaded binary cannot be passed through a text-only action.
 
 ## Promotion rule
 
