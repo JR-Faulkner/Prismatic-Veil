@@ -7,7 +7,7 @@
 // slice internally so this page can never silently fall through to legacy BP
 // because a query parameter was omitted or stripped by the browser.
 
-import IntegratedTacticalScene06C from './IntegratedTacticalScene06C.js?v=9';
+import IntegratedTacticalScene06C from './IntegratedTacticalScene06C.js?v=10';
 
 export default class IntegratedTacticalScene06D extends IntegratedTacticalScene06C {
   _suppressLegacyEncounterHUD06D() {
