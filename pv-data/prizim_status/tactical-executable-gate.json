@@ -1,8 +1,8 @@
 {
   "tool": "PriZim Tactical Executable Gate",
-  "source_commit": "aa3dec09ead4f7f8f0f56d2f6148fbf88a53f090",
-  "workflow_run_id": "32315933943",
-  "validated_at_utc": "2026-08-20T00:06:32Z",
+  "source_commit": "ea67f19b0ede13f2bdc2eef8c822ae3179d29b0f",
+  "workflow_run_id": "32316129096",
+  "validated_at_utc": "2026-08-20T00:10:00Z",
   "syntax": "success",
   "browser_setup": "success",
   "attack_staging_tripwire": "success",
@@ -10,7 +10,7 @@
   "local_portrait_hud_smoke": "success",
   "phone_delivery_hud_smoke": "success",
   "delivery_surface": "github-pages",
-  "build_marker": "TACTICAL-HUD-PHONE-07",
+  "build_marker": "TACTICAL-HUD-PHONE-08",
   "legacy_action_ui_blocked": true,
   "legacy_bp_blocked": true
 }

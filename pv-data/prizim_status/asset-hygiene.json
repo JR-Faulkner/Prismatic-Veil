@@ -84,6 +84,7 @@
     "src/tactical/IntegratedTacticalScene05M1.js",
     "src/tactical/DreamViewCalibrationSandbox.js",
     "src/tactical/ActiveTurnBattleSlice05FPatched.js",
+    "src/tactical/IntegratedTacticalScene06I.js",
     "src/tactical/TacticalActionConsole.js",
     "src/prizim/ContinuityGate.js",
     "src/prizim/SequenceLab.js",
