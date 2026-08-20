@@ -14,6 +14,7 @@ on:
       - 'src/tactical/IntegratedTacticalScene06C.js'
       - 'src/tactical/IntegratedTacticalViewFlavor06B.js'
       - 'src/tactical/IntegratedTacticalScene06A.js'
+      - 'src/tactical/ActiveTurnBattleSlice05*.js'
       - 'src/tactical/ActiveTurnBattleSlice.js'
       - 'src/tactical/ActiveTurnBattleSlice06A.js'
       - 'assets/sequences/production/**'
@@ -35,6 +36,7 @@ on:
       - 'src/tactical/IntegratedTacticalScene06C.js'
       - 'src/tactical/IntegratedTacticalViewFlavor06B.js'
       - 'src/tactical/IntegratedTacticalScene06A.js'
+      - 'src/tactical/ActiveTurnBattleSlice05*.js'
       - 'src/tactical/ActiveTurnBattleSlice.js'
       - 'src/tactical/ActiveTurnBattleSlice06A.js'
       - 'assets/sequences/production/**'
@@ -65,6 +67,8 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
+          node --check src/tactical/ActiveTurnBattleSlice05FPatched.js
+          node --check src/tactical/ActiveTurnBattleSlice05G.js
           node --check src/tactical/ActiveTurnBattleSlice06A.js
           node --check src/tactical/IntegratedTacticalScene06A.js
           node --check src/tactical/IntegratedTacticalViewFlavor06B.js
@@ -104,6 +108,21 @@ jobs:
           sleep 1
           PRIZIM_BUILD_MARKER="TACTICAL-HUD-PHONE-08" \
           PRIZIM_REQUIRE_ATTACK_STAGING=1 \
+          node tools/pv_forge/tactical_boot_smoke.mjs
+
+      - name: Run PriZim Auryi + Kineza full attack lifecycle
+        id: attack_lifecycle
+        continue-on-error: true
+        shell: bash
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/prizim-lifecycle-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          PRIZIM_BUILD_MARKER="TACTICAL-HUD-PHONE-08" \
+          PRIZIM_REQUIRE_ATTACK_LIFECYCLE=1 \
+          PRIZIM_VIEWPORT_WIDTH=844 \
+          PRIZIM_VIEWPORT_HEIGHT=390 \
           node tools/pv_forge/tactical_boot_smoke.mjs
 
       - name: Run PriZim local landscape phone smoke
@@ -155,6 +174,7 @@ jobs:
             PRIZIM_REQUIRE_PHONE_HUD=1 \
             PRIZIM_REQUIRE_ACTIVE_TURN=1 \
             PRIZIM_REQUIRE_ATTACK_STAGING=1 \
+            PRIZIM_REQUIRE_ATTACK_LIFECYCLE=1 \
             PRIZIM_VIEWPORT_WIDTH=844 \
             PRIZIM_VIEWPORT_HEIGHT=390 \
             node tools/pv_forge/tactical_boot_smoke.mjs && landscape=1 || true
@@ -185,6 +205,7 @@ jobs:
           echo "- JS parse: ${{ steps.syntax.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Browser setup: ${{ steps.browser_setup.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Auryi + Kineza attack staging: ${{ steps.attack_staging.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Auryi + Kineza full lifecycle: ${{ steps.attack_lifecycle.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Local landscape PHONE-08 HUD + active-turn: ${{ steps.boot_smoke.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Local portrait PHONE-08 HUD: ${{ steps.portrait_smoke.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- GitHub Pages landscape + portrait PHONE-08: ${{ steps.delivery_smoke.outcome }}" >> "$GITHUB_STEP_SUMMARY"
@@ -205,6 +226,7 @@ jobs:
             "syntax": "${{ steps.syntax.outcome }}",
             "browser_setup": "${{ steps.browser_setup.outcome }}",
             "attack_staging_tripwire": "${{ steps.attack_staging.outcome }}",
+            "attack_lifecycle_tripwire": "${{ steps.attack_lifecycle.outcome }}",
             "local_phone_hud_smoke": "${{ steps.boot_smoke.outcome }}",
             "local_portrait_hud_smoke": "${{ steps.portrait_smoke.outcome }}",
             "phone_delivery_hud_smoke": "${{ steps.delivery_smoke.outcome }}",
@@ -225,7 +247,7 @@ jobs:
           fi
 
       - name: Enforce gate result
-        if: steps.syntax.outcome != 'success' || steps.preflight.outcome != 'success' || steps.hygiene.outcome != 'success' || steps.browser_setup.outcome != 'success' || steps.attack_staging.outcome != 'success' || steps.boot_smoke.outcome != 'success' || steps.portrait_smoke.outcome != 'success' || steps.delivery_smoke.outcome != 'success'
+        if: steps.syntax.outcome != 'success' || steps.preflight.outcome != 'success' || steps.hygiene.outcome != 'success' || steps.browser_setup.outcome != 'success' || steps.attack_staging.outcome != 'success' || steps.attack_lifecycle.outcome != 'success' || steps.boot_smoke.outcome != 'success' || steps.portrait_smoke.outcome != 'success' || steps.delivery_smoke.outcome != 'success'
         run: exit 1
 
       - name: Upload PriZim Tactical reports
