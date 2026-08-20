@@ -6,6 +6,7 @@ const truthy = value => ['1', 'true', 'yes', 'on'].includes((value || '').toLowe
 const requireActiveTurn = truthy(process.env.PRIZIM_REQUIRE_ACTIVE_TURN);
 const requirePhoneHud = truthy(process.env.PRIZIM_REQUIRE_PHONE_HUD);
 const requireAttackStaging = truthy(process.env.PRIZIM_REQUIRE_ATTACK_STAGING);
+const requireAttackLifecycle = truthy(process.env.PRIZIM_REQUIRE_ATTACK_LIFECYCLE);
 const viewportWidth = Number(process.env.PRIZIM_VIEWPORT_WIDTH || 844);
 const viewportHeight = Number(process.env.PRIZIM_VIEWPORT_HEIGHT || 390);
 const dpr = Number(process.env.PRIZIM_DPR || 3);
@@ -61,7 +62,7 @@ try {
     else if (loadingState.display !== 'none') record('boot', `loading overlay still visible: ${loadingState.text.trim()}`);
   }
 
-  if ((requirePhoneHud || requireActiveTurn || requireAttackStaging) && failures.length === 0) {
+  if ((requirePhoneHud || requireActiveTurn || requireAttackStaging || requireAttackLifecycle) && failures.length === 0) {
     await page.waitForFunction(() => {
       const game = window.__PV_GAME__;
       return !!game?.scene?.getScenes(true).find(scene => scene?.activeTurnBattleSlice && Array.isArray(scene.heroes));
@@ -182,6 +183,48 @@ try {
     }
   }
 
+  if (requireAttackLifecycle && failures.length === 0) {
+    try {
+      const lifecycle = await page.evaluate(async () => {
+        const game = window.__PV_GAME__;
+        const tactical = game.scene.getScenes(true).find(scene => scene?.activeTurnBattleSlice && Array.isArray(scene.heroes) && Array.isArray(scene.enemies));
+        if (!tactical) return { ok: false, reason: 'active Tactical scene not found for lifecycle smoke' };
+        const target = tactical.enemies.find(enemy => enemy?.alive && enemy.type === 'hushling') || tactical.enemies.find(enemy => enemy?.alive);
+        if (!target) return { ok: false, reason: 'no living enemy available for lifecycle smoke' };
+
+        const SliceCtor = tactical.activeTurnBattleSlice.constructor;
+        const results = [];
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        for (const heroId of ['auryi', 'kineza']) {
+          const hero = tactical.heroes.find(h => h.id === heroId && h.alive);
+          if (!hero) return { ok: false, reason: `${heroId} unavailable for lifecycle smoke` };
+          const slice = new SliceCtor(tactical);
+          slice._activeHero06A = hero;
+          try {
+            slice._ensureEnemy();
+            await slice._introCutin();
+            await slice._playAttackPresentation(hero, target);
+            const endpoints = slice._projectileEndpoints();
+            const nums = [endpoints?.start?.x, endpoints?.start?.y, endpoints?.end?.x, endpoints?.end?.y];
+            if (!nums.every(Number.isFinite)) throw new Error(`${heroId} projectile endpoints are not finite`);
+            slice._impactBurst();
+            await delay(260);
+            results.push({ heroId, endpoints });
+          } finally {
+            try { slice._teardownVisuals(); } catch (err) {}
+            slice._activeHero06A = null;
+          }
+        }
+        return { ok: results.length === 2, reason: results.length === 2 ? '' : 'incomplete canon lifecycle coverage', results };
+      });
+      if (!lifecycle.ok) record('attack-lifecycle', lifecycle.reason || 'Auryi/Kineza full attack lifecycle failed');
+      await page.waitForTimeout(120);
+    } catch (error) {
+      record('attack-lifecycle', error);
+    }
+  }
+
   if (requireActiveTurn && failures.length === 0) {
     try {
       const contract = await page.evaluate(() => {
@@ -239,6 +282,7 @@ try {
     if (expectedMarker) console.log(`Verified deployed marker ${expectedMarker}.`);
     if (requirePhoneHud) console.log('Verified phone HUD visibility with legacy command UI disabled.');
     if (requireAttackStaging) console.log('Verified Auryi ranged-hover and Kineza close-range attack staging contract.');
+    if (requireAttackLifecycle) console.log('Verified Auryi and Kineza full presentation lifecycle through impact and cleanup.');
     if (requireActiveTurn) console.log('Verified ATTACK ownership by active-turn slice with legacy BP blocked.');
   }
 } catch (error) {
