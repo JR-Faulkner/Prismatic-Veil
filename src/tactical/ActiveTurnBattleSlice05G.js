@@ -8,7 +8,7 @@
 // charge / release / impact lighting so the active turn reads as a game scene
 // rather than a debug overlay on the Tactical board.
 
-import ActiveTurnBattleSlice05FPatched from './ActiveTurnBattleSlice05FPatched.js?v=1';
+import ActiveTurnBattleSlice05FPatched from './ActiveTurnBattleSlice05FPatched.js?v=2';
 
 const ENV_LAYERS = Object.freeze([
   { key: 'too_quiet_far_backyards', alpha: 1.00 },
