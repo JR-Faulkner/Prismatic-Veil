@@ -5,6 +5,10 @@ const expectedMarker = process.env.PRIZIM_BUILD_MARKER || '';
 const truthy = value => ['1', 'true', 'yes', 'on'].includes((value || '').toLowerCase());
 const requireActiveTurn = truthy(process.env.PRIZIM_REQUIRE_ACTIVE_TURN);
 const requirePhoneHud = truthy(process.env.PRIZIM_REQUIRE_PHONE_HUD);
+const requireAttackStaging = truthy(process.env.PRIZIM_REQUIRE_ATTACK_STAGING);
+const viewportWidth = Number(process.env.PRIZIM_VIEWPORT_WIDTH || 844);
+const viewportHeight = Number(process.env.PRIZIM_VIEWPORT_HEIGHT || 390);
+const dpr = Number(process.env.PRIZIM_DPR || 3);
 const failures = [];
 let browser;
 
@@ -16,8 +20,8 @@ function record(kind, value) {
 try {
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
-    viewport: { width: 844, height: 390 },
-    deviceScaleFactor: 3,
+    viewport: { width: viewportWidth, height: viewportHeight },
+    deviceScaleFactor: dpr,
     isMobile: true,
     hasTouch: true,
   });
@@ -57,15 +61,7 @@ try {
     else if (loadingState.display !== 'none') record('boot', `loading overlay still visible: ${loadingState.text.trim()}`);
   }
 
-  const findTactical = () => {
-    const game = window.__PV_GAME__;
-    if (!game?.scene) return null;
-    return game.scene.getScenes(true).find(scene =>
-      scene?.activeTurnBattleSlice && Array.isArray(scene.heroes) && Array.isArray(scene.enemies)
-    ) || null;
-  };
-
-  if ((requirePhoneHud || requireActiveTurn) && failures.length === 0) {
+  if ((requirePhoneHud || requireActiveTurn || requireAttackStaging) && failures.length === 0) {
     await page.waitForFunction(() => {
       const game = window.__PV_GAME__;
       return !!game?.scene?.getScenes(true).find(scene => scene?.activeTurnBattleSlice && Array.isArray(scene.heroes));
@@ -77,7 +73,7 @@ try {
       const hud = await page.evaluate(() => {
         const game = window.__PV_GAME__;
         const tactical = game.scene.getScenes(true).find(scene => scene?._phoneHud06G && Array.isArray(scene.heroes));
-        if (!tactical) return { ok: false, reason: 'PHONE-06 HUD scene not found' };
+        if (!tactical) return { ok: false, reason: 'phone HUD scene not found' };
         const hero = tactical.heroes.find(h => h.id === 'prismel' && h.alive);
         if (!hero) return { ok: false, reason: 'Prismel unavailable for HUD selection smoke' };
         tactical.selectHero(hero);
@@ -102,9 +98,87 @@ try {
         if (!rootVisible) bad.push('phone-hud-root-hidden');
         return { ok: bad.length === 0, reason: bad.join(', '), legacyVisible, drawerVisible };
       });
-      if (!hud.ok) record('phone-hud', hud.reason || 'PHONE-06 HUD contract failed');
+      if (!hud.ok) record('phone-hud', hud.reason || 'phone HUD contract failed');
     } catch (error) {
       record('phone-hud', error);
+    }
+  }
+
+  if (requireAttackStaging && failures.length === 0) {
+    try {
+      const staging = await page.evaluate(() => {
+        const game = window.__PV_GAME__;
+        const tactical = game.scene.getScenes(true).find(scene => scene?.activeTurnBattleSlice && Array.isArray(scene.heroes));
+        if (!tactical) return { ok: false, reason: 'active Tactical scene not found for staging contract' };
+        const slice = tactical.activeTurnBattleSlice;
+        if (typeof slice.stageContract06A !== 'function') return { ok: false, reason: 'stageContract06A unavailable' };
+
+        const auryi = tactical.heroes.find(hero => hero.id === 'auryi' && hero.alive);
+        const kineza = tactical.heroes.find(hero => hero.id === 'kineza' && hero.alive);
+        if (!auryi || !kineza) return { ok: false, reason: 'Auryi or Kineza unavailable for staging contract' };
+
+        const a = slice.stageContract06A('auryi');
+        const k = slice.stageContract06A('kineza');
+        const bad = [];
+        if (!a || !k) bad.push('missing-stage-contract');
+        if (!(a?.stage?.xFrac < 0)) bad.push('auryi-not-ranged-left');
+        if (!(a?.stage?.yFrac < 0)) bad.push('auryi-not-hover-raised');
+        if (!(Math.max(...(a?.attackTravel || [1])) <= 0.03)) bad.push('auryi-travel-too-large');
+        if (!(k?.stage?.xFrac > 0.10)) bad.push('kineza-not-forward-staged');
+        if (!(Math.max(...(k?.attackTravel || [0])) >= 0.12)) bad.push('kineza-forward-drive-too-small');
+        if (!a || !k || Math.max(...k.attackTravel) <= Math.max(...a.attackTravel) + 0.08) bad.push('hero-stage-separation-too-small');
+
+        const originalHero = slice._activeHero06A;
+        const originalFrame = slice._activeFrame06A;
+        const originalImg = slice._cutinImage;
+        const originalSnapshot = slice._stageSnapshot06A;
+        const fake = {
+          active: true,
+          x: 0,
+          y: 0,
+          scaleX: 1,
+          setOrigin() { return this; },
+          setScale(value) { this.scaleX = value; return this; },
+          setPosition(x, y) { this.x = x; this.y = y; return this; }
+        };
+
+        const snap = (hero, index) => {
+          slice._cutinImage = fake;
+          slice._activeHero06A = hero;
+          slice._activeFrame06A = { phase: 'attack', index };
+          slice._layoutCutin();
+          return { ...slice._stageSnapshot06A };
+        };
+
+        let a0, a4, k0, k4, k5, cutinW;
+        try {
+          a0 = snap(auryi, 0);
+          a4 = snap(auryi, 4);
+          k0 = snap(kineza, 0);
+          k4 = snap(kineza, 4);
+          k5 = snap(kineza, 5);
+          cutinW = slice._layoutMetrics().cutin.maxW;
+        } finally {
+          slice._activeHero06A = originalHero;
+          slice._activeFrame06A = originalFrame;
+          slice._cutinImage = originalImg;
+          slice._stageSnapshot06A = originalSnapshot;
+        }
+
+        const finite = [a0?.x, a4?.x, k0?.x, k4?.x, k5?.x, cutinW].every(Number.isFinite);
+        if (!finite) bad.push('runtime-stage-snapshot-invalid');
+        else {
+          if (!(k0.x - a0.x > cutinW * 0.07)) bad.push('kineza-not-closer-than-auryi');
+          if (!(k4.x - k0.x > cutinW * 0.07)) bad.push('kineza-punch-does-not-advance');
+          if (!(k4.x - k5.x > cutinW * 0.035)) bad.push('kineza-recovery-does-not-return');
+          if (!(Math.abs(a4.x - a0.x) < cutinW * 0.08)) bad.push('auryi-ranged-stage-drifts-too-far');
+        }
+
+        return { ok: bad.length === 0, reason: bad.join(', '), a0, a4, k0, k4, k5 };
+      });
+      if (!staging.ok) record('attack-staging', staging.reason || 'Auryi/Kineza attack staging contract failed');
+    } catch (error) {
+      record('attack-staging', error);
     }
   }
 
@@ -161,9 +235,10 @@ try {
     process.exitCode = 1;
   } else {
     console.log('PriZim Tactical Boot Smoke: PASS');
-    console.log(`Booted ${url} at 844x390, DPR 3, touch enabled.`);
+    console.log(`Booted ${url} at ${viewportWidth}x${viewportHeight}, DPR ${dpr}, touch enabled.`);
     if (expectedMarker) console.log(`Verified deployed marker ${expectedMarker}.`);
-    if (requirePhoneHud) console.log('Verified PHONE-06 HUD is visible with legacy command UI disabled.');
+    if (requirePhoneHud) console.log('Verified phone HUD visibility with legacy command UI disabled.');
+    if (requireAttackStaging) console.log('Verified Auryi ranged-hover and Kineza close-range attack staging contract.');
     if (requireActiveTurn) console.log('Verified ATTACK ownership by active-turn slice with legacy BP blocked.');
   }
 } catch (error) {
