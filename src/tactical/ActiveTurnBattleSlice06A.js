@@ -13,9 +13,6 @@ const CANON = Object.freeze({
     attackLabel: 'ATTACK',
     entranceHolds: [220, 260, 300, 340, 360, 400],
     attackHolds: [150, 125, 115, 110, 150, 190],
-    // Stage authority is separate from frame registration. Auryi remains a
-    // ranged hover caster: slightly left of the shared cut-in center and lifted
-    // off the ground line. Attack travel is deliberately restrained.
     stage: { xFrac: -0.045, yFrac: -0.060, scale: 0.94 },
     attackTravel: [0.000, 0.000, 0.010, 0.020, 0.015, 0.000],
     attackRegistration: [
@@ -33,15 +30,9 @@ const CANON = Object.freeze({
     attackLabel: 'ATTACK',
     entranceHolds: [220, 180, 220, 180, 260, 320],
     attackHolds: [145, 115, 95, 105, 145, 190],
-    // Kineza is the close-range bruiser. His whole presentation stage sits
-    // nearer the target, then advances deterministically across punch frames.
-    // This replaces the old per-frame tween shove that was reset by layout.
     stage: { xFrac: 0.155, yFrac: 0.012, scale: 0.92 },
     attackTravel: [0.000, 0.035, 0.075, 0.115, 0.145, 0.035],
     attackRegistration: [
-      // Frame 1 is the entrance seam, not punch travel. PriZim measured the
-      // raw entrance→attack delta at ~63.8px center / 42px baseline. Fully
-      // normalize the starting handoff; frames 2–6 own authored motion.
       { scale: 0.94027, x: -63.80, y: -33.00 },
       { scale: 0.99532, x: -58.12, y: -12.76 },
       { scale: 1.02163, x: -68.02, y: -17.17 },
@@ -74,8 +65,6 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     return this._activeHero06A ? CANON[this._activeHero06A.id] : null;
   }
 
-  // PriZim-readable contract for presentation QA. This intentionally exposes
-  // authored staging values, not mutable runtime objects.
   stageContract06A(heroId) {
     const spec = CANON[heroId];
     if (!spec) return null;
@@ -99,6 +88,28 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
     this._cutinImage = img;
     this._activeFrame06A = { phase: 'entrance', index: 0 };
     return img;
+  }
+
+  // Prismel's inherited presentation uses a parent _heroRig. The canon Auryi
+  // and Kineza sheets are positioned directly in screen space, so impact FX
+  // must not assume that rig exists. This override keeps the shared impact path
+  // valid for all three heroes while leaving Prismel's proven anchor untouched.
+  _heroHandPoint() {
+    const spec = this._canonSpec06A();
+    if (!spec) return super._heroHandPoint();
+
+    const img = this._ensureCutin();
+    if (!img || !img.active) {
+      const m = this._layoutMetrics();
+      return { x: m.w * 0.38, y: m.h * 0.48 };
+    }
+
+    const left = img.x - img.displayWidth * img.originX;
+    const top = img.y - img.displayHeight * img.originY;
+    return {
+      x: left + img.displayWidth * 0.79,
+      y: top + img.displayHeight * 0.42
+    };
   }
 
   _registration06A() {
@@ -221,9 +232,6 @@ export default class ActiveTurnBattleSlice06A extends ActiveTurnBattleSlice05M {
   }
 
   async _playAttackPresentation(hero, target) {
-    // Inherited 05M invokes this method with no positional args. The active
-    // hero stored by run() is the contract authority. Optional args are only
-    // tolerated for compatibility with direct callers.
     const activeHero = hero || this._activeHero06A;
     const spec = this._canonSpec06A();
     if (!spec) return super._playAttackPresentation(hero, target);
