@@ -49,10 +49,43 @@ jobs:
       - name: Validate Kineza style tester contract
         run: |
           grep -q "PRIZIM · ATTACK STYLE COMPARISON" kineza-attack-style-lab.html
-          grep -q "KinezaAttackStyleLab.js?v=1" kineza-attack-style-lab.html
+          grep -q "KinezaAttackStyleLab.js?v=2" kineza-attack-style-lab.html
           grep -q "STYLE ONLY CHANGES" kineza-attack-style-lab.html
+          ! grep -R "\.jpg\.jpg" pv-data/sequences/kineza_attack_style_*.sequence.json src/prizim/KinezaAttackStyleLab.js kineza-attack-style-lab.html
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path('pv-data/sequences').glob('kineza_attack_style_*.sequence.json'):
+              data=json.loads(p.read_text())
+              asset=data['sheets']['attack']['asset']
+              if not Path(asset).is_file():
+                  raise SystemExit(f'Missing style asset: {asset}')
+              if asset.endswith('.jpg.jpg'):
+                  raise SystemExit(f'Double-extension style asset: {asset}')
+          PY
       - name: Rank continuity handoffs
         run: python tools/pv_forge/continuity_batch_report.py
+      - name: Verify GitHub Pages Kineza style lab delivery
+        id: delivery
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          BASE="https://jr-faulkner.github.io/Prismatic-Veil"
+          ok=0
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            echo "Pages delivery attempt $attempt/12"
+            html="$(curl -fsSL "$BASE/kineza-attack-style-lab.html?commit=${{ github.sha }}" || true)"
+            if echo "$html" | grep -q 'KinezaAttackStyleLab.js?v=2' \
+              && curl -fsS "$BASE/src/prizim/KinezaAttackStyleLab.js?v=2" >/dev/null \
+              && curl -fsS "$BASE/assets/sequences/style_tests/kineza_attack_style_epic.jpg?v=2" >/dev/null \
+              && curl -fsS "$BASE/assets/sequences/style_tests/kineza_attack_style_jrpg.jpg?v=2" >/dev/null \
+              && curl -fsS "$BASE/assets/sequences/style_tests/kineza_attack_style_graphic.jpg?v=2" >/dev/null; then
+              ok=1
+              break
+            fi
+            sleep 15
+          done
+          test "$ok" -eq 1
       - name: Publish continuity report to workflow summary
         run: cat build/prizim/continuity-report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload PriZim continuity report
@@ -67,6 +100,7 @@ jobs:
         env:
           PRIZIM_SOURCE_COMMIT: ${{ github.sha }}
           PRIZIM_RUN_ID: ${{ github.run_id }}
+          PRIZIM_DELIVERY: ${{ steps.delivery.outcome }}
         run: |
           python - <<'PY'
           import json, os
@@ -85,6 +119,8 @@ jobs:
             'choreography_lock': 'success',
             'tester_javascript': 'success',
             'tester_contract': 'success',
+            'asset_path_tripwire': 'success',
+            'live_delivery': os.environ.get('PRIZIM_DELIVERY', 'skipped'),
             'continuity_report': 'success'
           }
           path.write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
