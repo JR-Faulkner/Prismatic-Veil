@@ -29,6 +29,9 @@ on:
       - 'kineza-attack-style-lab.html'
       - '.github/workflows/prizim-sequence-check.yml'
 
+permissions:
+  contents: write
+
 jobs:
   validate-sequences:
     runs-on: ubuntu-latest
@@ -59,3 +62,42 @@ jobs:
           path: |
             build/prizim/continuity-report.json
             build/prizim/continuity-report.md
+      - name: Write exact source receipt
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          PRIZIM_SOURCE_COMMIT: ${{ github.sha }}
+          PRIZIM_RUN_ID: ${{ github.run_id }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          path = Path('pv-data/prizim_status/sequence-check.json')
+          path.parent.mkdir(parents=True, exist_ok=True)
+          receipt = {
+            'tool': 'PriZim Sequence Gate',
+            'source_commit': os.environ['PRIZIM_SOURCE_COMMIT'],
+            'workflow_run_id': os.environ['PRIZIM_RUN_ID'],
+            'validated_at_utc': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+            'manifest_validation': 'success',
+            'comparison_group': 'kineza_attack_style_test_v1',
+            'comparison_variants': 3,
+            'choreography_lock': 'success',
+            'tester_javascript': 'success',
+            'tester_contract': 'success',
+            'continuity_report': 'success'
+          }
+          path.write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
+          PY
+      - name: Publish exact source receipt
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "PriZim Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add pv-data/prizim_status/sequence-check.json
+          if git diff --cached --quiet; then
+            echo "Receipt unchanged"
+            exit 0
+          fi
+          git commit -m "PriZim publish sequence check receipt"
+          git push
