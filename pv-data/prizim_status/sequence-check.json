@@ -1,13 +1,15 @@
 {
   "tool": "PriZim Sequence Gate",
-  "source_commit": "15e0d4c19e190ed6c62ef3a8421b7cb18eefb2e9",
-  "workflow_run_id": "32605373576",
-  "validated_at_utc": "2026-08-22T23:30:05.023117Z",
+  "source_commit": "a22b4b86df63d0a143f41146119970f0fa366005",
+  "workflow_run_id": "32605486575",
+  "validated_at_utc": "2026-08-22T23:33:09.957149Z",
   "manifest_validation": "success",
   "comparison_group": "kineza_attack_style_test_v1",
   "comparison_variants": 3,
   "choreography_lock": "success",
   "tester_javascript": "success",
   "tester_contract": "success",
+  "asset_path_tripwire": "success",
+  "live_delivery": "success",
   "continuity_report": "success"
 }
