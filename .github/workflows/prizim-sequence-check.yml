@@ -11,7 +11,9 @@ on:
       - 'assets/sequences/**'
       - 'src/prizim/SequenceLab.js'
       - 'src/prizim/ContinuityGate.js'
+      - 'src/prizim/KinezaAttackStyleLab.js'
       - 'sequence-lab.html'
+      - 'kineza-attack-style-lab.html'
       - '.github/workflows/prizim-sequence-check.yml'
   pull_request:
     paths:
@@ -22,7 +24,9 @@ on:
       - 'assets/sequences/**'
       - 'src/prizim/SequenceLab.js'
       - 'src/prizim/ContinuityGate.js'
+      - 'src/prizim/KinezaAttackStyleLab.js'
       - 'sequence-lab.html'
+      - 'kineza-attack-style-lab.html'
       - '.github/workflows/prizim-sequence-check.yml'
 
 jobs:
@@ -37,6 +41,13 @@ jobs:
         run: python -m pip install --disable-pip-version-check Pillow
       - name: Validate PriZim sequence manifests
         run: python tools/pv_forge/sequence_check.py
+      - name: Validate Kineza style tester JavaScript
+        run: node --check src/prizim/KinezaAttackStyleLab.js
+      - name: Validate Kineza style tester contract
+        run: |
+          grep -q "PRIZIM · ATTACK STYLE COMPARISON" kineza-attack-style-lab.html
+          grep -q "KinezaAttackStyleLab.js?v=1" kineza-attack-style-lab.html
+          grep -q "STYLE ONLY CHANGES" kineza-attack-style-lab.html
       - name: Rank continuity handoffs
         run: python tools/pv_forge/continuity_batch_report.py
       - name: Publish continuity report to workflow summary

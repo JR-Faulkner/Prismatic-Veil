@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "kineza_attack_style_jrpg",
+  "character": "kineza",
+  "displayName": "Kineza · Stylized JRPG",
+  "sequenceName": "Kinetic Punch · Style Test",
+  "status": "style-candidate-qa",
+  "signatureReady": true,
+  "qaProxy": true,
+  "comparisonGroup": "kineza_attack_style_test_v1",
+  "styleVariant": "stylized-jrpg",
+  "continuityBatch": false,
+  "accent": "kinetic-green",
+  "notes": "Non-canon visual style candidate. PriZim locks choreography/timing across variants so only rendering language is being compared.",
+  "sheets": {
+    "attack": {
+      "asset": "assets/sequences/style_tests/kineza_attack_style_jrpg.jpg",
+      "cols": 6,
+      "rows": 1
+    }
+  },
+  "motionProfile": {
+    "style": "impact",
+    "axis": "x",
+    "direction": 1,
+    "minBlendMs": 58,
+    "blendScale": 0.92,
+    "travelPx": 5,
+    "enterScale": 0.992,
+    "overlap": 0.34,
+    "settleMs": 64,
+    "settleScale": 1.004
+  },
+  "frames": [
+    {"id":"kineza_jrpg_1","sheet":"attack","sheetIndex":0,"label":"Ready","holdMs":220,"blendMs":60,"scale":1.0,"x":0,"y":0,"cue":"ready"},
+    {"id":"kineza_jrpg_2","sheet":"attack","sheetIndex":1,"label":"Coil","holdMs":180,"blendMs":54,"scale":1.0,"x":0,"y":0,"cue":"coil"},
+    {"id":"kineza_jrpg_3","sheet":"attack","sheetIndex":2,"label":"Drive","holdMs":150,"blendMs":44,"scale":1.0,"x":0,"y":0,"cue":"drive"},
+    {"id":"kineza_jrpg_4","sheet":"attack","sheetIndex":3,"label":"Release","holdMs":220,"blendMs":72,"scale":1.0,"x":0,"y":0,"cue":"release"},
+    {"id":"kineza_jrpg_5","sheet":"attack","sheetIndex":4,"label":"Recoil","holdMs":170,"blendMs":62,"scale":1.0,"x":0,"y":0,"cue":"recoil"},
+    {"id":"kineza_jrpg_6","sheet":"attack","sheetIndex":5,"label":"Recover","holdMs":300,"blendMs":90,"scale":1.0,"x":0,"y":0,"cue":"recover"}
+  ],
+  "comparisonExpectedVariants": 3
+}
