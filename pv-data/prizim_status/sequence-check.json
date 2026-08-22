@@ -1,8 +1,8 @@
 {
   "tool": "PriZim Sequence Gate",
-  "source_commit": "b9c0242d160d1674e4ab4ed516eb11f52ed39aec",
-  "workflow_run_id": "32604818748",
-  "validated_at_utc": "2026-08-22T23:17:47.340574Z",
+  "source_commit": "15e0d4c19e190ed6c62ef3a8421b7cb18eefb2e9",
+  "workflow_run_id": "32605373576",
+  "validated_at_utc": "2026-08-22T23:30:05.023117Z",
   "manifest_validation": "success",
   "comparison_group": "kineza_attack_style_test_v1",
   "comparison_variants": 3,
