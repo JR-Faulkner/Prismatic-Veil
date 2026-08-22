@@ -12,25 +12,8 @@
   "continuityBatch": false,
   "accent": "kinetic-green",
   "notes": "Non-canon visual style candidate. PriZim locks choreography/timing across variants so only rendering language is being compared.",
-  "sheets": {
-    "attack": {
-      "asset": "assets/sequences/style_tests/kineza_attack_style_graphic.jpg",
-      "cols": 6,
-      "rows": 1
-    }
-  },
-  "motionProfile": {
-    "style": "impact",
-    "axis": "x",
-    "direction": 1,
-    "minBlendMs": 58,
-    "blendScale": 0.92,
-    "travelPx": 5,
-    "enterScale": 0.992,
-    "overlap": 0.34,
-    "settleMs": 64,
-    "settleScale": 1.004
-  },
+  "sheets": {"attack": {"asset": "assets/sequences/style_tests/kineza_attack_style_graphic.webp", "cols": 6, "rows": 1}},
+  "motionProfile": {"style":"impact","axis":"x","direction":1,"minBlendMs":58,"blendScale":0.92,"travelPx":5,"enterScale":0.992,"overlap":0.34,"settleMs":64,"settleScale":1.004},
   "frames": [
     {"id":"kineza_graphic_1","sheet":"attack","sheetIndex":0,"label":"Ready","holdMs":220,"blendMs":60,"scale":1.0,"x":0,"y":0,"cue":"ready"},
     {"id":"kineza_graphic_2","sheet":"attack","sheetIndex":1,"label":"Coil","holdMs":180,"blendMs":54,"scale":1.0,"x":0,"y":0,"cue":"coil"},
