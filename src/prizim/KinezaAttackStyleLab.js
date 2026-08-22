@@ -1,17 +1,18 @@
-// PriZim Kineza Attack Style Lab v1
+// PriZim Kineza Attack Style Lab v1.1
 const MANIFESTS = [
   './pv-data/sequences/kineza_attack_style_epic.sequence.json',
   './pv-data/sequences/kineza_attack_style_jrpg.sequence.json',
   './pv-data/sequences/kineza_attack_style_graphic.sequence.json'
 ];
 
-const VERSION = '1';
+const VERSION = '2';
 const $ = s => document.querySelector(s);
 
 class KinezaAttackStyleLab {
   constructor() {
     this.manifests = [];
     this.images = new Map();
+    this.objectUrls = [];
     this.styleIndex = 0;
     this.frameIndex = 0;
     this.playing = false;
@@ -36,6 +37,7 @@ class KinezaAttackStyleLab {
     this.resize();
     this.render();
     window.addEventListener('resize', () => { this.resize(); this.render(); });
+    window.addEventListener('pagehide', () => this.objectUrls.forEach(url => URL.revokeObjectURL(url)), {once:true});
     $('#boot-status').textContent = 'PRIZIM LOCK • 3 STYLES • 6 FRAMES • SYNCED';
   }
 
@@ -54,16 +56,49 @@ class KinezaAttackStyleLab {
     return (m.frames || []).map(f => [f.label, f.holdMs, f.blendMs, f.cue || '']);
   }
 
-  async loadSheet(m) {
-    const sheet = m.sheets.attack;
+  async imageFromUrl(url, label) {
     const img = new Image();
     img.decoding = 'async';
     await new Promise((resolve, reject) => {
       img.onload = resolve;
-      img.onerror = () => reject(new Error(`Sheet failed: ${sheet.asset}`));
-      img.src = `${sheet.asset}?v=${VERSION}`;
+      img.onerror = () => reject(new Error(`Sheet failed: ${label}`));
+      img.src = url;
     });
-    this.images.set(m.id, img);
+    return img;
+  }
+
+  async loadSheet(m) {
+    const sheet = m.sheets.attack;
+    const assetUrl = `${sheet.asset}?v=${VERSION}`;
+
+    // PriZim's repository writer stores binary payloads as base64 text. Fetch the
+    // payload ourselves and decode it in-browser so GitHub Pages can still serve
+    // the exact audited asset without a second binary upload path.
+    const response = await fetch(assetUrl, {cache:'no-store'});
+    if (!response.ok) throw new Error(`Sheet fetch failed: ${sheet.asset} (${response.status})`);
+    const raw = await response.arrayBuffer();
+    const bytes = new Uint8Array(raw);
+
+    let imageUrl = assetUrl;
+    const looksLikeJpeg = bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+    if (!looksLikeJpeg) {
+      const encoded = new TextDecoder('utf-8').decode(bytes).replace(/\s+/g, '');
+      let decoded;
+      try {
+        const binary = atob(encoded);
+        decoded = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) decoded[i] = binary.charCodeAt(i);
+      } catch (_) {
+        throw new Error(`Sheet decode failed: ${sheet.asset}`);
+      }
+      if (decoded.length < 3 || decoded[0] !== 0xff || decoded[1] !== 0xd8 || decoded[2] !== 0xff) {
+        throw new Error(`Sheet payload invalid: ${sheet.asset}`);
+      }
+      imageUrl = URL.createObjectURL(new Blob([decoded], {type:'image/jpeg'}));
+      this.objectUrls.push(imageUrl);
+    }
+
+    this.images.set(m.id, await this.imageFromUrl(imageUrl, sheet.asset));
   }
 
   bind() {
