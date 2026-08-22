@@ -7,6 +7,7 @@ on:
       - 'pv-data/sequences/**'
       - 'tools/pv_forge/sequence_check.py'
       - 'tools/pv_forge/continuity_batch_report.py'
+      - 'tools/pv_forge/kineza_style_lab_smoke.mjs'
       - 'assets/poses/**'
       - 'assets/sequences/**'
       - 'src/prizim/SequenceLab.js'
@@ -20,6 +21,7 @@ on:
       - 'pv-data/sequences/**'
       - 'tools/pv_forge/sequence_check.py'
       - 'tools/pv_forge/continuity_batch_report.py'
+      - 'tools/pv_forge/kineza_style_lab_smoke.mjs'
       - 'assets/poses/**'
       - 'assets/sequences/**'
       - 'src/prizim/SequenceLab.js'
@@ -40,67 +42,138 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Install PriZim analysis dependency
         run: python -m pip install --disable-pip-version-check Pillow
+
       - name: Validate PriZim sequence manifests
+        id: manifests
+        continue-on-error: true
         run: python tools/pv_forge/sequence_check.py
+
       - name: Validate Kineza style tester JavaScript
-        run: node --check src/prizim/KinezaAttackStyleLab.js
+        id: js_check
+        continue-on-error: true
+        run: |
+          node --check src/prizim/KinezaAttackStyleLab.js
+          node --check tools/pv_forge/kineza_style_lab_smoke.mjs
+
       - name: Validate Kineza style tester contract
+        id: contract
+        continue-on-error: true
         run: |
           grep -q "PRIZIM · ATTACK STYLE COMPARISON" kineza-attack-style-lab.html
           grep -q "KinezaAttackStyleLab.js?v=2" kineza-attack-style-lab.html
           grep -q "STYLE ONLY CHANGES" kineza-attack-style-lab.html
-          ! grep -R "\.jpg\.jpg" pv-data/sequences/kineza_attack_style_*.sequence.json src/prizim/KinezaAttackStyleLab.js kineza-attack-style-lab.html
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          for p in Path('pv-data/sequences').glob('kineza_attack_style_*.sequence.json'):
-              data=json.loads(p.read_text())
-              asset=data['sheets']['attack']['asset']
-              if not Path(asset).is_file():
-                  raise SystemExit(f'Missing style asset: {asset}')
-              if asset.endswith('.jpg.jpg'):
-                  raise SystemExit(f'Double-extension style asset: {asset}')
-          PY
+          grep -q "KINEZA-STYLE-AUDITION-002" kineza-attack-style-lab.html
+          grep -q "TextDecoder('utf-8')" src/prizim/KinezaAttackStyleLab.js
+          grep -q "__KINEZA_STYLE_LAB__" src/prizim/KinezaAttackStyleLab.js
+
       - name: Rank continuity handoffs
+        id: continuity
+        continue-on-error: true
         run: python tools/pv_forge/continuity_batch_report.py
-      - name: Verify GitHub Pages Kineza style lab delivery
-        id: delivery
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+      - name: Publish continuity report to workflow summary
+        if: always()
+        run: |
+          if [ -f build/prizim/continuity-report.md ]; then
+            cat build/prizim/continuity-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Install browser smoke dependency
+        id: browser_setup
+        continue-on-error: true
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run PriZim local landscape Kineza style lab smoke
+        id: style_local_landscape
+        continue-on-error: true
         shell: bash
         run: |
-          BASE="https://jr-faulkner.github.io/Prismatic-Veil"
-          ok=0
-          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
-            echo "Pages delivery attempt $attempt/12"
-            html="$(curl -fsSL "$BASE/kineza-attack-style-lab.html?commit=${{ github.sha }}" || true)"
-            if echo "$html" | grep -q 'KinezaAttackStyleLab.js?v=2' \
-              && curl -fsS "$BASE/src/prizim/KinezaAttackStyleLab.js?v=2" >/dev/null \
-              && curl -fsS "$BASE/assets/sequences/style_tests/kineza_attack_style_epic.jpg?v=2" >/dev/null \
-              && curl -fsS "$BASE/assets/sequences/style_tests/kineza_attack_style_jrpg.jpg?v=2" >/dev/null \
-              && curl -fsS "$BASE/assets/sequences/style_tests/kineza_attack_style_graphic.jpg?v=2" >/dev/null; then
-              ok=1
-              break
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/prizim-style-local.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          PRIZIM_STYLE_URL="http://127.0.0.1:4173/kineza-attack-style-lab.html?prizim=KINEZA-STYLE-AUDITION-002" \
+          PRIZIM_BUILD_MARKER="KINEZA-STYLE-AUDITION-002" \
+          PRIZIM_VIEWPORT_WIDTH=844 \
+          PRIZIM_VIEWPORT_HEIGHT=390 \
+          node tools/pv_forge/kineza_style_lab_smoke.mjs
+
+      - name: Run PriZim local portrait Kineza style lab smoke
+        id: style_local_portrait
+        continue-on-error: true
+        shell: bash
+        run: |
+          python3 -m http.server 4174 --bind 127.0.0.1 > /tmp/prizim-style-portrait.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          PRIZIM_STYLE_URL="http://127.0.0.1:4174/kineza-attack-style-lab.html?prizim=KINEZA-STYLE-AUDITION-002" \
+          PRIZIM_BUILD_MARKER="KINEZA-STYLE-AUDITION-002" \
+          PRIZIM_VIEWPORT_WIDTH=390 \
+          PRIZIM_VIEWPORT_HEIGHT=844 \
+          node tools/pv_forge/kineza_style_lab_smoke.mjs
+
+      - name: Run PriZim GitHub Pages Kineza style lab delivery smoke
+        id: style_delivery
+        continue-on-error: true
+        shell: bash
+        env:
+          DELIVERY_URL: https://jr-faulkner.github.io/Prismatic-Veil/kineza-attack-style-lab.html?prizim=KINEZA-STYLE-AUDITION-002
+        run: |
+          for attempt in $(seq 1 20); do
+            echo "Pages style audition attempt $attempt/20"
+            landscape=0
+            portrait=0
+
+            PRIZIM_STYLE_URL="$DELIVERY_URL&viewport=landscape&attempt=$attempt" \
+            PRIZIM_BUILD_MARKER="KINEZA-STYLE-AUDITION-002" \
+            PRIZIM_VIEWPORT_WIDTH=844 \
+            PRIZIM_VIEWPORT_HEIGHT=390 \
+            node tools/pv_forge/kineza_style_lab_smoke.mjs && landscape=1 || true
+
+            PRIZIM_STYLE_URL="$DELIVERY_URL&viewport=portrait&attempt=$attempt" \
+            PRIZIM_BUILD_MARKER="KINEZA-STYLE-AUDITION-002" \
+            PRIZIM_VIEWPORT_WIDTH=390 \
+            PRIZIM_VIEWPORT_HEIGHT=844 \
+            node tools/pv_forge/kineza_style_lab_smoke.mjs && portrait=1 || true
+
+            if [ "$landscape" -eq 1 ] && [ "$portrait" -eq 1 ]; then
+              exit 0
             fi
-            sleep 15
+            if [ "$attempt" -lt 20 ]; then sleep 15; fi
           done
-          test "$ok" -eq 1
-      - name: Publish continuity report to workflow summary
-        run: cat build/prizim/continuity-report.md >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
       - name: Upload PriZim continuity report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: prizim-continuity-report
           path: |
             build/prizim/continuity-report.json
             build/prizim/continuity-report.md
+
       - name: Write exact source receipt
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           PRIZIM_SOURCE_COMMIT: ${{ github.sha }}
           PRIZIM_RUN_ID: ${{ github.run_id }}
-          PRIZIM_DELIVERY: ${{ steps.delivery.outcome }}
+          MANIFESTS: ${{ steps.manifests.outcome }}
+          JS_CHECK: ${{ steps.js_check.outcome }}
+          CONTRACT: ${{ steps.contract.outcome }}
+          CONTINUITY: ${{ steps.continuity.outcome }}
+          BROWSER_SETUP: ${{ steps.browser_setup.outcome }}
+          LOCAL_LANDSCAPE: ${{ steps.style_local_landscape.outcome }}
+          LOCAL_PORTRAIT: ${{ steps.style_local_portrait.outcome }}
+          DELIVERY: ${{ steps.style_delivery.outcome }}
         run: |
           python - <<'PY'
           import json, os
@@ -113,27 +186,47 @@ jobs:
             'source_commit': os.environ['PRIZIM_SOURCE_COMMIT'],
             'workflow_run_id': os.environ['PRIZIM_RUN_ID'],
             'validated_at_utc': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
-            'manifest_validation': 'success',
+            'manifest_validation': os.environ['MANIFESTS'],
             'comparison_group': 'kineza_attack_style_test_v1',
             'comparison_variants': 3,
-            'choreography_lock': 'success',
-            'tester_javascript': 'success',
-            'tester_contract': 'success',
-            'asset_path_tripwire': 'success',
-            'live_delivery': os.environ.get('PRIZIM_DELIVERY', 'skipped'),
-            'continuity_report': 'success'
+            'choreography_lock': os.environ['MANIFESTS'],
+            'tester_javascript': os.environ['JS_CHECK'],
+            'tester_contract': os.environ['CONTRACT'],
+            'continuity_report': os.environ['CONTINUITY'],
+            'browser_setup': os.environ['BROWSER_SETUP'],
+            'local_landscape_style_lab_smoke': os.environ['LOCAL_LANDSCAPE'],
+            'local_portrait_style_lab_smoke': os.environ['LOCAL_PORTRAIT'],
+            'github_pages_style_lab_smoke': os.environ['DELIVERY'],
+            'delivery_surface': 'github-pages',
+            'build_marker': 'KINEZA-STYLE-AUDITION-002',
+            'encoded_asset_loader': True,
+            'live_asset_fetch_tripwire': True
           }
           path.write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
           PY
+
       - name: Publish exact source receipt
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           git config user.name "PriZim Bot"
           git config user.email "actions@users.noreply.github.com"
           git add pv-data/prizim_status/sequence-check.json
           if git diff --cached --quiet; then
             echo "Receipt unchanged"
-            exit 0
+          else
+            git commit -m "PriZim publish sequence check receipt"
+            git push
           fi
-          git commit -m "PriZim publish sequence check receipt"
-          git push
+
+      - name: Enforce PriZim sequence + delivery gate
+        if: always()
+        shell: bash
+        run: |
+          test "${{ steps.manifests.outcome }}" = "success"
+          test "${{ steps.js_check.outcome }}" = "success"
+          test "${{ steps.contract.outcome }}" = "success"
+          test "${{ steps.continuity.outcome }}" = "success"
+          test "${{ steps.browser_setup.outcome }}" = "success"
+          test "${{ steps.style_local_landscape.outcome }}" = "success"
+          test "${{ steps.style_local_portrait.outcome }}" = "success"
+          test "${{ steps.style_delivery.outcome }}" = "success"
