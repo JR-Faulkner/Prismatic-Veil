@@ -1,0 +1,15 @@
+{
+  "tool": "PriZim Animation Registration Gate",
+  "source_commit": "5fa92ac65e1761782fc82de15fb4b9b1e3a6dd5d",
+  "workflow_run_id": "32645695134",
+  "validated_at_utc": "2026-08-23T14:31:41Z",
+  "dependency_setup": "success",
+  "syntax": "success",
+  "selftest": "success",
+  "animation_asset_tripwire": "success",
+  "animation_assets_found": "0",
+  "baseline_tripwire": true,
+  "scale_tripwire": true,
+  "loop_seam_tripwire": true,
+  "mechanical_normalization_preview": true
+}
