@@ -1,0 +1,145 @@
+name: PriZim Animation Registration
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'assets/sequences/qa/**'
+      - 'tools/pv_forge/animation_registration.py'
+      - '.github/workflows/prizim-animation-registration.yml'
+  pull_request:
+    paths:
+      - 'assets/sequences/qa/**'
+      - 'tools/pv_forge/animation_registration.py'
+      - '.github/workflows/prizim-animation-registration.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  animation-registration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install image analysis dependency
+        id: setup
+        run: python -m pip install --disable-pip-version-check pillow
+
+      - name: Parse PriZim animation registration tool
+        id: syntax
+        run: python -m py_compile tools/pv_forge/animation_registration.py
+
+      - name: Run deterministic registration self-test
+        id: selftest
+        shell: bash
+        run: |
+          mkdir -p build/prizim/selftest
+          python - <<'PY'
+          from PIL import Image, ImageDraw
+          ratios = [1.00, .98, .99, 1.00, .99, 1.00]
+          fw, h, base = 120, 220, 205
+          img = Image.new('RGB', (fw * 6, h), 'white')
+          d = ImageDraw.Draw(img)
+          anchor = 150
+          for i, ratio in enumerate(ratios):
+              hh = round(anchor * ratio)
+              x0 = i * fw + 35
+              x1 = i * fw + 84
+              d.rectangle((x0, base - hh + 1, x1, base), fill=(40, 40, 40))
+          img.save('build/prizim/selftest/idle_6f.png')
+          PY
+          python tools/pv_forge/animation_registration.py \
+            build/prizim/selftest/idle_6f.png \
+            --frames 6 --profile idle --normalize \
+            --output-dir build/prizim/animation-registration/selftest
+
+      - name: Run animation asset registration tripwires
+        id: assets
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p build/prizim/animation-registration
+          found=0
+          failed=0
+          shopt -s nullglob
+          for f in assets/sequences/qa/*_idle_6f.png assets/sequences/qa/*_idle_6f.jpg assets/sequences/qa/*_idle_6f.webp; do
+            found=1
+            echo "PriZim idle registration: $f"
+            python tools/pv_forge/animation_registration.py "$f" --frames 6 --profile idle --normalize || failed=1
+          done
+          for f in assets/sequences/qa/*_attack_6f.png assets/sequences/qa/*_attack_6f.jpg assets/sequences/qa/*_attack_6f.webp; do
+            found=1
+            echo "PriZim attack registration: $f"
+            python tools/pv_forge/animation_registration.py "$f" --frames 6 --profile attack --normalize || failed=1
+          done
+          echo "found_assets=$found" >> "$GITHUB_OUTPUT"
+          if [ "$found" -eq 0 ]; then
+            echo "No *_idle_6f or *_attack_6f QA strips committed yet. Tool self-test still enforced."
+          fi
+          exit "$failed"
+
+      - name: Publish registration reports
+        if: always()
+        shell: bash
+        run: |
+          echo "## PriZim Animation Registration Gate" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Source commit: ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Dependency setup: ${{ steps.setup.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Tool syntax: ${{ steps.syntax.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Deterministic self-test: ${{ steps.selftest.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- QA animation strips: ${{ steps.assets.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- QA animation assets found: ${{ steps.assets.outputs.found_assets || '0' }}" >> "$GITHUB_STEP_SUMMARY"
+          for f in build/prizim/animation-registration/*.md; do
+            [ -f "$f" ] || continue
+            cat "$f" >> "$GITHUB_STEP_SUMMARY"
+            echo >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Persist animation registration receipt
+        if: always() && github.event_name == 'push'
+        shell: bash
+        run: |
+          mkdir -p pv-data/prizim_status
+          cat > pv-data/prizim_status/animation-registration-gate.json <<EOF
+          {
+            "tool": "PriZim Animation Registration Gate",
+            "source_commit": "${{ github.sha }}",
+            "workflow_run_id": "${{ github.run_id }}",
+            "validated_at_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "dependency_setup": "${{ steps.setup.outcome }}",
+            "syntax": "${{ steps.syntax.outcome }}",
+            "selftest": "${{ steps.selftest.outcome }}",
+            "animation_asset_tripwire": "${{ steps.assets.outcome }}",
+            "animation_assets_found": "${{ steps.assets.outputs.found_assets || '0' }}",
+            "baseline_tripwire": true,
+            "scale_tripwire": true,
+            "loop_seam_tripwire": true,
+            "mechanical_normalization_preview": true
+          }
+          EOF
+          git config user.name "PriZim Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add pv-data/prizim_status/animation-registration-gate.json
+          if git diff --cached --quiet; then
+            echo "PriZim animation receipt unchanged."
+          else
+            git commit -m "PriZim publish animation registration receipt"
+            git push
+          fi
+
+      - name: Enforce animation registration gate
+        if: steps.setup.outcome != 'success' || steps.syntax.outcome != 'success' || steps.selftest.outcome != 'success' || steps.assets.outcome != 'success'
+        run: exit 1
+
+      - name: Upload PriZim animation registration artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prizim-animation-registration
+          path: |
+            build/prizim/animation-registration/**
+            pv-data/prizim_status/animation-registration-gate.json
