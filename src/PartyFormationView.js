@@ -6,17 +6,23 @@
 // hits the "fading both layers at once" trap documented in CLAUDE.md) and
 // registers through scene.worldAdd() — never scene.uiLayer — so the
 // battle camera can push in without dragging the party off their marks.
-import { PARTY_SLOTS, PARTY_ASSET_LOCK, heightScaleFor } from './PartyBattleConfig.js?v=2';
+import { PARTY_SLOTS, PARTY_ASSET_LOCK, heightScaleFor } from './PartyBattleConfig.js?v=3';
 
 // Formation x-fractions (of screen width) and relative depth-in-frame —
 // back is furthest from the enemy/camera, front is nearest. Landscape and
 // portrait both stack the party toward the left third of the screen,
 // enemies on the right, matching every existing battle screen's facing
 // convention (heroes face right).
+//
+// FAI-HUD-01E: on-device landscape evidence showed Prismel/Auryi/Kineza's
+// silhouettes merging into one mass (0.16/0.24/0.34 packed them within
+// ~18% of screen width of each other). Widened so each retains a
+// separate readable envelope — verified against DAI's own annotated
+// reference by screenshot, not just by the numbers looking bigger.
 const SLOT_LAYOUT = Object.freeze({
-  back: { xFrac: 0.16, yFrac: 0.62, depth: 10 },
-  middle: { xFrac: 0.24, yFrac: 0.74, depth: 12 },
-  front: { xFrac: 0.34, yFrac: 0.90, depth: 14 }
+  back: { xFrac: 0.07, yFrac: 0.60, depth: 10 },
+  middle: { xFrac: 0.20, yFrac: 0.74, depth: 12 },
+  front: { xFrac: 0.36, yFrac: 0.90, depth: 14 }
 });
 
 export default class PartyFormationView {
@@ -65,9 +71,19 @@ export default class PartyFormationView {
     const landscape = w > h;
     // Target on-screen CONTENT height for Auryi specifically (the
     // tallest, per the locked height hierarchy) — everything else derives
-    // from her via the locked normalizedHeightPx ratios, not an
+    // from her via the locked normalizedHeightPx ratios (Prismel
+    // 570/650=0.877, Kineza 475/650=0.731 of Auryi's own height), not an
     // independent per-hero target.
-    const targetAuryiContentH = landscape ? h * 0.5 : h * 0.4;
+    //
+    // FAI-HUD-01E: landscape's old 0.5 read as "dominating the full
+    // center of screen" on-device (DAI's own words) — REVISED_VISUAL_
+    // RATIOS.json's actor_height_share_of_stage puts Auryi at 0.38-0.42.
+    // 0.40 lands there directly, and the locked ratios carry Prismel to
+    // ~0.35 and Kineza to ~0.29 — both inside their own target bands too
+    // (0.34-0.39 and 0.27-0.33) without touching heightScaleFor's math at
+    // all. Portrait is untouched — this pack's evidence and ratios are
+    // explicitly landscape-scoped.
+    const targetAuryiContentH = landscape ? h * 0.40 : h * 0.4;
     const commonScale = targetAuryiContentH / PARTY_ASSET_LOCK.normalizedHeightPx.auryi;
 
     this.actors.forEach(({ sprite, ghost, ring, slot }, heroId) => {
