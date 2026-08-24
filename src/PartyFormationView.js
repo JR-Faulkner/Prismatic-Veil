@@ -6,7 +6,7 @@
 // hits the "fading both layers at once" trap documented in CLAUDE.md) and
 // registers through scene.worldAdd() — never scene.uiLayer — so the
 // battle camera can push in without dragging the party off their marks.
-import { PARTY_SLOTS, heightScaleFor } from './PartyBattleConfig.js';
+import { PARTY_SLOTS, PARTY_ASSET_LOCK, heightScaleFor } from './PartyBattleConfig.js';
 
 // Formation x-fractions (of screen width) and relative depth-in-frame —
 // back is furthest from the enemy/camera, front is nearest. Landscape and
@@ -30,11 +30,17 @@ export default class PartyFormationView {
       const hero = roster.find(h => h.id === heroId);
       if (!hero) return;
 
-      const texKey = this.scene.textures.exists(hero.poses.idle) ? hero.poses.idle : null;
+      const tex = PARTY_ASSET_LOCK.textures[heroId];
+      const texKey = tex && this.scene.textures.exists(tex.key) ? tex.key : null;
       if (!texKey) return; // caller's preload() is the source of truth for what's loaded
 
-      const sprite = this.scene.add.image(0, 0, texKey).setOrigin(0.5, 1);
-      const ghost = this.scene.add.image(0, 0, texKey).setOrigin(0.5, 1).setAlpha(0);
+      // Origin.y lands on each asset's own measured feet position (see
+      // contentBottomFrac's comment in PartyBattleConfig.js) rather than
+      // a blind canvas-bottom anchor, so all three appear to stand on
+      // the same ground line despite differently-padded source canvases.
+      const originY = tex.contentBottomFrac;
+      const sprite = this.scene.add.image(0, 0, texKey).setOrigin(0.5, originY);
+      const ghost = this.scene.add.image(0, 0, texKey).setOrigin(0.5, originY).setAlpha(0);
       // Active-turn ring: hollow, drawn behind the actor's feet, never a
       // filled disc over the art (same "reticle goes behind, never
       // covers" lesson CLAUDE.md documents for the enemy target reticle).
@@ -57,13 +63,16 @@ export default class PartyFormationView {
     const w = this.scene.scale.width;
     const h = this.scene.scale.height;
     const landscape = w > h;
-    const targetH = (landscape ? h * 0.5 : h * 0.4);
+    // Target on-screen CONTENT height for Auryi specifically (the
+    // tallest, per the locked height hierarchy) — everything else derives
+    // from her via the locked normalizedHeightPx ratios, not an
+    // independent per-hero target.
+    const targetAuryiContentH = landscape ? h * 0.5 : h * 0.4;
+    const commonScale = targetAuryiContentH / PARTY_ASSET_LOCK.normalizedHeightPx.auryi;
 
     this.actors.forEach(({ sprite, ghost, ring, slot }, heroId) => {
       const pos = SLOT_LAYOUT[slot];
-      const mul = heightScaleFor(heroId);
-      const refImg = sprite.texture.getSourceImage();
-      const scale = (refImg && refImg.height ? targetH / refImg.height : 1) * mul;
+      const scale = heightScaleFor(heroId, commonScale);
       sprite.setScale(scale);
       ghost.setScale(scale);
 

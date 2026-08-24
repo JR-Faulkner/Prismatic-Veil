@@ -18,17 +18,89 @@ export const PARTY_SLOTS = Object.freeze([
   Object.freeze({ slot: 'front', heroId: 'kineza' })
 ]);
 
-// Height hierarchy Auryi > Prismel > Kineza is already encoded in
-// BattleConfig's own scaleMul (Prismel 1 / Kineza 0.78 / Auryi 1.29) —
-// derived from the SAME source canvases (assets/poses/**) this scene
-// composites directly, in the same "real proportions" context BP already
-// uses it for. That's a legitimate reuse, not the tactical-map-icon
-// anti-pattern documented in CLAUDE.md (those are a separately
-// pre-processed asset family with different padding) — this scene draws
-// from the identical pose PNGs BP does.
-export function heightScaleFor(heroId) {
-  const hero = HEROES[heroId];
-  return (hero && hero.scaleMul) || 1;
+// FAI-HUD-01B correction: BP's assets/poses/**_LOCKED.png (and its
+// scaleMul calibration) is a DIFFERENT asset library from the party
+// formation's own locked JRPG masters — exactly the "don't reach for
+// whichever asset library is already loaded" trap CLAUDE.md documents
+// elsewhere. The formation now runs on ASSET_LOCK_CONTRACT.json's own
+// exact approved masters (assets/party_formation/) with FAI-HUD-01B's
+// own calibration, not BattleConfig's.
+//
+// PRISMEL/AURYI are the locked masters' own 900x900 "normalized" layers
+// — pre-matted to a shared canvas where relative content height already
+// encodes the correct real-world proportions (confirmed by measuring:
+// content heights 562/636px on the 900-tall canvas match the contract's
+// declared normalized_heights_px_on_reference of 570/650 to within
+// matting-threshold noise). Because both are on the same 900px canvas, a
+// single shared scale factor (canvas-height-based, same as HeroPoseView's
+// own "one scale for the whole pose set, derived from the idle frame"
+// principle) reproduces the locked height hierarchy with no per-hero
+// multiplier needed.
+//
+// KINEZA is the one exception: FAI-HUD-01B's own "EXACT" master is
+// front/camera-facing, not right-facing toward the enemy side — the
+// same facing problem FAIPZ01's evidence report already flagged for this
+// exact character in the frontline slot. Per FAI-HUD-01B's own missing-
+// pose protocol ("use the closest approved existing pose temporarily,
+// return the request to DAI, do not invent a replacement"), this uses
+// FAI-HUD-01's earlier already-APPROVED right-facing companion asset
+// instead — same character, confirmed visually (identical armor/cape/
+// fist-glow design), just a different crop convention (full-bleed, no
+// canvas padding) than the other two's 900x900 normalized layers, so it
+// needs its own scale derived from the SAME locked target height rather
+// than the shared canvas-based scale. Flagged back to DAI in the FAI
+// feedback for this pass — not a silent substitution.
+export const PARTY_ASSET_LOCK = Object.freeze({
+  referenceCanvas: 900,
+  // ASSET_LOCK_CONTRACT.json's normalized_heights_px_on_reference.
+  normalizedHeightPx: Object.freeze({ auryi: 650, prismel: 570, kineza: 475 }),
+  // contentBottomFrac: measured offline (alpha-threshold connected-
+  // component bbox, same method this project's earlier asset-extraction
+  // passes used) — where the character's actual feet sit as a fraction
+  // of the full canvas height. The three source files pad differently
+  // below the feet (Prismel to 90.6%, Auryi to 88.6%, Kineza's substitute
+  // to 87.3%), so anchoring every sprite's origin at a blind 1.0 (canvas
+  // bottom) would put their feet at three different heights and break the
+  // "standing on the same ground" read — this lets each one's origin
+  // land on its own actual feet instead.
+  textures: Object.freeze({
+    prismel: { key: 'party_prismel', path: './assets/party_formation/PRISMEL_JRPG_NORMALIZED_900x900.png', canvas: true, contentBottomFrac: 0.906 },
+    auryi: { key: 'party_auryi', path: './assets/party_formation/AURYI_JRPG_NORMALIZED_900x900.png', canvas: true, contentBottomFrac: 0.886 },
+    // Substituted per the missing-pose protocol above — not the pack's
+    // own KINEZA_JRPG_MASTER (front-facing). This file shipped with a
+    // fully opaque alpha channel (RGBA in name only — every pixel at
+    // alpha=255, flat white background baked in, confirmed by direct
+    // pixel inspection) and needed matting before it was usable at all;
+    // that matting is the one departure from "mechanical placement only"
+    // this pass took, and it's exactly the "masking" operation the
+    // correction pack's own rules permit (not a redraw/regenerate).
+    // canvas: false + contentHeightPx: matting revealed real padding
+    // above and below the character (content spans only 364 of the
+    // canvas's 512px, not the full canvas as assumed before matting) —
+    // heightScaleFor() needs the actual content height, not the raw
+    // texture height, or Kineza renders undersized relative to the
+    // locked target.
+    kineza: { key: 'party_kineza', path: './assets/party_formation/KINEZA_RIGHT_FACING_IDLE_APPROVED.png', canvas: false, contentBottomFrac: 0.873, contentHeightPx: 364 }
+  })
+});
+
+// One shared scale for the two canvas-based masters (their relative
+// height is already baked into the 900px canvas, so scaling the raw
+// canvas uniformly reproduces the locked heights with no per-hero
+// multiplier). The substituted Kineza asset is a different crop
+// convention with its own real padding (see contentHeightPx's comment
+// above — 364 of its 512px canvas, not the full canvas) — it needs its
+// own scale derived from its actual measured CONTENT height (not raw
+// texture height, which would undersize him relative to the locked
+// target by the ratio of padding involved) so his displayed content
+// still lands on the same locked 475-reference-unit target the
+// canvas-based pair would have put him at.
+export function heightScaleFor(heroId, commonScale) {
+  const tex = PARTY_ASSET_LOCK.textures[heroId];
+  if (tex && !tex.canvas) {
+    return (PARTY_ASSET_LOCK.normalizedHeightPx[heroId] * commonScale) / tex.contentHeightPx;
+  }
+  return commonScale;
 }
 
 export const BASE_COMMANDS = Object.freeze(['Attack', 'Resonart', 'Guard', 'Item']);

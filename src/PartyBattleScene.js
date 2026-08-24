@@ -18,7 +18,7 @@ import { createEnemyView } from './EnemyViewFactory.js?v=40';
 import PartyFormationView from './PartyFormationView.js';
 import {
   partyRoster, BASE_COMMANDS, RESONART_RP_COST, ITEM_DEFS,
-  projectedDamage, hitChanceFor
+  PARTY_ASSET_LOCK, projectedDamage, hitChanceFor
 } from './PartyBattleConfig.js';
 
 const ENEMY_DEFAULT = Object.freeze({
@@ -41,8 +41,15 @@ export default class PartyBattleScene extends Phaser.Scene {
   }
 
   preload() {
+    // FAI-HUD-01B: the formation renders from the locked JRPG master
+    // assets (assets/party_formation/), not BattleConfig's BP cinematic
+    // pose set — see PartyBattleConfig.js's PARTY_ASSET_LOCK for why
+    // those are a different asset library entirely. hero.poses.idle is
+    // no longer loaded here on purpose.
+    Object.values(PARTY_ASSET_LOCK.textures).forEach(tex => {
+      this.load.image(tex.key, tex.path);
+    });
     Object.values(HEROES).forEach(hero => {
-      this.load.image(hero.poses.idle, `${hero.posePath}${hero.poses.idle}.png`);
       this.load.image(hero.portrait, `./assets/ui/${hero.portrait}.png`);
     });
     Object.values(WRAITH_TEXTURES).forEach(tex => {
