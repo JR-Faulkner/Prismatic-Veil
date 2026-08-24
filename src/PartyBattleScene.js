@@ -15,11 +15,11 @@
 import { HEROES } from './BattleConfig.js?v=44';
 import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=40';
 import { createEnemyView } from './EnemyViewFactory.js?v=40';
-import PartyFormationView from './PartyFormationView.js?v=2';
+import PartyFormationView from './PartyFormationView.js?v=3';
 import {
   partyRoster, BASE_COMMANDS, RESONART_RP_COST, ITEM_DEFS,
   PARTY_ASSET_LOCK, projectedDamage, hitChanceFor
-} from './PartyBattleConfig.js?v=2';
+} from './PartyBattleConfig.js?v=3';
 
 const ENEMY_DEFAULT = Object.freeze({
   id: 'wraith', viewId: 'wraith', name: 'Veil Wraith',
@@ -128,24 +128,45 @@ export default class PartyBattleScene extends Phaser.Scene {
   }
 
   // --- HUD: enemy target card ----------------------------------------
+  // FAI-HUD-01E: the fixed 260x64 card ran to ~31%/16% of a 844x390
+  // landscape viewport — over REVISED_VISUAL_RATIOS.json's 25%/12% caps —
+  // and covered Prismel's head/staff (DAI's own annotated evidence).
+  // Rebuilt responsively (same rebuild-on-resize shape as the party
+  // strip) instead of one fixed size, and capped directly against the
+  // locked ratios rather than a guessed-smaller constant.
   _buildTargetCard() {
     const c = this.add.container(0, 0).setDepth(10);
-    const bg = this.add.rectangle(0, 0, 260, 64, PALETTE.panel, 0.92)
-      .setOrigin(0, 0).setStrokeStyle(1.6, PALETTE.gold, 0.8);
-    const name = this.add.text(12, 8, this.enemy.name, {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '18px', color: '#FF8B9A'
-    });
-    const track = this.add.rectangle(12, 38, 236, 14, PALETTE.enemyHpTrack, 0.95).setOrigin(0, 0);
-    const fill = this.add.rectangle(12, 38, 236, 14, PALETTE.enemyHp, 1).setOrigin(0, 0);
-    const hpText = this.add.text(12 + 118, 38 + 7, `${this.enemy.hp} / ${this.enemy.maxHp}`, {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '12px', color: '#FFFFFF'
-    }).setOrigin(0.5);
-    c.add([bg, name, track, fill, hpText]);
     this.uiAdd(c);
-    this._targetCard = { container: c, fill, hpText, barW: 236 };
-    const layout = () => this._layoutTopLeft(c, 16, 16);
+    this._targetCardContainer = c;
+    const layout = () => this._layoutTargetCard();
     layout();
     this._registerRelayout(layout);
+  }
+
+  _layoutTargetCard() {
+    const c = this._targetCardContainer;
+    c.removeAll(true);
+    const w = Math.round(Math.min(230, this.scale.width * 0.24));
+    const h = Math.round(Math.min(46, this.scale.height * 0.115));
+    const pad = Math.max(8, Math.round(w * 0.05));
+
+    const bg = this.add.rectangle(0, 0, w, h, PALETTE.panel, 0.92)
+      .setOrigin(0, 0).setStrokeStyle(1.4, PALETTE.gold, 0.8);
+    const name = this.add.text(pad, h * 0.14, this.enemy.name, {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: `${Math.max(12, Math.round(h * 0.32))}px`, color: '#FF8B9A'
+    });
+    const barW = w - pad * 2;
+    const barH = Math.max(8, Math.round(h * 0.24));
+    const barY = h - pad - barH;
+    const track = this.add.rectangle(pad, barY, barW, barH, PALETTE.enemyHpTrack, 0.95).setOrigin(0, 0);
+    const fill = this.add.rectangle(pad, barY, barW, barH, PALETTE.enemyHp, 1).setOrigin(0, 0);
+    const hpText = this.add.text(pad + barW / 2, barY + barH / 2, `${Math.max(0, this.enemy.hp)} / ${this.enemy.maxHp}`, {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: `${Math.max(9, Math.round(barH * 0.62))}px`, color: '#FFFFFF'
+    }).setOrigin(0.5);
+    c.add([bg, name, track, fill, hpText]);
+
+    this._targetCard = { container: c, fill, hpText, barW };
+    this._layoutTopLeft(c, 16, 16);
   }
 
   _updateTargetCard() {
@@ -156,28 +177,40 @@ export default class PartyBattleScene extends Phaser.Scene {
   }
 
   // --- HUD: compact turn order strip ----------------------------------
+  // FAI-HUD-01E: "tiny portrait chain is easy to miss" — bumped chip/ring
+  // size modestly (28->32 / 17->19 radius) while staying inside
+  // REVISED_VISUAL_RATIOS.json's turn_order_target_viewport_width
+  // (18-24%): at 844px landscape width the new 4*52-8=200px strip is
+  // 23.7%, still under the cap.
   _buildTurnOrderStrip() {
     const c = this.add.container(0, 0).setDepth(10);
     const order = ['prismel', 'auryi', 'kineza', 'enemy'];
+    const slot = 52;
     this._turnChips = {};
     order.forEach((id, i) => {
-      const x = i * 44;
-      const ring = this.add.circle(x + 18, 18, 17, 0x000000, 0).setStrokeStyle(2, PALETTE.goldBright, 0);
+      const x = i * slot;
+      const ring = this.add.circle(x + 20, 20, 19, 0x000000, 0).setStrokeStyle(2.4, PALETTE.goldBright, 0);
       const tex = id === 'enemy' ? this.enemy.portrait : HEROES[id].portrait;
-      const chip = this.add.image(x + 18, 18, tex).setDisplaySize(28, 28);
+      const chip = this.add.image(x + 20, 20, tex).setDisplaySize(32, 32);
       c.add([ring, chip]);
       this._turnChips[id] = ring;
     });
     this.uiAdd(c);
     this._turnOrderContainer = c;
-    const w = order.length * 44 - 8;
+    const w = order.length * slot - (slot - 40);
     // Landscape has room for the strip top-right, clear of the target
     // card. Portrait's narrower width put the two in the same horizontal
     // band and they overlapped on first test — below the target card,
-    // left-aligned with it, is clear in both orientations.
+    // left-aligned with it, is clear in both orientations. Reads the
+    // target card's own actual current height rather than a stale
+    // hardcoded number — it became responsive in the same pass this
+    // strip did, so a fixed offset here would drift out of sync with it.
     const layout = () => {
       if (this.scale.width > this.scale.height) this._layoutTopRight(c, 16, 16, w);
-      else c.setPosition(16, 16 + 64 + 8);
+      else {
+        const cardH = Math.round(Math.min(46, this.scale.height * 0.115));
+        c.setPosition(16, 16 + cardH + 8);
+      }
     };
     layout();
     this._registerRelayout(layout);
@@ -206,12 +239,21 @@ export default class PartyBattleScene extends Phaser.Scene {
     this._registerRelayout(layout);
   }
 
+  // FAI-HUD-01E: fixed 76px cards ran to ~19.5% of a 390px-tall landscape
+  // viewport — over REVISED_VISUAL_RATIOS.json's party_band_target of
+  // 14-18% — and read "like character sheets," per DAI's own words.
+  // cardH is now derived from viewport height directly, clamped to a
+  // sane range for extreme sizes, and every internal offset scales off
+  // cardH instead of the old fixed pixel values so the shorter card
+  // doesn't just clip its old layout.
   _layoutPartyStrip() {
     const c = this._partyStripContainer;
     c.removeAll(true);
     this._partyStripParts = [];
     const landscape = this.scale.width > this.scale.height;
-    const cardH = 76, gap = 8, n = this.party.length;
+    const h = this.scale.height;
+    const cardH = Math.round(Phaser.Math.Clamp(h * 0.16, 52, 90));
+    const gap = 8, n = this.party.length;
     // Landscape: rail is a left column, so the strip starts to its right.
     // Portrait: rail moves to a full-width bottom row (_layoutCommandRail),
     // so the strip spans the full width instead and sits above it.
@@ -221,19 +263,29 @@ export default class PartyBattleScene extends Phaser.Scene {
       : this.scale.width - 32;
     const cardW = Math.floor((availW - gap * (n - 1)) / n);
 
+    const portraitD = Math.round(cardH * 0.44);
+    const contentX = portraitD + 22;
+    const nameFont = Math.max(11, Math.round(cardH * 0.185));
+    const hpBarH = Math.max(7, Math.round(cardH * 0.145));
+    const rpBarH = Math.max(6, Math.round(cardH * 0.115));
+    const hpBarY = Math.round(cardH * 0.40);
+    const rpBarY = hpBarY + hpBarH + Math.round(cardH * 0.03);
+    const textY = Math.round(cardH * 0.80);
+    const textFont = Math.max(8, Math.round(cardH * 0.135));
+
     this.party.forEach((hero, i) => {
       const x = i * (cardW + gap);
       const bg = this.add.rectangle(x, 0, cardW, cardH, PALETTE.panel, 0.92)
         .setOrigin(0, 0).setStrokeStyle(1.6, PALETTE.gold, 0.7);
-      const portrait = this.add.image(x + 20, cardH / 2, hero.portrait).setDisplaySize(34, 34);
-      const barW = Math.max(50, cardW - 62);
-      const name = this.add.text(x + 42, 8, hero.name, {
-        fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '14px', color: '#FFE8A0'
+      const portrait = this.add.image(x + 12 + portraitD / 2, cardH / 2, hero.portrait).setDisplaySize(portraitD, portraitD);
+      const barW = Math.max(50, cardW - contentX - 12);
+      const name = this.add.text(x + contentX, Math.round(cardH * 0.10), hero.name, {
+        fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: `${nameFont}px`, color: '#FFE8A0'
       });
-      const hpTrack = this.add.rectangle(x + 42, 30, barW, 11, PALETTE.hpTrack, 0.95).setOrigin(0, 0);
-      const hpFill = this.add.rectangle(x + 42, 30, barW, 11, PALETTE.hp, 1).setOrigin(0, 0);
-      const rpTrack = this.add.rectangle(x + 42, 46, barW, 9, PALETTE.rpTrack, 0.95).setOrigin(0, 0);
-      const rpFill = this.add.rectangle(x + 42, 46, barW, 9, PALETTE.rp, 1).setOrigin(0, 0);
+      const hpTrack = this.add.rectangle(x + contentX, hpBarY, barW, hpBarH, PALETTE.hpTrack, 0.95).setOrigin(0, 0);
+      const hpFill = this.add.rectangle(x + contentX, hpBarY, barW, hpBarH, PALETTE.hp, 1).setOrigin(0, 0);
+      const rpTrack = this.add.rectangle(x + contentX, rpBarY, barW, rpBarH, PALETTE.rpTrack, 0.95).setOrigin(0, 0);
+      const rpFill = this.add.rectangle(x + contentX, rpBarY, barW, rpBarH, PALETTE.rp, 1).setOrigin(0, 0);
       // Narrow cards (portrait's 3-across row) can't fit the full "HP
       // x/y  RP x/y" label without overflowing the card — the bars
       // already carry the same information visually, so a narrow card
@@ -241,8 +293,8 @@ export default class PartyBattleScene extends Phaser.Scene {
       const hpLabel = cardW < 130
         ? `${hero.currentHp}/${hero.maxHp}  ${hero.currentRp}/${hero.maxRp}`
         : `HP ${hero.currentHp}/${hero.maxHp}  RP ${hero.currentRp}/${hero.maxRp}`;
-      const hpText = this.add.text(x + 42, 60, hpLabel, {
-        fontFamily: 'Georgia, serif', fontSize: '10px', color: '#CFC7E8'
+      const hpText = this.add.text(x + contentX, textY, hpLabel, {
+        fontFamily: 'Georgia, serif', fontSize: `${textFont}px`, color: '#CFC7E8'
       });
       c.add([bg, portrait, name, hpTrack, hpFill, rpTrack, rpFill, hpText]);
       this._heroCards[hero.id] = { bg, hpFill, rpFill, hpText, barW, compact: cardW < 130 };
@@ -383,7 +435,10 @@ export default class PartyBattleScene extends Phaser.Scene {
     // there.
     const relayout = () => {
       if (this.scale.width > this.scale.height) t.setPosition(this.scale.width / 2, 34);
-      else t.setPosition(this.scale.width / 2, 16 + 64 + 8 + 36 + 10);
+      else {
+        const cardH = Math.round(Math.min(46, this.scale.height * 0.115));
+        t.setPosition(this.scale.width / 2, 16 + cardH + 8 + 40 + 10);
+      }
     };
     relayout();
     this._registerRelayout(relayout);
@@ -587,13 +642,39 @@ export default class PartyBattleScene extends Phaser.Scene {
     });
   }
 
+  // FAI-HUD-01E Pass 2: on-device evidence showed VICTORY appearing while
+  // the full combat HUD (enemy card at 0/30, opaque party cards, turn
+  // order) stayed exactly as busy as mid-fight, competing with the
+  // result for attention. Fades the secondary HUD out, leaves the
+  // formation/battlefield fully visible (the actual payoff), and makes
+  // the banner the dominant element instead of just changing its text.
+  // No rewards/Continue affordance yet — this is a single isolated
+  // encounter proof with nothing real to continue to or reward from; a
+  // fabricated one would be dead UI, not a completed feature, so it's
+  // left out rather than faked.
   _onVictory() {
     this._hideCommandRail();
+    this.formation.setActive(null); // clear the last actor's ring — no one's turn now
+    this._softenSecondaryHud();
+    this.tweens.add({
+      targets: this._banner, scale: 1.6, duration: 420, ease: 'Back.easeOut'
+    });
     this._setBanner('VICTORY');
   }
 
   _onDefeat() {
     this._hideCommandRail();
+    this.formation.setActive(null);
+    this._softenSecondaryHud();
+    this.tweens.add({
+      targets: this._banner, scale: 1.6, duration: 420, ease: 'Back.easeOut'
+    });
     this._setBanner('DEFEAT');
+  }
+
+  _softenSecondaryHud() {
+    this.tweens.add({ targets: this._targetCardContainer, alpha: 0.18, duration: 380, ease: 'Sine.easeOut' });
+    this.tweens.add({ targets: this._turnOrderContainer, alpha: 0, duration: 300, ease: 'Sine.easeOut' });
+    this.tweens.add({ targets: this._partyStripContainer, alpha: 0.55, duration: 380, ease: 'Sine.easeOut' });
   }
 }
