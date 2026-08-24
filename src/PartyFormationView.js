@@ -6,7 +6,7 @@
 // hits the "fading both layers at once" trap documented in CLAUDE.md) and
 // registers through scene.worldAdd() — never scene.uiLayer — so the
 // battle camera can push in without dragging the party off their marks.
-import { PARTY_SLOTS, PARTY_ASSET_LOCK, heightScaleFor } from './PartyBattleConfig.js';
+import { PARTY_SLOTS, PARTY_ASSET_LOCK, heightScaleFor } from './PartyBattleConfig.js?v=2';
 
 // Formation x-fractions (of screen width) and relative depth-in-frame —
 // back is furthest from the enemy/camera, front is nearest. Landscape and

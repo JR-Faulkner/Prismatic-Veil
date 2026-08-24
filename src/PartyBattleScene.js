@@ -15,11 +15,11 @@
 import { HEROES } from './BattleConfig.js?v=44';
 import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=40';
 import { createEnemyView } from './EnemyViewFactory.js?v=40';
-import PartyFormationView from './PartyFormationView.js';
+import PartyFormationView from './PartyFormationView.js?v=2';
 import {
   partyRoster, BASE_COMMANDS, RESONART_RP_COST, ITEM_DEFS,
   PARTY_ASSET_LOCK, projectedDamage, hitChanceFor
-} from './PartyBattleConfig.js';
+} from './PartyBattleConfig.js?v=2';
 
 const ENEMY_DEFAULT = Object.freeze({
   id: 'wraith', viewId: 'wraith', name: 'Veil Wraith',
