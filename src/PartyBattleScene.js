@@ -15,7 +15,7 @@
 import { HEROES } from './BattleConfig.js?v=44';
 import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=40';
 import { createEnemyView } from './EnemyViewFactory.js?v=40';
-import PartyFormationView from './PartyFormationView.js?v=3';
+import PartyFormationView from './PartyFormationView.js?v=5';
 import {
   partyRoster, BASE_COMMANDS, RESONART_RP_COST, ITEM_DEFS,
   PARTY_ASSET_LOCK, projectedDamage, hitChanceFor
