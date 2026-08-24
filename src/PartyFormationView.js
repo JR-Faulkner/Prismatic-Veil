@@ -19,10 +19,24 @@ import { PARTY_SLOTS, PARTY_ASSET_LOCK, heightScaleFor } from './PartyBattleConf
 // ~18% of screen width of each other). Widened so each retains a
 // separate readable envelope — verified against DAI's own annotated
 // reference by screenshot, not just by the numbers looking bigger.
+//
+// Follow-up, caught on-device again: that widening still put Prismel's
+// anchor (0.07) directly inside the vertical command rail's own footprint
+// (x: 16-166px, i.e. up to ~0.20 of an 844px landscape width) — the rail
+// sits on the UI camera, on top of everything in world space, so it
+// plastered right over him. Shifted the whole trio right — twice: the
+// first shift (anchor to 0.24) cleared the rail at the anchor point but
+// not the actual sprite, since each sprite's origin is horizontally
+// centered and the source canvases carry real width beyond the character
+// (flowing robes, an outstretched staff) — Prismel's displayed left edge
+// still reached into the rail even with his center clear of it, confirmed
+// by screenshot, not assumed fixed from the anchor number alone. Pushed
+// further so the sprite's actual rendered footprint — not just its
+// anchor — clears the rail.
 const SLOT_LAYOUT = Object.freeze({
-  back: { xFrac: 0.07, yFrac: 0.60, depth: 10 },
-  middle: { xFrac: 0.20, yFrac: 0.74, depth: 12 },
-  front: { xFrac: 0.36, yFrac: 0.90, depth: 14 }
+  back: { xFrac: 0.30, yFrac: 0.60, depth: 10 },
+  middle: { xFrac: 0.42, yFrac: 0.74, depth: 12 },
+  front: { xFrac: 0.54, yFrac: 0.90, depth: 14 }
 });
 
 export default class PartyFormationView {
