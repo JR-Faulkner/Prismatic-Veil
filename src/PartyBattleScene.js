@@ -20,6 +20,7 @@ import {
   partyRoster, BASE_COMMANDS, RESONART_RP_COST, ITEM_DEFS,
   PARTY_ASSET_LOCK, projectedDamage, hitChanceFor
 } from './PartyBattleConfig.js?v=3';
+import { GUI_TEXTURES, NINESLICE_INSETS, preloadGuiKit } from './PartyBattleGuiKit.js';
 
 const ENEMY_DEFAULT = Object.freeze({
   id: 'wraith', viewId: 'wraith', name: 'Veil Wraith',
@@ -56,6 +57,7 @@ export default class PartyBattleScene extends Phaser.Scene {
       this.load.image(tex, `./assets/enemy/veil_wraith/${tex}.png`);
     });
     this.load.image(ENEMY_DEFAULT.portrait, `./assets/ui/${ENEMY_DEFAULT.portrait}_v34.png`);
+    preloadGuiKit(this);
   }
 
   create() {
@@ -87,12 +89,22 @@ export default class PartyBattleScene extends Phaser.Scene {
     this.enemyView = createEnemyView(this, this.enemy);
     this.enemyView.create();
 
+    // FAI-UI-ASSET-01 targeting cursor: world-space (tracks the enemy,
+    // never the fixed UI camera), hidden until a damaging command is
+    // being considered. PriZim's own review flagged the selected variant
+    // as "intentionally loud... reduce scale if it competes with actor
+    // art" — sized modestly rather than at the source asset's own scale.
+    this._targetCursor = this.add.image(0, 0, GUI_TEXTURES.cursorSelected.key)
+      .setDisplaySize(64, 76).setDepth(16).setVisible(false);
+    this.worldAdd(this._targetCursor);
+
     this._buildTargetCard();
     this._buildTurnOrderStrip();
     this._buildPartyStrip();
     this._buildCommandRail();
     this._buildProjectionPanel();
     this._buildBanner();
+    this._buildRotateOverlay();
 
     this.turnOrder = ['prismel', 'auryi', 'kineza', 'enemy'];
     this.turnIndex = -1;
@@ -182,6 +194,11 @@ export default class PartyBattleScene extends Phaser.Scene {
   // REVISED_VISUAL_RATIOS.json's turn_order_target_viewport_width
   // (18-24%): at 844px landscape width the new 4*52-8=200px strip is
   // 23.7%, still under the cap.
+  // FAI-UI-ASSET-01: the plain gold-ring highlight is now the real
+  // turn_diamond_normal/active frame art, layered behind the same
+  // dynamic circular portrait chip this project already used — "Runtime
+  // portraits remain dynamic" (FAI_COMPONENT_MAPPING.md) is exactly this:
+  // the frame is decorative, the portrait inside it is still real data.
   _buildTurnOrderStrip() {
     const c = this.add.container(0, 0).setDepth(10);
     const order = ['prismel', 'auryi', 'kineza', 'enemy'];
@@ -189,11 +206,11 @@ export default class PartyBattleScene extends Phaser.Scene {
     this._turnChips = {};
     order.forEach((id, i) => {
       const x = i * slot;
-      const ring = this.add.circle(x + 20, 20, 19, 0x000000, 0).setStrokeStyle(2.4, PALETTE.goldBright, 0);
+      const diamond = this.add.image(x + 20, 20, GUI_TEXTURES.turnNormal.key).setDisplaySize(40, 40);
       const tex = id === 'enemy' ? this.enemy.portrait : HEROES[id].portrait;
-      const chip = this.add.image(x + 20, 20, tex).setDisplaySize(32, 32);
-      c.add([ring, chip]);
-      this._turnChips[id] = ring;
+      const chip = this.add.image(x + 20, 20, tex).setDisplaySize(26, 26);
+      c.add([diamond, chip]);
+      this._turnChips[id] = diamond;
     });
     this.uiAdd(c);
     this._turnOrderContainer = c;
@@ -217,8 +234,8 @@ export default class PartyBattleScene extends Phaser.Scene {
   }
 
   _highlightTurnChip(id) {
-    Object.entries(this._turnChips).forEach(([key, ring]) => {
-      ring.setStrokeStyle(2, PALETTE.goldBright, key === id ? 1 : 0);
+    Object.entries(this._turnChips).forEach(([key, diamond]) => {
+      diamond.setTexture(key === id ? GUI_TEXTURES.turnActive.key : GUI_TEXTURES.turnNormal.key);
     });
   }
 
@@ -270,22 +287,42 @@ export default class PartyBattleScene extends Phaser.Scene {
     const rpBarH = Math.max(6, Math.round(cardH * 0.115));
     const hpBarY = Math.round(cardH * 0.40);
     const rpBarY = hpBarY + hpBarH + Math.round(cardH * 0.03);
-    const textY = Math.round(cardH * 0.80);
+    // Nudged in from the card edges (name 0.10->0.17, text 0.80->0.74) —
+    // party_card_normal's own painted border carries a shadow band along
+    // the top and bottom that isn't part of the 9-slice insets, so text
+    // placed right at the old fractions sat on top of that shadow instead
+    // of the clear parchment field. Confirmed by screenshot, not guessed.
+    const nameY = Math.round(cardH * 0.17);
+    const textY = Math.round(cardH * 0.74);
     const textFont = Math.max(8, Math.round(cardH * 0.135));
 
     this.party.forEach((hero, i) => {
       const x = i * (cardW + gap);
-      const bg = this.add.rectangle(x, 0, cardW, cardH, PALETTE.panel, 0.92)
-        .setOrigin(0, 0).setStrokeStyle(1.6, PALETTE.gold, 0.7);
+      const insN = NINESLICE_INSETS.partyNormal;
+      const bg = this.add.nineslice(
+        x, 0, GUI_TEXTURES.partyNormal.key, null, cardW, cardH,
+        insN.left, insN.right, insN.top, insN.bottom
+      ).setOrigin(0, 0);
+      // Active-state glow — see _highlightHeroCard's comment for why this
+      // is a stroke, not the active nineslice texture.
+      const glow = this.add.rectangle(x - 2, -2, cardW + 4, cardH + 4, 0x000000, 0)
+        .setOrigin(0, 0).setStrokeStyle(2.4, 0x9fe0ff, 0.9).setVisible(false);
       const portrait = this.add.image(x + 12 + portraitD / 2, cardH / 2, hero.portrait).setDisplaySize(portraitD, portraitD);
       const barW = Math.max(50, cardW - contentX - 12);
-      const name = this.add.text(x + contentX, Math.round(cardH * 0.10), hero.name, {
-        fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: `${nameFont}px`, color: '#FFE8A0'
+      const name = this.add.text(x + contentX, nameY, hero.name, {
+        fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: `${nameFont}px`, color: '#2A1E12',
+        stroke: '#F4E9C9', strokeThickness: Math.max(1, Math.round(nameFont * 0.08))
       });
-      const hpTrack = this.add.rectangle(x + contentX, hpBarY, barW, hpBarH, PALETTE.hpTrack, 0.95).setOrigin(0, 0);
-      const hpFill = this.add.rectangle(x + contentX, hpBarY, barW, hpBarH, PALETTE.hp, 1).setOrigin(0, 0);
-      const rpTrack = this.add.rectangle(x + contentX, rpBarY, barW, rpBarH, PALETTE.rpTrack, 0.95).setOrigin(0, 0);
-      const rpFill = this.add.rectangle(x + contentX, rpBarY, barW, rpBarH, PALETTE.rp, 1).setOrigin(0, 0);
+      // Storybook meter shells (dark pill w/ gold border) as the track,
+      // colored fill drawn on top inset within the shell's own border —
+      // same "shell background, runtime fill on top" split the shells'
+      // own README calls for ("fill amount/color is runtime-driven").
+      const hpShell = this.add.image(x + contentX, hpBarY, GUI_TEXTURES.hpShell.key)
+        .setOrigin(0, 0).setDisplaySize(barW, hpBarH);
+      const hpFill = this.add.rectangle(x + contentX + 2, hpBarY + 2, barW - 4, hpBarH - 4, PALETTE.hp, 1).setOrigin(0, 0);
+      const rpShell = this.add.image(x + contentX, rpBarY, GUI_TEXTURES.rpShell.key)
+        .setOrigin(0, 0).setDisplaySize(barW, rpBarH);
+      const rpFill = this.add.rectangle(x + contentX + 2, rpBarY + 2, barW - 4, rpBarH - 4, PALETTE.rp, 1).setOrigin(0, 0);
       // Narrow cards (portrait's 3-across row) can't fit the full "HP
       // x/y  RP x/y" label without overflowing the card — the bars
       // already carry the same information visually, so a narrow card
@@ -294,10 +331,16 @@ export default class PartyBattleScene extends Phaser.Scene {
         ? `${hero.currentHp}/${hero.maxHp}  ${hero.currentRp}/${hero.maxRp}`
         : `HP ${hero.currentHp}/${hero.maxHp}  RP ${hero.currentRp}/${hero.maxRp}`;
       const hpText = this.add.text(x + contentX, textY, hpLabel, {
-        fontFamily: 'Georgia, serif', fontSize: `${textFont}px`, color: '#CFC7E8'
+        fontFamily: 'Georgia, serif', fontSize: `${textFont}px`, color: '#2A1E12',
+        stroke: '#F4E9C9', strokeThickness: Math.max(1, Math.round(textFont * 0.1))
       });
-      c.add([bg, portrait, name, hpTrack, hpFill, rpTrack, rpFill, hpText]);
-      this._heroCards[hero.id] = { bg, hpFill, rpFill, hpText, barW, compact: cardW < 130 };
+      // Guard/Prepared badge — deliberately small (PriZim's own review:
+      // "reduce display size so it reads as a status indicator rather
+      // than a crest") — top-right corner of the card, hidden by default.
+      const guardBadge = this.add.image(x + cardW - 14, 12, GUI_TEXTURES.guardBadge.key)
+        .setDisplaySize(20, 22).setVisible(false);
+      c.add([bg, glow, portrait, name, hpShell, hpFill, rpShell, rpFill, hpText, guardBadge]);
+      this._heroCards[hero.id] = { bg, glow, hpFill, rpFill, hpText, guardBadge, barW: barW - 4, compact: cardW < 130 };
     });
 
     // Landscape: strip shares the bottom row with the rail (which is a
@@ -328,13 +371,49 @@ export default class PartyBattleScene extends Phaser.Scene {
     card.hpText.setText(card.compact
       ? `${Math.max(0, hero.currentHp)}/${hero.maxHp}  ${hero.currentRp}/${hero.maxRp}`
       : `HP ${Math.max(0, hero.currentHp)}/${hero.maxHp}  RP ${hero.currentRp}/${hero.maxRp}`);
-    card.bg.setStrokeStyle(1.6, PALETTE.gold, hero.alive ? 0.7 : 0.25);
+    card.bg.setAlpha(hero.alive ? 1 : 0.4);
+    card.guardBadge.setVisible(!!hero.guarding);
   }
 
+  // FAI-UI-ASSET-01: party_card_active/normal are two distinct nineslice
+  // textures (a glowing frame vs. a plain one), not a stroke-color swap —
+  // texture change is the "active state" here, same idea as the command
+  // buttons but via ASSET_MAP rather than a stroke.
+  // party_card_active.png is SCALING_RULES.json's own "9slice_review"
+  // flag, not "9slice_ok" — confirmed why the hard way: at this card's
+  // actual compact height (~55-90px, locked by REVISED_VISUAL_RATIOS.json's
+  // party_band_target of 14-18% viewport height) its ornament insets don't
+  // fit, and 9-slicing it produced a visibly smeared/duplicated border
+  // (screenshotted, not assumed). party_card_normal (the "ok"-listed one)
+  // renders cleanly at the same compression. Every card stays on the
+  // normal texture; "active" is a separate glow stroke instead of a
+  // texture swap, sidestepping the broken asset rather than forcing it.
   _highlightHeroCard(heroId) {
     Object.entries(this._heroCards).forEach(([id, card]) => {
-      card.bg.setStrokeStyle(id === heroId ? 2.4 : 1.6, id === heroId ? PALETTE.goldBright : PALETTE.gold, id === heroId ? 1 : 0.7);
+      card.glow.setVisible(id === heroId);
     });
+  }
+
+  // Swaps a command button between its normal/selected/disabled art —
+  // selected on hover/press (there's no persistent "selection" state once
+  // the drawer takes over, so this is a momentary hover cue), disabled
+  // reserved for a future affordability gate (e.g. Resonart with
+  // insufficient RP) rather than wired to anything yet.
+  _setCommandButtonVisual(label, state) {
+    const btn = this._commandButtons[label];
+    if (!btn) return;
+    btn.state = state;
+    const texKey = state === 'selected' ? GUI_TEXTURES.cmdSelected.key
+      : state === 'disabled' ? GUI_TEXTURES.cmdDisabled.key
+      : GUI_TEXTURES.cmdNormal.key;
+    const ins = state === 'selected' ? NINESLICE_INSETS.cmdSelected
+      : state === 'disabled' ? NINESLICE_INSETS.cmdDisabled
+      : NINESLICE_INSETS.cmdNormal;
+    btn.bg.setTexture(texKey);
+    if (typeof btn.bg.leftWidth === 'number') {
+      btn.bg.leftWidth = ins.left; btn.bg.rightWidth = ins.right;
+      btn.bg.topHeight = ins.top; btn.bg.bottomHeight = ins.bottom;
+    }
   }
 
   // --- HUD: 4-command rail + contextual Resonart/Item drawers ----------
@@ -342,21 +421,33 @@ export default class PartyBattleScene extends Phaser.Scene {
   // command-list placement (STORYBOOK_UI_PALETTE_REFERENCE.png) — a
   // horizontal row here collided with the party strip; a left column
   // shares no horizontal band with anything else on screen.
+  // FAI-UI-ASSET-01: command buttons now render the real storybook
+  // nineslice art (normal/selected/disabled) instead of a flat rectangle.
+  // Phaser's built-in nineslice (confirmed available — this bundled
+  // Phaser is 3.70) is what SCALING_RULES.json calls these three safe
+  // for; the disabled/normal-review flag there is about the shorter,
+  // taller disabled variant needing its own insets, not about avoiding
+  // nineslice altogether — handled via NINESLICE_INSETS per state.
   _buildCommandRail() {
     const c = this.add.container(0, 0).setDepth(11);
     this._commandButtons = {};
-    const btnW = COMMAND_RAIL_W, btnH = 40, gap = 6;
+    const btnW = COMMAND_RAIL_W, btnH = 44, gap = 6;
     BASE_COMMANDS.forEach((label, i) => {
       const y = i * (btnH + gap);
-      const bg = this.add.rectangle(0, y, btnW, btnH, PALETTE.panel, 0.95)
-        .setOrigin(0, 0).setStrokeStyle(1.8, PALETTE.gold, 0.85)
-        .setInteractive({ useHandCursor: true });
+      const ins = NINESLICE_INSETS.cmdNormal;
+      const bg = this.add.nineslice(
+        0, y, GUI_TEXTURES.cmdNormal.key, null, btnW, btnH,
+        ins.left, ins.right, ins.top, ins.bottom
+      ).setOrigin(0, 0).setInteractive({ useHandCursor: true });
       const text = this.add.text(btnW / 2, y + btnH / 2, label.toUpperCase(), {
-        fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '15px', color: '#F4E9C9'
+        fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '15px', color: '#2A1E12',
+        stroke: '#F4E9C9', strokeThickness: 1.5
       }).setOrigin(0.5);
       bg.on('pointerdown', () => this._onCommand(label));
+      bg.on('pointerover', () => this._setCommandButtonVisual(label, 'selected'));
+      bg.on('pointerout', () => this._setCommandButtonVisual(label, 'normal'));
       c.add([bg, text]);
-      this._commandButtons[label] = { bg, text };
+      this._commandButtons[label] = { bg, text, btnW, btnH, state: 'normal' };
     });
     this.uiAdd(c);
     this._commandRailContainer = c;
@@ -369,16 +460,19 @@ export default class PartyBattleScene extends Phaser.Scene {
     // Anchored above the command rail so it never competes with the party
     // strip (which starts to the rail's right) or the target card (top).
     const drawer = this.add.container(0, 0).setDepth(12).setVisible(false);
-    const dBg = this.add.rectangle(0, 0, 300, 170, PALETTE.panel, 0.97)
-      .setOrigin(0, 0).setStrokeStyle(2, PALETTE.goldBright, 0.9);
+    const insD = NINESLICE_INSETS.resonartDrawer;
+    const dBg = this.add.nineslice(
+      0, 0, GUI_TEXTURES.resonartDrawer.key, null, 300, 170,
+      insD.left, insD.right, insD.top, insD.bottom
+    ).setOrigin(0, 0);
     const dTitle = this.add.text(14, 10, '', {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '18px', color: '#9FE0FF'
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '18px', color: '#4A2E7A'
     });
     const dDetail = this.add.text(14, 36, '', {
-      fontFamily: 'Georgia, serif', fontSize: '13px', color: '#CFC7E8', wordWrap: { width: 272 }
+      fontFamily: 'Georgia, serif', fontSize: '13px', color: '#4A3826', wordWrap: { width: 272 }
     });
     const dStats = this.add.text(14, 106, '', {
-      fontFamily: 'Georgia, serif', fontSize: '13px', color: '#F4E9C9'
+      fontFamily: 'Georgia, serif', fontSize: '13px', color: '#2A1E12'
     });
     const useBtn = this.add.rectangle(14, 138, 128, 26, 0x1a3a1e, 0.95)
       .setOrigin(0, 0).setStrokeStyle(1.6, PALETTE.hp, 0.9).setInteractive({ useHandCursor: true });
@@ -423,6 +517,18 @@ export default class PartyBattleScene extends Phaser.Scene {
 
   // --- HUD: turn banner -------------------------------------------------
   _buildBanner() {
+    // FAI-UI-ASSET-01: victory_frame is deliberately its own object,
+    // hidden until _onVictory()/_onDefeat() and sized well below its
+    // source resolution — PriZim's own review called the frame "slightly
+    // more ornate than the battle HUD... test intensity," and 565x244
+    // full-size would dominate a 390px-tall landscape viewport outright.
+    // Fixed-aspect scale, never stretched independently on each axis
+    // (matches SCALING_RULES.json's fixed_aspect_or_cap_stretch list).
+    const frame = this.add.image(0, 0, GUI_TEXTURES.victoryFrame.key)
+      .setDepth(14).setVisible(false);
+    this.uiAdd(frame);
+    this._victoryFrame = frame;
+
     const t = this.add.text(0, 0, '', {
       fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '22px', color: '#FFE8A0'
     }).setOrigin(0.5).setDepth(15);
@@ -439,9 +545,22 @@ export default class PartyBattleScene extends Phaser.Scene {
         const cardH = Math.round(Math.min(46, this.scale.height * 0.115));
         t.setPosition(this.scale.width / 2, 16 + cardH + 8 + 40 + 10);
       }
+      if (frame.visible) this._layoutVictoryFrame();
     };
     relayout();
     this._registerRelayout(relayout);
+  }
+
+  _layoutVictoryFrame() {
+    const frame = this._victoryFrame;
+    const w = Math.min(340, this.scale.width * 0.5);
+    // Ratio from the raw source image, not frame.width/height — those
+    // become the mutated display size after the first setDisplaySize()
+    // call, which would compound on every subsequent resize.
+    const src = frame.texture.getSourceImage();
+    const ratio = (src && src.width && src.height) ? src.width / src.height : 2.3;
+    frame.setDisplaySize(w, w / ratio);
+    frame.setPosition(this.scale.width / 2, this._banner.y);
   }
 
   _setBanner(msg) {
@@ -508,6 +627,7 @@ export default class PartyBattleScene extends Phaser.Scene {
       this._drawer.title.setText('ATTACK');
       this._drawer.detail.setText('A basic strike — free, always available.');
       this._drawer.stats.setText(`Damage: ${low}-${high}   Hit: ${hitPct}%`);
+      this._showTargetCursor();
     } else if (label === 'Resonart') {
       const { low, high } = projectedDamage(hero, 'Resonart');
       const hitPct = Math.round(hitChanceFor('Resonart') * 100);
@@ -518,22 +638,37 @@ export default class PartyBattleScene extends Phaser.Scene {
         `RP Cost: ${RESONART_RP_COST}${affordable ? '' : ' (not enough RP)'}\n` +
         `Damage: ${low}-${high}   Hit: ${hitPct}%`
       );
+      this._showTargetCursor();
     } else if (label === 'Guard') {
       this._drawer.title.setText('GUARD');
       this._drawer.detail.setText(`${hero.name} braces for the enemy's next attack.`);
       this._drawer.stats.setText('Damage Reduction: 50%');
+      this._hideTargetCursor();
     } else if (label === 'Item') {
       const item = ITEM_DEFS[0];
       this._drawer.title.setText(item.name.toUpperCase());
       this._drawer.detail.setText(`Restores ${item.heal} HP to ${hero.name}.`);
       this._drawer.stats.setText('Target: Self');
+      this._hideTargetCursor();
     }
     this._drawer.container.setVisible(true);
+  }
+
+  _showTargetCursor() {
+    const enemyAnchor = this.enemyView.container;
+    const enemySprite = this.enemyView.sprite;
+    this._targetCursor.setPosition(enemyAnchor.x, enemyAnchor.y - (enemySprite.displayHeight || 120) * 0.55);
+    this._targetCursor.setVisible(true);
+  }
+
+  _hideTargetCursor() {
+    this._targetCursor.setVisible(false);
   }
 
   _closeDrawer() {
     this._drawerOpen = null;
     if (this._drawer) this._drawer.container.setVisible(false);
+    this._hideTargetCursor();
   }
 
   _confirmDrawer() {
@@ -563,6 +698,7 @@ export default class PartyBattleScene extends Phaser.Scene {
       this._hideCommandRail();
       hero.guarding = true;
       this.formation.guardPose(hero.id, true);
+      this._updateHeroCard(hero.id);
       this._setBanner(`${hero.name} guards.`);
       this._turnLock = false;
       this._endHeroTurn();
@@ -654,8 +790,10 @@ export default class PartyBattleScene extends Phaser.Scene {
   // left out rather than faked.
   _onVictory() {
     this._hideCommandRail();
+    this._hideTargetCursor();
     this.formation.setActive(null); // clear the last actor's ring — no one's turn now
     this._softenSecondaryHud();
+    this._showVictoryFrame();
     this.tweens.add({
       targets: this._banner, scale: 1.6, duration: 420, ease: 'Back.easeOut'
     });
@@ -664,8 +802,10 @@ export default class PartyBattleScene extends Phaser.Scene {
 
   _onDefeat() {
     this._hideCommandRail();
+    this._hideTargetCursor();
     this.formation.setActive(null);
     this._softenSecondaryHud();
+    this._showVictoryFrame();
     this.tweens.add({
       targets: this._banner, scale: 1.6, duration: 420, ease: 'Back.easeOut'
     });
@@ -676,5 +816,57 @@ export default class PartyBattleScene extends Phaser.Scene {
     this.tweens.add({ targets: this._targetCardContainer, alpha: 0.18, duration: 380, ease: 'Sine.easeOut' });
     this.tweens.add({ targets: this._turnOrderContainer, alpha: 0, duration: 300, ease: 'Sine.easeOut' });
     this.tweens.add({ targets: this._partyStripContainer, alpha: 0.55, duration: 380, ease: 'Sine.easeOut' });
+  }
+
+  _showVictoryFrame() {
+    this._layoutVictoryFrame();
+    this._victoryFrame.setAlpha(0).setVisible(true);
+    this.tweens.add({ targets: this._victoryFrame, alpha: 1, duration: 420, ease: 'Sine.easeOut' });
+  }
+
+  // FAI-UI-ASSET-01 rotate-device overlay — new functionality, not a
+  // reskin of anything that already existed. This whole mode is
+  // landscape-phone-first per every FAI-HUD-01 addendum so far; nothing
+  // previously stopped someone from playing it in portrait (cramped, but
+  // functional). This blocks that outright: full-screen scrim + the
+  // fixed-aspect rotate frame + input disabled underneath, shown/hidden
+  // on orientation change, restored to whatever this.input.enabled was
+  // before (never assumes it was true — a future pause/menu state could
+  // have legitimately disabled it already).
+  _buildRotateOverlay() {
+    const c = this.add.container(0, 0).setDepth(2000);
+    const scrim = this.add.rectangle(0, 0, 10, 10, 0x07060f, 0.94).setOrigin(0, 0);
+    const frame = this.add.image(0, 0, GUI_TEXTURES.rotateDevice.key);
+    const label = this.add.text(0, 0, 'Rotate your device to landscape', {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '15px', color: '#F4E9C9', align: 'center'
+    }).setOrigin(0.5);
+    c.add([scrim, frame, label]);
+    this.uiAdd(c);
+    this._rotateOverlay = { container: c, scrim, frame, label };
+
+    const layout = () => this._layoutRotateOverlay();
+    layout();
+    this._registerRelayout(layout);
+  }
+
+  _layoutRotateOverlay() {
+    const { container, scrim, frame, label } = this._rotateOverlay;
+    const w = this.scale.width, h = this.scale.height;
+    const portrait = h >= w;
+    container.setVisible(portrait);
+    if (!portrait) {
+      if (this._rotateOverlayBlocking) { this.input.enabled = this._preRotateInputEnabled; this._rotateOverlayBlocking = false; }
+      return;
+    }
+    if (!this._rotateOverlayBlocking) { this._preRotateInputEnabled = this.input.enabled; this._rotateOverlayBlocking = true; }
+    this.input.enabled = false;
+    scrim.setSize(w, h);
+    const frameW = Math.min(320, w * 0.86);
+    const src = frame.texture.getSourceImage();
+    const ratio = (src && src.width && src.height) ? src.width / src.height : 3.07;
+    frame.setDisplaySize(frameW, frameW / ratio);
+    frame.setPosition(w / 2, h * 0.42);
+    label.setPosition(w / 2, frame.y + frame.displayHeight / 2 + 28);
+    label.setWordWrapWidth(w * 0.8);
   }
 }
