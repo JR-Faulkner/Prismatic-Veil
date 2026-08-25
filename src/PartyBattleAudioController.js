@@ -14,6 +14,7 @@
 // fade-out — not chosen as final BGM). Per DO_NOT_DO.md, this file does
 // not compose or select final music/SFX.
 import { AUDIO_EVENT_MAP, MUSIC_ASSET } from './PartyBattleAudioConfig.js';
+import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=42';
 
 const PREFS_KEY = 'pv_party_battle_audio_prefs_v1';
 const DEFAULT_PREFS = Object.freeze({ master: 0.9, music: 0.6, sfx: 0.85, ui: 0.7, muted: false });
@@ -55,10 +56,20 @@ export default class PartyBattleAudioController {
       this.scene.load.audio(def.key, def.path);
     });
     if (MUSIC_ASSET) this.scene.load.audio(MUSIC_ASSET.key, MUSIC_ASSET.path);
+    // FAI-AUDIO-02 §4: "prefer sharing/reusing EnemyAudioDirector logic
+    // rather than duplicating enemy-bank selection in Party Battle" —
+    // reuses the exact same preload helper VeilBattleScene.js already
+    // calls, not a re-implementation of its enemy/cue-key convention.
+    preloadEnemyAudio(this.scene);
   }
 
   // --- lifecycle ----------------------------------------------------------
+  // `scene.enemy` must already be assigned before this runs — PartyBattleScene
+  // calls this after setting it, not before (see that file's create()).
   create() {
+    this.enemyDirector = new EnemyAudioDirector(this.scene, this.scene.enemy);
+    this.enemyDirector.create();
+
     // Background/resume must not stack a second BGM loop — pause on
     // hide, resume (never re-create) on show. Named + stored so a future
     // scene teardown can actually remove it; an inline arrow here would
@@ -72,6 +83,14 @@ export default class PartyBattleAudioController {
     document.addEventListener('visibilitychange', this._visHandler);
     this.scene.events.once('shutdown', () => this.destroy());
   }
+
+  // Whether a mobile-unlock gate is needed right now — PartyBattleScene
+  // uses this to decide whether to show an explicit "Tap to Enable Audio"
+  // overlay (MOBILE_AUDIO_UNLOCK.md's required treatment for a direct dev
+  // route with no prior title-screen gesture) rather than letting unlock
+  // happen invisibly on whatever the player happens to tap first.
+  isLocked() { return this.scene.sound.locked; }
+  onUnlocked(cb) { this.scene.sound.once('unlocked', cb); }
 
   // --- volume buses --------------------------------------------------------
   setBusVolume(bus, value) {
@@ -158,15 +177,24 @@ export default class PartyBattleAudioController {
   uiMove() { this._play('uiMove'); }
   uiConfirm() { this._play('uiConfirm'); }
   uiReject() { this._play('uiReject'); }
-  turnStart(characterId) { this._play('turnStart'); } // characterId reserved for future per-character turn stings
+  // Uses each hero's own "step" cue — a real per-character turn-start
+  // beat rather than one shared sting, matching CHARACTER_AUDIO_DIRECTION.md's
+  // spirit even for a moment that isn't technically an "attack."
+  turnStart(characterId) { this._play(`turnStart:${characterId}`); }
   targetAcquire() { this._play('targetAcquire'); }
   attackGather(characterId) { this._play(`attackGather:${characterId}`); }
   attackRelease(characterId) { this._play(`attackRelease:${characterId}`); }
   attackImpact(characterId) { this._play(`attackImpact:${characterId}`); }
+  // No dedicated Guard/Item SFX exist anywhere in this repo — see
+  // PartyBattleAudioConfig.js's own header for why these stay silent
+  // rather than borrowing a hero's attack cue or a legacy bleep.
   guard(characterId) { this._play('guard'); }
   itemUse(itemId) { this._play('itemUse'); }
-  enemyHit() { this._play('enemyHit'); }
-  enemyDefeat() { this._play('enemyDefeat'); }
+  // Routed through EnemyAudioDirector (constructed in create()) instead
+  // of AUDIO_EVENT_MAP — reuses its bank-resolution/volume tuning rather
+  // than re-implementing "which enemy, which cue, what volume" here.
+  enemyHit() { if (this.enemyDirector) this.enemyDirector.play('hurt'); }
+  enemyDefeat() { if (this.enemyDirector) this.enemyDirector.play('defeat'); }
   victory() { this._play('victory'); }
   battleExit() { this.battleMusicStop(); this._play('battleExit'); }
 
@@ -176,5 +204,6 @@ export default class PartyBattleAudioController {
     if (this.music) { try { this.music.stop(); this.music.destroy(); } catch (err) { /* ignore */ } this.music = null; }
     Object.values(this.sounds).forEach(s => { try { s.stop(); s.destroy(); } catch (err) { /* ignore */ } });
     this.sounds = {};
+    if (this.enemyDirector) { this.enemyDirector.destroy(); this.enemyDirector = null; }
   }
 }

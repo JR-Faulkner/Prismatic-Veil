@@ -15,7 +15,7 @@
 import { HEROES } from './BattleConfig.js?v=44';
 import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=40';
 import { createEnemyView } from './EnemyViewFactory.js?v=40';
-import PartyFormationView from './PartyFormationView.js?v=5';
+import PartyFormationView from './PartyFormationView.js?v=6';
 import {
   partyRoster, BASE_COMMANDS, RESONART_RP_COST, ITEM_DEFS,
   PARTY_ASSET_LOCK, projectedDamage, hitChanceFor
@@ -88,16 +88,21 @@ export default class PartyBattleScene extends Phaser.Scene {
 
     this._buildBackdrop();
 
-    // FAI-AUDIO-01: battleEnter() first (a one-shot stinger, if one's
-    // ever mapped), battleMusicStart() right after — both no-op safely
-    // if their assets aren't loaded, and battleMusicStart() is itself
-    // idempotent against being called twice.
-    this.audio.create();
-    this.audio.battleEnter();
-    this.audio.battleMusicStart();
-
+    // party/enemy must exist before audio.create() — it constructs an
+    // EnemyAudioDirector against this.enemy (FAI-AUDIO-02).
     this.party = partyRoster();
     this.enemy = { ...ENEMY_DEFAULT, attack: { ...ENEMY_DEFAULT.attack } };
+
+    this.audio.create();
+    this.audio.battleEnter();
+    // FAI-AUDIO-02: do not start music unconditionally here anymore — if
+    // a mobile-unlock gate is needed, _buildAudioUnlockGate() below owns
+    // starting it, on the explicit tap, per MOBILE_AUDIO_UNLOCK.md ("do
+    // not wait for the first battle command and then suddenly start the
+    // soundtrack" — starting it silently in the locked-and-deferred state
+    // is exactly that, just one layer removed). Already-unlocked contexts
+    // (desktop, or mobile after a real prior gesture) start immediately.
+    if (!this.audio.isLocked()) this.audio.battleMusicStart();
 
     this.formation = new PartyFormationView(this);
     this.formation.create(this.party);
@@ -120,6 +125,7 @@ export default class PartyBattleScene extends Phaser.Scene {
     this._buildProjectionPanel();
     this._buildBanner();
     this._buildRotateOverlay();
+    this._buildAudioUnlockGate();
 
     this.turnOrder = ['prismel', 'auryi', 'kineza', 'enemy'];
     this.turnIndex = -1;
@@ -704,12 +710,21 @@ export default class PartyBattleScene extends Phaser.Scene {
     const hero = this._activeHero();
     if (!hero) return;
     const label = this._drawerOpen;
+    // FAI-AUDIO-02 (UI_AUDIO_SEMANTICS.md): uiConfirm() used to fire
+    // unconditionally before the Resonart RP check, so an unaffordable
+    // Resonart said "yes" sonically and then silently refused — the
+    // insufficient-RP branch now checks and plays uiReject() BEFORE
+    // anything else runs, and every other branch plays uiConfirm() only
+    // once it's actually committing to the action, not on drawer entry.
+    if (label === 'Resonart' && hero.currentRp < RESONART_RP_COST) {
+      this.audio.uiReject();
+      return; // visibly insufficient, no-op
+    }
     this.audio.uiConfirm();
     if (label === 'Attack') {
       this._closeDrawer();
       this._resolveHeroAction(hero, 'Attack');
     } else if (label === 'Resonart') {
-      if (hero.currentRp < RESONART_RP_COST) return; // visibly insufficient, no-op
       hero.currentRp -= RESONART_RP_COST;
       this._closeDrawer();
       this._resolveHeroAction(hero, 'Resonart');
@@ -742,14 +757,16 @@ export default class PartyBattleScene extends Phaser.Scene {
     const { low, high } = projectedDamage(hero, command);
     const hitRoll = Math.random() < hitChanceFor(command);
 
-    // Gather/Release/Impact are 3 separate hooks per IMPLEMENT_NOW.md
-    // ("Do not trigger attack audio merely when a command button is
-    // pressed... Impact SFX must align to the actual animation/damage
-    // moment") even though only attackImpact has a mapped asset today —
-    // gather/release fire at the real anticipation/release beats of the
-    // lunge, not bunched at the top of this method, so swapping in real
-    // per-beat assets later is a config change, not a re-wire.
+    // FAI-AUDIO-02 (ATTACK_AUDIO_TIMING.md): Gather and Release used to
+    // fire back-to-back in the same tick — "collapses the action into one
+    // sonic blob." Gather now attaches to a real anticipation beat
+    // (attackGatherPulse — a small scale pulse, the character visibly
+    // "charging"), Release fires only once that beat completes and the
+    // lunge itself begins ("the attack actually leaves the character"),
+    // Impact stays exactly where it already was: the same frame damage
+    // applies and the hit reaction fires, never at button-press time.
     this.audio.attackGather(hero.id);
+    await this.formation.attackGatherPulse(hero.id);
     this.audio.attackRelease(hero.id);
     await this.formation.attackLunge(hero.id);
 
@@ -893,6 +910,63 @@ export default class PartyBattleScene extends Phaser.Scene {
     const layout = () => this._layoutRotateOverlay();
     layout();
     this._registerRelayout(layout);
+  }
+
+  // FAI-AUDIO-02 / MOBILE_AUDIO_UNLOCK.md: party-battle-v1.html is a
+  // direct dev route with no prior title/encounter screen to supply the
+  // unlock gesture, so DAI's "Preferred flow" (unlock happens before the
+  // battle scene needs audible playback) isn't available here — the
+  // explicit fallback the same doc calls for is this gate. The scrim
+  // itself is interactive and consumes the tap (rather than disabling
+  // scene.input like the rotate overlay does) specifically so the tap
+  // that dismisses it is also a real gesture Phaser's own unlock listener
+  // sees — disabling input first would have blocked that gesture from
+  // ever reaching anything, including the gate's own tap target.
+  _buildAudioUnlockGate() {
+    const c = this.add.container(0, 0).setDepth(2100).setVisible(false);
+    const scrim = this.add.rectangle(0, 0, 10, 10, 0x07060f, 0.92).setOrigin(0, 0)
+      .setInteractive({ useHandCursor: true });
+    const label = this.add.text(0, 0, '♪ Tap to Enable Audio ♪', {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '20px', color: '#F4E9C9'
+    }).setOrigin(0.5);
+    c.add([scrim, label]);
+    this.uiAdd(c);
+    this._audioGate = { container: c, scrim, label };
+
+    scrim.on('pointerdown', () => this._dismissAudioGate());
+    this.audio.onUnlocked(() => this._dismissAudioGate());
+
+    // Rotate takes priority — this.input is fully disabled while that
+    // overlay blocks (see _layoutRotateOverlay), which would make this
+    // gate's own tap target unreachable too. Registered after the rotate
+    // overlay's own relayout (both via _registerRelayout, called in
+    // Phaser's listener-registration order), so _rotateOverlayBlocking is
+    // already current by the time this reads it on every resize.
+    const layout = () => {
+      scrim.setSize(this.scale.width, this.scale.height);
+      label.setPosition(this.scale.width / 2, this.scale.height / 2);
+      if (this._stillLocked && this._rotateOverlayBlocking) c.setVisible(false);
+      else if (this._stillLocked) c.setVisible(true);
+    };
+    layout();
+    this._registerRelayout(layout);
+
+    // Shown only once we know for certain — asked immediately after
+    // construction, not deferred, so the gate never flashes visible on an
+    // already-unlocked desktop context before this check runs.
+    this._stillLocked = this.audio.isLocked();
+    layout();
+  }
+
+  // Not gated on the container's current visibility — this also runs as
+  // the audio.onUnlocked() callback, which can fire while the gate is
+  // hidden behind the rotate overlay (unlock reaching Phaser through some
+  // other gesture entirely). battleMusicStart() is already idempotent, so
+  // calling it unconditionally here is safe either way.
+  _dismissAudioGate() {
+    this._stillLocked = false;
+    if (this._audioGate) this._audioGate.container.setVisible(false);
+    this.audio.battleMusicStart();
   }
 
   _layoutRotateOverlay() {
