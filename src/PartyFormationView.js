@@ -151,6 +151,32 @@ export default class PartyFormationView {
     });
   }
 
+  // FAI-AUDIO-02 (ATTACK_AUDIO_TIMING.md): a real anticipation beat for
+  // attackGather() to attach to — previously the lunge fired immediately
+  // with no visual "charging" moment at all, so Gather and Release always
+  // landed in the same JS tick. A small settle-then-swell scale pulse,
+  // not a new pose or animation system — the smallest addition that
+  // gives audio an actual milestone to hook, per that doc's own guidance
+  // ("add the smallest callback mechanism needed... do not rewrite the
+  // battle controller").
+  attackGatherPulse(heroId) {
+    const actor = this.actors.get(heroId);
+    if (!actor) return Promise.resolve();
+    const { sprite } = actor;
+    const baseScale = sprite.scaleX;
+    return new Promise(resolve => {
+      this.scene.tweens.add({
+        targets: sprite,
+        scaleX: baseScale * 1.05,
+        scaleY: baseScale * 1.05,
+        duration: 260,
+        yoyo: true,
+        ease: 'Sine.easeInOut',
+        onComplete: () => { sprite.setScale(baseScale); resolve(); }
+      });
+    });
+  }
+
   attackLunge(heroId) {
     const actor = this.actors.get(heroId);
     if (!actor) return Promise.resolve();
