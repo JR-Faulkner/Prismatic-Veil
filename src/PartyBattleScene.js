@@ -21,6 +21,7 @@ import {
   PARTY_ASSET_LOCK, projectedDamage, hitChanceFor
 } from './PartyBattleConfig.js?v=3';
 import { GUI_TEXTURES, NINESLICE_INSETS, preloadGuiKit } from './PartyBattleGuiKit.js';
+import PartyBattleAudioController from './PartyBattleAudioController.js';
 
 const ENEMY_DEFAULT = Object.freeze({
   id: 'wraith', viewId: 'wraith', name: 'Veil Wraith',
@@ -58,6 +59,12 @@ export default class PartyBattleScene extends Phaser.Scene {
     });
     this.load.image(ENEMY_DEFAULT.portrait, `./assets/ui/${ENEMY_DEFAULT.portrait}_v34.png`);
     preloadGuiKit(this);
+    // FAI-AUDIO-01: constructed here (not create()) because Phaser's
+    // preload() must run before the loader starts — the controller owns
+    // its own preload() step so PartyBattleScene.js doesn't need to know
+    // its asset list.
+    this.audio = new PartyBattleAudioController(this);
+    this.audio.preload();
   }
 
   create() {
@@ -80,6 +87,14 @@ export default class PartyBattleScene extends Phaser.Scene {
     this.events.once('shutdown', () => this.scale.off('resize', this._onResize, this));
 
     this._buildBackdrop();
+
+    // FAI-AUDIO-01: battleEnter() first (a one-shot stinger, if one's
+    // ever mapped), battleMusicStart() right after — both no-op safely
+    // if their assets aren't loaded, and battleMusicStart() is itself
+    // idempotent against being called twice.
+    this.audio.create();
+    this.audio.battleEnter();
+    this.audio.battleMusicStart();
 
     this.party = partyRoster();
     this.enemy = { ...ENEMY_DEFAULT, attack: { ...ENEMY_DEFAULT.attack } };
@@ -487,7 +502,7 @@ export default class PartyBattleScene extends Phaser.Scene {
     drawer.add([dBg, dTitle, dDetail, dStats, useBtn, useText, closeBtn, closeText]);
     this.uiAdd(drawer);
     useBtn.on('pointerdown', () => this._confirmDrawer());
-    closeBtn.on('pointerdown', () => this._closeDrawer());
+    closeBtn.on('pointerdown', () => { this.audio.uiReject(); this._closeDrawer(); });
     this._drawer = { container: drawer, title: dTitle, detail: dDetail, stats: dStats };
     // Centered modal, not anchored above the rail — "above the rail" only
     // had room to spare on tall screens. At 390px landscape height,
@@ -605,6 +620,7 @@ export default class PartyBattleScene extends Phaser.Scene {
     this._setBanner(`${hero.name}'s Turn`);
     this.activeHeroId = actor;
     this._showCommandRail();
+    this.audio.turnStart(actor);
   }
 
   _showCommandRail() { this._commandRailContainer.setVisible(true); }
@@ -620,6 +636,7 @@ export default class PartyBattleScene extends Phaser.Scene {
     const hero = this._activeHero();
     if (!hero) return;
     this._drawerOpen = label;
+    this.audio.uiMove();
 
     if (label === 'Attack') {
       const { low, high } = projectedDamage(hero, 'Attack');
@@ -655,10 +672,12 @@ export default class PartyBattleScene extends Phaser.Scene {
   }
 
   _showTargetCursor() {
+    const wasVisible = this._targetCursor.visible;
     const enemyAnchor = this.enemyView.container;
     const enemySprite = this.enemyView.sprite;
     this._targetCursor.setPosition(enemyAnchor.x, enemyAnchor.y - (enemySprite.displayHeight || 120) * 0.55);
     this._targetCursor.setVisible(true);
+    if (!wasVisible) this.audio.targetAcquire(); // fire once per acquisition, not on every re-layout
   }
 
   _hideTargetCursor() {
@@ -685,6 +704,7 @@ export default class PartyBattleScene extends Phaser.Scene {
     const hero = this._activeHero();
     if (!hero) return;
     const label = this._drawerOpen;
+    this.audio.uiConfirm();
     if (label === 'Attack') {
       this._closeDrawer();
       this._resolveHeroAction(hero, 'Attack');
@@ -700,6 +720,7 @@ export default class PartyBattleScene extends Phaser.Scene {
       this.formation.guardPose(hero.id, true);
       this._updateHeroCard(hero.id);
       this._setBanner(`${hero.name} guards.`);
+      this.audio.guard(hero.id);
       this._turnLock = false;
       this._endHeroTurn();
     } else if (label === 'Item') {
@@ -709,6 +730,7 @@ export default class PartyBattleScene extends Phaser.Scene {
       hero.currentHp = Math.min(hero.maxHp, hero.currentHp + item.heal);
       this._updateHeroCard(hero.id);
       this._setBanner(`${hero.name} uses ${item.name}!`);
+      this.audio.itemUse(item.id);
       this._turnLock = false;
       this._endHeroTurn();
     }
@@ -720,6 +742,15 @@ export default class PartyBattleScene extends Phaser.Scene {
     const { low, high } = projectedDamage(hero, command);
     const hitRoll = Math.random() < hitChanceFor(command);
 
+    // Gather/Release/Impact are 3 separate hooks per IMPLEMENT_NOW.md
+    // ("Do not trigger attack audio merely when a command button is
+    // pressed... Impact SFX must align to the actual animation/damage
+    // moment") even though only attackImpact has a mapped asset today —
+    // gather/release fire at the real anticipation/release beats of the
+    // lunge, not bunched at the top of this method, so swapping in real
+    // per-beat assets later is a config change, not a re-wire.
+    this.audio.attackGather(hero.id);
+    this.audio.attackRelease(hero.id);
     await this.formation.attackLunge(hero.id);
 
     if (!hitRoll) {
@@ -735,9 +766,14 @@ export default class PartyBattleScene extends Phaser.Scene {
     this.enemyView.hit();
     this._floatText(`-${dmg}`, '#FFD8D8');
     this._setBanner(`${hero.name} uses ${command === 'Resonart' ? hero.attack.name : 'Attack'} for ${dmg} damage!`);
+    // Impact fires exactly here — the same frame damage actually applies
+    // and the hit animation plays, not at button-press time.
+    this.audio.attackImpact(hero.id);
+    this.audio.enemyHit();
 
     if (this.enemy.hp <= 0) {
       this.enemyView.die();
+      this.audio.enemyDefeat();
     }
 
     this._turnLock = false;
@@ -798,6 +834,11 @@ export default class PartyBattleScene extends Phaser.Scene {
       targets: this._banner, scale: 1.6, duration: 420, ease: 'Back.easeOut'
     });
     this._setBanner('VICTORY');
+    // Fired exactly here, at the victory-state commit — not earlier —
+    // per PZ_AUDIO_GATE_V1.json's "victory cue does not fire before
+    // defeat commit" timing rule.
+    this.audio.battleMusicStop();
+    this.audio.victory();
   }
 
   _onDefeat() {
@@ -810,6 +851,11 @@ export default class PartyBattleScene extends Phaser.Scene {
       targets: this._banner, scale: 1.6, duration: 420, ease: 'Back.easeOut'
     });
     this._setBanner('DEFEAT');
+    // No "defeat" cue exists in IMPLEMENT_NOW.md's event vocabulary
+    // (only "victory" is listed) — stopping music is the one thing that's
+    // unambiguously correct here; a real defeat stinger needs a DAI call,
+    // not an invented substitute from the legacy reference set.
+    this.audio.battleMusicStop();
   }
 
   _softenSecondaryHud() {
