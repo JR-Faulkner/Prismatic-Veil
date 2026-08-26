@@ -71,7 +71,33 @@ export default class PartyFormationView {
       sprite.setDepth(SLOT_LAYOUT[slot].depth);
       ghost.setDepth(SLOT_LAYOUT[slot].depth);
 
-      this.actors.set(heroId, { sprite, ghost, ring, slot, hero });
+      // FAI-BATTLE-PRESENTATION-03: hero.poses/posePath/flip/scaleMul are
+      // BattleConfig.js's already-approved, already-battle-tested 1v1
+      // attack pose set (see HeroPoseView.js) — the same hero objects
+      // already carry this data (partyRoster() spreads it straight from
+      // HEROES), so no separate asset system is invented here. Resolved
+      // once at create() time so a missing/unloaded texture is caught
+      // here, not mid-attack: `poseTex` stays null (attackGatherPulse()/
+      // attackLunge() below remain the explicit fallback path — per
+      // ANIMATION_INTEGRATION_DIRECTIVE.md's "keep any fallback behind an
+      // explicit temporary fallback path", not a silent still-image swap)
+      // unless every one of the five poses actually loaded.
+      let poseTex = null;
+      if (hero.poses) {
+        const map = {};
+        let allLoaded = true;
+        Object.entries(hero.poses).forEach(([pose, tex]) => {
+          if (this.scene.textures.exists(tex)) map[pose] = tex;
+          else allLoaded = false;
+        });
+        if (allLoaded) poseTex = map;
+      }
+
+      this.actors.set(heroId, {
+        sprite, ghost, ring, slot, hero, poseTex,
+        standbyTex: texKey, standbyOriginY: originY,
+        _snapshot: null, _poseScale: null
+      });
     });
 
     this.layout();
@@ -100,7 +126,14 @@ export default class PartyFormationView {
     const targetAuryiContentH = landscape ? h * 0.40 : h * 0.4;
     const commonScale = targetAuryiContentH / PARTY_ASSET_LOCK.normalizedHeightPx.auryi;
 
-    this.actors.forEach(({ sprite, ghost, ring, slot }, heroId) => {
+    this.actors.forEach((actor, heroId) => {
+      // Mid-attack, the actor's transform is governed by setActionPose()'s
+      // own snapshot (see below), not this fixed-formation math — a
+      // resize firing between Gather and Recover would otherwise snap the
+      // acting hero back to standby scale/position out from under their
+      // own attack animation.
+      if (actor._snapshot) return;
+      const { sprite, ghost, ring, slot } = actor;
       const pos = SLOT_LAYOUT[slot];
       const scale = heightScaleFor(heroId, commonScale);
       sprite.setScale(scale);
@@ -192,6 +225,108 @@ export default class PartyFormationView {
         ease: 'Back.easeOut',
         onComplete: () => { sprite.setPosition(homeX, sprite.y); resolve(); }
       });
+    });
+  }
+
+  // FAI-BATTLE-PRESENTATION-03: whether this hero's real attack pose set
+  // loaded successfully — PartyBattleScene checks this before choosing
+  // between setActionPose() (real motion) and the older attackGatherPulse()
+  // + attackLunge() still-image tween pair (explicit fallback only).
+  hasActionPoses(heroId) {
+    const actor = this.actors.get(heroId);
+    return !!(actor && actor.poseTex);
+  }
+
+  // Swaps the acting hero through their real BattleConfig pose set —
+  // 'step' | 'gather' | 'release' | 'recover' | 'idle' — the same five
+  // poses HeroPoseView.js already uses in the 1v1 battle, reusing its own
+  // proven conventions: one scale for the whole pose set (derived from
+  // the idle frame, calibrated here to match this actor's current
+  // on-screen standby height rather than a screen fraction, so the
+  // swap-in doesn't visibly jump size), origin (0.5, 1) since these
+  // assets are authored with feet at the exact canvas bottom, and a
+  // ghost-layer crossfade so the outgoing frame never goes fully
+  // transparent mid-blend (see CLAUDE.md's "crossfading two stacked
+  // sprites" trap). The formation's own three fixed slots/positions are
+  // untouched — only the acting hero's own sprite ever changes here.
+  //
+  // 'idle' restores the actor's standby art (the locked JRPG master used
+  // the rest of the time) and is the action-sequence's own exit —
+  // matching ANIMATION_EVENT_MARKERS.md's actionEnd.
+  setActionPose(heroId, pose) {
+    const actor = this.actors.get(heroId);
+    if (!actor || !actor.poseTex) return false;
+    const { sprite, hero } = actor;
+
+    if (pose === 'idle') {
+      if (!actor._snapshot) return true; // never entered an action pose — nothing to restore
+      const snap = actor._snapshot;
+      this._crossfade(actor, actor.standbyTex, false, snap.originY, snap);
+      actor._snapshot = null;
+      actor._poseScale = null;
+      return true;
+    }
+
+    const texKey = actor.poseTex[pose];
+    if (!texKey) return false;
+
+    if (!actor._snapshot) {
+      // Captured once, from the standby art still on screen, before the
+      // first pose swap — every subsequent beat in this action (gather/
+      // release/recover) reuses this same calibration and home position,
+      // exactly like HeroPoseView's "one scale for the whole pose set".
+      actor._snapshot = {
+        x: sprite.x, y: sprite.y,
+        scaleX: sprite.scaleX, scaleY: sprite.scaleY,
+        originY: sprite.originY
+      };
+      const idleTex = this.scene.textures.get(actor.poseTex.idle);
+      const idleImg = idleTex && idleTex.getSourceImage();
+      const mul = hero.scaleMul || 1;
+      actor._poseScale = (idleImg && idleImg.height)
+        ? (sprite.displayHeight / idleImg.height) * mul
+        : sprite.scaleX;
+    }
+
+    const flip = !!(hero.flip && hero.flip[pose]);
+    // A small forward translation on Release only — supporting the real
+    // pose art, never substituting for it (ANIMATION_INTEGRATION_
+    // DIRECTIVE.md's Fallback section draws this line explicitly).
+    const nudge = pose === 'release' ? 18 : 0;
+    this._crossfade(actor, texKey, flip, 1, {
+      x: actor._snapshot.x + nudge, y: actor._snapshot.y,
+      scaleX: actor._poseScale, scaleY: actor._poseScale
+    });
+    return true;
+  }
+
+  // Shared by every setActionPose() transition, including the idle
+  // restore. Always eases position (even zero-distance) rather than
+  // snapping, so Release's nudge and Recover's return never pop — PriZim's
+  // own "no pop entering/leaving attack" requirement.
+  _crossfade(actor, texKey, flipX, originY, transform) {
+    const { sprite, ghost } = actor;
+    this.scene.tweens.killTweensOf(sprite);
+    this.scene.tweens.killTweensOf(ghost);
+    if (sprite.texture.key !== texKey) {
+      // Ghost holds the outgoing frame fully opaque behind the incoming
+      // one — fading both layers at once (this project's own documented
+      // trap) leaves a window where the character is see-through.
+      ghost.setTexture(sprite.texture.key)
+        .setOrigin(sprite.originX, sprite.originY)
+        .setPosition(sprite.x, sprite.y)
+        .setScale(sprite.scaleX, sprite.scaleY)
+        .setFlipX(sprite.flipX)
+        .setAlpha(1);
+      sprite.setTexture(texKey).setAlpha(0);
+    }
+    sprite.setOrigin(0.5, originY).setFlipX(flipX).setScale(transform.scaleX, transform.scaleY);
+    this.scene.tweens.add({
+      targets: sprite,
+      x: transform.x, y: transform.y, alpha: 1,
+      duration: 130,
+      ease: 'Sine.easeInOut',
+      onComplete: () => { sprite.setAlpha(1); ghost.setAlpha(0); }
     });
   }
 

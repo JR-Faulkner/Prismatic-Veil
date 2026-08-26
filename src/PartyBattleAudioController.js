@@ -13,7 +13,7 @@
 // own preload only to prove the music lifecycle — load/fade-in/loop/
 // fade-out — not chosen as final BGM). Per DO_NOT_DO.md, this file does
 // not compose or select final music/SFX.
-import { AUDIO_EVENT_MAP, MUSIC_ASSET } from './PartyBattleAudioConfig.js';
+import { AUDIO_EVENT_MAP, AUDIO_LAYER_MAP, MUSIC_ASSET } from './PartyBattleAudioConfig.js?v=2';
 import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=42';
 
 const PREFS_KEY = 'pv_party_battle_audio_prefs_v1';
@@ -143,6 +143,32 @@ export default class PartyBattleAudioController {
     };
     if (this.scene.sound.locked) this.scene.sound.once('unlocked', fire);
     else fire();
+
+    // FAI-BATTLE-PRESENTATION-03 (DYNAMIC_AUDIO_DIRECTION.md): a second,
+    // already-owned cue layered underneath the primary one — runtime
+    // layering, never a new file. Only exact `heroEvent:heroId` keys carry
+    // a layer entry (never the bare event name), so uiConfirm/uiReject/
+    // victory etc. are untouched.
+    const layers = AUDIO_LAYER_MAP[eventName];
+    if (layers) layers.forEach(layer => this._playLayer(layer, def.bus));
+  }
+
+  _playLayer(layer, bus) {
+    if (!this.scene.cache.audio.exists(layer.key)) return;
+    const fire = () => {
+      const sound = this.scene.sound.add(layer.key, {
+        volume: this._effectiveVolume(bus, layer.volumeMul != null ? layer.volumeMul : 1),
+        rate: layer.rate || 1
+      });
+      sound.play();
+      sound.once('complete', () => sound.destroy());
+    };
+    const start = () => {
+      if (layer.delayMs) this.scene.time.delayedCall(layer.delayMs, fire);
+      else fire();
+    };
+    if (this.scene.sound.locked) this.scene.sound.once('unlocked', start);
+    else start();
   }
 
   // --- IMPLEMENT_NOW.md's event vocabulary, used verbatim -----------------
