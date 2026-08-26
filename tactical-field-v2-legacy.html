@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Prismatic Veil — Tactical Field v2 Legacy</title>
+<meta name="theme-color" content="#07060f">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}html,body{width:100%;height:100%;height:100dvh;overflow:hidden;background:#07060f;touch-action:none;user-select:none;-webkit-user-select:none}#game-container{width:100vw;height:100vh;height:100dvh}canvas{display:block}#loading{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;white-space:pre-wrap;text-align:center;color:#f7e8b6;font-family:Georgia,serif;background:radial-gradient(circle at 50% 30%,#24124b 0%,#07060f 70%);line-height:1.45}
+</style>
+<script src="./phaser.min.js"></script>
+</head>
+<body>
+<div id="loading">✦ Loading Legacy Tactical Field v2 ✦</div>
+<div id="game-container"></div>
+<script type="module">
+import TitleScene from './src/tactical/TitleScene.js?v=7';
+import IntroCrawlScene from './src/tactical/IntroCrawlScene.js?v=3';
+import TacticalScene from './src/tactical/IntegratedTacticalScene.js?v=7';
+import VeilBattleScene from './src/IntegratedVeilBattleScene.js?v=2';
+const boot=document.getElementById('loading');
+function fail(error){console.error(error);boot.style.display='flex';boot.textContent='Boot Error\n\n'+(error?.stack||error?.message||String(error))}
+window.addEventListener('error',e=>fail(e.error||e.message));
+window.addEventListener('unhandledrejection',e=>fail(e.reason||e));
+if(!window.Phaser){fail('Phaser did not load.')}else{
+(function(){const dpr=Math.min(window.devicePixelRatio||1,3);const orig=Phaser.GameObjects.GameObjectFactory.prototype.text;Phaser.GameObjects.GameObjectFactory.prototype.text=function(x,y,text,style){style=style||{};if(style.resolution===undefined)style.resolution=dpr;return orig.call(this,x,y,text,style)}})();
+class HarnessScene extends TacticalScene{create(){boot.style.display='none';super.create()}}
+try{new Phaser.Game({type:Phaser.AUTO,parent:'game-container',width:800,height:600,backgroundColor:'#07060f',scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},input:{activePointers:2},scene:[TitleScene,IntroCrawlScene,HarnessScene,VeilBattleScene]})}catch(error){fail(error)}
+}
+</script>
+</body>
+</html>
