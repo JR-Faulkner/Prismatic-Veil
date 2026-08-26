@@ -1,0 +1,62 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#070817"><title>The Prismatic Veil · Hybrid Battle</title>
+<style>
+:root{--paper:#efe1bd;--paper2:#fff3d3;--gold:#b99148;--ink:#241a11;--night:#070817;--violet:#8d4dff;--vh:1vh;--vw:1vw}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--night);font-family:Georgia,serif}
+#stage{position:fixed;inset:0;background:radial-gradient(circle at 70% 55%,#35165b55,transparent 28%),linear-gradient(#071126,#120c26);overflow:hidden}
+#stage canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important}
+.hud{position:absolute;inset:0;z-index:10;pointer-events:none;color:var(--ink)}
+.ui{pointer-events:auto}.paper{background:linear-gradient(145deg,var(--paper2),#ddc99a);border:1px solid #8d6d34;border-radius:9px;box-shadow:inset 0 0 0 2px #fff4d855,0 8px 20px #0005}
+.night{background:linear-gradient(145deg,#0e1028f5,#21162ef4);border:1px solid #9c7441;color:#f6e7bf}
+#turns{position:absolute;left:max(12px,1.3vw);top:max(9px,1.7vh);color:#f4e8ca}.ttl{font-size:clamp(12px,2.6vh,20px);letter-spacing:.05em}.chips{display:flex;gap:8px;margin-top:8px}
+.chip{width:clamp(31px,7vh,44px);aspect-ratio:1;transform:rotate(45deg);display:grid;place-items:center;border:1px solid #d7b66c;background:#181528;box-shadow:0 4px 12px #0008}.chip span{transform:rotate(-45deg);font:bold 12px system-ui;color:#f4dfae}.chip.on{box-shadow:0 0 0 1px #fff8,0 0 15px #8d4dff}
+#enemy{position:absolute;right:max(12px,1.3vw);top:max(9px,1.7vh);width:clamp(250px,25vw,410px);padding:10px 14px}.row{display:flex;justify-content:space-between;align-items:baseline}.bar{height:7px;background:#3a2d2a55;border-radius:20px;overflow:hidden}.bar i{display:block;height:100%;background:#d85063}
+#commands{position:absolute;left:max(12px,1.3vw);bottom:max(12px,4.5vh);width:clamp(128px,13vw,205px);overflow:hidden}
+.cmd{width:100%;height:clamp(43px,9.5vh,61px);border:0;border-bottom:1px solid #9e7b4555;background:transparent;text-align:left;padding:0 18px;color:#2a2117;font:clamp(13px,2.6vh,19px) Georgia}.cmd.sel{box-shadow:inset 0 0 0 2px #9c5eff,0 0 15px #8d4dff;background:#f7e8c8}
+#party{position:absolute;left:22%;bottom:max(12px,3.8vh);width:42%;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.hero{height:clamp(92px,21vh,135px);padding:6px;display:grid;grid-template-columns:38px 1fr;grid-template-rows:21px 1fr;gap:4px 6px;overflow:hidden}.hero.on{box-shadow:0 0 0 2px #fff8,0 0 17px #9f62ff}
+.hname{grid-column:1/-1;padding:2px 6px;border-bottom:1px solid #9b723f66;background:#fff4d655;font-weight:bold;font-size:clamp(10px,2.25vh,14px);white-space:nowrap}
+.portrait{width:36px;height:36px;border-radius:7px;background:#17182d;color:#f1dcaa;display:grid;place-items:center;font:bold 20px Georgia;overflow:hidden}.portrait img{width:100%;height:100%;object-fit:cover}
+.stats{font-size:clamp(8px,1.85vh,11px);line-height:1.2;min-width:0}.stats b{font-size:1.08em}.m{height:5px;background:#554b3b44;border-radius:9px;overflow:hidden;margin:2px 0 4px}.m i{display:block;height:100%;background:#70b876}.m.rp i{background:#6d55c8}
+#drawer{position:absolute;right:max(12px,1.3vw);bottom:max(12px,3.8vh);width:clamp(330px,34vw,570px);min-height:clamp(126px,31vh,205px);padding:12px 14px;display:none}
+#drawer h2{margin:0;font-size:clamp(17px,3.8vh,27px);font-weight:500}.dgrid{display:grid;grid-template-columns:1fr 42%;gap:12px;margin-top:7px}.desc{font-size:clamp(9px,1.8vh,12px)}dl{margin:0;font-size:clamp(8px,1.7vh,11px)}dl div{display:flex;justify-content:space-between;border-bottom:1px solid #9b723f44;padding:2px 0}dd{margin:0;color:#7741a4}
+.actions{margin-top:7px;display:flex;gap:8px}.actions button{padding:8px 14px;border:1px solid #9b763d;border-radius:6px;background:#f1deb2;color:#302217;font:12px Georgia}
+#boot,#audio,#rotate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#070817e8;color:#f6e6ba;text-align:center;padding:24px}#boot[hidden],#audio[hidden],#rotate[hidden]{display:none}
+#boot pre{max-width:90vw;max-height:55vh;overflow:auto;background:#24131b;border:1px solid #8b5965;padding:12px;border-radius:8px;text-align:left;white-space:pre-wrap}
+#audio button{padding:13px 18px;border:1px solid #d3b46b;border-radius:8px;background:#f4dfae;color:#271b10;font:bold 12px Georgia}
+#home{position:fixed;left:10px;bottom:10px;z-index:40;color:#f4e3bb;background:#0b0d20cc;border:1px solid #b8904f;border-radius:6px;padding:6px 9px;text-decoration:none;font:bold 10px Georgia}
+@media(max-height:370px){#party{left:22%;width:42%}.hero{height:90px;grid-template-columns:34px 1fr}.portrait{width:32px;height:32px}#drawer{min-height:120px}}
+</style><script src="./phaser.min.js"></script></head>
+<body><div id="stage"></div><div class="hud">
+<section id="turns"><div class="ttl">TURN ORDER</div><div class="chips"><div class="chip"><span>P</span></div><div class="chip"><span>A</span></div><div class="chip"><span>K</span></div><div class="chip"><span>V</span></div></div></section>
+<section id="enemy" class="paper night"><div class="row"><strong id="ename">VEIL WRAITH</strong><span>LV 18</span></div><hr><div class="row"><span>HP</span><b><span id="ehp">30</span> / <span id="emax">30</span></b></div><div class="bar"><i id="ebar" style="width:100%"></i></div><small>WEAK ✦ LIGHT</small></section>
+<section id="commands" class="paper ui"><button class="cmd" data-c="attack">⚔ ATTACK</button><button class="cmd" data-c="resonart">✦ RESONART</button><button class="cmd" data-c="guard">◇ GUARD</button><button class="cmd" data-c="item">⚗ ITEM</button></section>
+<section id="party" class="ui">
+<div class="hero paper" data-h="prismel"><div class="hname">PRISMEL</div><div class="portrait">P</div><div class="stats"><div>HP <b class="hpv">0</b></div><div class="m"><i class="hpbar"></i></div><div>RP <b class="rpv">0</b></div><div class="m rp"><i class="rpbar"></i></div></div></div>
+<div class="hero paper" data-h="auryi"><div class="hname">AURYI</div><div class="portrait">A</div><div class="stats"><div>HP <b class="hpv">0</b></div><div class="m"><i class="hpbar"></i></div><div>RP <b class="rpv">0</b></div><div class="m rp"><i class="rpbar"></i></div></div></div>
+<div class="hero paper" data-h="kineza"><div class="hname">KINEZA</div><div class="portrait">K</div><div class="stats"><div>HP <b class="hpv">0</b></div><div class="m"><i class="hpbar"></i></div><div>RP <b class="rpv">0</b></div><div class="m rp"><i class="rpbar"></i></div></div></div>
+</section>
+<section id="drawer" class="paper ui"><h2 id="dtitle">ATTACK</h2><div class="dgrid"><div id="ddesc" class="desc"></div><dl id="dstats"></dl></div><div class="actions"><button id="use">USE</button><button id="back">BACK</button></div></section>
+</div><div id="boot">STARTING THE VEIL…</div><div id="audio" hidden><button id="audioBtn">✦ TAP TO ENABLE AUDIO ✦</button></div><div id="rotate" hidden>ROTATE TO LANDSCAPE</div><a id="home" href="./index.html">⌂ MENU</a>
+<script type="module">
+const ROOT=new URL('./',location.href).href,boot=document.querySelector('#boot'),stage=document.querySelector('#stage'),drawer=document.querySelector('#drawer');let scene=null,last='';
+function fail(e){boot.hidden=false;boot.innerHTML='<div><strong>LIVE BATTLE BOOT ERROR</strong><pre>'+String(e?.stack||e?.message||e)+'</pre></div>'}
+addEventListener('error',e=>fail(e.error||e.message));addEventListener('unhandledrejection',e=>fail(e.reason||e));
+function disable(n){if(!n)return;if(n.input&&n.disableInteractive)n.disableInteractive();for(const c of(n.list||n.getAll?.()||[]))disable(c)}
+function paint(s){const sig=JSON.stringify(s);if(sig===last)return;last=sig;
+document.querySelectorAll('.chip').forEach((c,i)=>c.classList.toggle('on',!!s.turnOrder[i]?.active));
+for(const h of s.party){const c=document.querySelector('[data-h="'+h.id+'"]');if(!c)continue;c.classList.toggle('on',h.active);c.querySelector('.hname').textContent=h.name;c.querySelector('.hpv').textContent=h.hp.toLocaleString();c.querySelector('.rpv').textContent=h.rp;c.querySelector('.hpbar').style.width=(h.hp/h.maxHp*100)+'%';c.querySelector('.rpbar').style.width=(h.rp/h.maxRp*100)+'%';const p=c.querySelector('.portrait');if(h.portrait&&!p.querySelector('img'))p.innerHTML='<img src="'+ROOT+'assets/ui/'+h.portrait+'.png" onerror="this.remove()">' }
+ename.textContent=s.enemy.name;ehp.textContent=s.enemy.hp;emax.textContent=s.enemy.maxHp;ebar.style.width=(s.enemy.hp/s.enemy.maxHp*100)+'%';
+document.querySelectorAll('.cmd').forEach(b=>{b.disabled=s.lock;b.classList.toggle('sel',b.dataset.c===s.selected)});
+if(!s.drawer)drawer.style.display='none';else{drawer.style.display='block';dtitle.textContent=s.drawer.title;ddesc.textContent=s.drawer.description;dstats.innerHTML=s.drawer.stats.map(x=>'<div><dt>'+x[0]+'</dt><dd>'+x[1]+'</dd></div>').join('')}
+audio.hidden=!s.audioLocked}
+function snap(x,cfg){const a=x.activeHeroId||(x.turnOrder?.[x.turnIndex]==='enemy'?'enemy':null),h=x._activeHero?.()||null,d=x._drawerOpen?.toLowerCase(),out=x._netOutcome||(x.enemy?.hp<=0?'victory':null);let dr=null;
+if(d&&h){if(d==='attack'){const q=cfg.projectedDamage(h,'Attack');dr={title:'ATTACK',description:'A basic strike. Free and always available.',stats:[['TARGET','1 ENEMY'],['DAMAGE',q.low+'–'+q.high],['HIT',Math.round(cfg.hitChanceFor('Attack')*100)+'%']]}}else if(d==='resonart'){const q=cfg.projectedDamage(h,'Resonart');dr={title:(h.attack?.name||'RESONART').toUpperCase(),description:h.attack?.flavor||'A signature technique.',stats:[['RP',cfg.RESONART_RP_COST],['TARGET','1 ENEMY'],['DAMAGE',q.low+'–'+q.high],['HIT',Math.round(cfg.hitChanceFor('Resonart')*100)+'%']]}}else if(d==='guard')dr={title:'GUARD',description:h.name+' braces for the next attack.',stats:[['TARGET','SELF'],['GUARD','50%']]};else{const it=cfg.ITEM_DEFS[0];dr={title:it.name.toUpperCase(),description:'Restores '+it.heal+' HP to '+h.name+'.',stats:[['TARGET','SELF'],['HEAL',it.heal+' HP']]}}}
+return{turnOrder:(x.turnOrder||[]).map(id=>({active:id===a})),party:(x.party||[]).map(v=>({id:v.id,name:v.name.toUpperCase(),hp:Math.max(0,v.currentHp),maxHp:v.maxHp,rp:Math.max(0,v.currentRp),maxRp:v.maxRp,active:v.id===x.activeHeroId,portrait:v.portrait})),enemy:{name:(x.enemy?.name||'ENEMY').toUpperCase(),hp:Math.max(0,x.enemy?.hp||0),maxHp:x.enemy?.maxHp||1},selected:d||null,drawer:dr,lock:!!x._turnLock||a==='enemy'||!!out,audioLocked:!!x.audio?.isLocked?.()}}
+try{if(!window.Phaser)throw Error('Phaser failed to load');const[{default:Base},cfg]=await Promise.all([import('./src/PartyBattleScene.js?v=h27-2'),import('./src/PartyBattleConfig.js?v=h27-2')]);
+class Hybrid extends Base{preload(){this.load.setBaseURL(ROOT);super.preload()}create(){super.create();if(this.uiLayer){this.uiLayer.setVisible(false);disable(this.uiLayer)}scene=this;boot.hidden=true;this.pub(true)}update(){this.pub(false)}pub(f=false){const s=snap(this,cfg),q=JSON.stringify(s);if(!f&&q===this._q)return;this._q=q;paint(s)}}
+window.__pvHybridGame=new Phaser.Game({type:Phaser.AUTO,parent:'stage',width:800,height:600,backgroundColor:'#07060f',scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[Hybrid]});
+document.querySelectorAll('.cmd').forEach(b=>b.onclick=()=>{if(!scene||scene._turnLock)return;scene._onCommand({attack:'Attack',resonart:'Resonart',guard:'Guard',item:'Item'}[b.dataset.c]);scene.pub(true)});
+use.onclick=()=>{if(scene&&scene._drawerOpen&&!scene._turnLock){scene._confirmDrawer();scene.pub(true)}};back.onclick=()=>{if(scene?._drawerOpen){scene._closeDrawer();scene.pub(true)}};audioBtn.onclick=()=>{if(!scene)return;const done=()=>{scene._dismissAudioGate?.();scene.pub(true)};scene.audio?.onUnlocked?.(done);scene.sound?.unlock?.();scene.sound?.context?.resume?.().then(done).catch(()=>{})};
+const orient=()=>rotate.hidden=innerWidth>=innerHeight;orient();addEventListener('resize',orient)}catch(e){fail(e)}
+</script></body></html>
