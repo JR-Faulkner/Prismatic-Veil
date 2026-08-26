@@ -15,13 +15,13 @@
 import { HEROES } from './BattleConfig.js?v=44';
 import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=40';
 import { createEnemyView } from './EnemyViewFactory.js?v=40';
-import PartyFormationView from './PartyFormationView.js?v=6';
+import PartyFormationView from './PartyFormationView.js?v=7';
 import {
   partyRoster, BASE_COMMANDS, RESONART_RP_COST, ITEM_DEFS,
   PARTY_ASSET_LOCK, projectedDamage, hitChanceFor
 } from './PartyBattleConfig.js?v=3';
 import { GUI_TEXTURES, NINESLICE_INSETS, preloadGuiKit } from './PartyBattleGuiKit.js';
-import PartyBattleAudioController from './PartyBattleAudioController.js';
+import PartyBattleAudioController from './PartyBattleAudioController.js?v=2';
 
 const ENEMY_DEFAULT = Object.freeze({
   id: 'wraith', viewId: 'wraith', name: 'Veil Wraith',
@@ -30,6 +30,17 @@ const ENEMY_DEFAULT = Object.freeze({
 });
 
 const COMMAND_RAIL_W = 150;
+
+// FAI-BATTLE-PRESENTATION-03: mirrors BattleController.js's own
+// POSE_TIMING beats (Idle -> Step -> Gather -> Hold -> Release -> Impact
+// hold -> Recover -> Idle) as a plain data table, not an import of that
+// class — BattleController is 1v1-scene-specific machinery (camera
+// hit-stop, reticle, dialogue queue) this scene doesn't have and
+// HARD_LOCKS.md says not to pull in. A hero's own `attackTiming`
+// (BattleConfig.js) merges over these per-attack, same as playAttackCinematic().
+const ACTION_POSE_TIMING = Object.freeze({
+  step: 220, gather: 450, hold: 120, release: 160, holdImpact: 80, recover: 260
+});
 
 const PALETTE = Object.freeze({
   paper: 0x0d1230, ink: 0xf4e9c9, gold: 0xd8b46a, goldBright: 0xffe8a0,
@@ -53,6 +64,21 @@ export default class PartyBattleScene extends Phaser.Scene {
     });
     Object.values(HEROES).forEach(hero => {
       this.load.image(hero.portrait, `./assets/ui/${hero.portrait}.png`);
+    });
+    // FAI-BATTLE-PRESENTATION-03: the same real attack pose set the 1v1
+    // battle already loads (VeilBattleScene.js's own preload loop, mirrored
+    // here) — this is a separate Phaser.Game/cache from that scene, so it
+    // needs its own load even though the textures/keys are identical.
+    // PartyFormationView.create() checks scene.textures.exists() per pose
+    // and falls back to the still-image tween path for any hero whose set
+    // doesn't fully load, so a partial/failed load degrades, not crashes.
+    Object.values(HEROES).forEach(hero => {
+      const seen = new Set();
+      Object.values(hero.poses || {}).forEach(tex => {
+        if (seen.has(tex)) return;
+        seen.add(tex);
+        this.load.image(tex, `${hero.posePath}${tex}.png`);
+      });
     });
     Object.values(WRAITH_TEXTURES).forEach(tex => {
       this.load.image(tex, `./assets/enemy/veil_wraith/${tex}.png`);
@@ -136,6 +162,10 @@ export default class PartyBattleScene extends Phaser.Scene {
     if (Array.isArray(obj)) obj.forEach(o => this.world.add(o));
     else this.world.add(obj);
     return obj;
+  }
+
+  _wait(ms) {
+    return new Promise(resolve => this.time.delayedCall(ms, resolve));
   }
 
   uiAdd(obj) {
@@ -757,14 +787,75 @@ export default class PartyBattleScene extends Phaser.Scene {
     const { low, high } = projectedDamage(hero, command);
     const hitRoll = Math.random() < hitChanceFor(command);
 
-    // FAI-AUDIO-02 (ATTACK_AUDIO_TIMING.md): Gather and Release used to
-    // fire back-to-back in the same tick — "collapses the action into one
-    // sonic blob." Gather now attaches to a real anticipation beat
-    // (attackGatherPulse — a small scale pulse, the character visibly
-    // "charging"), Release fires only once that beat completes and the
-    // lunge itself begins ("the attack actually leaves the character"),
-    // Impact stays exactly where it already was: the same frame damage
-    // applies and the hit reaction fires, never at button-press time.
+    // FAI-BATTLE-PRESENTATION-03: real per-hero attack motion (Kineza's
+    // Coil->Strike, Prismel's Gather->Release, Auryi's OrbGather->
+    // VeilPulse — BattleConfig.js's own approved 1v1 pose set) replaces
+    // the still-image scale-pulse+lunge substitute wherever that hero's
+    // poses actually loaded. ANIMATION_INTEGRATION_DIRECTIVE.md's own
+    // Fallback clause: if they didn't, this reports it once (not on every
+    // attack) and drops back to the FAI-AUDIO-02 tween pair rather than
+    // faking completion.
+    const useRealPoses = this.formation.hasActionPoses(hero.id);
+
+    if (useRealPoses) {
+      const timing = { ...ACTION_POSE_TIMING, ...(hero.attackTiming || {}) };
+
+      // actionStart / Step — the ready/anticipation beat.
+      this.formation.setActionPose(hero.id, 'step');
+      await this._wait(timing.step);
+
+      // Gather — coil / focus / orb-gather. Audio fires the same beat the
+      // pose visibly begins preparing, per ANIMATION_EVENT_MARKERS.md.
+      this.audio.attackGather(hero.id);
+      this.formation.setActionPose(hero.id, 'gather');
+      await this._wait(timing.gather + timing.hold);
+
+      // Release — the attack visibly commits (strike/prismatic release/
+      // veil pulse leaves the hero).
+      this.audio.attackRelease(hero.id);
+      this.formation.setActionPose(hero.id, 'release');
+      await this._wait(timing.release);
+
+      if (!hitRoll) {
+        this._setBanner(`${hero.name} uses ${command === 'Resonart' ? hero.attack.name : 'Attack'} — missed!`);
+        this.formation.setActionPose(hero.id, 'recover');
+        await this._wait(timing.recover);
+        this.formation.setActionPose(hero.id, 'idle');
+        this._turnLock = false;
+        this._endHeroTurn();
+        return;
+      }
+
+      // Impact — same beat as damage applying and the enemy's hit
+      // reaction, held briefly on the Release pose (no separate impact
+      // art exists for any hero, matching how the 1v1 battle's own
+      // playAttackCinematic() does this).
+      await this._wait(timing.holdImpact);
+      const dmg = Phaser.Math.Between(low, high);
+      this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
+      this._updateTargetCard();
+      this.enemyView.hit();
+      this._floatText(`-${dmg}`, '#FFD8D8');
+      this._setBanner(`${hero.name} uses ${command === 'Resonart' ? hero.attack.name : 'Attack'} for ${dmg} damage!`);
+      this.audio.attackImpact(hero.id);
+      this.audio.enemyHit();
+
+      if (this.enemy.hp <= 0) {
+        this.enemyView.die();
+        this.audio.enemyDefeat();
+      }
+
+      // Recover — settle/recompose, then a clean return to standby.
+      this.formation.setActionPose(hero.id, 'recover');
+      await this._wait(timing.recover);
+      this.formation.setActionPose(hero.id, 'idle');
+
+      this._turnLock = false;
+      this._endHeroTurn();
+      return;
+    }
+
+    // --- Fallback: still-image scale-pulse + lunge (FAI-AUDIO-02) -----
     this.audio.attackGather(hero.id);
     await this.formation.attackGatherPulse(hero.id);
     this.audio.attackRelease(hero.id);
@@ -783,8 +874,6 @@ export default class PartyBattleScene extends Phaser.Scene {
     this.enemyView.hit();
     this._floatText(`-${dmg}`, '#FFD8D8');
     this._setBanner(`${hero.name} uses ${command === 'Resonart' ? hero.attack.name : 'Attack'} for ${dmg} damage!`);
-    // Impact fires exactly here — the same frame damage actually applies
-    // and the hit animation plays, not at button-press time.
     this.audio.attackImpact(hero.id);
     this.audio.enemyHit();
 
