@@ -13,7 +13,7 @@
 // own preload only to prove the music lifecycle — load/fade-in/loop/
 // fade-out — not chosen as final BGM). Per DO_NOT_DO.md, this file does
 // not compose or select final music/SFX.
-import { AUDIO_EVENT_MAP, AUDIO_LAYER_MAP, MUSIC_ASSET } from './PartyBattleAudioConfig.js?v=2';
+import { AUDIO_EVENT_MAP, AUDIO_LAYER_MAP, MUSIC_ASSET } from './PartyBattleAudioConfig.js?v=3';
 import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=42';
 
 const PREFS_KEY = 'pv_party_battle_audio_prefs_v1';

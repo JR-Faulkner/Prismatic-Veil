@@ -6,7 +6,7 @@
 // hits the "fading both layers at once" trap documented in CLAUDE.md) and
 // registers through scene.worldAdd() — never scene.uiLayer — so the
 // battle camera can push in without dragging the party off their marks.
-import { PARTY_SLOTS, PARTY_ASSET_LOCK, heightScaleFor } from './PartyBattleConfig.js?v=3';
+import { PARTY_SLOTS, PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, heightScaleFor } from './PartyBattleConfig.js?v=4';
 
 // Formation x-fractions (of screen width) and relative depth-in-frame —
 // back is furthest from the enemy/camera, front is nearest. Landscape and
@@ -93,10 +93,35 @@ export default class PartyFormationView {
         if (allLoaded) poseTex = map;
       }
 
+      // FAI-BATTLE-PRESENTATION-04 (ANIMATION_AUTHORITY_CORRECTION.md):
+      // Kineza's real current-authority Basic Attack — a genuine 6-frame
+      // sprite sheet, not a pose crossfade. A second, hidden Sprite (not
+      // Image, since only Sprite can play a Phaser animation) sits over
+      // the same slot; playAttackSheet() below swaps visibility with the
+      // standby Image for the attack's duration, never both at once, so
+      // this sidesteps the alpha-crossfade trap entirely (a hard cut
+      // between two always-fully-opaque layers, not a fade).
+      let attackSprite = null;
+      let attackSheetConfig = null;
+      const sheetCfg = HERO_ATTACK_SHEETS[heroId];
+      if (sheetCfg && this.scene.textures.exists(sheetCfg.key)) {
+        attackSprite = this.scene.add.sprite(0, 0, sheetCfg.key, 0).setVisible(false);
+        this.scene.worldAdd(attackSprite);
+        attackSprite.setDepth(SLOT_LAYOUT[slot].depth);
+        const animKey = `${sheetCfg.key}_play`;
+        if (!this.scene.anims.exists(animKey)) {
+          const frames = this.scene.anims.generateFrameNumbers(sheetCfg.key, { start: 0, end: sheetCfg.frameCount - 1 });
+          frames.forEach((f, i) => { f.duration = sheetCfg.frameDurations[i] || 150; });
+          this.scene.anims.create({ key: animKey, frames, repeat: 0 });
+        }
+        attackSheetConfig = sheetCfg;
+      }
+
       this.actors.set(heroId, {
         sprite, ghost, ring, slot, hero, poseTex,
         standbyTex: texKey, standbyOriginY: originY,
-        _snapshot: null, _poseScale: null
+        _snapshot: null, _poseScale: null,
+        attackSprite, attackSheetConfig
       });
     });
 
@@ -228,6 +253,59 @@ export default class PartyFormationView {
     });
   }
 
+  // FAI-BATTLE-PRESENTATION-04: whether this hero has a real current-
+  // authority sprite-sheet attack (currently only Kineza) — checked
+  // FIRST, ahead of hasActionPoses(), since a sheet outranks a pose-swap
+  // when both exist.
+  hasAttackSheet(heroId) {
+    const actor = this.actors.get(heroId);
+    return !!(actor && actor.attackSprite);
+  }
+
+  // Plays the hero's real Basic Attack sprite sheet once, hiding the
+  // standby Image for the duration (a hard cut between two always-opaque
+  // layers, never a fade) and restoring it on completion. `onFrame(i)` is
+  // called once per Phaser 'animationupdate' with the 0-based frame index
+  // actually on screen, so the caller can fire audio/damage exactly when
+  // that frame becomes visible — "synchronize attack event markers to
+  // actual current frames," not a fixed-timing guess. Scale is calibrated
+  // the same way setActionPose() calibrates pose textures — matched to
+  // this actor's own current standby height, not an absolute constant —
+  // but anchored on the sheet's own registered baselinePx fraction
+  // (its own asset convention, distinct from the pose set's origin=1
+  // convention) rather than reusing that unrelated number.
+  playAttackSheet(heroId, onFrame) {
+    const actor = this.actors.get(heroId);
+    if (!actor || !actor.attackSprite) return Promise.resolve();
+    const { sprite, attackSprite, hero } = actor;
+    const cfg = actor.attackSheetConfig;
+    const originY = cfg.baselinePx / cfg.frameHeight;
+    const scale = (sprite.displayHeight / cfg.frameHeight) * (hero.scaleMul || 1);
+
+    this.scene.tweens.killTweensOf(attackSprite);
+    attackSprite
+      .setOrigin(0.5, originY)
+      .setScale(scale)
+      .setPosition(sprite.x, sprite.y)
+      .setFlipX(sprite.flipX)
+      .setAlpha(1)
+      .setVisible(true);
+    sprite.setVisible(false);
+
+    return new Promise(resolve => {
+      const animKey = `${cfg.key}_play`;
+      const onUpdate = (_anim, frame) => { if (onFrame) onFrame(frame.index - 1); };
+      attackSprite.on('animationupdate', onUpdate);
+      attackSprite.once('animationcomplete', () => {
+        attackSprite.off('animationupdate', onUpdate);
+        attackSprite.setVisible(false);
+        sprite.setVisible(true);
+        resolve();
+      });
+      attackSprite.play(animKey);
+    });
+  }
+
   // FAI-BATTLE-PRESENTATION-03: whether this hero's real attack pose set
   // loaded successfully — PartyBattleScene checks this before choosing
   // between setActionPose() (real motion) and the older attackGatherPulse()
@@ -291,8 +369,13 @@ export default class PartyFormationView {
     const flip = !!(hero.flip && hero.flip[pose]);
     // A small forward translation on Release only — supporting the real
     // pose art, never substituting for it (ANIMATION_INTEGRATION_
-    // DIRECTIVE.md's Fallback section draws this line explicitly).
-    const nudge = pose === 'release' ? 18 : 0;
+    // DIRECTIVE.md's Fallback section draws this line explicitly). Not
+    // for Prismel: ANIMATION_AUTHORITY_CORRECTION.md asks specifically
+    // for "minimal restrained motion that does not visually impersonate a
+    // final current attack" from his fallback — no forward commitment,
+    // just the pose swap itself. Auryi's own correction note carries no
+    // such restraint, so hers is unchanged.
+    const nudge = (pose === 'release' && heroId !== 'prismel') ? 18 : 0;
     this._crossfade(actor, texKey, flip, 1, {
       x: actor._snapshot.x + nudge, y: actor._snapshot.y,
       scaleX: actor._poseScale, scaleY: actor._poseScale
