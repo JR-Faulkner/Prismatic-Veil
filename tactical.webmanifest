@@ -1,11 +1,12 @@
 {
   "name": "The Prismatic Veil",
   "short_name": "Prismatic Veil",
-  "start_url": "./tactical-field-v2.html",
+  "start_url": "./index.html?home=1",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#07060f",
-  "theme_color": "#07060f",
+  "orientation": "landscape",
+  "background_color": "#070817",
+  "theme_color": "#070817",
   "icons": [
     {
       "src": "./assets/ui/android_chrome_192.png",
