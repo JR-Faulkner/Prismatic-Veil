@@ -2,17 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>The Prismatic Veil — Tactical Field v2</title>
-<meta name="theme-color" content="#07060f">
-<!-- v0.5B App Icon handoff — this is the live game entry point, so it's
-     the one page that gets a Home Screen icon and manifest. The example
-     manifest's start_url ("./") would resolve to the repo root, which
-     GitHub Pages serves as index.html — the legacy wave-survival
-     prototype, not this game — so tactical.webmanifest overrides it to
-     point at this file explicitly. index.html and battle-v2.html are
-     untouched: the legacy prototype and the standalone BP dev harness
-     aren't "the live game site" this handoff is for. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>The Prismatic Veil</title>
+<meta name="theme-color" content="#070817">
 <link rel="apple-touch-icon" sizes="180x180" href="./assets/ui/apple_touch_icon_180.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./assets/ui/android_chrome_512.png">
 <link rel="icon" type="image/png" sizes="192x192" href="./assets/ui/android_chrome_192.png">
@@ -20,125 +12,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="The Prismatic Veil">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    width: 100%;
-    height: 100%;
-    height: 100dvh;
-    overflow: hidden;
-    background: #07060f;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  #game-container { width: 100vw; height: 100vh; height: 100dvh; }
-  canvas { display: block; }
-  #loading {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    white-space: pre-wrap;
-    text-align: center;
-    color: #f7e8b6;
-    font-family: Georgia, serif;
-    background: radial-gradient(circle at 50% 30%, #24124b 0%, #07060f 70%);
-    line-height: 1.45;
-  }
-</style>
-<script src="./phaser.min.js"></script>
+<meta http-equiv="refresh" content="0;url=./index.html?home=1">
+<style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#070817;color:#f6e6ba;font-family:Georgia,serif}body{display:grid;place-items:center;text-align:center;padding:24px}a{color:#e0bf72}</style>
+<script>location.replace('./index.html?home=1');</script>
 </head>
-<body>
-<div id="loading">✦ Loading Tactical Field v2 ✦</div>
-<div id="game-container"></div>
-
-<script type="module">
-  import TitleScene from './src/tactical/TitleScene.js?v=7';
-  import IntroCrawlScene from './src/tactical/IntroCrawlScene.js?v=3';
-  import TacticalScene from './src/tactical/IntegratedTacticalScene.js?v=7';
-  import VeilBattleScene from './src/IntegratedVeilBattleScene.js?v=2';
-
-  const boot = document.getElementById('loading');
-
-  function fail(error) {
-    console.error(error);
-    if (!boot) return;
-    boot.style.display = 'flex';
-    boot.textContent = 'Boot Error\n\n' + (
-      error && (error.stack || error.message)
-        ? (error.stack || error.message)
-        : String(error)
-    );
-  }
-
-  window.addEventListener('error', event => fail(event.error || event.message));
-  window.addEventListener('unhandledrejection', event => fail(event.reason || event));
-
-  if (!window.Phaser) {
-    fail('Phaser did not load. Make sure phaser.min.js is in the repository root.');
-  } else {
-    // Phaser.Scale.RESIZE ties the canvas's backing-store resolution 1:1
-    // to its CSS pixel size, with no devicePixelRatio awareness at all —
-    // confirmed directly (canvas.width stayed 390 at both DPR 1 and DPR 3
-    // in the same RESIZE-mode config). On any real phone (DPR 2-3, i.e.
-    // nearly all of them) the browser then upscales that low-res canvas
-    // to fill the physical screen, softening everything. A full fix
-    // (bigger backing store + matching camera zoom so world coordinates
-    // still map 1:1) touches TacticalCamera/BattleCamera's own zoom math
-    // and the getWorldPoint() input-coordinate conversion this project's
-    // already been bitten by once (see CLAUDE.md) — too much blast radius
-    // for a quick pass. Text objects are a safe, self-contained exception:
-    // each one rasterizes to its own off-screen bitmap independent of the
-    // main canvas, so a per-object `resolution` style genuinely sharpens
-    // it with no camera/coordinate risk. Patching the factory once here
-    // means every existing and future `add.text(...)` call gets this for
-    // free without touching every call site.
-    (function () {
-      const dpr = Math.min(window.devicePixelRatio || 1, 3);
-      const orig = Phaser.GameObjects.GameObjectFactory.prototype.text;
-      Phaser.GameObjects.GameObjectFactory.prototype.text = function (x, y, text, style) {
-        style = style || {};
-        if (style.resolution === undefined) style.resolution = dpr;
-        return orig.call(this, x, y, text, style);
-      };
-    })();
-
-    class HarnessScene extends TacticalScene {
-      create() {
-        if (boot) boot.style.display = 'none';
-        super.create();
-      }
-    }
-
-    // v0.4 Tactical <-> Battle Presentation bridge: both scenes live in
-    // one Phaser.Game now, so a linked ATTACK/RESONART can pause Tactical
-    // in place (state, camera, and all, untouched in memory) and launch
-    // the full VeilBattleScene on top, instead of restarting either scene
-    // or hand-rolling a state snapshot/restore. battle-v2.html remains a
-    // completely separate single-scene boot — standalone BP is
-    // unaffected by any of this.
-    try {
-      new Phaser.Game({
-        type: Phaser.AUTO,
-        parent: 'game-container',
-        width: 800,
-        height: 600,
-        backgroundColor: '#07060f',
-        scale: {
-          mode: Phaser.Scale.RESIZE,
-          autoCenter: Phaser.Scale.CENTER_BOTH
-        },
-        input: { activePointers: 2 },
-        scene: [TitleScene, IntroCrawlScene, HarnessScene, VeilBattleScene]
-      });
-    } catch (error) {
-      fail(error);
-    }
-  }
-</script>
-</body>
+<body><div>✦ Opening The Prismatic Veil ✦<br><br><a href="./index.html?home=1">Enter the Veil</a></div></body>
 </html>
