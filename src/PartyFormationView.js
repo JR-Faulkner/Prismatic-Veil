@@ -36,7 +36,7 @@ import { PARTY_SLOTS, PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, heightScaleFor } fro
 const SLOT_LAYOUT = Object.freeze({
   back: { xFrac: 0.30, yFrac: 0.60, depth: 10 },
   middle: { xFrac: 0.42, yFrac: 0.74, depth: 12 },
-  front: { xFrac: 0.54, yFrac: 0.90, depth: 14 }
+  front: { xFrac: 0.54, yFrac: 0.79, depth: 14 }
 });
 
 export default class PartyFormationView {
