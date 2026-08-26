@@ -15,13 +15,13 @@
 import { HEROES } from './BattleConfig.js?v=44';
 import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=40';
 import { createEnemyView } from './EnemyViewFactory.js?v=40';
-import PartyFormationView from './PartyFormationView.js?v=7';
+import PartyFormationView from './PartyFormationView.js?v=8';
 import {
   partyRoster, BASE_COMMANDS, RESONART_RP_COST, ITEM_DEFS,
-  PARTY_ASSET_LOCK, projectedDamage, hitChanceFor
-} from './PartyBattleConfig.js?v=3';
+  PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, projectedDamage, hitChanceFor
+} from './PartyBattleConfig.js?v=4';
 import { GUI_TEXTURES, NINESLICE_INSETS, preloadGuiKit } from './PartyBattleGuiKit.js';
-import PartyBattleAudioController from './PartyBattleAudioController.js?v=2';
+import PartyBattleAudioController from './PartyBattleAudioController.js?v=3';
 
 const ENEMY_DEFAULT = Object.freeze({
   id: 'wraith', viewId: 'wraith', name: 'Veil Wraith',
@@ -78,6 +78,15 @@ export default class PartyBattleScene extends Phaser.Scene {
         if (seen.has(tex)) return;
         seen.add(tex);
         this.load.image(tex, `${hero.posePath}${tex}.png`);
+      });
+    });
+    // FAI-BATTLE-PRESENTATION-04: real current-authority attack sheets
+    // (currently only Kineza) — a genuine sprite sheet, loaded alongside
+    // (not instead of) the legacy pose set above, since Auryi/Prismel
+    // still fall back to it per ANIMATION_AUTHORITY_CORRECTION.md.
+    Object.values(HERO_ATTACK_SHEETS).forEach(sheet => {
+      this.load.spritesheet(sheet.key, sheet.path, {
+        frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight
       });
     });
     Object.values(WRAITH_TEXTURES).forEach(tex => {
@@ -206,29 +215,54 @@ export default class PartyBattleScene extends Phaser.Scene {
     this._registerRelayout(layout);
   }
 
+  // FAI-BATTLE-PRESENTATION-04 (STORYBOOK_HUD_POLISH_DIRECTIVE.md): the
+  // flat navy rectangle + stroke read as "prototype/custom fallback," not
+  // Storybook-family — DAI's own words on the same card. Rebuilt on the
+  // same partyNormal parchment nineslice the hero cards already use (one
+  // card language across the whole HUD, not a second bespoke panel style
+  // for the enemy alone) with the diamond portrait frame already shipped
+  // in the GUI kit but never used anywhere — the enemy_card.png background
+  // asset itself stays excluded (baked "THREAT" text — see
+  // PartyBattleGuiKit.js's header), only the empty diamond frame is safe.
   _layoutTargetCard() {
     const c = this._targetCardContainer;
     c.removeAll(true);
-    const w = Math.round(Math.min(230, this.scale.width * 0.24));
-    const h = Math.round(Math.min(46, this.scale.height * 0.115));
-    const pad = Math.max(8, Math.round(w * 0.05));
+    const w = Math.round(Math.min(240, this.scale.width * 0.26));
+    const h = Math.round(Math.min(58, this.scale.height * 0.145));
+    const pad = Math.max(8, Math.round(h * 0.14));
 
-    const bg = this.add.rectangle(0, 0, w, h, PALETTE.panel, 0.92)
-      .setOrigin(0, 0).setStrokeStyle(1.4, PALETTE.gold, 0.8);
-    const name = this.add.text(pad, h * 0.14, this.enemy.name, {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: `${Math.max(12, Math.round(h * 0.32))}px`, color: '#FF8B9A'
+    const insN = NINESLICE_INSETS.partyNormal;
+    const bg = this.add.nineslice(
+      0, 0, GUI_TEXTURES.partyNormal.key, null, w, h,
+      insN.left, insN.right, insN.top, insN.bottom
+    ).setOrigin(0, 0);
+
+    const portraitD = Math.round(h * 0.72);
+    const diamond = this.add.image(pad + portraitD / 2, h / 2, GUI_TEXTURES.enemyDiamond.key).setDisplaySize(portraitD, portraitD);
+    const portrait = this.add.image(pad + portraitD / 2, h / 2, this.enemy.portrait).setDisplaySize(portraitD * 0.72, portraitD * 0.72);
+
+    const contentX = pad + portraitD + 10;
+    const nameFont = Math.max(12, Math.round(h * 0.24));
+    // Deep crimson on parchment — reads as "danger" while staying inside
+    // the same warm-ivory/gold card family the hero cards already use,
+    // rather than the old bright pink tuned for a dark navy background.
+    const name = this.add.text(contentX, h * 0.16, this.enemy.name, {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: `${nameFont}px`, color: '#7A1F1F',
+      stroke: '#F4E9C9', strokeThickness: Math.max(1, Math.round(nameFont * 0.08))
     });
-    const barW = w - pad * 2;
-    const barH = Math.max(8, Math.round(h * 0.24));
-    const barY = h - pad - barH;
-    const track = this.add.rectangle(pad, barY, barW, barH, PALETTE.enemyHpTrack, 0.95).setOrigin(0, 0);
-    const fill = this.add.rectangle(pad, barY, barW, barH, PALETTE.enemyHp, 1).setOrigin(0, 0);
-    const hpText = this.add.text(pad + barW / 2, barY + barH / 2, `${Math.max(0, this.enemy.hp)} / ${this.enemy.maxHp}`, {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: `${Math.max(9, Math.round(barH * 0.62))}px`, color: '#FFFFFF'
-    }).setOrigin(0.5);
-    c.add([bg, name, track, fill, hpText]);
 
-    this._targetCard = { container: c, fill, hpText, barW };
+    const barW = w - contentX - pad;
+    const barH = Math.max(9, Math.round(h * 0.2));
+    const barY = h * 0.58;
+    const shell = this.add.image(contentX, barY, GUI_TEXTURES.hpShell.key).setOrigin(0, 0).setDisplaySize(barW, barH);
+    const fill = this.add.rectangle(contentX + 2, barY + 2, barW - 4, barH - 4, PALETTE.enemyHp, 1).setOrigin(0, 0);
+    const hpText = this.add.text(contentX, barY + barH + 3, `${Math.max(0, this.enemy.hp)} / ${this.enemy.maxHp}`, {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: `${Math.max(9, Math.round(barH * 0.72))}px`, color: '#2A1E12',
+      stroke: '#F4E9C9', strokeThickness: 1
+    });
+    c.add([bg, diamond, portrait, name, shell, fill, hpText]);
+
+    this._targetCard = { container: c, fill, hpText, barW: barW - 4 };
     this._layoutTopLeft(c, 16, 16);
   }
 
@@ -355,9 +389,12 @@ export default class PartyBattleScene extends Phaser.Scene {
         insN.left, insN.right, insN.top, insN.bottom
       ).setOrigin(0, 0);
       // Active-state glow — see _highlightHeroCard's comment for why this
-      // is a stroke, not the active nineslice texture.
+      // is a stroke, not the active nineslice texture. Violet/prismatic,
+      // per STORYBOOK_HUD_POLISH_DIRECTIVE.md's palette rule ("violet /
+      // prismatic glow only for active/selected emphasis") — was a plain
+      // cyan stroke, outside that family entirely.
       const glow = this.add.rectangle(x - 2, -2, cardW + 4, cardH + 4, 0x000000, 0)
-        .setOrigin(0, 0).setStrokeStyle(2.4, 0x9fe0ff, 0.9).setVisible(false);
+        .setOrigin(0, 0).setStrokeStyle(2.6, 0xc98cff, 0.95).setVisible(false);
       const portrait = this.add.image(x + 12 + portraitD / 2, cardH / 2, hero.portrait).setDisplaySize(portraitD, portraitD);
       const barW = Math.max(50, cardW - contentX - 12);
       const name = this.add.text(x + contentX, nameY, hero.name, {
@@ -391,7 +428,10 @@ export default class PartyBattleScene extends Phaser.Scene {
       const guardBadge = this.add.image(x + cardW - 14, 12, GUI_TEXTURES.guardBadge.key)
         .setDisplaySize(20, 22).setVisible(false);
       c.add([bg, glow, portrait, name, hpShell, hpFill, rpShell, rpFill, hpText, guardBadge]);
-      this._heroCards[hero.id] = { bg, glow, hpFill, rpFill, hpText, guardBadge, barW: barW - 4, compact: cardW < 130 };
+      this._heroCards[hero.id] = {
+        bg, glow, portrait, name, hpShell, rpShell, hpFill, rpFill, hpText, guardBadge,
+        barW: barW - 4, compact: cardW < 130
+      };
     });
 
     // Landscape: strip shares the bottom row with the rail (which is a
@@ -422,8 +462,24 @@ export default class PartyBattleScene extends Phaser.Scene {
     card.hpText.setText(card.compact
       ? `${Math.max(0, hero.currentHp)}/${hero.maxHp}  ${hero.currentRp}/${hero.maxRp}`
       : `HP ${Math.max(0, hero.currentHp)}/${hero.maxHp}  RP ${hero.currentRp}/${hero.maxRp}`);
-    card.bg.setAlpha(hero.alive ? 1 : 0.4);
+    this._applyCardAlpha(heroId);
     card.guardBadge.setVisible(!!hero.guarding);
+  }
+
+  // Single source of truth for a card's alpha — dead beats inactive beats
+  // active, in that priority order. _updateHeroCard() (fires on HP/RP/
+  // death changes) and _highlightHeroCard() (fires on turn advance) both
+  // need to set this, and previously each wrote to card.bg.alpha
+  // independently — a dead hero's dimming could get silently overwritten
+  // the next time the turn indicator moved to someone else. One function,
+  // called from both.
+  _applyCardAlpha(heroId) {
+    const hero = this.party.find(h => h.id === heroId);
+    const card = this._heroCards[heroId];
+    if (!hero || !card) return;
+    const alpha = !hero.alive ? 0.4 : (heroId === this.activeHeroId ? 1 : 0.74);
+    [card.bg, card.portrait, card.name, card.hpShell, card.rpShell, card.hpFill, card.rpFill, card.hpText]
+      .forEach(obj => obj.setAlpha(alpha));
   }
 
   // FAI-UI-ASSET-01: party_card_active/normal are two distinct nineslice
@@ -439,9 +495,30 @@ export default class PartyBattleScene extends Phaser.Scene {
   // renders cleanly at the same compression. Every card stays on the
   // normal texture; "active" is a separate glow stroke instead of a
   // texture swap, sidestepping the broken asset rather than forcing it.
+  // FAI-BATTLE-PRESENTATION-04 (STORYBOOK_HUD_POLISH_DIRECTIVE.md):
+  // "selected hero should look 'page-open'/illuminated — inactive cards
+  // quieter, not dead." Previously every card sat at full alpha
+  // regardless of turn state, so "active" was only the thin glow border —
+  // easy to miss at a glance. Inactive cards now dim modestly (never to
+  // guardBadge-style "dead," just quieter) and the active glow gets a
+  // slow pulse instead of a static stroke, so it actually reads as "lit"
+  // rather than just "outlined."
   _highlightHeroCard(heroId) {
-    Object.entries(this._heroCards).forEach(([id, card]) => {
-      card.glow.setVisible(id === heroId);
+    // this.activeHeroId is set by _advanceTurn() just before this call for
+    // the hero path — _applyCardAlpha() reads it directly, so this only
+    // needs to (re)apply it per card and own the glow's visibility/pulse.
+    Object.keys(this._heroCards).forEach(id => {
+      this._applyCardAlpha(id);
+      const card = this._heroCards[id];
+      const active = id === heroId;
+      this.tweens.killTweensOf(card.glow);
+      card.glow.setVisible(active);
+      if (active) {
+        card.glow.setAlpha(1);
+        this.tweens.add({
+          targets: card.glow, alpha: 0.55, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+        });
+      }
     });
   }
 
@@ -516,27 +593,51 @@ export default class PartyBattleScene extends Phaser.Scene {
       0, 0, GUI_TEXTURES.resonartDrawer.key, null, 300, 170,
       insD.left, insD.right, insD.top, insD.bottom
     ).setOrigin(0, 0);
-    const dTitle = this.add.text(14, 10, '', {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '18px', color: '#4A2E7A'
+    const dTitle = this.add.text(16, 12, '', {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '19px', color: '#4A2E7A'
     });
-    const dDetail = this.add.text(14, 36, '', {
-      fontFamily: 'Georgia, serif', fontSize: '13px', color: '#4A3826', wordWrap: { width: 272 }
+    const dDetail = this.add.text(16, 40, '', {
+      fontFamily: 'Georgia, serif', fontSize: '13px', color: '#4A3826', wordWrap: { width: 268 }
     });
-    const dStats = this.add.text(14, 106, '', {
-      fontFamily: 'Georgia, serif', fontSize: '13px', color: '#2A1E12'
+    // FAI-BATTLE-PRESENTATION-04 (STORYBOOK_HUD_POLISH_DIRECTIVE.md):
+    // "ABILITY NAME / short effect sentence / RP COST - TARGET / DAMAGE
+    // RANGE  HIT % / Use-Back" — split into two lines (RP+Target, then
+    // Damage+Hit) instead of the old single damage/hit blob, per
+    // _onCommand()'s own formatting below. A thin gold rule under the
+    // title separates identity from the stat block, matching the
+    // "authored, not debug/raw" ask more than a denser text stack alone.
+    const dRule = this.add.rectangle(16, 34, 268, 1, PALETTE.gold, 0.55).setOrigin(0, 0);
+    const dStats = this.add.text(16, 100, '', {
+      fontFamily: 'Georgia, serif', fontSize: '13px', color: '#2A1E12', lineSpacing: 6
     });
-    const useBtn = this.add.rectangle(14, 138, 128, 26, 0x1a3a1e, 0.95)
-      .setOrigin(0, 0).setStrokeStyle(1.6, PALETTE.hp, 0.9).setInteractive({ useHandCursor: true });
-    const useText = this.add.text(14 + 64, 138 + 13, 'USE', {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '14px', color: '#D8FFD8'
+    const insU = NINESLICE_INSETS.cmdNormal;
+    const useBtn = this.add.nineslice(16, 138, GUI_TEXTURES.cmdNormal.key, null, 128, 30, insU.left, insU.right, insU.top, insU.bottom)
+      .setOrigin(0, 0).setInteractive({ useHandCursor: true });
+    const useText = this.add.text(16 + 64, 138 + 15, 'USE', {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '14px', color: '#2A1E12',
+      stroke: '#F4E9C9', strokeThickness: 1.5
     }).setOrigin(0.5);
-    const closeBtn = this.add.rectangle(158, 138, 128, 26, 0x3a1a1e, 0.95)
-      .setOrigin(0, 0).setStrokeStyle(1.6, 0xff8b8b, 0.9).setInteractive({ useHandCursor: true });
-    const closeText = this.add.text(158 + 64, 138 + 13, 'CLOSE', {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '14px', color: '#FFD8D8'
+    const closeBtn = this.add.nineslice(160, 138, GUI_TEXTURES.cmdNormal.key, null, 128, 30, insU.left, insU.right, insU.top, insU.bottom)
+      .setOrigin(0, 0).setInteractive({ useHandCursor: true });
+    const closeText = this.add.text(160 + 64, 138 + 15, 'BACK', {
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '14px', color: '#2A1E12',
+      stroke: '#F4E9C9', strokeThickness: 1.5
     }).setOrigin(0.5);
-    drawer.add([dBg, dTitle, dDetail, dStats, useBtn, useText, closeBtn, closeText]);
+    drawer.add([dBg, dTitle, dRule, dDetail, dStats, useBtn, useText, closeBtn, closeText]);
     this.uiAdd(drawer);
+    const insS = NINESLICE_INSETS.cmdSelected;
+    const setDrawerBtnState = (btn, state) => {
+      btn.setTexture(state === 'selected' ? GUI_TEXTURES.cmdSelected.key : GUI_TEXTURES.cmdNormal.key);
+      const ins = state === 'selected' ? insS : insU;
+      if (typeof btn.leftWidth === 'number') {
+        btn.leftWidth = ins.left; btn.rightWidth = ins.right;
+        btn.topHeight = ins.top; btn.bottomHeight = ins.bottom;
+      }
+    };
+    useBtn.on('pointerover', () => setDrawerBtnState(useBtn, 'selected'));
+    useBtn.on('pointerout', () => setDrawerBtnState(useBtn, 'normal'));
+    closeBtn.on('pointerover', () => setDrawerBtnState(closeBtn, 'selected'));
+    closeBtn.on('pointerout', () => setDrawerBtnState(closeBtn, 'normal'));
     useBtn.on('pointerdown', () => this._confirmDrawer());
     closeBtn.on('pointerdown', () => { this.audio.uiReject(); this._closeDrawer(); });
     this._drawer = { container: drawer, title: dTitle, detail: dDetail, stats: dStats };
@@ -580,8 +681,17 @@ export default class PartyBattleScene extends Phaser.Scene {
     this.uiAdd(frame);
     this._victoryFrame = frame;
 
+    // FAI-BATTLE-PRESENTATION-04: flat pale gold fill with no stroke or
+    // shadow read as "pale temporary text" against a busy battlefield
+    // (STORYBOOK_HUD_POLISH_DIRECTIVE.md's own words, aimed at Victory
+    // specifically) — a dark ink stroke + shadow gives it real contrast
+    // and weight without touching the color itself. This is the same
+    // object turn text uses too, so the fix benefits both, not just the
+    // victory/defeat moment.
     const t = this.add.text(0, 0, '', {
-      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '22px', color: '#FFE8A0'
+      fontFamily: 'Georgia, serif', fontStyle: 'bold', fontSize: '22px', color: '#FFE8A0',
+      stroke: '#2A1408', strokeThickness: 4,
+      shadow: { offsetX: 0, offsetY: 2, color: '#000000', blur: 6, fill: true }
     }).setOrigin(0.5).setDepth(15);
     this.uiAdd(t);
     this._banner = t;
@@ -640,6 +750,8 @@ export default class PartyBattleScene extends Phaser.Scene {
 
     if (actor === 'enemy') {
       this._highlightTurnChip('enemy');
+      this.activeHeroId = null;
+      this._highlightHeroCard(null); // no hero card reads as "active" during the enemy's own turn
       this.formation.setActive(null);
       this._setBanner('Enemy Turn');
       this._hideCommandRail();
@@ -651,10 +763,13 @@ export default class PartyBattleScene extends Phaser.Scene {
     if (!hero || !hero.alive) { this._advanceTurn(); return; }
 
     this._highlightTurnChip(actor);
+    // Set before _highlightHeroCard() — it (via _applyCardAlpha()) reads
+    // this.activeHeroId to decide which card gets full alpha, so it has
+    // to already reflect the new turn, not the one just ending.
+    this.activeHeroId = actor;
     this._highlightHeroCard(actor);
     this.formation.setActive(actor);
     this._setBanner(`${hero.name}'s Turn`);
-    this.activeHeroId = actor;
     this._showCommandRail();
     this.audio.turnStart(actor);
   }
@@ -679,7 +794,10 @@ export default class PartyBattleScene extends Phaser.Scene {
       const hitPct = Math.round(hitChanceFor('Attack') * 100);
       this._drawer.title.setText('ATTACK');
       this._drawer.detail.setText('A basic strike — free, always available.');
-      this._drawer.stats.setText(`Damage: ${low}-${high}   Hit: ${hitPct}%`);
+      this._drawer.stats.setText(
+        `RP Cost: —  •  Target: ${this.enemy.name}\n` +
+        `Damage: ${low}-${high}   Hit: ${hitPct}%`
+      );
       this._showTargetCursor();
     } else if (label === 'Resonart') {
       const { low, high } = projectedDamage(hero, 'Resonart');
@@ -688,7 +806,7 @@ export default class PartyBattleScene extends Phaser.Scene {
       this._drawer.title.setText(hero.attack.name.toUpperCase());
       this._drawer.detail.setText(hero.attack.flavor || 'A signature technique.');
       this._drawer.stats.setText(
-        `RP Cost: ${RESONART_RP_COST}${affordable ? '' : ' (not enough RP)'}\n` +
+        `RP Cost: ${RESONART_RP_COST}${affordable ? '' : ' (not enough)'}  •  Target: ${this.enemy.name}\n` +
         `Damage: ${low}-${high}   Hit: ${hitPct}%`
       );
       this._showTargetCursor();
@@ -787,14 +905,63 @@ export default class PartyBattleScene extends Phaser.Scene {
     const { low, high } = projectedDamage(hero, command);
     const hitRoll = Math.random() < hitChanceFor(command);
 
-    // FAI-BATTLE-PRESENTATION-03: real per-hero attack motion (Kineza's
-    // Coil->Strike, Prismel's Gather->Release, Auryi's OrbGather->
-    // VeilPulse — BattleConfig.js's own approved 1v1 pose set) replaces
-    // the still-image scale-pulse+lunge substitute wherever that hero's
-    // poses actually loaded. ANIMATION_INTEGRATION_DIRECTIVE.md's own
-    // Fallback clause: if they didn't, this reports it once (not on every
-    // attack) and drops back to the FAI-AUDIO-02 tween pair rather than
-    // faking completion.
+    // FAI-BATTLE-PRESENTATION-04 (ANIMATION_AUTHORITY_CORRECTION.md):
+    // Kineza's real current-authority Basic Attack sheet outranks the
+    // BP03 pose-swap — checked first, per-hero, so Auryi/Prismel (who
+    // have no current sheet) fall through to the pose-swap path below
+    // exactly as before. Markers fire from the sheet's own real frames
+    // (formation.playAttackSheet's onFrame callback), not a fixed-timing
+    // guess — this is what "synchronize attack event markers to actual
+    // current frames" means concretely.
+    if (this.formation.hasAttackSheet(hero.id)) {
+      const cfg = this.formation.actors.get(hero.id).attackSheetConfig;
+      const isMarkerFrame = (frameIndex, marker) => cfg.markerFrames[marker].includes(frameIndex);
+      let dmg = 0;
+      const seen = new Set();
+      await this.formation.playAttackSheet(hero.id, frameIndex => {
+        if (isMarkerFrame(frameIndex, 'gather') && !seen.has('gather')) {
+          seen.add('gather');
+          this.audio.attackGather(hero.id);
+        } else if (isMarkerFrame(frameIndex, 'release') && !seen.has('release')) {
+          seen.add('release');
+          this.audio.attackRelease(hero.id);
+        } else if (isMarkerFrame(frameIndex, 'impact') && !seen.has('impact')) {
+          seen.add('impact');
+          if (hitRoll) {
+            dmg = Phaser.Math.Between(low, high);
+            this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
+            this._updateTargetCard();
+            this.enemyView.hit();
+            this._floatText(`-${dmg}`, '#FFD8D8');
+            this._setBanner(`${hero.name} uses ${command === 'Resonart' ? hero.attack.name : 'Attack'} for ${dmg} damage!`);
+            this.audio.attackImpact(hero.id);
+            this.audio.enemyHit();
+            if (this.enemy.hp <= 0) {
+              this.enemyView.die();
+              this.audio.enemyDefeat();
+            }
+          } else {
+            this._setBanner(`${hero.name} uses ${command === 'Resonart' ? hero.attack.name : 'Attack'} — missed!`);
+          }
+        } else if (isMarkerFrame(frameIndex, 'recover') && !seen.has('recover')) {
+          seen.add('recover');
+        }
+      });
+
+      this._turnLock = false;
+      this._endHeroTurn();
+      return;
+    }
+
+    // FAI-BATTLE-PRESENTATION-03/04: Prismel's Gather->Release and
+    // Auryi's OrbGather->VeilPulse (BattleConfig.js's 1v1 pose set) —
+    // reached only when the hero has no current-authority attack sheet
+    // (the branch above). Neither is current Party Battle attack
+    // authority per ANIMATION_AUTHORITY_CORRECTION.md — both are
+    // explicitly TEMPORARY FALLBACK, kept only because DAI has not yet
+    // supplied a current Basic Attack for either character. Drops back
+    // further still, to the FAI-AUDIO-02 tween pair, for any hero whose
+    // pose set doesn't even load — reported once, not faked.
     const useRealPoses = this.formation.hasActionPoses(hero.id);
 
     if (useRealPoses) {

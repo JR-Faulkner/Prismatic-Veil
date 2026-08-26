@@ -71,21 +71,19 @@ function heroEventEntries() {
 //
 // Per-hero identity is enforced by construction, not by convention: a
 // hero's layers only ever reference that hero's own bank (DYNAMIC_AUDIO_
-// DIRECTION.md's explicit "avoid" lines — Prismel must not read as
-// Kineza's debris/impact, Auryi must not read as Prismel's brittle glass
-// or Kineza's crack). Prismel's layers pitch UP (brighter, crystalline);
-// Kineza's pitch DOWN (heavier, kinetic); Auryi's pitch DOWN but softer
-// (warm/resonant, not brittle).
+// DIRECTION.md's explicit "avoid" lines — Auryi must not read as
+// Kineza's crack). Kineza's layers pitch DOWN (heavier, kinetic); Auryi's
+// pitch DOWN but softer (warm/resonant, not brittle). Prismel has none —
+// see the note at the top of this map.
 export const AUDIO_LAYER_MAP = Object.freeze({
-  // Prismel — crystalline gather shimmer -> focused refractive snap ->
-  // prismatic fracture impact -> short spectral tail. Built only from his
-  // own gather/release cues, pitched up for a lighter, glassier read.
-  'attackRelease:prismel': [
-    { key: 'pb_hero_prismel_gather', volumeMul: 0.25, rate: 1.35, delayMs: 0 }
-  ],
-  'attackImpact:prismel': [
-    { key: 'pb_hero_prismel_release', volumeMul: 0.3, rate: 1.5, delayMs: 60 }
-  ],
+  // FAI-BATTLE-PRESENTATION-04 (AUDIO_CHOREOGRAPHY_STATUS.md): "Do not
+  // over-tune audio to the legacy fallback attack. Keep the mapping easy
+  // to move when DAI supplies the current Basic Attack." BP03's Prismel
+  // layering (a pitched gather/release echo under his release/impact) was
+  // built around his legacy TEMPORARY FALLBACK pose sequence specifically
+  // — removed rather than carried forward, so nothing has to be undone or
+  // re-tuned the moment his real Basic Attack lands; he plays on his
+  // plain primary cues only until then.
 
   // Auryi — harmonic inward bloom -> airy luminous release -> warm
   // resonant impact -> resolving recompose tail. Built only from her own
