@@ -16,6 +16,7 @@
   "include": [
     "src/core/**/*.ts",
     "tools/modernization/**/*.ts",
+    "tests/**/*.ts",
     "vite.config.ts"
   ]
 }

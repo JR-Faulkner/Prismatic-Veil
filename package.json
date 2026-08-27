@@ -8,13 +8,16 @@
   "scripts": {
     "dev:modern": "vite --host 0.0.0.0 --config vite.config.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:unit": "vitest run --reporter=verbose",
+    "test:unit:watch": "vitest",
     "build:modern": "vite build --config vite.config.ts",
     "preview:modern": "vite preview --host 0.0.0.0 --config vite.config.ts",
-    "check:modern": "npm run typecheck && npm run build:modern"
+    "check:modern": "npm run typecheck && npm run test:unit && npm run build:modern"
   },
   "devDependencies": {
     "@types/node": "26.3.0",
     "typescript": "7.0.2",
-    "vite": "8.2.2"
+    "vite": "8.2.2",
+    "vitest": "4.1.11"
   }
 }
