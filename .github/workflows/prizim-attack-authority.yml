@@ -7,8 +7,10 @@ on:
     paths:
       - 'src/PartyAttackAuthority.js'
       - 'pv-data/sequence_authority/**'
+      - 'pv-data/prizim_status/visual_integrity/**'
       - 'pv-data/animations/prismel_active_turn.registration.json'
       - 'tools/prizim/attack_authority_check.py'
+      - 'tools/prizim/visual_integrity_check.py'
       - 'assets/party_formation/**'
       - 'assets/sequences/production/**'
       - '.github/workflows/prizim-attack-authority.yml'
@@ -16,8 +18,10 @@ on:
     paths:
       - 'src/PartyAttackAuthority.js'
       - 'pv-data/sequence_authority/**'
+      - 'pv-data/prizim_status/visual_integrity/**'
       - 'pv-data/animations/prismel_active_turn.registration.json'
       - 'tools/prizim/attack_authority_check.py'
+      - 'tools/prizim/visual_integrity_check.py'
       - 'assets/party_formation/**'
       - 'assets/sequences/production/**'
       - '.github/workflows/prizim-attack-authority.yml'
@@ -32,3 +36,5 @@ jobs:
           python-version: '3.12'
       - name: PriZim attack authority gate
         run: python tools/prizim/attack_authority_check.py
+      - name: PriZim visual integrity gate
+        run: python tools/prizim/visual_integrity_check.py
