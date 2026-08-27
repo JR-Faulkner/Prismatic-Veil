@@ -43,6 +43,9 @@ def main():
             "Auryi pending status drifted")
     require("id: 'kineza_attack_master_a'" in authority_text, "Kineza Master A missing")
     require("status: 'production-current'" in authority_text, "Kineza must remain production-current")
+    require(authority_text.count("mode: 'sheet'") >= 3, "all three Basic Attack contracts must be sheet-shaped")
+    require("assets/sequences/runtime/prismel_attack_jrpg_10a.png" in authority_text, "Prismel runtime path missing")
+    require("assets/sequences/runtime/auryi_attack_jrpg_10a.png" in authority_text, "Auryi runtime path missing")
 
     prismel = load_json("pv-data/sequence_authority/prismel_attack_jrpg_10a.registration.json")
     require(prismel.get("id") == "PRISMEL_ATTACK_JRPG_10A", "Prismel PZ id mismatch")

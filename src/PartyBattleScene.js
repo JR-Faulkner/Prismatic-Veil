@@ -18,8 +18,9 @@ import { createEnemyView } from './EnemyViewFactory.js?v=40';
 import PartyFormationView from './PartyFormationView.js?v=8';
 import {
   partyRoster, BASE_COMMANDS, RESONART_RP_COST, ITEM_DEFS,
-  PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, projectedDamage, hitChanceFor
+  PARTY_ASSET_LOCK, projectedDamage, hitChanceFor
 } from './PartyBattleConfig.js?v=4';
+import { preloadPartyAttackAuthority } from './PartyAttackAuthority.js?v=2';
 import { GUI_TEXTURES, NINESLICE_INSETS, preloadGuiKit } from './PartyBattleGuiKit.js';
 import PartyBattleAudioController from './PartyBattleAudioController.js?v=3';
 
@@ -80,15 +81,10 @@ export default class PartyBattleScene extends Phaser.Scene {
         this.load.image(tex, `${hero.posePath}${tex}.png`);
       });
     });
-    // FAI-BATTLE-PRESENTATION-04: real current-authority attack sheets
-    // (currently only Kineza) — a genuine sprite sheet, loaded alongside
-    // (not instead of) the legacy pose set above, since Auryi/Prismel
-    // still fall back to it per ANIMATION_AUTHORITY_CORRECTION.md.
-    Object.values(HERO_ATTACK_SHEETS).forEach(sheet => {
-      this.load.spritesheet(sheet.key, sheet.path, {
-        frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight
-      });
-    });
+    // H2.8: preload only hero Basic Attacks promoted by PartyAttackAuthority.
+    // Pending Prismel/Auryi sheets stay disabled until their binaries are ingested;
+    // retired pose art is never silently promoted by the loader.
+    preloadPartyAttackAuthority(this);
     Object.values(WRAITH_TEXTURES).forEach(tex => {
       this.load.image(tex, `./assets/enemy/veil_wraith/${tex}.png`);
     });
@@ -913,7 +909,7 @@ export default class PartyBattleScene extends Phaser.Scene {
     // (formation.playAttackSheet's onFrame callback), not a fixed-timing
     // guess — this is what "synchronize attack event markers to actual
     // current frames" means concretely.
-    if (this.formation.hasAttackSheet(hero.id)) {
+    if (command === 'Attack' && this.formation.hasAttackSheet(hero.id)) {
       const cfg = this.formation.actors.get(hero.id).attackSheetConfig;
       const isMarkerFrame = (frameIndex, marker) => cfg.markerFrames[marker].includes(frameIndex);
       let dmg = 0;
@@ -962,7 +958,9 @@ export default class PartyBattleScene extends Phaser.Scene {
     // supplied a current Basic Attack for either character. Drops back
     // further still, to the FAI-AUDIO-02 tween pair, for any hero whose
     // pose set doesn't even load — reported once, not faked.
-    const useRealPoses = this.formation.hasActionPoses(hero.id);
+    // Retired five/six-pose art may still support Resonart presentation,
+    // but it may not masquerade as a current Party Battle Basic Attack.
+    const useRealPoses = command !== 'Attack' && this.formation.hasActionPoses(hero.id);
 
     if (useRealPoses) {
       const timing = { ...ACTION_POSE_TIMING, ...(hero.attackTiming || {}) };

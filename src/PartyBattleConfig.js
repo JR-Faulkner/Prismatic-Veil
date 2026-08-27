@@ -103,42 +103,9 @@ export function heightScaleFor(heroId, commonScale) {
   return commonScale;
 }
 
-// FAI-BATTLE-PRESENTATION-04 (ANIMATION_AUTHORITY_CORRECTION.md): BP03's
-// Kineza attack used the legacy Kineza02-05 pose-slide/crossfade set
-// (assets/poses/kineza/) — DAI's own correction: "those are NOT the
-// current Party Battle Basic Attack authority." The real authority is
-// Kineza's PriZim-cleared 7-animation pack's Basic Attack entry — a real
-// 6-frame sprite sheet (`six_frame_emerald_punch_animation.png`,
-// PriZim bleed-isolation "pass"), copied in at
-// assets/characters/kineza/animations/kineza_basic_attack_v1.png per
-// that pack's own suggested naming convention (ASSET_NAMING.md). Frame
-// geometry (frameWidth/frameHeight/baselinePx) comes directly from the
-// pack's own pz_report.json — a uniform 520x660 6-column grid, every
-// frame independently registered to the same baseline (feet) position,
-// so no per-frame position correction is needed at runtime.
-// markerFrames maps ANIMATION_EVENT_MARKERS.md's vocabulary onto the
-// real frames the source content actually shows (confirmed by viewing
-// each extracted frame, not guessed from the file name): 1-2 are the
-// coil/wind-up, 3 is the punch committing, 4 is full extension with the
-// energy burst (the impact beat), 5-6 are the retract/settle back toward
-// the frame-1 guard stance.
-export const KINEZA_ATTACK_SHEET = Object.freeze({
-  key: 'kineza_basic_attack_v1',
-  path: './assets/characters/kineza/animations/kineza_basic_attack_v1.png',
-  frameWidth: 520,
-  frameHeight: 660,
-  frameCount: 6,
-  baselinePx: 620,
-  // Per-frame hold time (ms) — not a flat frameRate, so the coil/impact
-  // beats can hold a little longer than the fast punch-commit frame.
-  frameDurations: Object.freeze([140, 220, 90, 160, 120, 200]),
-  markerFrames: Object.freeze({ gather: [0, 1], release: [2], impact: [3], recover: [4, 5] })
-});
-
-// Keyed lookup so PartyFormationView's sheet-attack support stays generic
-// (checks this map, never a hardcoded hero id) — adding a second hero's
-// current-authority sheet later is a data entry here, not a code branch.
-export const HERO_ATTACK_SHEETS = Object.freeze({ kineza: KINEZA_ATTACK_SHEET });
+// H2.8: Basic Attack presentation authority now lives exclusively in
+// PartyAttackAuthority.js. Do not define a second per-hero attack-sheet map
+// here; that created two competing 'current' Kineza authorities.
 
 export const BASE_COMMANDS = Object.freeze(['Attack', 'Resonart', 'Guard', 'Item']);
 

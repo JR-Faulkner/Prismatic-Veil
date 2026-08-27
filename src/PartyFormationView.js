@@ -6,7 +6,8 @@
 // hits the "fading both layers at once" trap documented in CLAUDE.md) and
 // registers through scene.worldAdd() — never scene.uiLayer — so the
 // battle camera can push in without dragging the party off their marks.
-import { PARTY_SLOTS, PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, heightScaleFor } from './PartyBattleConfig.js?v=4';
+import { PARTY_SLOTS, PARTY_ASSET_LOCK, heightScaleFor } from './PartyBattleConfig.js?v=4';
+import { PARTY_ATTACK_AUTHORITY } from './PartyAttackAuthority.js?v=2';
 
 // Formation x-fractions (of screen width) and relative depth-in-frame —
 // back is furthest from the enemy/camera, front is nearest. Landscape and
@@ -103,8 +104,8 @@ export default class PartyFormationView {
       // between two always-fully-opaque layers, not a fade).
       let attackSprite = null;
       let attackSheetConfig = null;
-      const sheetCfg = HERO_ATTACK_SHEETS[heroId];
-      if (sheetCfg && this.scene.textures.exists(sheetCfg.key)) {
+      const sheetCfg = PARTY_ATTACK_AUTHORITY[heroId];
+      if (sheetCfg && sheetCfg.enabled !== false && sheetCfg.mode === 'sheet' && this.scene.textures.exists(sheetCfg.key)) {
         attackSprite = this.scene.add.sprite(0, 0, sheetCfg.key, 0).setVisible(false);
         this.scene.worldAdd(attackSprite);
         attackSprite.setDepth(SLOT_LAYOUT[slot].depth);
@@ -279,17 +280,29 @@ export default class PartyFormationView {
     if (!actor || !actor.attackSprite) return Promise.resolve();
     const { sprite, attackSprite } = actor;
     const cfg = actor.attackSheetConfig;
-    const originY = cfg.baselinePx / cfg.frameHeight;
-    // H2.8: the Party Battle standby is already independently calibrated.
-    // hero.scaleMul belongs to the legacy 1v1 pose library (Kineza = 0.78)
-    // and must never be applied again to a current Party Battle attack sheet.
-    const scale = sprite.displayHeight / cfg.frameHeight;
+    const formationTex = PARTY_ASSET_LOCK.textures[heroId];
+    const standbyBodyDisplayH = formationTex && formationTex.canvas
+      ? sprite.displayHeight * (PARTY_ASSET_LOCK.normalizedHeightPx[heroId] / PARTY_ASSET_LOCK.referenceCanvas)
+      : sprite.scaleY * (formationTex?.contentHeightPx || sprite.height);
+    const referenceBodyH = cfg.referenceBodyHeightPx || cfg.frameHeight;
+    const scale = standbyBodyDisplayH / referenceBodyH;
+    const homeX = sprite.x;
+    const homeY = sprite.y;
+    const baselineFor = i => (cfg.baselinePxByFrame && cfg.baselinePxByFrame[i] != null)
+      ? cfg.baselinePxByFrame[i]
+      : (cfg.baselinePx ?? cfg.frameHeight);
+    const regFor = i => (cfg.registration && cfg.registration[i]) || { scale: 1, x: 0, y: 0 };
+    const applyFrameRegistration = i => {
+      const reg = regFor(i);
+      attackSprite
+        .setOrigin(0.5, baselineFor(i) / cfg.frameHeight)
+        .setScale(scale * (reg.scale ?? 1))
+        .setPosition(homeX + (reg.x || 0) * scale, homeY + (reg.y || 0) * scale);
+    };
+    applyFrameRegistration(0);
 
     this.scene.tweens.killTweensOf(attackSprite);
     attackSprite
-      .setOrigin(0.5, originY)
-      .setScale(scale)
-      .setPosition(sprite.x, sprite.y)
       .setFlipX(sprite.flipX)
       .setAlpha(1)
       .setVisible(true);
@@ -297,7 +310,11 @@ export default class PartyFormationView {
 
     return new Promise(resolve => {
       const animKey = `${cfg.key}_play`;
-      const onUpdate = (_anim, frame) => { if (onFrame) onFrame(frame.index - 1); };
+      const onUpdate = (_anim, frame) => {
+        const frameIndex = frame.index - 1;
+        applyFrameRegistration(frameIndex);
+        if (onFrame) onFrame(frameIndex);
+      };
       attackSprite.on('animationupdate', onUpdate);
       attackSprite.once('animationcomplete', () => {
         attackSprite.off('animationupdate', onUpdate);
