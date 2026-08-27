@@ -277,10 +277,13 @@ export default class PartyFormationView {
   playAttackSheet(heroId, onFrame) {
     const actor = this.actors.get(heroId);
     if (!actor || !actor.attackSprite) return Promise.resolve();
-    const { sprite, attackSprite, hero } = actor;
+    const { sprite, attackSprite } = actor;
     const cfg = actor.attackSheetConfig;
     const originY = cfg.baselinePx / cfg.frameHeight;
-    const scale = (sprite.displayHeight / cfg.frameHeight) * (hero.scaleMul || 1);
+    // H2.8: the Party Battle standby is already independently calibrated.
+    // hero.scaleMul belongs to the legacy 1v1 pose library (Kineza = 0.78)
+    // and must never be applied again to a current Party Battle attack sheet.
+    const scale = sprite.displayHeight / cfg.frameHeight;
 
     this.scene.tweens.killTweensOf(attackSprite);
     attackSprite
