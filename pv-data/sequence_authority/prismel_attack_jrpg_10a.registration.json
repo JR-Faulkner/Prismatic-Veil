@@ -13,8 +13,27 @@
     },
     "sourceSheetWidthPx": 1983,
     "sourceSheetHeightPx": 793,
+    "sourceSheetSha256": "292f1e94041c8692b3ace0a6fe35b629241c687dd0911d21df961eb143eadd3a",
     "background": "black-source-candidate",
-    "runtimeAssetState": "pending-mechanical-extraction-and-alpha-matte"
+    "runtimeAssetState": "local-extraction-validated-pending-repo-binary-ingestion"
+  },
+  "extraction": {
+    "method": "border-connected-near-pure-black-matte-v2",
+    "backgroundThresholdMaxRgb": 12,
+    "assessment": "pass",
+    "notes": "V1 threshold was rejected for nibbling very dark costume pixels. V2 removes only border-connected near-pure-black source matte and preserves internal navy/black costume detail.",
+    "frameSha256": [
+      "0f4cbfd016c5d1331a164442172f32a1c92a8874a505e3320e50452e39f76f46",
+      "61ace8a4c14a5e6628f33e8a38f14bbc11641c14c7d02870e5dee51409c3b218",
+      "83047714dd30f0238d7d073ff64514061bba525406e363426af418caddf6d399",
+      "bbb5853f28c4e6282419297607ef096e1eed068a88b6bb054fdd8bf3e164b2af",
+      "b901244fc351b64ee876fda5751ff0ed1ec56b23264c5690c2a7d58edbb673a5",
+      "107515aea222d1bb7d281515c3087a08b04f2750819409bf70df0ce94f3b83f8",
+      "d8ebf6708f3b0111b7d5a5c05b2aac1c6c5ea53d5a44a8d8bb9f7dc166fa3065",
+      "41002503b831fdce9bb93e7d227c578ff2bc30d6f2c32bc8b66d1f72b765a37d",
+      "e685c3b2519693691e28a154c1728efb1217217cee85d59bb4245e79c5220cff",
+      "f598e69af60c10fccd32d199af8f618b22246ac06da9b4075a7641d0dc92719e"
+    ]
   },
   "frameAuthority": [
     { "frame": 1, "beat": "ready" },
