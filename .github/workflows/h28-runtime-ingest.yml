@@ -6,6 +6,7 @@ on:
       - h28-attack-authority-audio
     paths:
       - 'tools/h28_runtime_ingest_patch.py'
+      - 'tools/h28_runtime_ingest_patch_v2.py'
       - '.github/workflows/h28-runtime-ingest.yml'
 
 permissions:
@@ -23,7 +24,7 @@ jobs:
         with:
           node-version: '24'
       - name: Apply exact H2.8 runtime migration
-        run: python tools/h28_runtime_ingest_patch.py
+        run: python tools/h28_runtime_ingest_patch_v2.py
       - name: Verify JavaScript syntax and authority boundaries
         run: |
           node --check src/PartyBattleConfig.js
