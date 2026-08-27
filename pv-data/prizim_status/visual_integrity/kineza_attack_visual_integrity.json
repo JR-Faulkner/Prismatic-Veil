@@ -1,0 +1,49 @@
+{
+  "schema": "prizim.visual_integrity.v1",
+  "heroId": "kineza",
+  "assetId": "KINEZA_ATTACK_MASTER_A",
+  "frameCount": 6,
+  "overall": "conditional-pass",
+  "productionDisposition": "minor-corrections-before-production-promotion",
+  "reviewScope": {
+    "explicitAnatomyAudit": true,
+    "reviewedAtHighResolution": false,
+    "sourceEvidence": "current production strip description plus prior PriZim extraction/bleed report",
+    "checksInclude": [
+      "extra-or-missing-limbs",
+      "limb-attachment",
+      "hands-and-fingers-or-gauntlet-topology",
+      "eyes-and-pupil-direction",
+      "face-identity",
+      "anatomy-object-fusion",
+      "costume-and-prop-continuity",
+      "frame-to-frame-identity-drift"
+    ]
+  },
+  "checks": {
+    "duplicateLimbs": {"status": "pass", "notes": "No extra arm or leg is indicated across the six-frame production strip."},
+    "limbCountAndAttachment": {"status": "pass", "notes": "Attack poses remain anatomically coherent through ready, coil, drive, impact, recoil and recover."},
+    "handsAndFingerTopology": {"status": "minor-review", "notes": "Hands are mostly enclosed by oversized gauntlets. PZ must verify there is only one fist/thumb mass per gauntlet and no duplicated wrist/forearm geometry where green FX overlaps."},
+    "eyesAndPupilDirection": {"status": "pass", "notes": "Face and gaze are consistently described as focused/right-facing; no crossed-eye read is indicated."},
+    "faceIdentityContinuity": {"status": "pass", "notes": "Youthful face, hair, age and expression remain consistent across the strip."},
+    "anatomyObjectFusion": {"status": "minor-review", "frames": [3,4,5], "notes": "Peak green energy overlaps the striking gauntlet. Preserve a readable fist/gauntlet silhouette so FX cannot be mistaken for an extra limb or second fist."},
+    "costumeObjectContinuity": {"status": "pass", "notes": "Armor, cape, chest gem, boots and gauntlets remain one coherent design across the attack."},
+    "frameToFrameIdentityDrift": {"status": "pass", "notes": "No major anatomy, age or character-model drift is indicated in the production strip."}
+  },
+  "requiredCorrections": [
+    "verify-one-fist-one-thumb-mass-per-gauntlet-where-visible",
+    "keep-wrist-and-forearm-boundaries-readable-under-emerald-FX",
+    "prevent-impact-pressure-ring-from-creating-a-false-extra-hand-silhouette",
+    "preserve-right-facing-eye-direction-through-drive-and-impact",
+    "retain-current-armor-cape-and-gauntlet-geometry"
+  ],
+  "hardRejects": [
+    "extra-arm-or-leg",
+    "duplicated-fist-or-thumb-mass",
+    "second-wrist-or-forearm-emerging-from-gauntlet",
+    "crossed-or-conflicting-pupil-direction",
+    "face-identity-swap",
+    "gauntlet-fused-into-anatomically-impossible-hand"
+  ],
+  "pzDecision": "No gross anatomy artifact is indicated, but because the current repo binary was not available for direct pixel-level inspection in this pass, Kineza remains conditional until one final high-resolution gauntlet/eye audit is completed."
+}
