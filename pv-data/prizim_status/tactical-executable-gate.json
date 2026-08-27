@@ -1,8 +1,8 @@
 {
   "tool": "PriZim Tactical Executable Gate",
-  "source_commit": "34a3ab4fa6889c2bc6064a5880040559724d4d7d",
-  "workflow_run_id": "33068215975",
-  "validated_at_utc": "2026-08-27T11:39:19Z",
+  "source_commit": "f9d37f4d5be662432f29cbf22971d228bec64fd4",
+  "workflow_run_id": "33070463121",
+  "validated_at_utc": "2026-08-27T12:09:46Z",
   "syntax": "success",
   "browser_setup": "success",
   "attack_staging_tripwire": "success",
