@@ -2,8 +2,11 @@
   "schemaVersion": 1,
   "id": "auryi_attack_master_a",
   "character": "auryi",
-  "status": "canon-approved-runtime-wired",
+  "status": "canon-approved-tactical-reference",
   "authority": "Auryi Attack Master A",
+  "authorityScope": "preserved-tactical-active-turn-reference",
+  "supersededForPartyBattleBy": "AURYI_ATTACK_JRPG_10A",
+  "preserveAsReference": true,
   "sourceSheet": {
     "width": 1536,
     "height": 1024,
@@ -40,11 +43,11 @@
     "entranceToAttackBaselineDeltaPx": 5,
     "entranceToAttackCenterDeltaPx": 7.51,
     "entranceToAttackNormalizedIoU": 0.821,
-    "assessment": "Healthy seam. Use deterministic registration and motion tuning; no regeneration indicated."
+    "assessment": "Healthy historical seam. Preserve as choreography/registration reference; current Party Battle visual authority moves to AURYI_ATTACK_JRPG_10A."
   },
   "runtime": {
     "binary": "assets/sequences/production/auryi_attack_master_a.png",
     "presenter": "src/tactical/ActiveTurnBattleSlice06A.js"
   },
-  "assetPolicy": "Approved source art is canon. Cleanup/transparency/registration are runtime derivatives only."
+  "assetPolicy": "Approved source art remains preserved canon reference. It is not the current JRPG Party Battle visual target after H2.8 supersession."
 }
