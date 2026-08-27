@@ -33,6 +33,7 @@ if (!root) throw new Error('PriZim modernization probe root is missing');
 root.innerHTML = `
   <strong>PriZim Modernization Probe</strong>
   <span>TypeScript boundary: PASS</span>
+  <span>Vite browser pipeline: PASS</span>
   <span>Current attack authorities: ${Object.keys(probe.attacks).length}</span>
   <span>Declared runtime surfaces: ${probe.surfaces.length}</span>
 `;
