@@ -1,0 +1,77 @@
+{
+  "schema": "prizim.sequence_authority.registration.v1",
+  "id": "PRISMEL_ATTACK_JRPG_10A",
+  "heroId": "prismel",
+  "sequenceType": "basic-attack",
+  "status": "conditional-pass",
+  "visualFamily": "jrpg-high-resolution",
+  "source": {
+    "frameCount": 10,
+    "layout": {
+      "columns": 5,
+      "rows": 2
+    },
+    "sourceSheetWidthPx": 1983,
+    "sourceSheetHeightPx": 793,
+    "background": "black-source-candidate",
+    "runtimeAssetState": "pending-mechanical-extraction-and-alpha-matte"
+  },
+  "frameAuthority": [
+    { "frame": 1, "beat": "ready" },
+    { "frame": 2, "beat": "weight-shift" },
+    { "frame": 3, "beat": "gather" },
+    { "frame": 4, "beat": "charge" },
+    { "frame": 5, "beat": "peak-charge" },
+    { "frame": 6, "beat": "drive" },
+    { "frame": 7, "beat": "release" },
+    { "frame": 8, "beat": "projection-impact" },
+    { "frame": 9, "beat": "dissipation" },
+    { "frame": 10, "beat": "recovery-ready" }
+  ],
+  "timingMs": [110, 85, 90, 95, 115, 80, 75, 105, 95, 150],
+  "markerFramesZeroBased": {
+    "gather": [2, 3, 4],
+    "release": [6],
+    "impact": [7],
+    "recover": [9]
+  },
+  "normalization": {
+    "strategy": "alpha-weighted-body-registration",
+    "target": "formation-apparent-body-height",
+    "baseline": "lower-body-foot-anchor",
+    "horizontalAnchor": "lower-body-center",
+    "ignore": [
+      "staff-extremities",
+      "prismatic-particles",
+      "beam-and-shards",
+      "thin-cloak-wisps",
+      "fx-halos"
+    ],
+    "runtimeSizingAuthority": true
+  },
+  "prizimFindings": {
+    "choreography": "pass",
+    "jrpgVisualFamily": "pass",
+    "readyRecoverySeam": "pass",
+    "characterIdentity": "pass",
+    "staffConsistency": "minor-drift",
+    "headFaceConsistency": "minor-drift",
+    "cloakSilhouetteContinuity": "normalize-runtime-seam",
+    "fxProgression": "minor-refinement",
+    "bodyScale": "normalize-runtime",
+    "feetBaseline": "register-runtime",
+    "attackReadability": "pass"
+  },
+  "visualRefinementNotes": {
+    "frame5": "Peak charge FX should not overpower Prismel silhouette.",
+    "frame8": "Impact projection should remain Basic Attack scale, below Resonart spectacle.",
+    "staff": "Preserve intentional arc while preventing apparent crystal-head and shaft-size pops.",
+    "recovery": "Frame 10 must register tightly back toward Frame 1 for a clean loop seam."
+  },
+  "authorityRules": {
+    "replacesOldSixFramePrismelPartyAttack": true,
+    "oldSixFrameSetMayNotMasqueradeAsCurrent": true,
+    "productionAuthorityRequiresRuntimeExtraction": true,
+    "productionAuthorityRequiresPhoneAcceptance": true
+  }
+}
