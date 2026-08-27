@@ -1,0 +1,48 @@
+name: H2.8 Attack Runtime Ingestion
+
+on:
+  push:
+    branches:
+      - h28-attack-authority-audio
+    paths:
+      - 'tools/h28_runtime_ingest_patch.py'
+      - '.github/workflows/h28-runtime-ingest.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrate-and-verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: h28-attack-authority-audio
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Apply exact H2.8 runtime migration
+        run: python tools/h28_runtime_ingest_patch.py
+      - name: Verify JavaScript syntax and authority boundaries
+        run: |
+          node --check src/PartyBattleConfig.js
+          node --check src/PartyFormationView.js
+          node --check src/PartyBattleAudioController.js
+          node --check src/PartyBattleScene.js
+          ! grep -q "const useRealPoses = this.formation.hasActionPoses(hero.id);" src/PartyBattleScene.js
+          grep -q "attackRecover(characterId)" src/PartyBattleAudioController.js
+          grep -q "prismel: PRISMEL_ATTACK_SHEET" src/PartyBattleConfig.js
+          grep -q "auryi: AURYI_ATTACK_SHEET" src/PartyBattleConfig.js
+          git diff --check
+      - name: Commit runtime migration
+        run: |
+          if git diff --quiet -- src/PartyBattleConfig.js src/PartyFormationView.js src/PartyBattleAudioController.js src/PartyBattleScene.js; then
+            echo 'No runtime diff produced; refusing silent pass.'
+            exit 1
+          fi
+          git config user.name 'JR-Faulkner'
+          git config user.email '53619182+JR-Faulkner@users.noreply.github.com'
+          git add src/PartyBattleConfig.js src/PartyFormationView.js src/PartyBattleAudioController.js src/PartyBattleScene.js
+          git commit -m 'H2.8 wire three-hero current Basic Attack runtime'
+          git push origin HEAD:h28-attack-authority-audio
