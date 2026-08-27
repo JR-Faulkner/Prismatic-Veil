@@ -16,10 +16,19 @@
     "test:e2e:webkit": "playwright test --project=webkit-phone",
     "test:phaser4-lab": "playwright test tests/e2e/phaser4-lab.spec.ts",
     "build:modern": "vite build --config vite.config.ts",
+    "build:capacitor": "vite build --config vite.config.capacitor.ts",
     "preview:modern": "vite preview --host 0.0.0.0 --config vite.config.ts",
+    "cap:doctor": "cap doctor",
+    "cap:sync": "cap sync",
     "check:modern": "npm run typecheck && npm run test:unit && npm run build:modern"
   },
+  "dependencies": {
+    "@capacitor/core": "8.5.0"
+  },
   "devDependencies": {
+    "@capacitor/android": "8.5.0",
+    "@capacitor/cli": "8.5.0",
+    "@capacitor/ios": "8.5.0",
     "@playwright/test": "1.62.1",
     "@types/node": "26.3.0",
     "phaser": "4.2.1",
