@@ -1,0 +1,63 @@
+name: PriZim Phaser 4 Renderer Lab
+
+on:
+  push:
+    branches:
+      - prizim-modernization-phase4-phaser4-lab
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'vite.config.ts'
+      - 'renderer-lab-phaser4.html'
+      - 'tools/renderer-lab/**'
+      - 'tests/e2e/phaser4-lab.spec.ts'
+      - 'pv-data/prizim_modernization_status.json'
+      - '.github/workflows/prizim-phaser4-lab.yml'
+
+jobs:
+  renderer-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: package.json
+
+      - name: Install
+        run: npm install --ignore-scripts
+
+      - name: Install Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Vite multi-page build
+        run: npm run build:modern
+
+      - name: Phaser 4 browser lab
+        run: npm run test:phaser4-lab
+
+      - name: Verify production renderer files untouched
+        run: |
+          git diff --exit-code -- index.html hybrid-battle-live.html phaser.min.js
+
+      - name: Upload renderer-lab report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phaser4-renderer-lab-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore

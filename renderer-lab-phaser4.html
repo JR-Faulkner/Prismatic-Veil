@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>PriZim Phaser 4 Renderer Lab</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif;background:#050714;color:#f4e8ca}
+    *{box-sizing:border-box}html,body,#lab{margin:0;width:100%;height:100%;overflow:hidden}
+    body{background:radial-gradient(circle at 50% 55%,#25124b,#070817 58%,#03040b)}
+    #lab canvas{display:block;width:100%!important;height:100%!important}
+    #status{position:fixed;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));z-index:5;max-width:min(420px,72vw);padding:10px 12px;border:1px solid #b99148;border-radius:10px;background:#090b1dd9;backdrop-filter:blur(8px);box-shadow:0 8px 28px #0008;font-size:12px;line-height:1.45}
+    #status strong{display:block;color:#fff1b8;letter-spacing:.05em;margin-bottom:3px}
+    #status span{display:block;color:#d8c9ff}
+    #note{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));z-index:5;padding:8px 10px;border-radius:8px;background:#090b1dbd;color:#c8bbdc;font-size:10px;border:1px solid #60428d}
+  </style>
+</head>
+<body>
+  <div id="lab"></div>
+  <aside id="status"><strong>PRIZIM · PHASER 4 RENDERER LAB</strong><span>Booting isolated renderer…</span></aside>
+  <div id="note">LAB ONLY · production renderer remains Phaser 3</div>
+  <script type="module" src="/tools/renderer-lab/phaser4.ts"></script>
+</body>
+</html>

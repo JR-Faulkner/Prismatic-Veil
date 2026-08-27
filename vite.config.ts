@@ -16,7 +16,10 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     rollupOptions: {
-      input: 'modernization-probe.html'
+      input: {
+        modernization: 'modernization-probe.html',
+        phaser4Lab: 'renderer-lab-phaser4.html'
+      }
     }
   }
 });
