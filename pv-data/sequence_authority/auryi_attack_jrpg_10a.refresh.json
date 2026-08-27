@@ -1,0 +1,75 @@
+{
+  "schema": "prizim.sequence_authority.refresh_target.v1",
+  "id": "AURYI_ATTACK_JRPG_10A",
+  "heroId": "auryi",
+  "sequenceType": "basic-attack",
+  "status": "refresh-target-pending-source-art",
+  "visualFamily": "jrpg-high-resolution",
+  "visualAnchor": {
+    "path": "assets/party_formation/AURYI_JRPG_NORMALIZED_900x900.png",
+    "authority": "locked-party-formation-jrpg-master"
+  },
+  "referenceAuthority": {
+    "id": "auryi_attack_master_a",
+    "path": "assets/sequences/production/auryi_attack_master_a.png",
+    "registration": "pv-data/sequence_authority/auryi_attack_master_a.registration.json",
+    "role": "canonical-choreography-and-seam-reference-not-current-jrpg-visual-authority",
+    "preserve": true
+  },
+  "continuationFrom": "auryi_auorb.sequence.json#frame-6",
+  "frameCount": 10,
+  "frameAuthority": [
+    { "frame": 1, "beat": "auorb-ready" },
+    { "frame": 2, "beat": "hover-settle" },
+    { "frame": 3, "beat": "draw" },
+    { "frame": 4, "beat": "gather" },
+    { "frame": 5, "beat": "compression" },
+    { "frame": 6, "beat": "cast-windup" },
+    { "frame": 7, "beat": "cast-forward" },
+    { "frame": 8, "beat": "release-impact" },
+    { "frame": 9, "beat": "recompose" },
+    { "frame": 10, "beat": "recovery-ready" }
+  ],
+  "timingIntentMs": [115, 85, 90, 95, 105, 80, 80, 110, 105, 155],
+  "markerFramesZeroBased": {
+    "gather": [2, 3, 4],
+    "release": [6],
+    "impact": [7],
+    "recover": [8, 9]
+  },
+  "motionIdentity": {
+    "stanceLanguage": "hovering-controlled-not-grounded-weight-shift",
+    "auorb": "already-materialized-at-frame-1",
+    "energy": "warm-gold-and-lavender-luminous-compression-to-release",
+    "recovery": "recompose-energy-then-return-to-auorb-ready",
+    "doNotClonePrismelMotion": true
+  },
+  "normalization": {
+    "strategy": "body-and-robe-registration-with-fx-exclusion",
+    "target": "formation-apparent-body-height",
+    "baseline": "hover-body-lower-silhouette-anchor",
+    "horizontalAnchor": "torso-lower-robe-center",
+    "ignore": [
+      "auorb-extremity",
+      "aura-crown-or-halo",
+      "release-projectile",
+      "prismatic-particles",
+      "robe-wisps-and-thin-fringe"
+    ],
+    "runtimeSizingAuthority": true
+  },
+  "visualFamilyRequirements": {
+    "preserveLockedJrpgFaceHairSkinTone": true,
+    "preserveLavenderIvoryGoldCostume": true,
+    "preserveTallestPartySilhouette": true,
+    "preserveAuorbIdentity": true,
+    "basicAttackMustRemainBelowResonartSpectacle": true
+  },
+  "authorityRules": {
+    "oldFivePoseAuryiAttackMayNotMasqueradeAsCurrent": true,
+    "auryiAttackMasterAIsReferenceNotCurrentJrpgVisualAuthority": true,
+    "productionAuthorityRequiresSourceArt": true,
+    "productionAuthorityRequiresPriZimRegistration": true,
+    "productionAuthorityRequiresPhoneAcceptance": true
+  }
+}

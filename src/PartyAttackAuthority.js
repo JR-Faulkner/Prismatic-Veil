@@ -31,34 +31,27 @@ export const PARTY_ATTACK_AUTHORITY = Object.freeze({
   }),
 
   auryi: Object.freeze({
-    id: 'auryi_attack_master_a',
+    id: 'auryi_attack_jrpg_10a',
     heroId: 'auryi',
     enabled: false,
-    status: 'hold-pending-jrpg-visual-family-review',
-    mode: 'sheet',
-    key: 'auryi_party_attack_master_a',
-    path: './assets/sequences/production/auryi_attack_master_a.png',
-    frameWidth: 512,
-    frameHeight: 512,
-    frameCount: 6,
-    referenceBodyHeightPx: 437,
-    baselinePx: 499,
-    registration: Object.freeze([
-      Object.freeze({ scale: 0.98869, x: -5.07, y: 0.70 }),
-      Object.freeze({ scale: 0.98869, x: -13.66, y: 0.70 }),
-      Object.freeze({ scale: 0.98423, x: 4.09, y: 1.96 }),
-      Object.freeze({ scale: 1.01628, x: 0.49, y: -8.12 }),
-      Object.freeze({ scale: 1.01628, x: 19.92, y: -8.12 }),
-      Object.freeze({ scale: 1.01628, x: -5.87, y: -8.12 })
-    ]),
-    normalization: 'registered-body-height',
-    frameDurations: Object.freeze([150, 125, 115, 110, 150, 190]),
+    status: 'refresh-target-pending-source-art',
+    mode: 'pending-frames',
+    frameCount: 10,
+    registrationPath: './pv-data/sequence_authority/auryi_attack_jrpg_10a.refresh.json',
+    normalization: 'body-and-robe-registration-with-fx-exclusion',
+    frameDurations: Object.freeze([115, 85, 90, 95, 105, 80, 80, 110, 105, 155]),
     markerFrames: Object.freeze({
-      gather: Object.freeze([0, 1, 2]),
-      release: Object.freeze([3]),
-      impact: Object.freeze([4]),
-      recover: Object.freeze([5])
-    })
+      gather: Object.freeze([2, 3, 4]),
+      release: Object.freeze([6]),
+      impact: Object.freeze([7]),
+      recover: Object.freeze([8, 9])
+    }),
+    referenceAuthority: Object.freeze({
+      id: 'auryi_attack_master_a',
+      path: './assets/sequences/production/auryi_attack_master_a.png',
+      role: 'canonical-choreography-reference-not-current-jrpg-visual-authority'
+    }),
+    replaces: 'legacy-auryi-five-pose-party-attack'
   }),
 
   kineza: Object.freeze({
