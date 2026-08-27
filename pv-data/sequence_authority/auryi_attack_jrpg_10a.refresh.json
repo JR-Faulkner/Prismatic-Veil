@@ -3,7 +3,7 @@
   "id": "AURYI_ATTACK_JRPG_10A",
   "heroId": "auryi",
   "sequenceType": "basic-attack",
-  "status": "refresh-target-pending-source-art",
+  "status": "conditional-pz-pass-pending-runtime-ingestion",
   "visualFamily": "jrpg-high-resolution",
   "visualAnchor": {
     "path": "assets/party_formation/AURYI_JRPG_NORMALIZED_900x900.png",
@@ -17,7 +17,16 @@
     "preserve": true
   },
   "continuationFrom": "auryi_auorb.sequence.json#frame-6",
-  "frameCount": 10,
+  "sourceCandidate": {
+    "frameCount": 10,
+    "layout": { "columns": 5, "rows": 2 },
+    "sourceSheetWidthPx": 1983,
+    "sourceSheetHeightPx": 793,
+    "sourceSha256": "1e7a750c5094df2d65450378fd2b46d7c204c5d7bf5f000ec14184d8e9e345a0",
+    "colorMode": "RGB-no-alpha",
+    "background": "dark-neutral-source-matte",
+    "runtimeAssetState": "validated-local-extraction-pending-repo-ingestion"
+  },
   "frameAuthority": [
     { "frame": 1, "beat": "auorb-ready" },
     { "frame": 2, "beat": "hover-settle" },
@@ -58,6 +67,37 @@
     ],
     "runtimeSizingAuthority": true
   },
+  "extractionValidation": {
+    "method": "border-connected-dark-neutral-matte",
+    "maxChannel": 32,
+    "maxChroma": 8,
+    "assessment": "pass-preserves-hair-crown-robe-shadows-sandals-and-auorb-edges",
+    "frameSha256": [
+      "02b51bdcdd35f1a726dacf62afd634f73f6f362a71b6de5fa9e5686f42c6546e",
+      "8ac19b632fe2e2406742fd1607a4c2e5a6493f75762f3eff1f33a1b57d48f213",
+      "1eaa545dd9b122407c61e77452cdbb14715f7b614b72db07f7d23bf1591d4cd6",
+      "16643f171e99d336abdbbfd0c0ced8233d75d8e45341b24efa7e7ebd2540cb93",
+      "4156a479d20ea45f8b1123d984e3ca42580029895ba0ff5d80283d380b7e2ac0",
+      "d954a3d3e99832f7c890688bde749de5e93d38b180465986b70122a6fc7edb2b",
+      "62b4b381290421fd7a526d92a237e81855672f7c7f2ad443dd0e89da3bda2c33",
+      "121fbda657c716dced76db4f9021ab94841ad101cf3363f62a2502f539d13e60",
+      "f8b347a3ab759ba17ee536e085dde511264a576976f21cfb2073791eb12e1bd8",
+      "c3c4060bea1c0c621cb23338527c2f5fcebbfee61f5932085b9703c6717e778c"
+    ]
+  },
+  "prizimFindings": {
+    "choreography": "pass",
+    "jrpgVisualFamily": "pass",
+    "characterIdentity": "pass",
+    "auorbProgression": "pass",
+    "bodyScale": "normalize-runtime",
+    "crownHeadSpacing": "minor-drift",
+    "hairMassContinuity": "minor-drift",
+    "robeLowerSilhouette": "register-runtime",
+    "fxProgression": "minor-refinement-frames-7-8",
+    "readyRecoverySeam": "register-tightly-frame-10-to-frame-1",
+    "attackReadability": "pass"
+  },
   "visualFamilyRequirements": {
     "preserveLockedJrpgFaceHairSkinTone": true,
     "preserveLavenderIvoryGoldCostume": true,
@@ -68,7 +108,8 @@
   "authorityRules": {
     "oldFivePoseAuryiAttackMayNotMasqueradeAsCurrent": true,
     "auryiAttackMasterAIsReferenceNotCurrentJrpgVisualAuthority": true,
-    "productionAuthorityRequiresSourceArt": true,
+    "productionAuthorityRequiresSourceArt": false,
+    "productionAuthorityRequiresRuntimeIngestion": true,
     "productionAuthorityRequiresPriZimRegistration": true,
     "productionAuthorityRequiresPhoneAcceptance": true
   }
