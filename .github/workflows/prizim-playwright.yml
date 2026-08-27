@@ -1,0 +1,54 @@
+name: PriZim Playwright Gate
+
+on:
+  push:
+    branches:
+      - prizim-modernization-phase3-playwright
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'playwright.config.ts'
+      - 'tests/e2e/**'
+      - 'index.html'
+      - 'hybrid-battle-live.html'
+      - '.github/workflows/prizim-playwright.yml'
+
+jobs:
+  browser-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: package.json
+
+      - name: Install
+        run: npm install --ignore-scripts
+
+      - name: Install Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Browser tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
