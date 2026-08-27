@@ -1,0 +1,49 @@
+{
+  "schema": "prizim.visual_integrity.v1",
+  "heroId": "auryi",
+  "assetId": "AURYI_ATTACK_JRPG_10A",
+  "frameCount": 10,
+  "overall": "conditional-pass",
+  "productionDisposition": "minor-corrections-before-production-promotion",
+  "reviewScope": {
+    "explicitAnatomyAudit": true,
+    "reviewedAtHighResolution": true,
+    "checksInclude": [
+      "extra-or-missing-limbs",
+      "limb-attachment",
+      "hands-and-fingers",
+      "eyes-and-pupil-direction",
+      "face-identity",
+      "anatomy-object-fusion",
+      "costume-and-prop-continuity",
+      "frame-to-frame-identity-drift"
+    ]
+  },
+  "checks": {
+    "duplicateLimbs": {"status": "pass", "notes": "No obvious duplicated arms or legs across the ten frames."},
+    "limbCountAndAttachment": {"status": "pass", "notes": "Visible limbs attach plausibly throughout the sequence; no detached or impossible duplicate joint found."},
+    "handsAndFingerTopology": {"status": "minor-review", "frames": [3,4,5,6,7,8], "notes": "Hands remain anatomically plausible, but Auorb glow and sleeve overlap obscure finger separation during the casting half. Final production close-up must verify clean finger silhouettes."},
+    "eyesAndPupilDirection": {"status": "pass", "notes": "Gaze remains coherent toward the target/right; no crossed-eye or conflicting pupil-direction read found."},
+    "faceIdentityContinuity": {"status": "pass", "notes": "Face, age, skin tone and overall identity remain consistent across the ten-frame strip."},
+    "anatomyObjectFusion": {"status": "minor-review", "frames": [3,4,5,6,7,8], "notes": "No anatomical fusion found, but the Auorb, fingers and sleeve edges partially merge under bloom in several frames. Preserve a readable hand-to-orb gap during cleanup."},
+    "costumeObjectContinuity": {"status": "minor-review", "frames": [3,4,5,6,7,8], "notes": "Robe construction remains coherent. Crown spacing and hair mass drift slightly across frames and should be normalized without redesign."},
+    "frameToFrameIdentityDrift": {"status": "minor-review", "notes": "Identity is stable; only crown spacing and hair-volume drift need minor continuity correction."}
+  },
+  "requiredCorrections": [
+    "preserve-visible-gap-between-Auorb-and-fingers-where-pose-allows",
+    "prevent-sleeve-glow-from-merging-with-hand-silhouette",
+    "normalize-crown-radius-and-head-spacing",
+    "normalize-hair-mass-without-freezing-intentional-motion",
+    "keep-frame-10-recovery-registration-tight-to-frame-1"
+  ],
+  "hardRejects": [
+    "extra-arm-or-leg",
+    "missing-attached-limb-without-occlusion",
+    "obvious-extra-fingers",
+    "crossed-or-conflicting-pupil-direction",
+    "face-identity-swap",
+    "hand-fused-into-Auorb-or-sleeve",
+    "crown-merging-into-head-anatomy"
+  ],
+  "pzDecision": "No hard AI-anatomy artifact found. Apply minor hand/orb separation, crown-spacing and hair-continuity corrections before production promotion."
+}
