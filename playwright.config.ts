@@ -14,7 +14,11 @@ export default defineConfig({
     video: 'retain-on-failure'
   },
   webServer: {
-    command: 'python3 -m http.server 4173 --bind 127.0.0.1',
+    // Vite owns browser-test serving so TypeScript probe modules are
+    // transpiled exactly as they are during modernization development.
+    // The Vite dev server still serves the repository root, so the
+    // existing PV menu, hybrid shell and assets remain testable too.
+    command: 'npx vite --host 127.0.0.1 --port 4173 --strictPort --config vite.config.ts',
     url: 'http://127.0.0.1:4173/index.html',
     reuseExistingServer: !process.env.CI,
     timeout: 15_000
