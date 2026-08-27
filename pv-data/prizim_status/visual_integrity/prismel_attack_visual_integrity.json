@@ -1,0 +1,49 @@
+{
+  "schema": "prizim.visual_integrity.v1",
+  "heroId": "prismel",
+  "assetId": "PRISMEL_ATTACK_JRPG_10A",
+  "frameCount": 10,
+  "overall": "conditional-pass",
+  "productionDisposition": "minor-corrections-before-production-promotion",
+  "reviewScope": {
+    "explicitAnatomyAudit": true,
+    "reviewedAtHighResolution": true,
+    "checksInclude": [
+      "extra-or-missing-limbs",
+      "limb-attachment",
+      "hands-and-fingers",
+      "eyes-and-pupil-direction",
+      "face-identity",
+      "anatomy-object-fusion",
+      "costume-and-prop-continuity",
+      "frame-to-frame-identity-drift"
+    ]
+  },
+  "checks": {
+    "duplicateLimbs": {"status": "pass", "notes": "No obvious duplicated arms or legs across the ten frames."},
+    "limbCountAndAttachment": {"status": "pass", "notes": "Visible limbs attach plausibly throughout the sequence; no detached or impossible duplicate joint found."},
+    "handsAndFingerTopology": {"status": "minor-review", "frames": [1,2,3,10], "notes": "Open/free hands are small and partially obscured by glow. No obvious extra-digit failure, but finger separation must remain readable after final extraction."},
+    "eyesAndPupilDirection": {"status": "pass", "notes": "Gaze remains coherently target/right-facing; overhead-charge frame appropriately shifts attention upward without crossed-eye read."},
+    "faceIdentityContinuity": {"status": "pass", "notes": "Youthful face, head construction, skin tone and hood read as one Prismel model across all frames."},
+    "anatomyObjectFusion": {"status": "minor-review", "frames": [6,7,8,9], "notes": "No body-part fusion detected, but forward staff/hand/beam silhouette becomes visually ambiguous during release and can read as staff-to-projectile morphing."},
+    "costumeObjectContinuity": {"status": "minor-review", "frames": [6,7,8,9], "notes": "Cloak and costume remain coherent. Staff continuity through the release arc needs explicit prop-separation correction."},
+    "frameToFrameIdentityDrift": {"status": "pass", "notes": "No major anatomy, age, or identity mutation across the ten-frame strip."}
+  },
+  "requiredCorrections": [
+    "preserve-clear-finger-separation-on-visible-open-hand",
+    "keep-staff-shaft-and-crystal-readable-through-release",
+    "separate-staff-tip-from-projectile-origin-so-the-prop-does-not-appear-to-morph",
+    "keep-prismatic-bloom-from-erasing-hand-wrist-boundaries",
+    "retain-frame-10-to-frame-1-face-head-and-hand-continuity"
+  ],
+  "hardRejects": [
+    "extra-arm-or-leg",
+    "missing-attached-limb-without-occlusion",
+    "obvious-extra-fingers",
+    "crossed-or-conflicting-pupil-direction",
+    "face-identity-swap",
+    "hand-fused-into-staff-or-fx",
+    "staff-morphing-into-anatomy"
+  ],
+  "pzDecision": "No hard AI-anatomy artifact found. Apply hand-readability and staff/projectile-separation corrections before production promotion."
+}
