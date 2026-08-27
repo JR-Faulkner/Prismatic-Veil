@@ -8,8 +8,8 @@
   "scripts": {
     "dev:modern": "vite --host 0.0.0.0 --config vite.config.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:unit": "vitest run --reporter=verbose",
-    "test:unit:watch": "vitest",
+    "test:unit": "vitest run --config vitest.config.ts --reporter=verbose",
+    "test:unit:watch": "vitest --config vitest.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:chromium": "playwright test --project=chromium-phone",
     "test:e2e:webkit": "playwright test --project=webkit-phone",
