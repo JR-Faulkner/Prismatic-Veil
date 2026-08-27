@@ -1,0 +1,37 @@
+{
+  "schema": "prizim.visual_integrity.correction_policy.v1",
+  "scope": "generated-character-animation",
+  "purpose": "Prevent AI-generation artifacts from being promoted as production authority.",
+  "severity": {
+    "hardReject": [
+      "extra-or-missing-limb-without-occlusion",
+      "duplicated-hand-fist-thumb-or-joint",
+      "obvious-extra-fingers-or-digit-fusion",
+      "crossed-or-conflicting-pupil-direction",
+      "face-identity-swap-or-age-mutation",
+      "anatomically-impossible-prop-or-fx-fusion"
+    ],
+    "requiredCleanup": [
+      "ambiguous-finger-separation",
+      "hand-prop-or-hand-orb-bloom-fusion",
+      "gauntlet-FX-causing-false-extra-hand-silhouette",
+      "hair-crown-hood-or-face-continuity-drift",
+      "prop-geometry-morphing-between-frames"
+    ],
+    "runtimeCorrection": [
+      "apparent-body-scale",
+      "baseline-and-foot-anchor",
+      "horizontal-body-anchor",
+      "FX-extents-excluded-from-body-bounds"
+    ]
+  },
+  "rules": [
+    "A bleed/registration PASS does not imply anatomy PASS.",
+    "Hands must be reviewed where visible; intentional gauntlets or closed fists are judged by plausible topology, not by requiring five visible digits.",
+    "Eyes must have coherent gaze direction for the authored pose; dramatic head turns do not excuse crossed or independently wandering pupils.",
+    "FX may occlude anatomy but may never create a second readable limb, hand, fist, thumb, wrist or joint.",
+    "Character identity must remain stable across the entire sequence.",
+    "Hard rejects block production promotion. Required cleanup keeps authority conditional until corrected and re-reviewed.",
+    "Runtime geometry issues are corrected by registration, not by redrawing otherwise-valid anatomy."
+  ]
+}
