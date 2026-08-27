@@ -36,9 +36,11 @@ def main():
 
     # Current H2.8 promotion map. Pending art must never preload as production.
     require("id: 'prismel_attack_jrpg_10a'" in authority_text, "Prismel 10A target missing")
-    require("status: 'conditional-pz-pass-pending-runtime-extraction'" in authority_text, "Prismel pending status drifted")
+    require("status: 'conditional-pz-pass-pending-runtime-ingestion'" in authority_text,
+            "Prismel pending status drifted")
     require("id: 'auryi_attack_jrpg_10a'" in authority_text, "Auryi 10A target missing")
-    require("status: 'refresh-target-pending-source-art'" in authority_text, "Auryi pending status drifted")
+    require(authority_text.count("status: 'conditional-pz-pass-pending-runtime-ingestion'") >= 2,
+            "Auryi pending status drifted")
     require("id: 'kineza_attack_master_a'" in authority_text, "Kineza Master A missing")
     require("status: 'production-current'" in authority_text, "Kineza must remain production-current")
 
@@ -51,7 +53,10 @@ def main():
 
     auryi = load_json("pv-data/sequence_authority/auryi_attack_jrpg_10a.refresh.json")
     require(auryi.get("id") == "AURYI_ATTACK_JRPG_10A", "Auryi refresh id mismatch")
-    require(auryi.get("frameCount") == 10, "Auryi refresh must remain 10 frames")
+    require(auryi.get("sourceCandidate", {}).get("frameCount") == 10,
+            "Auryi refresh must remain 10 frames")
+    require(len(auryi.get("frameAuthority", [])) == 10,
+            "Auryi frame authority must contain exactly 10 beats")
     validate_markers(auryi, 10)
     require(auryi.get("referenceAuthority", {}).get("preserve") is True,
             "Auryi Master A reference preservation missing")
@@ -76,8 +81,8 @@ def main():
             "Auryi JRPG visual anchor missing")
 
     print("PZ ATTACK AUTHORITY PASS")
-    print("- Prismel: JRPG 10A conditional, old six-frame preserved reference")
-    print("- Auryi: JRPG 10A refresh target, Master A preserved reference")
+    print("- Prismel: JRPG 10A conditional, pending runtime ingestion")
+    print("- Auryi: JRPG 10A conditional, pending runtime ingestion")
     print("- Kineza: Master A production-current")
 
 
