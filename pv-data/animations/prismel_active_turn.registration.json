@@ -2,9 +2,13 @@
   "schemaVersion": 1,
   "id": "prismel_active_turn",
   "character": "prismel",
+  "status": "canon-preserved-tactical-reference",
+  "authorityScope": "materialization-and-legacy-active-turn-reference",
+  "supersededForPartyBattleAttackBy": "PRISMEL_ATTACK_JRPG_10A",
+  "preserveAsReference": true,
   "assetRoot": "assets/poses/prismel_active_turn",
   "referenceFrame": "prismel_ready_6",
-  "notes": "Canonical renderer-neutral registration and cadence tuning. Scale is a multiplier applied after measured visible-body normalization. x/y are local pixel nudges at the registered rig origin. Timing/cues are authored here so renderers and future audio can share the same beats.",
+  "notes": "Canonical renderer-neutral registration and cadence tuning for the preserved tactical active-turn sequence. Scale is a multiplier applied after measured visible-body normalization. x/y are local pixel nudges at the registered rig origin. Materialization remains useful reference; the six-frame attack portion is superseded for current Party Battle by PRISMEL_ATTACK_JRPG_10A.",
   "frames": {
     "prismel_ready_1": {
       "scale": 1.0,
