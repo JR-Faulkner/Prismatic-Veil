@@ -1,0 +1,29 @@
+{
+  "system": "PriZim",
+  "modernization_version": "0.4-phase1",
+  "status": "active",
+  "current_runtime": {
+    "renderer": "Phaser 3",
+    "ui_shell": "HTML/CSS/JavaScript DOM",
+    "production_entry": "index.html -> hybrid-battle-live.html"
+  },
+  "phase1": {
+    "typescript": "7.0.2",
+    "vite": "8.2.2",
+    "strategy": "typed boundaries first; no rewrite-first migration",
+    "live_runtime_modified": false
+  },
+  "planned": [
+    "Vitest logic gates",
+    "Playwright Chromium/WebKit regression",
+    "Phaser 4 renderer lab",
+    "Capacitor mobile prototype"
+  ],
+  "rules": {
+    "react_required": false,
+    "legacy_surfaces_explicit": true,
+    "fallback_may_masquerade_as_current": false,
+    "real_iphone_final_acceptance": true,
+    "renderer_independent_core_direction": true
+  }
+}

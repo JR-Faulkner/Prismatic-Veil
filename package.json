@@ -1,0 +1,19 @@
+{
+  "name": "prismatic-veil",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev:modern": "vite --host 0.0.0.0 --config vite.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build:modern": "vite build --config vite.config.ts",
+    "preview:modern": "vite preview --host 0.0.0.0 --config vite.config.ts",
+    "check:modern": "npm run typecheck && npm run build:modern"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "8.2.2"
+  }
+}
