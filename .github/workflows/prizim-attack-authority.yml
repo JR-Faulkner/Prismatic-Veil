@@ -1,0 +1,34 @@
+name: PriZim Attack Authority
+
+on:
+  push:
+    branches:
+      - h28-attack-authority-audio
+    paths:
+      - 'src/PartyAttackAuthority.js'
+      - 'pv-data/sequence_authority/**'
+      - 'pv-data/animations/prismel_active_turn.registration.json'
+      - 'tools/prizim/attack_authority_check.py'
+      - 'assets/party_formation/**'
+      - 'assets/sequences/production/**'
+      - '.github/workflows/prizim-attack-authority.yml'
+  pull_request:
+    paths:
+      - 'src/PartyAttackAuthority.js'
+      - 'pv-data/sequence_authority/**'
+      - 'pv-data/animations/prismel_active_turn.registration.json'
+      - 'tools/prizim/attack_authority_check.py'
+      - 'assets/party_formation/**'
+      - 'assets/sequences/production/**'
+      - '.github/workflows/prizim-attack-authority.yml'
+
+jobs:
+  authority:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: PriZim attack authority gate
+        run: python tools/prizim/attack_authority_check.py
