@@ -69,7 +69,7 @@ Rule: Phaser 4 remains experimental until a representative PV scene proves a mat
 
 ### Phase 5 — Capacitor native-shell prototype
 Version: Capacitor 8.5.0
-Status: IN VERIFICATION
+Status: PASS AS ISOLATED NATIVE PROTOTYPE
 Production promotion: NOT APPROVED
 
 Architecture:
@@ -78,16 +78,17 @@ Architecture:
 - no replacement of live web route
 - no committed generated `ios/` or `android/` platform trees during prototype
 
-Verified so far:
+Validated:
 - Android wrapper generation/sync: PASS
 - Android packaged native-shell asset: PASS
 - Android production-runtime integrity guard: PASS
 - iOS wrapper generation/sync: PASS
 - iOS packaged native-shell asset: PASS
-- Xcode project inspection: pending at time of this ledger revision
+- Xcode project inspection: PASS
+- iOS production-runtime integrity guard: PASS
 
 Current iOS ecosystem note:
-Capacitor 8.x has active upstream reports involving current Apple SDK/signature freshness. Prototype compatibility and App Store submission readiness are therefore separate PriZim gates.
+Capacitor 8.x has active upstream reports involving current Apple SDK/signature freshness. Prototype compatibility and App Store submission readiness remain separate PriZim gates.
 
 ## Planned flow
 
