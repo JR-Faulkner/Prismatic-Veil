@@ -8,6 +8,7 @@ on:
     paths:
       - 'package.json'
       - 'tsconfig.json'
+      - 'tsconfig.phaser4.json'
       - 'vite.config.ts'
       - 'renderer-lab-phaser4.html'
       - 'tools/renderer-lab/**'
@@ -36,8 +37,11 @@ jobs:
       - name: Install Chromium and WebKit
         run: npx playwright install --with-deps chromium webkit
 
-      - name: TypeScript
+      - name: PriZim core TypeScript
         run: npm run typecheck
+
+      - name: Phaser 4 lab TypeScript
+        run: npm run typecheck:phaser4
 
       - name: Unit tests
         run: npm run test:unit

@@ -20,7 +20,12 @@
     "route": "renderer-lab-phaser4.html",
     "focus": ["Glow", "Barrel", "ColorMatrix", "WebGL", "mobile browser compatibility"],
     "production_renderer_modified": false,
-    "migration_decision": "pending evidence"
+    "migration_decision": "pending evidence",
+    "compatibility_evidence": {
+      "typescript_7_vendor_declarations": "Phaser 4.2.1 bundled declarations currently report internal TS7 errors",
+      "containment": "PriZim core stays strict; Phaser 4 lab uses isolated skipLibCheck only for vendor declarations",
+      "our_lab_code_strict": true
+    }
   },
   "next_planned": [
     "evaluate Phaser 4 renderer lab quality and migration cost",

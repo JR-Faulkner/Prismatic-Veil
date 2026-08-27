@@ -32,6 +32,7 @@ class VeilRendererLab extends Phaser.Scene {
     const veil = this.add.graphics();
     veil.fillStyle(0x6b37b7, 0.13);
     veil.fillEllipse(width * 0.68, height * 0.48, width * 0.45, height * 0.62);
+    if (!veil.filters) throw new Error('Phaser 4 filter list unavailable on Veil distortion layer');
     const barrel = veil.filters.external.addBarrel(1.03);
 
     const crystal = this.add.graphics({ x: width * 0.5, y: height * 0.52 });
@@ -47,12 +48,13 @@ class VeilRendererLab extends Phaser.Scene {
     crystal.closePath();
     crystal.fillPath();
     crystal.strokePath();
-
+    if (!crystal.filters) throw new Error('Phaser 4 filter list unavailable on prismatic crystal');
     const glow = crystal.filters.external.addGlow(0x9b65ff, 5, 0.8, 1, false, 10, 12);
     crystal.filters.external.addBarrel(1.015);
 
     const shardA = this.add.triangle(width * 0.34, height * 0.48, 0, 48, 22, 0, 44, 48, 0x7b4fd2, 0.75);
     const shardB = this.add.triangle(width * 0.67, height * 0.58, 0, 44, 18, 0, 36, 44, 0xf0c96d, 0.72);
+    if (!shardA.filters || !shardB.filters) throw new Error('Phaser 4 filter list unavailable on shard layer');
     shardA.filters.external.addGlow(0x7348c8, 3, 0, 1, false, 8, 8);
     shardB.filters.external.addGlow(0xffd876, 2.5, 0, 1, false, 8, 8);
 
