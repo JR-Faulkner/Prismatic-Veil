@@ -1,0 +1,48 @@
+name: PriZim Modernization Gate
+
+on:
+  push:
+    branches:
+      - prizim-modernization-phase1
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'vite.config.ts'
+      - 'src/core/**'
+      - 'tools/modernization/**'
+      - 'modernization-probe.html'
+      - 'docs/PRIZIM_MODERNIZATION_ROADMAP.md'
+      - 'pv-data/prizim_modernization_status.json'
+      - '.github/workflows/prizim-modernization.yml'
+
+jobs:
+  phase1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: package.json
+
+      - name: Install modernization toolchain
+        run: npm install --ignore-scripts
+
+      - name: TypeScript boundary check
+        run: npm run typecheck
+
+      - name: Vite modernization probe build
+        run: npm run build:modern
+
+      - name: Verify live runtime untouched by generated output
+        run: |
+          test -f index.html
+          test -f hybrid-battle-live.html
+          test -f dist-modernization/modernization-probe.html
+          git diff --exit-code -- index.html hybrid-battle-live.html
