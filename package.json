@@ -13,6 +13,7 @@
     "check:modern": "npm run typecheck && npm run build:modern"
   },
   "devDependencies": {
+    "@types/node": "26.3.0",
     "typescript": "7.0.2",
     "vite": "8.2.2"
   }
