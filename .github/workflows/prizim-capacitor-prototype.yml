@@ -1,0 +1,81 @@
+name: PriZim Capacitor Prototype
+
+on:
+  push:
+    branches:
+      - prizim-modernization-phase5-capacitor
+    paths:
+      - 'package.json'
+      - 'capacitor.config.ts'
+      - 'vite.config.capacitor.ts'
+      - 'native-shell/**'
+      - '.github/workflows/prizim-capacitor-prototype.yml'
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'capacitor.config.ts'
+      - 'vite.config.capacitor.ts'
+      - 'native-shell/**'
+      - '.github/workflows/prizim-capacitor-prototype.yml'
+
+jobs:
+  web-and-android-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Install
+        run: npm install --ignore-scripts
+      - name: PriZim core TypeScript
+        run: npm run typecheck
+      - name: Capacitor web bundle
+        run: npm run build:capacitor
+      - name: Verify isolated bundle
+        run: |
+          test -f dist-capacitor/index.html
+          grep -q 'The Prismatic Veil' dist-capacitor/index.html
+          test ! -e dist-capacitor/renderer-lab-phaser4.html
+      - name: Generate Android wrapper
+        run: npx cap add android
+      - name: Sync Android wrapper
+        run: npx cap sync android
+      - name: Verify Android shell
+        run: |
+          test -f android/app/src/main/AndroidManifest.xml
+          test -f android/app/src/main/assets/public/index.html
+          grep -q 'The Prismatic Veil' android/app/src/main/assets/public/index.html
+      - name: Verify production runtime untouched
+        run: |
+          git diff --exit-code -- index.html hybrid-battle-live.html phaser.min.js src/PartyBattleScene.js
+
+  ios-contract:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - name: Install
+        run: npm install --ignore-scripts
+      - name: Capacitor web bundle
+        run: npm run build:capacitor
+      - name: Generate iOS wrapper
+        run: npx cap add ios
+      - name: Sync iOS wrapper
+        run: npx cap sync ios
+      - name: Verify iOS shell
+        run: |
+          test -d ios/App
+          test -f ios/App/App/public/index.html
+          grep -q 'The Prismatic Veil' ios/App/App/public/index.html
+      - name: Inspect Xcode project
+        run: xcodebuild -list -project ios/App/App.xcodeproj
+      - name: Verify production runtime untouched
+        run: |
+          git diff --exit-code -- index.html hybrid-battle-live.html phaser.min.js src/PartyBattleScene.js
