@@ -1,134 +1,93 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "profileId": "sarallel-herocel-v1",
-  "profileRevision": "1.4-single-source-edit-reset",
+  "profileRevision": "1.5-candidate-g-lock-pending-same-artist",
   "characterId": "sarallel",
   "inherits": "prismatic-herocel-v1",
   "ageAdapter": "adult",
-  "status": "locked-single-source-edit-pending-candidate-g",
+  "status": "candidate-g-pz-pass-pending-same-artist-comparison",
   "authorityStack": {
-    "likenessAuthority": {"master": "Sarallel Likeness Master A", "priority": "absolute-geometry-authority"},
-    "characterDesignAuthority": {"master": "Sarallel Design Master A", "priority": "absolute-design-authority"},
-    "singleVisualSource": {"master": "Sarallel HeroCel Candidate D", "priority": "only-visual-appearance-source"},
+    "likenessAuthority": {"master": "Sarallel Likeness Master A", "source": "sarallel-likeness-master-a-inspection", "priority": "absolute-geometry-authority"},
+    "characterDesignAuthority": {"master": "Sarallel Design Master A", "source": "sarallel-design-master-a-inspection", "priority": "absolute-design-authority"},
     "renderingAuthority": "prismatic-herocel-v1",
-    "renderingFingerprint": {"source": "Rendering Pass E distilled text-only fingerprint", "visualReferenceAllowed": false}
-  },
-  "singleSourceMode": {
-    "enabled": true,
-    "visualSourceCount": 1,
-    "onlyAllowedVisualSource": "Sarallel HeroCel Candidate D",
-    "allOtherVisualSourcesForbidden": true,
-    "forbiddenVisualSources": [
-      "Sarallel HeroCel Rendering Pass E image",
-      "Auryi",
-      "Prismel",
-      "Kineza",
-      "Sarallel Likeness Master A image",
-      "Sarallel Design Master A image",
-      "legacy Sarallel art",
-      "multi-character comparisons",
-      "rejected Sarallel attempts",
-      "character sheets",
-      "turnarounds"
-    ],
-    "rule": "Candidate D is the only image that may be supplied to generation. All other authorities are represented as text constraints only."
+    "currentHeroCelCandidate": {"candidate": "Sarallel HeroCel Candidate G", "source": "sarallel-herocel-candidate-g-inspection", "priority": "current-lock-candidate"}
   },
   "identityFirewall": {
     "priority": "absolute",
-    "singleSourceGeometryOwner": "Sarallel HeroCel Candidate D, constrained by locked Sarah likeness and Sarallel design text authority",
+    "subjectGeometryOwner": "likenessAuthority",
+    "characterGeometryOwner": "characterDesignAuthority",
+    "styleOwner": "prismatic-herocel-v1",
     "heroCelGeometryContributionPercent": 0,
-    "externalVisualGeometryContributionPercent": 0,
-    "externalVisualLikenessContributionPercent": 0,
-    "externalVisualDesignContributionPercent": 0,
-    "rule": "HeroCel may alter rendering treatment only. It may not replace or reconstruct Candidate D identity, face, hair, body, pose, costume, cape, crystals, or camera."
+    "legacySarallelFaceContributionPercent": 0,
+    "kinezaGeometryContributionPercent": 0,
+    "kinezaLikenessContributionPercent": 0,
+    "rule": "Candidate G may serve as Sarallel animation-rendering authority only while Sarah likeness geometry and Sarallel Design Master A geometry remain absolute."
   },
-  "frozenFromCandidateD": [
-    "face width",
-    "cheek fullness",
-    "jaw width and soft jaw transition",
-    "rounded chin",
-    "broader softer nose",
-    "Sarah-specific smile width and cheek lift",
-    "eye size shape spacing and tilt",
-    "hairline part length and face framing",
-    "body proportions",
-    "pose",
-    "camera",
-    "royal blue black and gold costume geometry",
-    "cape silhouette",
-    "crystal count placement and geometry"
-  ],
-  "renderingFingerprintTextOnly": {
-    "source": "distilled from Rendering Pass E; image must not be provided",
-    "targets": [
-      "2-to-3 facial value groups",
-      "crisp controlled shadow boundaries",
-      "grouped hair masses with selective strand accents",
-      "graphic armor material blocks",
-      "restrained highlight bands",
-      "clean animation-readable interior edges",
-      "premium animated game character rather than painted fantasy portrait"
-    ],
-    "forbidden": [
-      "new facial geometry",
-      "new hair geometry",
-      "new pose",
-      "new body proportions",
-      "new costume geometry",
-      "new crystal geometry",
-      "new magic staging",
-      "new background staging",
-      "character-sheet presentation",
-      "multi-view presentation"
-    ]
+  "singleSourceEditMode": {
+    "status": "proven-effective",
+    "visualSourceCount": 1,
+    "onlyVisualSource": "Sarallel HeroCel Candidate D",
+    "result": "Sarallel HeroCel Candidate G",
+    "lesson": "For likeness-sensitive HeroCel transitions, prefer a fresh single-source edit over multi-image style stacks."
   },
-  "generationContract": {
-    "nextAsset": "Sarallel HeroCel Candidate G",
-    "mode": "single-source image edit",
-    "sourceImage": "Sarallel HeroCel Candidate D only",
-    "presentation": "one full-body Sarallel on the same plain neutral background and same pose/camera family as Candidate D; no sheet, no text, no alternate views",
-    "editInstruction": "Edit the supplied Candidate D image itself. Preserve Candidate D identity and design exactly. Change only the rendering treatment toward the locked HeroCel fingerprint. Do not reinterpret the subject and do not generate a new character from description.",
-    "styleInstruction": "Apply 2-to-3 facial value groups, crisp controlled shadows, grouped hair masses, graphic armor material blocks, restrained highlight bands, and clean animation-readable edges while preserving every Candidate D geometry decision.",
-    "criticalRule": "If the result cannot remain recognizably the same Candidate D woman, pose, hair, costume, cape, and crystals, reject rather than substitute or redesign."
+  "candidateG": {
+    "inspection": "sarallel-herocel-candidate-g-inspection",
+    "generationId": "7882f852-8c45-4ff4-a4ff-cd392056d3dc",
+    "scores": {
+      "sarahLikeness": 9.0,
+      "heroCelAnimationRead": 9.4,
+      "sarallelDesignFidelity": 9.3,
+      "sameArtistImpressionPreComparison": 9.2
+    },
+    "status": "pz-pass-lock-candidate",
+    "stylizationRule": "Do not push HeroCel harder than Candidate G. Future refinements, if any, may only preserve or improve Sarah likeness while holding current animation intensity."
   },
   "hardReject": [
-    "more than one visual source used",
-    "Auryi contamination",
-    "different ethnicity or skin-tone identity",
-    "different face",
-    "different hair texture or curl family",
-    "face narrowing",
-    "cheek-volume loss",
+    "face narrowing beyond Candidate G",
     "jaw taper increase",
-    "nose sharpening",
-    "generic heroine smile",
-    "pose change",
-    "camera change",
-    "costume redesign",
-    "cape redesign",
-    "crystal redesign",
-    "lavender-white robe contamination",
-    "gold-orb contamination",
-    "character-sheet layout",
-    "turnaround layout",
-    "text or labels"
+    "cheek-volume loss",
+    "nose narrowing or sharpening",
+    "generic animated-heroine face normalization",
+    "age regression",
+    "hair geometry redesign",
+    "armor redesign",
+    "cape silhouette redesign",
+    "crystal geometry redesign",
+    "Auryi visual contamination",
+    "lavender robe contamination",
+    "Kineza geometry transfer",
+    "Prismel geometry transfer",
+    "multi-source visual generation for Sarallel likeness refinement",
+    "stylization intensity materially above Candidate G",
+    "painterly regression below Candidate G animation read"
   ],
+  "nextGate": {
+    "name": "untouched-same-artist-comparison",
+    "requiredCharacters": [
+      "Sarallel HeroCel Candidate G",
+      "Auryi HeroCel Master A",
+      "Prismel HeroCel Master B",
+      "Kineza master"
+    ],
+    "method": "Use untouched masters on one neutral comparison canvas. Scaling and positioning only. Do not regenerate characters together.",
+    "sameArtistMinimum": 9.2,
+    "promotionOnPass": "Sarallel HeroCel Production Authority"
+  },
   "passTarget": {
     "sarahLikenessMinimum": 9.0,
     "heroCelAnimationReadMinimum": 9.2,
     "sarallelDesignFidelityMinimum": 9.3,
-    "sameArtistImpressionMinimum": 9.2,
-    "visualSourceCountRequired": 1,
-    "promotionRule": "Promote only if Candidate G clearly remains Candidate D in identity/design while achieving the locked HeroCel rendering fingerprint."
+    "sameArtistImpressionMinimum": 9.2
   },
   "prizimGates": {
-    "singleVisualSourceOnly": "hard-reject",
-    "zeroExternalGeometryTransfer": "hard-reject",
+    "sarahGeometryOwnership": "hard-reject",
     "zeroHeroCelGeometryTransfer": "hard-reject",
-    "crossCharacterContamination": "hard-reject",
+    "zeroKinezaGeometryTransfer": "hard-reject",
+    "zeroLegacyFantasyFaceTransfer": "hard-reject",
+    "singleSourceEditPolicy": "required-for-future-likeness-refinement",
     "sarahLikenessRetention": "required",
     "sarallelDesignFidelity": "required",
     "heroCelAnimationRead": "required",
-    "singleCharacterPresentation": "required"
+    "untouchedSameArtistComparison": "required-before-production-promotion"
   }
 }
