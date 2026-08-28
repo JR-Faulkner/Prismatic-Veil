@@ -8,9 +8,11 @@ on:
       - 'src/PartyAttackAuthority.js'
       - 'pv-data/sequence_authority/**'
       - 'pv-data/prizim_status/visual_integrity/**'
+      - 'pv-data/style_authority/**'
       - 'pv-data/animations/prismel_active_turn.registration.json'
       - 'tools/prizim/attack_authority_check.py'
       - 'tools/prizim/visual_integrity_check.py'
+      - 'tools/prizim/style_authority_check.py'
       - 'assets/party_formation/**'
       - 'assets/sequences/production/**'
       - '.github/workflows/prizim-attack-authority.yml'
@@ -19,9 +21,11 @@ on:
       - 'src/PartyAttackAuthority.js'
       - 'pv-data/sequence_authority/**'
       - 'pv-data/prizim_status/visual_integrity/**'
+      - 'pv-data/style_authority/**'
       - 'pv-data/animations/prismel_active_turn.registration.json'
       - 'tools/prizim/attack_authority_check.py'
       - 'tools/prizim/visual_integrity_check.py'
+      - 'tools/prizim/style_authority_check.py'
       - 'assets/party_formation/**'
       - 'assets/sequences/production/**'
       - '.github/workflows/prizim-attack-authority.yml'
@@ -38,3 +42,5 @@ jobs:
         run: python tools/prizim/attack_authority_check.py
       - name: PriZim visual integrity gate
         run: python tools/prizim/visual_integrity_check.py
+      - name: PriZim style authority gate
+        run: python tools/prizim/style_authority_check.py
