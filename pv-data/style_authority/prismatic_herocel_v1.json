@@ -1,83 +1,154 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "authorityId": "prismatic-herocel-v1",
+  "styleRevision": "1.1-identity-firewall",
   "name": "Prismatic HeroCel",
   "status": "locked-style-calibration-authority",
   "project": "The Prismatic Veil",
-  "purpose": "Translate an approved real-person likeness and a locked character design into the same polished animated-game rendering language demonstrated by Kineza, without copying Kineza's anatomy, costume, personality, or identity.",
+  "purpose": "Apply a person-agnostic polished animated-game rendering grammar to any approved likeness and canonical character design while preserving that subject's own face geometry, anatomy, age, and identity. Kineza is calibration evidence for the rendering grammar only, never a transferable likeness source.",
+  "styleDefinition": {
+    "family": "premium animated fantasy game illustration",
+    "hybridDescription": "feature-animation-informed facial readability + anime-influenced graphic simplification + broad cel-like value grouping + restrained painterly polish + high-detail fantasy game materials",
+    "notEquivalentTo": [
+      "generic anime",
+      "generic JRPG",
+      "photoreal fantasy portraiture",
+      "Western superhero realism",
+      "pixel art"
+    ],
+    "coreResult": "A character should look like their own likeness transformed into a polished animated fantasy-game model, not like Kineza wearing a different costume."
+  },
   "calibrationMaster": {
     "character": "kineza",
     "role": "rendering-authority-only",
+    "transferScope": "style-properties-only",
     "selectedReference": "second approved animated Kineza image from 2026-08-28 calibration review",
     "localEvidenceSha256": "08bfcf1f362283b9fba5ed1a5fbfdc48123d0621439651037acf0ed5205f2fef",
-    "selectionReason": "Strongest blend of recognizable likeness, animated facial readability, graphic costume hierarchy, controlled cel-like rendering, and game-ready silhouette clarity.",
-    "forbiddenUse": [
-      "Do not copy Kineza facial anatomy onto another character.",
-      "Do not copy Kineza child proportions onto adult characters.",
-      "Do not copy Kineza armor, gauntlets, cape, stance, expression, or kinetic FX onto another character unless independently canonical.",
-      "Do not interpret this authority as generic anime, generic JRPG, or pixel-art direction."
+    "selectionReason": "Strongest example of the desired edge treatment, value grouping, detail hierarchy, material rendering, facial readability, and animation-ready finish.",
+    "neverTransfer": [
+      "face shape",
+      "eye shape",
+      "eye spacing",
+      "eye size",
+      "eyebrow shape",
+      "cheek contour",
+      "nose geometry",
+      "mouth geometry",
+      "smile geometry",
+      "jaw width",
+      "chin shape",
+      "ear shape or prominence",
+      "hairline",
+      "curl pattern",
+      "head-to-body ratio",
+      "body proportions",
+      "age read",
+      "expression",
+      "pose",
+      "costume",
+      "FX identity"
+    ]
+  },
+  "identityFirewall": {
+    "priority": "absolute",
+    "rule": "Style authority may alter how a feature is rendered, never whose feature geometry is used.",
+    "ownership": {
+      "facialGeometry": "likenessAuthority",
+      "facialFeatureSpacing": "likenessAuthority",
+      "headShape": "likenessAuthority",
+      "hairGeometry": "likenessAuthority or characterDesignAuthority when canonically altered",
+      "ageRead": "likenessAuthority + character profile",
+      "bodyProportions": "characterDesignAuthority + likenessAuthority",
+      "costumeGeometry": "characterDesignAuthority",
+      "propGeometry": "characterDesignAuthority",
+      "characterSpecificFX": "characterDesignAuthority",
+      "edgeTreatment": "prismatic-herocel-v1",
+      "shadowGrouping": "prismatic-herocel-v1",
+      "highlightTreatment": "prismatic-herocel-v1",
+      "textureSimplification": "prismatic-herocel-v1",
+      "detailHierarchy": "prismatic-herocel-v1",
+      "materialStylization": "prismatic-herocel-v1",
+      "animationReadability": "prismatic-herocel-v1"
+    },
+    "forbiddenGeometryTransfer": [
+      "calibration-master eye geometry",
+      "calibration-master cheek geometry",
+      "calibration-master nose geometry",
+      "calibration-master mouth or smile geometry",
+      "calibration-master jaw or chin geometry",
+      "calibration-master ear geometry",
+      "calibration-master hairline or curl geometry",
+      "calibration-master head ratio",
+      "calibration-master body ratio"
+    ],
+    "hardRejectExamples": [
+      "A Prismel result that resembles Ezra/Kineza more than Elijah",
+      "An adult character inheriting Kineza's child face proportions",
+      "Any character receiving Kineza's grin, eye spacing, cheek contour, or head shape merely because Kineza is the style master"
     ]
   },
   "likenessTransitionEvidence": {
-    "principle": "Derive the style fingerprint from the visual delta between authentic likeness references and the approved Kineza animation result, not from the fantasy artwork alone.",
+    "principle": "Use the delta between authentic Kineza photos and approved Kineza animation only to infer non-identity rendering transformations. Never encode Kineza-specific geometry as a reusable style trait.",
+    "permittedInferences": [
+      "how realistic skin gradients become broad readable value groups",
+      "how texture noise is reduced",
+      "how material edges become crisper",
+      "how highlights are concentrated",
+      "how silhouette layers are separated",
+      "how facial details are simplified without changing identity geometry",
+      "how FX gains clean negative space from anatomy"
+    ],
     "referenceHashes": {
       "supportingKinezaArt": "0db3764cccdca64553988e45adf0696f4668c5c02b500877d825c5248e7edbb6",
       "supportingRenderedLikeness": "21e2ea3c831f94334df318adf2723d71ef9653945f90ab85ba47b1299106686c",
       "authenticPhotoClose": "317fe78431ff3f5dbaa67f1df4aab5dcbd6904ed1c8238e8de8e1ed47a5c78fe",
       "authenticPhotoPrimary": "7c48af70240a1386c0952717cdeca0c676418e9d09f560517c9b321eca476d5c"
-    },
-    "photoWeighting": {
-      "authenticPhotoPrimary": 1.0,
-      "authenticPhotoClose": 0.9,
-      "supportingRenderedLikeness": 0.45,
-      "supportingKinezaArt": 0.25
     }
   },
-  "fingerprint": {
-    "likenessFirstStylization": {
-      "priority": "critical",
-      "rules": [
-        "Preserve the subject's strongest identity anchors before any stylization.",
-        "Stylization may simplify planes and enlarge readable features, but must not replace face identity.",
-        "Hairline, curl pattern, cheek volume, nose family, mouth shape, eye spacing, jaw/chin family, and age read remain subject-specific."
-      ]
+  "styleOnlyFingerprint": {
+    "edgeTreatment": {
+      "rule": "Crisp controlled silhouette and internal material boundaries with selective softness only where light or atmosphere requires it.",
+      "face": "clean feature separation without heavy comic inking",
+      "costume": "clear layer separation at gameplay scale"
     },
-    "facialStylization": {
-      "eyeTreatment": "Moderately enlarged, highly readable eyes derived from the subject's real eye shape and spacing; never generic oversized anime eyes.",
-      "cheekTreatment": "Retain real cheek volume and smile structure; organize into clean graphic planes.",
-      "noseTreatment": "Simplify bridge and tip into readable animation shapes while preserving the subject's nose family.",
-      "mouthTreatment": "Clean, expressive contour with recognizable smile/lip proportions; avoid photoreal micro-creases.",
-      "jawChinTreatment": "Preserve subject-specific jaw and chin identity, simplified into clean silhouette geometry.",
-      "skinRendering": "Smooth controlled volume with broad light/shadow grouping and restrained painterly highlights."
+    "valueGrouping": {
+      "rule": "Broad intentional light, midtone, and shadow masses replace photographic continuous gradients.",
+      "skin": "smooth dimensional volume with restrained transition bands",
+      "fabric": "large fold groups before microtexture",
+      "metalCrystal": "high-contrast focal accents"
     },
-    "proportionGrammar": {
-      "head": "Slight animation-oriented enlargement relative to realistic anatomy, adjusted by age rather than copied from Kineza.",
-      "handsFeet": "Slight readability emphasis when useful for gameplay motion; never distort likeness or age.",
-      "body": "Character-specific canonical build remains authoritative.",
-      "ageAdapterRequired": true
+    "highlightTreatment": {
+      "rule": "Selective painterly polish on focal surfaces rather than uniform gloss.",
+      "priority": ["eyes", "skin focal planes", "signature crystal", "metal edges", "FX"]
     },
-    "silhouetteGrammar": {
-      "rule": "Primary costume masses must read immediately at gameplay scale.",
-      "shapeHierarchy": "Large silhouette first, medium construction second, micro-detail last.",
-      "edgeReadability": "Crisp separation at face, hands, footwear, prop boundaries, costume layers, and major FX contact zones."
+    "detailHierarchy": {
+      "rule": "Large silhouette first, medium construction second, micro-detail last.",
+      "density": "high detail may exist, but it must be clustered around focal design features instead of distributed uniformly."
     },
-    "celShading": {
-      "shadowGroups": "Broad deliberate shadow masses rather than photographic continuous shading.",
-      "highlightGroups": "Selective polished highlights on skin, metal, crystal, and fabric without turning the image photoreal.",
-      "materialPriority": "Graphic material identity first, texture second."
+    "materialRendering": {
+      "rule": "Graphic material identity first, texture second.",
+      "examples": {
+        "metal": "crisp edge planes and controlled specular accents",
+        "fabric": "readable folds with restrained weave noise",
+        "crystal": "faceted luminous geometry with clear silhouette",
+        "skin": "clean volume, no photoreal pore-level emphasis"
+      }
     },
-    "detailDensity": {
-      "rule": "Concentrate detail around identity, hero props, focal costume features, and signature materials.",
-      "avoid": "Uniform micro-detail, noisy textures, and high-frequency surface treatment that crawls during animation."
+    "facialRendering": {
+      "rule": "Simplify surface modeling while preserving the exact subject-owned feature geometry.",
+      "eyes": "increase contrast, catchlight clarity, pupil/iris readability, and lid definition without borrowing Kineza eye size or shape",
+      "nose": "simplify shading planes without changing nose width, tip family, bridge relationship, or placement",
+      "mouth": "clean contour and shadow shapes without changing lip proportions or smile geometry",
+      "cheeksJawChin": "simplify shading and contour noise without changing the subject's actual facial silhouette"
     },
     "animationReadability": {
       "requirements": [
-        "Readable eye direction at reduced scale.",
-        "Readable hands and action props.",
-        "Clear body silhouette independent of FX.",
-        "Costume layers retain identity across poses.",
-        "Expression remains legible without photoreal facial detail.",
-        "FX must not fuse with anatomy or erase joint/hand boundaries."
+        "readable eye direction at reduced scale",
+        "readable hands and action props",
+        "clear body silhouette independent of FX",
+        "costume layers retain identity across poses",
+        "expression remains legible without photoreal micro-detail",
+        "FX does not fuse with anatomy or erase hand/joint boundaries"
       ]
     },
     "fxGrammar": {
@@ -87,29 +158,34 @@
   },
   "ageAdapters": {
     "youngChild": {
-      "eyeScale": "highest permitted within likeness",
-      "cheekRetention": "high",
-      "jawSimplification": "soft-rounded",
-      "headRatioStylization": "moderate",
-      "expressionReadability": "high"
+      "scope": "rendering intensity only",
+      "facialReadability": "high",
+      "surfaceSimplification": "high",
+      "geometryRule": "All actual child facial geometry remains likeness-owned. Do not import Kineza proportions."
     },
     "olderChild": {
-      "eyeScale": "moderate",
-      "cheekRetention": "subject-specific",
-      "jawSimplification": "soft but more structured",
-      "headRatioStylization": "light-to-moderate"
+      "scope": "rendering intensity only",
+      "facialReadability": "high but more restrained than youngChild",
+      "surfaceSimplification": "medium-high",
+      "geometryRule": "Preserve the subject's older-child geometry and maturity."
     },
     "youngAdult": {
-      "eyeScale": "light",
-      "faceElongation": "preserve real proportions",
-      "jawSimplification": "mature",
-      "headRatioStylization": "light"
+      "scope": "rendering intensity only",
+      "facialReadability": "medium",
+      "surfaceSimplification": "medium",
+      "geometryRule": "Preserve mature subject proportions exactly."
     },
     "adult": {
-      "eyeScale": "minimal-to-light",
-      "facialStructure": "preserve mature brow, jaw, and nose authority",
-      "headRatioStylization": "minimal"
+      "scope": "rendering intensity only",
+      "facialReadability": "medium",
+      "surfaceSimplification": "medium",
+      "geometryRule": "Preserve mature brow, jaw, nose, eye spacing, and head proportions exactly."
     }
+  },
+  "portabilityContract": {
+    "principle": "HeroCel must work on an unrelated random character with a completely different face, age, body type, costume, and personality while still producing the same rendering-family read.",
+    "passCondition": "Observers can recognize a common art/rendering family without perceiving transferred Kineza facial anatomy.",
+    "randomCharacterTest": "required"
   },
   "translationContract": {
     "requiredAuthorityStack": [
@@ -118,15 +194,11 @@
       "prismatic-herocel-v1"
     ],
     "priorityOrder": [
-      "likeness identity",
-      "canonical character design",
-      "HeroCel rendering grammar"
+      "likeness geometry and identity",
+      "canonical character design and anatomy",
+      "HeroCel style-only rendering grammar"
     ],
-    "defaultBalance": {
-      "identityAndDesignPercent": 90,
-      "styleNormalizationPercent": 10
-    },
-    "instruction": "Translate the approved likeness into the canonical character design using Prismatic HeroCel rendering grammar. Kineza is the rendering calibration master only."
+    "instruction": "Render the approved subject and canonical design using the Prismatic HeroCel style-only fingerprint. Never use Kineza as a facial, anatomical, proportional, or expression reference for another character."
   },
   "forbiddenDrift": [
     "generic anime face",
@@ -134,6 +206,9 @@
     "photoreal face pasted onto stylized costume",
     "pixel-art conversion when not explicitly requested",
     "copying Kineza anatomy or expression",
+    "copying Kineza facial geometry",
+    "copying Kineza eye spacing or eye shape",
+    "copying Kineza cheek, nose, mouth, jaw, chin, ear, or head geometry",
     "age regression or age inflation",
     "costume redesign during style translation",
     "prop substitution",
@@ -142,11 +217,13 @@
     "style normalization that weakens likeness"
   ],
   "prizimGates": {
+    "identityFirewall": "hard-reject",
     "likenessRetention": "required",
     "designFidelity": "required",
     "animationReadability": "required",
     "styleFingerprintMatch": "required",
     "ageAdapterApplied": "required",
+    "randomCharacterPortability": "required",
     "forbiddenDrift": "hard-reject"
   }
 }
