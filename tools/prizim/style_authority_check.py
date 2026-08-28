@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PROFILE = ROOT / "pv-data/style_authority/prismatic_herocel_v1.json"
 PRISMEL = ROOT / "pv-data/style_authority/characters/prismel_herocel_v1.json"
+PORTABILITY = ROOT / "pv-data/style_authority/tests/herocel_portability_v1.json"
 
 
 def fail(msg: str) -> None:
@@ -98,6 +99,67 @@ def validate_herocel() -> None:
     for name in ("identityFirewall", "forbiddenDrift"):
         if gates.get(name) != "hard-reject":
             fail(f"{name} gate must remain hard-reject")
+
+
+def validate_portability() -> None:
+    data = load_json(PORTABILITY, "HeroCel portability fixture")
+
+    if data.get("testId") != "herocel-portability-v1":
+        fail("HeroCel portability testId drifted")
+    if data.get("styleAuthority") != "prismatic-herocel-v1":
+        fail("HeroCel portability fixture must use HeroCel v1")
+    if data.get("kinezaLikenessContributionPercent") != 0:
+        fail("HeroCel portability fixture must keep Kineza likeness at 0%")
+    if data.get("kinezaGeometryContributionPercent") != 0:
+        fail("HeroCel portability fixture must keep Kineza geometry at 0%")
+
+    cases = data.get("cases", [])
+    required_ids = {
+        "unrelated-adult-human",
+        "nonhuman-synthetic",
+        "young-character-not-kineza",
+    }
+    found_ids = {case.get("id") for case in cases}
+    if found_ids != required_ids:
+        fail("HeroCel portability cases drifted")
+
+    style_only_allowed = {
+        "edge treatment",
+        "shadow grouping",
+        "highlight treatment",
+        "surface simplification",
+        "material readability",
+        "detail hierarchy",
+        "value grouping",
+        "specular simplification",
+        "facial surface rendering",
+        "highlight clarity",
+        "animation readability",
+    }
+    forbidden_geometry_tokens = (
+        "face geometry",
+        "eye spacing",
+        "eye geometry",
+        "nose geometry",
+        "jaw geometry",
+        "cheek contour",
+        "mouth geometry",
+        "head proportions",
+        "body proportions",
+        "costume geometry",
+        "shell geometry",
+        "expression identity",
+    )
+
+    for case in cases:
+        allowed = set(case.get("heroCelMayChange", []))
+        if not allowed or not allowed.issubset(style_only_allowed):
+            fail(f"portability case grants HeroCel non-style authority: {case.get('id')}")
+        may_not_change = set(case.get("heroCelMayNotChange", []))
+        if not may_not_change:
+            fail(f"portability case missing geometry firewall: {case.get('id')}")
+        if not any(token in may_not_change for token in forbidden_geometry_tokens):
+            fail(f"portability case does not protect subject geometry: {case.get('id')}")
 
 
 def validate_prismel() -> None:
@@ -205,8 +267,9 @@ def validate_prismel() -> None:
 
 def main() -> None:
     validate_herocel()
+    validate_portability()
     validate_prismel()
-    print("PZ STYLE AUTHORITY PASS: HeroCel artist fingerprint + Prismel identity firewall are locked and valid")
+    print("PZ STYLE AUTHORITY PASS: HeroCel artist fingerprint, portability fixture, and Prismel identity firewall are locked and valid")
 
 
 if __name__ == "__main__":
