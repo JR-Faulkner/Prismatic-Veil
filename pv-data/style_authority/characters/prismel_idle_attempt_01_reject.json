@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "prismel-idle-attempt-01-reject",
+  "characterId": "prismel",
+  "generationId": "4d7628ea-c0e9-4e50-a1d6-d9468c2b333c",
+  "status": "hard-reject",
+  "reason": "The six-frame sheet was generated as a fresh character reinterpretation instead of a source-preserving motion derivation from Prismel HeroCel Master B.",
+  "violations": [
+    "wrong facial identity",
+    "wrong age read",
+    "wrong hair geometry",
+    "wrong body proportions",
+    "wrong costume geometry",
+    "wrong cloak identity",
+    "wrong crystal language",
+    "HeroCel Master B rendering authority not preserved",
+    "Master A geometry authority not preserved"
+  ],
+  "reusePolicy": "Do not use this attempt as visual reference, motion reference, style reference, or production evidence.",
+  "pipelineCorrection": "Future idle frames must be source-preserving derivations from the exact Master B image. No multi-frame fresh redraw is allowed."
+}
