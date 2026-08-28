@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "inspectionId": "prismel-herocel-master-a-inspection",
+  "characterId": "prismel",
+  "candidateName": "Prismel HeroCel Master A",
+  "styleAuthority": "prismatic-herocel-v1",
+  "styleRevision": "1.2-animation-rendering-firewall",
+  "status": "approved-master-candidate-pending-multiview-stress-test",
+  "inspectionScope": "single-view production inspection only",
+  "generationEvidence": {
+    "genId": "ec89eda4-1804-45d8-a181-446e0a0ed7ac",
+    "sourceMode": "single-master-reference-to-herocel-transition",
+    "excludedReferenceClasses": [
+      "HD+ presentation sheet as generation reference",
+      "Kineza appearance reference",
+      "multi-reference visual averaging"
+    ]
+  },
+  "authorityStack": {
+    "likenessAuthority": "Prismel Gameplay Likeness Master / approved older likeness master",
+    "characterDesignAuthority": "locked Prismel canon",
+    "renderingAuthority": "Prismatic HeroCel 1.2"
+  },
+  "singleViewVerdict": "pass",
+  "scores": {
+    "elijahLikeness": 9.3,
+    "prismelIdentity": 9.7,
+    "heroCelAnimationRead": 9.5,
+    "olderChildAgeRead": 9.2,
+    "silhouette": 9.7,
+    "materialHierarchy": 9.4,
+    "anatomyCleanliness": 9.5,
+    "productionReadiness": 9.3
+  },
+  "lockedGeometryAnchors": {
+    "face": [
+      "eye size",
+      "eye shape",
+      "eye spacing",
+      "brow geometry",
+      "nose width and softness",
+      "full cheek volume",
+      "lip proportions",
+      "rounded older-child jaw",
+      "subtle chin definition",
+      "head-to-body ratio"
+    ],
+    "costume": [
+      "hood opening shape",
+      "hood-up silhouette",
+      "cloak shoulder volume",
+      "long cloak hem length",
+      "central chest crystal size and placement",
+      "belt and pouch placement",
+      "boot height",
+      "slender Prismel build",
+      "cloak as dominant visual mass"
+    ]
+  },
+  "animationLocks": {
+    "mustRemainStableAcrossFrames": [
+      "facial proportions",
+      "eye scale and spacing",
+      "nose family",
+      "cheek volume",
+      "age read",
+      "hood opening",
+      "cloak shoulder mass",
+      "chest crystal placement",
+      "belt line",
+      "boot height",
+      "overall height proportion"
+    ],
+    "renderingMustRemainStable": [
+      "broad cel-like value grouping",
+      "crisp animation-readable edges",
+      "low facial microtexture",
+      "clustered costume detail",
+      "graphic material separation",
+      "cosmic fabric detail subordinate to silhouette"
+    ]
+  },
+  "multiviewStressTest": {
+    "required": true,
+    "status": "pending",
+    "requiredViews": [
+      "front-neutral",
+      "rear-three-quarter",
+      "side-profile",
+      "three-quarter-face"
+    ],
+    "requiredExpressions": [
+      "neutral-calm",
+      "focused",
+      "concerned",
+      "small-confident-smile"
+    ],
+    "hardRejectConditions": [
+      "eye enlargement or spacing drift",
+      "face narrowing",
+      "nose sharpening",
+      "cheek-volume loss",
+      "age regression toward younger child",
+      "Kineza/Ezra facial geometry leakage",
+      "hood opening drift",
+      "cloak mass shrinkage",
+      "chest crystal relocation",
+      "painterly concept-art reversion",
+      "uniform costume micro-detail",
+      "cross-view identity inconsistency"
+    ],
+    "passCondition": "All alternate views and expressions read as the same Elijah-based Prismel while retaining HeroCel 1.2 animation-model rendering without geometry substitution or painterly drift."
+  },
+  "promotionRule": "Do not promote to final production likeness/style master until the multiview stress test passes. Until then this image is the strongest approved single-view HeroCel master candidate."
+}
