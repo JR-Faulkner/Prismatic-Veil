@@ -1,34 +1,46 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "authorityId": "sarallel-likeness-authority-v1",
   "characterId": "sarallel",
-  "status": "locked-hair-down-primary-likeness-authority",
-  "purpose": "Establish and preserve Sarallel likeness from real-photo geometry and real expression behavior. Existing Sarallel fantasy iterations are design-only and have zero facial-geometry authority.",
+  "status": "locked-master-b-geometry-hair-down-presentation-authority",
+  "purpose": "Establish and preserve Sarallel likeness from real-photo geometry and real expression behavior. Sarah Likeness Master B is the strongest current derived likeness calibration base, while real photos remain supreme for geometry and facial-surface truth. Existing Sarallel fantasy iterations are design-only and have zero facial-geometry authority.",
   "approvedDerivedMaster": {
+    "name": "Sarah Likeness Master B",
+    "inspection": "sarallel-likeness-master-b-inspection",
+    "presentation": "derived portrait calibration; hair-down Sarallel presentation remains separately locked",
+    "generationId": "7ae81a0a-4bba-47cc-a523-70751f1374a0",
+    "sha256": "c5bb063d958eebf6af676c3390ec524cc3f9eccfcc4d2724e0e21ffbc7a7f7e0",
+    "priority": "primary-derived-likeness-calibration-authority",
+    "separateSarahApprovalRecorded": false
+  },
+  "historicalDerivedMaster": {
     "name": "Sarallel Likeness Master A",
     "inspection": "sarallel-likeness-master-a-inspection",
-    "presentation": "hair-down primary",
-    "generationId": "c536-4efb-a6b7-8eed618c44d6",
-    "sha256": "6a386387d712fcfdac6e34738842e79dc4df1f2788567ff11f602c25a1f63024",
-    "priority": "primary-derived-likeness-presentation-authority"
+    "status": "superseded-for-current-transition-by-master-b"
   },
   "likenessSourcePolicy": {
     "primaryGeometrySources": [
       {
-        "sourceClass": "real-photo-hair-down-front-three-quarter",
-        "role": "primary facial-geometry and primary Sarallel appearance authority",
-        "reason": "confirms Sarah-specific face geometry while preserving the preferred hair-down framing"
+        "sourceClass": "real-photo-pulled-back-front",
+        "role": "primary facial-geometry truth source",
+        "reason": "exposes the face perimeter most clearly for cheek width, jaw transition, chin, eye spacing, nose family and mouth geometry"
       },
       {
-        "sourceClass": "real-photo-pulled-back-front",
-        "role": "secondary geometry confirmation",
-        "reason": "clear exposed face perimeter for cheek width, eye spacing, nose family, mouth width, jaw and chin"
+        "sourceClass": "real-photo-hair-down-front-three-quarter",
+        "role": "secondary facial-geometry confirmation plus primary Sarallel presentation authority",
+        "reason": "confirms Sarah-specific geometry while preserving the preferred hair-down framing"
       }
     ],
+    "derivedCalibrationSource": {
+      "source": "Sarah Likeness Master B",
+      "role": "strongest current derived likeness base for the next HeroCel transition",
+      "rule": "Master B may summarize likeness geometry but may never overrule real photos for facial crease, dimple, under-eye line, fine texture, or age-signaling surface detail."
+    },
     "appearancePriority": {
-      "primary": "hair-down real-photo presentation and Sarallel Likeness Master A",
-      "secondary": "pulled-back real-photo variant for geometry verification only",
-      "rule": "Pulled-back hair may not silently become the default Sarallel appearance unless explicitly revised by the user."
+      "primary": "hair-down real-photo presentation for Sarallel",
+      "secondary": "Sarah Likeness Master B for derived identity calibration",
+      "geometryCheck": "pulled-back real-photo variant",
+      "rule": "Pulled-back hair may clarify facial geometry but may not silently become the default Sarallel appearance."
     },
     "expressionMotionSource": {
       "sourceClass": "real-video",
@@ -73,7 +85,7 @@
   "geometryAuthority": {
     "priority": "absolute",
     "owner": "real-photo-likeness-subject",
-    "derivedPresentationMaster": "Sarallel Likeness Master A",
+    "derivedCalibrationMaster": "Sarah Likeness Master B",
     "lockedAnchors": [
       "broader face through cheek region",
       "shorter rounder overall facial silhouette rather than elongated oval",
@@ -85,9 +97,16 @@
       "softer less fashion-arched eyebrow geometry",
       "broader softer nose family including base and tip",
       "wider mouth geometry",
-      "warm broad smile with distinctive cheek lift",
+      "warm broad smile with natural cheek lift",
       "adult age read consistent with real reference",
       "hair-down face framing as primary Sarallel appearance"
+    ],
+    "surfaceTruthOverrides": [
+      "do not invent or deepen dimples absent from the real references",
+      "do not invent or deepen nasolabial crease lines absent from the real references",
+      "do not invent cheek crease marks as animation shorthand",
+      "do not invent under-eye crease lines as animation shorthand",
+      "do not use cel-shadow boundaries to imply older age than the real references"
     ],
     "geometryOwned": [
       "face silhouette",
@@ -111,8 +130,8 @@
   },
   "expressionAuthority": {
     "neutral": "open, approachable, natural adult expression without generic fantasy-model severity",
-    "signatureSmile": "wide warm smile; cheeks lift strongly; eyes narrow slightly from natural cheek compression; mouth corners rise without narrowing the face",
-    "rule": "Expression may animate the locked face geometry but may not replace it with glamorized fantasy-heroine geometry."
+    "signatureSmile": "wide warm smile with natural cheek lift and mild eye compression; no invented dimples or carved smile creases",
+    "rule": "Expression may animate the locked face geometry but may not replace it with glamorized fantasy-heroine geometry or add age-signaling facial marks."
   },
   "hardReject": [
     "elongated narrow fantasy-model face",
@@ -125,20 +144,25 @@
     "generic glamorous fantasy-woman face",
     "beauty normalization that weakens likeness",
     "legacy Sarallel iteration face used as likeness authority",
-    "younger-looking face caused by stylization",
+    "age drift caused by invented facial lines",
+    "invented dimples",
+    "invented nasolabial or cheek crease lines",
+    "invented under-eye crease lines",
     "cross-view identity drift",
     "hair-up substitution as default Sarallel presentation",
     "hairline or face-framing redesign that weakens Sarah recognition"
   ],
   "productionProgression": {
-    "likenessMaster": "approved",
-    "designMaster": "Sarallel Design Master A",
+    "likenessMaster": "Sarah Likeness Master B locked as current derived calibration base",
+    "designMaster": "Sarallel Design Master A retained",
     "heroCelProfile": "sarallel-herocel-v1",
-    "currentStage": "HeroCel rendering-only recalibration after rejected attempt 01",
-    "nextAsset": "Sarallel HeroCel Master B"
+    "currentStage": "likeness-only HeroCel animation transition before Sarallel design reintroduction",
+    "nextAsset": "Sarah HeroCel Likeness Transition A"
   },
   "prizimGates": {
     "realPhotoGeometryOwnership": "hard-reject",
+    "masterBCurrentCalibration": "required",
+    "realPhotoSurfaceTruthOverMasterB": "required",
     "legacyFantasyFaceContributionZero": "hard-reject",
     "broaderShorterFaceRetention": "required",
     "cheekVolumeRetention": "required",
@@ -146,6 +170,8 @@
     "broaderSoftNoseFamily": "required",
     "mouthAndSmileGeometry": "required",
     "adultAgeRead": "required",
+    "noInventedDimples": "hard-reject",
+    "noInventedAgeLines": "hard-reject",
     "expressionBehaviorRetention": "required",
     "hairDownPrimaryAppearance": "required",
     "genericFantasyBeautyDrift": "hard-reject"
