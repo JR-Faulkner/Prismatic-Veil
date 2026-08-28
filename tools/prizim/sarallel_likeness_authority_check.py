@@ -7,9 +7,9 @@ AUTHORITY = ROOT / "pv-data/style_authority/characters/sarallel_likeness_authori
 LIKENESS_MASTER = ROOT / "pv-data/style_authority/characters/sarallel_likeness_master_a_inspection.json"
 DESIGN_MASTER = ROOT / "pv-data/style_authority/characters/sarallel_design_master_a_inspection.json"
 HERO = ROOT / "pv-data/style_authority/characters/sarallel_herocel_v1.json"
+HYBRID = ROOT / "pv-data/style_authority/characters/sarallel_herocel_hybrid_calibration_v1.json"
 REJECT = ROOT / "pv-data/style_authority/characters/sarallel_herocel_attempt_01_reject.json"
 FACE_REJECT = ROOT / "pv-data/style_authority/characters/sarallel_herocel_face_calibration_attempt_01_reject.json"
-CANDIDATE_C = ROOT / "pv-data/style_authority/characters/sarallel_herocel_candidate_c_inspection.json"
 
 
 def fail(msg: str) -> None:
@@ -33,21 +33,21 @@ def require_items(actual, required, label):
 
 
 def main() -> None:
-    data = load(AUTHORITY, "Sarallel likeness authority")
+    authority = load(AUTHORITY, "Sarallel likeness authority")
     likeness = load(LIKENESS_MASTER, "Sarallel likeness Master A inspection")
     design = load(DESIGN_MASTER, "Sarallel Design Master A inspection")
     hero = load(HERO, "Sarallel HeroCel profile")
-    reject = load(REJECT, "Sarallel rejected HeroCel full-body attempt")
-    face_reject = load(FACE_REJECT, "Sarallel rejected face calibration attempt")
-    candidate = load(CANDIDATE_C, "Sarallel HeroCel Candidate C inspection")
+    hybrid = load(HYBRID, "Sarallel hybrid calibration")
+    reject = load(REJECT, "Sarallel rejected HeroCel attempt")
+    face_reject = load(FACE_REJECT, "Sarallel rejected face calibration")
 
-    if data.get("schemaVersion") != 2:
+    if authority.get("schemaVersion") != 2:
         fail("likeness authority schemaVersion must remain 2")
-    if data.get("status") != "locked-hair-down-primary-likeness-authority":
+    if authority.get("status") != "locked-hair-down-primary-likeness-authority":
         fail("hair-down likeness authority must remain locked")
-    if data.get("approvedDerivedMaster", {}).get("name") != "Sarallel Likeness Master A":
+    if authority.get("approvedDerivedMaster", {}).get("name") != "Sarallel Likeness Master A":
         fail("Sarallel Likeness Master A drifted")
-    if data.get("likenessSourcePolicy", {}).get("legacyFantasyIterations", {}).get("likenessContributionPercent") != 0:
+    if authority.get("likenessSourcePolicy", {}).get("legacyFantasyIterations", {}).get("likenessContributionPercent") != 0:
         fail("legacy fantasy face likeness contribution must remain zero")
 
     if likeness.get("status") != "approved-user-accepted-hair-down-primary-likeness-authority":
@@ -66,29 +66,59 @@ def main() -> None:
     if face_reject.get("status") != "reject-insufficient-animation-model-read":
         fail("face calibration attempt 01 must remain rejected")
 
-    if candidate.get("inspectionId") != "sarallel-herocel-candidate-c-inspection":
-        fail("Candidate C inspection id drifted")
-    if candidate.get("status") != "near-pass-animation-sufficient-identity-refinement-required":
-        fail("Candidate C must remain a near-pass requiring identity refinement")
-    cand = candidate.get("candidate", {})
-    if cand.get("generationId") != "9006ca69-1ac7-428c-9418-d2d3162abc25":
-        fail("Candidate C generation evidence drifted")
-    if cand.get("sha256") != "7a4dcf77d0622a7d3621fbb66e2a05b4eb1fda3810939c8f9baa41f49988aaad":
-        fail("Candidate C image hash drifted")
-    inspect = candidate.get("inspection", {})
-    if inspect.get("heroCelAnimationRead", 0) < 9.2:
-        fail("Candidate C animation read must remain sufficient")
-    if inspect.get("sarahLikeness", 10) >= 9.0:
-        fail("Candidate C must remain below final likeness promotion floor")
-    if inspect.get("animationVerdict") != "sufficient-lock-current-intensity":
-        fail("Candidate C animation intensity must remain locked sufficient")
+    if hybrid.get("calibrationId") != "sarallel-herocel-hybrid-calibration-v1":
+        fail("hybrid calibration id drifted")
+    if hybrid.get("status") != "locked-hybrid-target-pending-candidate-f":
+        fail("hybrid calibration status drifted")
 
-    if hero.get("schemaVersion") != 3:
-        fail("Sarallel HeroCel schemaVersion must remain 3")
-    if hero.get("profileRevision") != "1.2-identity-correction-fixed-animation-intensity":
-        fail("Sarallel identity-correction revision drifted")
-    if hero.get("status") != "locked-near-pass-profile-pending-identity-correction":
-        fail("Sarallel must remain in identity-correction stage")
+    d = hybrid.get("identityDesignReference", {})
+    if d.get("name") != "Sarallel HeroCel Candidate D":
+        fail("Candidate D must remain identity/design reference")
+    if d.get("generationId") != "75f69ea3-fe00-4f75-af51-a06667b25be5":
+        fail("Candidate D generation evidence drifted")
+    if d.get("sha256") != "363f82108a1280c11037491ffda3a1cb0d0485ed7bc63bcd877df8469edbdb7b":
+        fail("Candidate D image hash drifted")
+
+    e = hybrid.get("renderingIntensityReference", {})
+    if e.get("name") != "Sarallel HeroCel Rendering Pass E":
+        fail("Rendering Pass E must remain rendering reference")
+    if e.get("generationId") != "646feea9-b459-4817-afde-0080af1cd88d":
+        fail("Rendering Pass E generation evidence drifted")
+    if e.get("sha256") != "bd141c80ac8969ce991a64c86cb4a1ddc1a0dcea3cb1481191b12c4708d61b3d":
+        fail("Rendering Pass E image hash drifted")
+    if e.get("heroCelAnimationRead", 0) < 9.2:
+        fail("Rendering Pass E animation read fell below floor")
+    for key in ["geometryContributionPercent", "likenessContributionPercent", "designGeometryContributionPercent"]:
+        if e.get(key) != 0:
+            fail(f"Rendering Pass E must contribute zero {key}")
+
+    target = hybrid.get("hybridTarget", {})
+    if target.get("nextAsset") != "Sarallel HeroCel Candidate F":
+        fail("hybrid next asset must remain Candidate F")
+    if target.get("formula") != "Candidate D identity/design + Rendering Pass E animation intensity":
+        fail("hybrid formula drifted")
+    require_items(target.get("requiredIdentityCorrections"), [
+        "keep Candidate D face width",
+        "keep Candidate D cheek fullness",
+        "keep Candidate D softer broader jaw transition",
+        "keep Candidate D rounded chin",
+        "keep Candidate D broader softer nose family",
+        "keep Candidate D Sarah-specific smile geometry",
+    ], "Candidate D identity locks")
+    require_items(target.get("requiredRenderingLocks"), [
+        "match Rendering Pass E cel-value strength",
+        "match Rendering Pass E graphic shadow clarity",
+        "match Rendering Pass E grouped hair treatment",
+        "match Rendering Pass E material abstraction",
+        "match Rendering Pass E edge hierarchy",
+    ], "Rendering Pass E style locks")
+
+    if hero.get("schemaVersion") != 4:
+        fail("Sarallel HeroCel schemaVersion must remain 4")
+    if hero.get("profileRevision") != "1.3-hybrid-identity-rendering-lock":
+        fail("Sarallel hybrid profile revision drifted")
+    if hero.get("status") != "locked-hybrid-calibration-pending-candidate-f":
+        fail("Sarallel must remain in hybrid calibration stage")
     if hero.get("inherits") != "prismatic-herocel-v1" or hero.get("ageAdapter") != "adult":
         fail("Sarallel HeroCel inheritance drifted")
 
@@ -97,95 +127,96 @@ def main() -> None:
         fail("likeness authority drifted")
     if stack.get("characterDesignAuthority", {}).get("master") != "Sarallel Design Master A":
         fail("design authority drifted")
-    if stack.get("currentRenderingCalibration", {}).get("candidate") != "Sarallel HeroCel Candidate C":
-        fail("Candidate C must remain animation-intensity reference")
+    if stack.get("identityDesignCalibration", {}).get("candidate") != "Sarallel HeroCel Candidate D":
+        fail("Candidate D must remain identity/design calibration")
+    if stack.get("renderingCalibration", {}).get("candidate") != "Sarallel HeroCel Rendering Pass E":
+        fail("Rendering Pass E must remain rendering calibration")
 
     firewall = hero.get("identityFirewall", {})
-    for key in ["kinezaGeometryContributionPercent", "kinezaLikenessContributionPercent", "legacySarallelFaceContributionPercent", "heroCelGeometryContributionPercent"]:
+    for key in [
+        "kinezaGeometryContributionPercent",
+        "kinezaLikenessContributionPercent",
+        "legacySarallelFaceContributionPercent",
+        "heroCelGeometryContributionPercent",
+        "renderingPassEGeometryContributionPercent",
+        "renderingPassELikenessContributionPercent",
+    ]:
         if firewall.get(key) != 0:
             fail(f"geometry/likeness contribution must remain zero: {key}")
-    if firewall.get("heroCelStyleApplicationPercent") != 100:
-        fail("HeroCel style application must remain rendering-only 100%")
 
     stage = hero.get("currentStage", {})
-    if stage.get("name") != "identity-correction-at-fixed-herocel-intensity":
+    if stage.get("name") != "hybrid-identity-rendering-calibration":
         fail("current Sarallel stage drifted")
-    if stage.get("animationIntensityStatus") != "locked-sufficient":
-        fail("animation intensity must remain locked sufficient")
-    if stage.get("animationReference") != "Sarallel HeroCel Candidate C":
-        fail("Candidate C must remain animation reference")
-    if stage.get("fullBodyGenerationAllowed") is not True:
-        fail("full-body generation should be allowed for Candidate D")
-    if stage.get("singleCharacterOnly") is not True or stage.get("multiViewSheetAllowed") is not False:
-        fail("Candidate D must remain a single-character, no-sheet test")
-    if stage.get("nextAsset") != "Sarallel HeroCel Candidate D":
-        fail("next Sarallel asset must be Candidate D")
-    require_items(stage.get("allowedCorrection"), [
-        "restore cheek fullness",
-        "restore jaw width and softer jaw transition",
-        "restore rounded chin read",
-        "restore broader softer nose family",
-        "restore Sarah-specific smile width and cheek lift",
-    ], "identity-only correction targets")
+    if stage.get("identityDesignReference") != "Sarallel HeroCel Candidate D":
+        fail("Candidate D stage reference drifted")
+    if stage.get("renderingIntensityReference") != "Sarallel HeroCel Rendering Pass E":
+        fail("Rendering Pass E stage reference drifted")
+    if stage.get("nextAsset") != "Sarallel HeroCel Candidate F":
+        fail("next Sarallel asset must remain Candidate F")
+    if stage.get("fullBodyGenerationAllowed") is not True or stage.get("singleCharacterOnly") is not True:
+        fail("Candidate F must remain single full-body character")
+    if stage.get("multiViewSheetAllowed") is not False:
+        fail("Candidate F must remain no-sheet")
     require_items(stage.get("forbiddenCorrection"), [
-        "increase HeroCel intensity",
-        "decrease HeroCel intensity",
-        "change graphic shadow language",
-        "change grouped hair rendering language",
-        "change material abstraction level",
-        "change edge hierarchy",
+        "use Rendering Pass E face geometry",
+        "use Rendering Pass E nose geometry",
+        "use Rendering Pass E jaw geometry",
+        "use Rendering Pass E smile geometry",
+        "push animation materially beyond Rendering Pass E",
         "change pose or camera",
-    ], "fixed-animation correction firewall")
+    ], "hybrid geometry firewall")
 
     lock = hero.get("renderingLock", {})
-    if lock.get("source") != "Sarallel HeroCel Candidate C":
+    if lock.get("source") != "Sarallel HeroCel Rendering Pass E":
         fail("rendering lock source drifted")
-    if lock.get("heroCelAnimationRead") != 9.3 or lock.get("minimumAllowed") != 9.2:
+    if lock.get("heroCelAnimationRead") != 9.4 or lock.get("minimumAllowed") != 9.2:
         fail("rendering lock thresholds drifted")
 
-    require_items(hero.get("hardReject"), [
-        "face narrowing",
-        "jaw taper increase",
-        "cheek-volume loss",
-        "nose narrowing or sharpening",
-        "generic heroine smile substitution",
-        "animation intensity increased beyond Candidate C",
-        "animation intensity softened below Candidate C",
-        "new painterly regression",
-        "new exaggerated anime normalization",
-    ], "Sarallel Candidate D hard rejects")
-
     contract = hero.get("generationContract", {})
-    if contract.get("nextAsset") != "Sarallel HeroCel Candidate D":
+    if contract.get("nextAsset") != "Sarallel HeroCel Candidate F":
         fail("generation contract next asset drifted")
-    if contract.get("primaryVisualSource") != "approved Sarallel Design Master A full-body image":
-        fail("Design Master A must remain primary visual source")
-    if contract.get("renderingCalibrationSource") != "Sarallel HeroCel Candidate C for animation intensity only":
-        fail("Candidate C must remain rendering-intensity-only source")
-    if "Do not intensify or soften HeroCel" not in contract.get("artistInstruction", ""):
-        fail("Candidate D instruction must freeze HeroCel intensity")
+    if contract.get("primaryVisualSource") != "Sarallel HeroCel Candidate D for identity/design retention":
+        fail("Candidate D must remain primary identity/design visual source")
+    if contract.get("renderingCalibrationSource") != "Sarallel HeroCel Rendering Pass E for rendering intensity only":
+        fail("Rendering Pass E must remain rendering-only source")
+    if "Do not borrow any Rendering Pass E face geometry" not in contract.get("artistInstruction", ""):
+        fail("Candidate F instruction must explicitly block Rendering Pass E face geometry")
 
-    target = hero.get("passTarget", {})
-    if target.get("sarahLikenessMinimum") != 9.0:
+    pass_target = hero.get("passTarget", {})
+    if pass_target.get("sarahLikenessMinimum") != 9.0:
         fail("Sarallel likeness floor drifted")
-    if target.get("heroCelAnimationReadMinimum") != 9.2:
+    if pass_target.get("heroCelAnimationReadMinimum") != 9.2:
         fail("animation floor drifted")
-    if target.get("sarallelDesignFidelityMinimum") != 9.3:
+    if pass_target.get("sarallelDesignFidelityMinimum") != 9.3:
         fail("design fidelity floor drifted")
-    if target.get("sameArtistImpressionMinimum") != 9.2:
+    if pass_target.get("sameArtistImpressionMinimum") != 9.2:
         fail("same-artist floor drifted")
-    if target.get("animationIntensityMustRemainStable") is not True:
-        fail("Candidate D must preserve animation intensity")
+    if pass_target.get("renderingPassEGeometryContributionRequired") != 0:
+        fail("Rendering Pass E geometry contribution must remain zero")
 
     gates = hero.get("prizimGates", {})
-    for name in ["sarahGeometryOwnership", "zeroHeroCelGeometryTransfer", "zeroKinezaGeometryTransfer", "zeroLegacyFantasyFaceTransfer", "animationIntensityDrift"]:
+    for name in [
+        "sarahGeometryOwnership",
+        "zeroHeroCelGeometryTransfer",
+        "zeroRenderingPassEGeometryTransfer",
+        "zeroKinezaGeometryTransfer",
+        "zeroLegacyFantasyFaceTransfer",
+        "animationIntensityDrift",
+    ]:
         if gates.get(name) != "hard-reject":
             fail(f"hard-reject gate drifted: {name}")
-    for name in ["hairDownAppearanceRetention", "sarahLikenessRetention", "adultAgeRead", "sarallelDesignFidelity", "heroCelAnimationRead", "singleCharacterPresentation"]:
+    for name in [
+        "hairDownAppearanceRetention",
+        "sarahLikenessRetention",
+        "adultAgeRead",
+        "sarallelDesignFidelity",
+        "heroCelAnimationRead",
+        "singleCharacterPresentation",
+    ]:
         if gates.get(name) != "required":
             fail(f"required gate drifted: {name}")
 
-    print("PZ SARALLEL LIKENESS PASS: Candidate C locks sufficient HeroCel intensity; Candidate D is identity/design correction only")
+    print("PZ SARALLEL LIKENESS PASS: Candidate D owns identity/design retention; Rendering Pass E supplies HeroCel intensity only; Candidate F is the locked hybrid target")
 
 
 if __name__ == "__main__":
