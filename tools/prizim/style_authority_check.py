@@ -28,10 +28,16 @@ def validate_herocel() -> None:
         fail("HeroCel schemaVersion must remain 2")
     if data.get("authorityId") != "prismatic-herocel-v1":
         fail("authorityId must remain prismatic-herocel-v1")
-    if data.get("styleRevision") != "1.1-identity-firewall":
-        fail("HeroCel identity-firewall revision drifted")
+    if data.get("styleRevision") != "1.2-animation-rendering-firewall":
+        fail("HeroCel animation-rendering-firewall revision drifted")
     if data.get("status") != "locked-style-calibration-authority":
         fail("HeroCel v1 must remain locked")
+
+    style = data.get("styleDefinition", {})
+    if style.get("presentationBias") != "animation-model-first":
+        fail("HeroCel must remain animation-model-first")
+    if "painterly fantasy concept art" not in set(style.get("notEquivalentTo", [])):
+        fail("HeroCel must explicitly reject painterly fantasy concept art")
 
     master = data.get("calibrationMaster", {})
     if master.get("character") != "kineza":
@@ -76,6 +82,45 @@ def validate_herocel() -> None:
         if ownership.get(key) != value:
             fail(f"HeroCel ownership drifted: {key}")
 
+    animation_firewall = data.get("animationRenderingFirewall", {})
+    if animation_firewall.get("priority") != "absolute":
+        fail("HeroCel animation rendering firewall must remain absolute")
+    if animation_firewall.get("requiredRead") != "clean animated character model with premium game finish":
+        fail("HeroCel required animation-model read drifted")
+
+    value_contract = animation_firewall.get("valueGroupContract", {})
+    if value_contract.get("targetMajorGroupsPerMaterial") != "2-to-4":
+        fail("HeroCel must retain the 2-to-4 major value-group target")
+
+    hard_reject = set(animation_firewall.get("hardReject", []))
+    for item in (
+        "painterly concept-art finish",
+        "photoreal portrait rendering",
+        "continuous gradient shading as the primary form language",
+        "airbrushed skin modeling",
+        "uniform high-frequency fabric texture",
+        "dense costume micro-detail distributed evenly across the character",
+        "illustration polish that weakens animation readability",
+    ):
+        if item not in hard_reject:
+            fail(f"HeroCel animation firewall reject missing: {item}")
+
+    surface = animation_firewall.get("surfaceContract", {})
+    if "no pore detail" not in surface.get("skin", ""):
+        fail("HeroCel skin surface contract drifted")
+    if "organized star clusters" not in surface.get("cosmicFabric", ""):
+        fail("HeroCel cosmic-fabric simplification drifted")
+
+    facial_model = animation_firewall.get("facialModelContract", {})
+    if "animation-readable planes" not in facial_model.get("rule", ""):
+        fail("HeroCel facial animation-model contract drifted")
+
+    detail_frequency = animation_firewall.get("detailFrequencyContract", {})
+    if detail_frequency.get("face") != "low":
+        fail("HeroCel face micro-detail must remain low")
+    if detail_frequency.get("backgroundOrNonfocalTexture") != "minimal":
+        fail("HeroCel nonfocal texture must remain minimal")
+
     portability = data.get("portabilityContract", {})
     if portability.get("randomCharacterTest") != "required":
         fail("HeroCel must remain portable to unrelated characters")
@@ -85,18 +130,30 @@ def validate_herocel() -> None:
     if stack != required:
         fail("three-part translation authority stack changed")
 
+    drift = set(data.get("forbiddenDrift", []))
+    for item in (
+        "painterly concept-art finish",
+        "photoreal portrait rendering",
+        "continuous gradient shading as primary form language",
+        "uniform high-frequency costume detail",
+        "illustration polish that weakens animation readability",
+    ):
+        if item not in drift:
+            fail(f"HeroCel forbidden animation drift missing: {item}")
+
     gates = data.get("prizimGates", {})
     for name in (
         "likenessRetention",
         "designFidelity",
         "animationReadability",
+        "animationModelRead",
         "styleFingerprintMatch",
         "ageAdapterApplied",
         "randomCharacterPortability",
     ):
         if gates.get(name) != "required":
             fail(f"{name} gate must remain required")
-    for name in ("identityFirewall", "forbiddenDrift"):
+    for name in ("identityFirewall", "animationRenderingFirewall", "forbiddenDrift"):
         if gates.get(name) != "hard-reject":
             fail(f"{name} gate must remain hard-reject")
 
@@ -269,7 +326,7 @@ def main() -> None:
     validate_herocel()
     validate_portability()
     validate_prismel()
-    print("PZ STYLE AUTHORITY PASS: HeroCel artist fingerprint, portability fixture, and Prismel identity firewall are locked and valid")
+    print("PZ STYLE AUTHORITY PASS: HeroCel identity + animation rendering firewalls, portability fixture, and Prismel likeness authority are locked and valid")
 
 
 if __name__ == "__main__":
