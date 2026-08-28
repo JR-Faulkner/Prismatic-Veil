@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "testId": "herocel-portability-v1",
+  "styleAuthority": "prismatic-herocel-v1",
+  "purpose": "Prove that HeroCel behaves as a person-agnostic artist/rendering grammar rather than a Kineza likeness-transfer mechanism.",
+  "rule": "Each test subject supplies its own geometry and design. HeroCel may supply only rendering treatment.",
+  "cases": [
+    {
+      "id": "unrelated-adult-human",
+      "identitySource": "independent-subject-authority",
+      "geometryTraits": [
+        "adult proportions",
+        "long narrow face",
+        "deep-set eyes",
+        "angular nose",
+        "narrow jaw"
+      ],
+      "designTraits": [
+        "long technical coat",
+        "compact geometric relic"
+      ],
+      "heroCelMayChange": [
+        "edge treatment",
+        "shadow grouping",
+        "highlight treatment",
+        "surface simplification",
+        "material readability",
+        "detail hierarchy"
+      ],
+      "heroCelMayNotChange": [
+        "face geometry",
+        "eye spacing",
+        "nose geometry",
+        "jaw geometry",
+        "adult proportions",
+        "costume geometry"
+      ]
+    },
+    {
+      "id": "nonhuman-synthetic",
+      "identitySource": "independent-character-design-authority",
+      "geometryTraits": [
+        "synthetic humanoid face planes",
+        "nonhuman eye construction",
+        "metallic body proportions"
+      ],
+      "designTraits": [
+        "segmented synthetic shell",
+        "integrated luminous seams"
+      ],
+      "heroCelMayChange": [
+        "edge treatment",
+        "value grouping",
+        "specular simplification",
+        "material readability",
+        "detail hierarchy"
+      ],
+      "heroCelMayNotChange": [
+        "synthetic facial geometry",
+        "eye construction",
+        "body proportions",
+        "shell geometry"
+      ]
+    },
+    {
+      "id": "young-character-not-kineza",
+      "identitySource": "independent-subject-authority",
+      "geometryTraits": [
+        "young age read",
+        "different cheek contour",
+        "different eye shape and spacing",
+        "different nose and mouth family",
+        "different head proportions"
+      ],
+      "designTraits": [
+        "light layered clothing",
+        "small non-kinetic magical focus"
+      ],
+      "heroCelMayChange": [
+        "edge treatment",
+        "facial surface rendering",
+        "shadow grouping",
+        "highlight clarity",
+        "animation readability"
+      ],
+      "heroCelMayNotChange": [
+        "cheek contour",
+        "eye geometry",
+        "nose geometry",
+        "mouth geometry",
+        "head proportions",
+        "expression identity"
+      ]
+    }
+  ],
+  "passCondition": "All cases share the HeroCel rendering-family read while retaining distinct subject-owned geometry. Kineza likeness contribution remains zero in every case.",
+  "kinezaLikenessContributionPercent": 0,
+  "kinezaGeometryContributionPercent": 0
+}
