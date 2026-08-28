@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "authorityId": "sarallel-likeness-authority-v1",
   "characterId": "sarallel",
-  "status": "locked-master-b-geometry-hair-down-presentation-authority",
-  "purpose": "Establish and preserve Sarallel likeness from real-photo geometry and real expression behavior. Sarah Likeness Master B is the strongest current derived likeness calibration base, while real photos remain supreme for geometry and facial-surface truth. Existing Sarallel fantasy iterations are design-only and have zero facial-geometry authority.",
+  "status": "locked-transition-a-animated-likeness-hair-down-presentation-authority",
+  "purpose": "Establish and preserve Sarallel likeness from real-photo geometry and expression behavior. Sarah Likeness Master B remains the strongest derived geometry calibration base, Sarah HeroCel Likeness Transition A is the approved animated-likeness bridge, and real photos remain supreme for geometry and facial-surface truth. Existing Sarallel fantasy iterations are design-only and have zero facial-geometry authority.",
   "approvedDerivedMaster": {
     "name": "Sarah Likeness Master B",
     "inspection": "sarallel-likeness-master-b-inspection",
@@ -12,6 +12,16 @@
     "sha256": "c5bb063d958eebf6af676c3390ec524cc3f9eccfcc4d2724e0e21ffbc7a7f7e0",
     "priority": "primary-derived-likeness-calibration-authority",
     "separateSarahApprovalRecorded": false
+  },
+  "approvedAnimatedLikenessTransition": {
+    "name": "Sarah HeroCel Likeness Transition A",
+    "inspection": "sarallel-herocel-likeness-transition-a-inspection",
+    "generationId": "860801ab-5670-45cc-aec1-2f9b0cdd6c93",
+    "sha256": "b99ab75732bd7066ee1f92b3c2cf05ea8fc0ed3879c3dab59b2f4ef64c0c45a5",
+    "priority": "face-authority-for-sarallel-design-reintroduction-under-real-photo-supremacy",
+    "userApproved": true,
+    "separateSarahApprovalRecorded": false,
+    "rule": "Use Transition A to carry Sarah identity into Sarallel. Do not amplify dimples, smile creases, nasolabial lines, under-eye lines, or age-signaling marks beyond the real-photo references."
   },
   "historicalDerivedMaster": {
     "name": "Sarallel Likeness Master A",
@@ -33,13 +43,18 @@
     ],
     "derivedCalibrationSource": {
       "source": "Sarah Likeness Master B",
-      "role": "strongest current derived likeness base for the next HeroCel transition",
+      "role": "strongest current derived likeness base",
       "rule": "Master B may summarize likeness geometry but may never overrule real photos for facial crease, dimple, under-eye line, fine texture, or age-signaling surface detail."
+    },
+    "animatedLikenessSource": {
+      "source": "Sarah HeroCel Likeness Transition A",
+      "role": "approved animated likeness bridge for Sarallel design reintroduction",
+      "rule": "Transition A owns the approved HeroCel treatment of Sarah while real photos remain supreme for geometry and facial-surface truth."
     },
     "appearancePriority": {
       "primary": "hair-down real-photo presentation for Sarallel",
-      "secondary": "Sarah Likeness Master B for derived identity calibration",
-      "geometryCheck": "pulled-back real-photo variant",
+      "secondary": "Sarah HeroCel Likeness Transition A for animated identity carryover",
+      "geometryCheck": "pulled-back real-photo variant and Sarah Likeness Master B",
       "rule": "Pulled-back hair may clarify facial geometry but may not silently become the default Sarallel appearance."
     },
     "expressionMotionSource": {
@@ -86,6 +101,7 @@
     "priority": "absolute",
     "owner": "real-photo-likeness-subject",
     "derivedCalibrationMaster": "Sarah Likeness Master B",
+    "approvedAnimatedBridge": "Sarah HeroCel Likeness Transition A",
     "lockedAnchors": [
       "broader face through cheek region",
       "shorter rounder overall facial silhouette rather than elongated oval",
@@ -144,6 +160,7 @@
     "generic glamorous fantasy-woman face",
     "beauty normalization that weakens likeness",
     "legacy Sarallel iteration face used as likeness authority",
+    "Candidate G face used as likeness authority",
     "age drift caused by invented facial lines",
     "invented dimples",
     "invented nasolabial or cheek crease lines",
@@ -154,16 +171,19 @@
   ],
   "productionProgression": {
     "likenessMaster": "Sarah Likeness Master B locked as current derived calibration base",
-    "designMaster": "Sarallel Design Master A retained",
+    "animatedLikenessBridge": "Sarah HeroCel Likeness Transition A approved",
+    "designMaster": "Sarallel Design Master A retained and now eligible for reintroduction",
     "heroCelProfile": "sarallel-herocel-v1",
-    "currentStage": "likeness-only HeroCel animation transition before Sarallel design reintroduction",
-    "nextAsset": "Sarah HeroCel Likeness Transition A"
+    "currentStage": "Sarallel design reintroduction with Transition A face frozen",
+    "nextAsset": "Sarallel HeroCel Design Reintroduction A"
   },
   "prizimGates": {
     "realPhotoGeometryOwnership": "hard-reject",
     "masterBCurrentCalibration": "required",
-    "realPhotoSurfaceTruthOverMasterB": "required",
+    "transitionAAnimatedLikenessBridge": "required",
+    "realPhotoSurfaceTruthOverDerivedArt": "required",
     "legacyFantasyFaceContributionZero": "hard-reject",
+    "candidateGFaceContributionZero": "hard-reject",
     "broaderShorterFaceRetention": "required",
     "cheekVolumeRetention": "required",
     "naturalEyeGeometry": "required",
