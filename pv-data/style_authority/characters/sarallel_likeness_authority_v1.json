@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "authorityId": "sarallel-likeness-authority-v1",
+  "characterId": "sarallel",
+  "status": "locked-likeness-calibration-authority-pending-master-generation",
+  "purpose": "Establish Sarallel likeness from real-photo geometry and real expression behavior before any HeroCel translation. Existing Sarallel fantasy iterations are design-only and have zero facial-geometry authority.",
+  "likenessSourcePolicy": {
+    "primaryGeometrySources": [
+      {
+        "sourceClass": "real-photo-front",
+        "role": "primary facial-geometry authority",
+        "reason": "clear frontal face perimeter, cheek width, eye spacing, nose family, mouth width, jaw and chin"
+      },
+      {
+        "sourceClass": "real-photo-secondary-front-three-quarter",
+        "role": "secondary geometry confirmation",
+        "reason": "confirms broader/shorter facial structure across different distance, hair state, and camera context"
+      }
+    ],
+    "expressionMotionSource": {
+      "sourceClass": "real-video",
+      "role": "expression-behavior authority only",
+      "allowedUse": [
+        "smile width",
+        "cheek lift",
+        "eye compression during smile",
+        "mouth-corner behavior",
+        "jaw movement from neutral to smile"
+      ],
+      "forbiddenUse": [
+        "skin color calibration from poor lighting",
+        "fine facial texture authority",
+        "camera-distorted geometry substitution"
+      ]
+    },
+    "legacyFantasyIterations": {
+      "role": "design-only",
+      "facialGeometryContributionPercent": 0,
+      "likenessContributionPercent": 0,
+      "mayContribute": [
+        "blue-black-gold palette",
+        "diamond/crystal motif",
+        "simulacrum echo concept",
+        "cape and armor language",
+        "blue arcane geometry and interface-like magic"
+      ],
+      "mustNeverContribute": [
+        "face shape",
+        "eye geometry",
+        "eyebrow geometry",
+        "nose geometry",
+        "mouth or smile geometry",
+        "cheek contour",
+        "jaw or chin geometry",
+        "age read",
+        "beauty-model facial normalization"
+      ]
+    }
+  },
+  "geometryAuthority": {
+    "priority": "absolute",
+    "owner": "real-photo-likeness-subject",
+    "lockedAnchors": [
+      "broader face through cheek region",
+      "shorter rounder overall facial silhouette rather than elongated oval",
+      "full lower-cheek volume",
+      "soft broad jaw transition",
+      "rounded chin rather than pointed chin",
+      "natural adult eye scale and spacing",
+      "eyes not enlarged or dramatically upturned for fantasy stylization",
+      "softer less fashion-arched eyebrow geometry",
+      "broader softer nose family including base and tip",
+      "wider mouth geometry",
+      "warm broad smile with distinctive cheek lift",
+      "adult age read consistent with real reference"
+    ],
+    "geometryOwned": [
+      "face silhouette",
+      "forehead and brow geometry",
+      "eye shape",
+      "eye size",
+      "eye spacing",
+      "eyebrow shape and arch",
+      "cheek width, contour, and volume",
+      "nose width, bridge, base, tip, and placement",
+      "lip proportions",
+      "mouth width",
+      "smile geometry",
+      "jaw width and contour",
+      "chin shape",
+      "ear placement where visible",
+      "head shape",
+      "adult age read"
+    ]
+  },
+  "expressionAuthority": {
+    "neutral": "open, approachable, natural adult expression without generic fantasy-model severity",
+    "signatureSmile": "wide warm smile; cheeks lift strongly; eyes narrow slightly from natural cheek compression; mouth corners rise without narrowing the face",
+    "rule": "Expression may animate the locked face geometry but may not replace it with glamorized fantasy-heroine geometry."
+  },
+  "hardReject": [
+    "elongated narrow fantasy-model face",
+    "pointed or sharply tapered chin",
+    "cheek-volume reduction",
+    "dramatically upturned or enlarged eyes",
+    "high fashion-arched eyebrow substitution",
+    "narrow sculpted nose substitution",
+    "small narrow mouth substitution",
+    "generic glamorous fantasy-woman face",
+    "beauty normalization that weakens likeness",
+    "legacy Sarallel iteration face used as likeness authority",
+    "younger-looking face caused by stylization",
+    "cross-view identity drift"
+  ],
+  "generationPreparation": {
+    "nextAsset": "Sarallel Likeness Master A",
+    "presentation": "single neutral adult portrait or simple neutral upper-body likeness master",
+    "referenceStack": "real-photo likeness sources only",
+    "excludeDuringLikenessMaster": [
+      "legacy Sarallel fantasy images",
+      "HeroCel calibration character images",
+      "other Prismatic Veil character faces",
+      "multi-character sheets"
+    ],
+    "promotionRule": "Do not apply Sarallel design canon or HeroCel until a likeness-only Master A is visually accepted as the same real-photo subject."
+  },
+  "prizimGates": {
+    "realPhotoGeometryOwnership": "hard-reject",
+    "legacyFantasyFaceContributionZero": "hard-reject",
+    "broaderShorterFaceRetention": "required",
+    "cheekVolumeRetention": "required",
+    "naturalEyeGeometry": "required",
+    "broaderSoftNoseFamily": "required",
+    "mouthAndSmileGeometry": "required",
+    "adultAgeRead": "required",
+    "expressionBehaviorRetention": "required",
+    "genericFantasyBeautyDrift": "hard-reject"
+  }
+}
