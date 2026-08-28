@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "testId": "prismel-herocel-idle-stability-v1",
   "characterId": "prismel",
-  "status": "prepared-pending-hc-generation-and-prizim-inspection",
+  "status": "prepared-source-preserving-derivation-pending-frame-build-and-prizim-inspection",
   "purpose": "Prove that Prismel HeroCel production authority survives frame-to-frame motion without likeness, geometry, silhouette, or rendering-family drift before staff materialization or attack production begins.",
   "authorityStack": {
     "geometryAuthority": "Prismel HeroCel Master A",
@@ -10,51 +10,58 @@
     "heroCelAuthority": "prismatic-herocel-v1",
     "adapterRevision": "1.2-same-artist-calibration"
   },
-  "generationContract": {
-    "presentation": "single 6-frame neutral-idle sequence sheet",
-    "referenceRule": "Use Prismel HeroCel Master B as the only character visual reference. Master A geometry locks remain absolute through the production authority. Do not include Kineza, presentation sheets, attack art, or unrelated Prismel variants as visual references.",
-    "camera": "identical neutral full-body camera and perspective in all six frames",
-    "background": "plain neutral production background or transparent production field",
+  "rejectedAttempt": {
+    "receipt": "prismel-idle-attempt-01-reject",
+    "generationId": "4d7628ea-c0e9-4e50-a1d6-d9468c2b333c",
+    "lesson": "Do not request a fresh multi-frame redraw. Preserve Master B pixels and derive only localized motion."
+  },
+  "sourcePreservingDerivationContract": {
+    "masterSource": "Prismel HeroCel Master B",
+    "masterSourceSha256": "16e5c8f19c727c444486f4367e5cc6e7ab4b25905ca56a89483396b84aa378b9",
+    "presentation": "six individually derived idle frames assembled only after per-frame validation",
+    "frame1Rule": "exact pixel copy of Master B after standardized crop/registration; no redraw",
+    "frame6Rule": "exact pixel copy of validated frame 1 after registration; no redraw",
+    "middleFrameRule": "frames 2 through 5 must each derive independently from Master B, never from the previous modified frame",
+    "allowedMethods": [
+      "deterministic localized pixel deformation from Master B",
+      "localized image edit using Master B as the sole image source"
+    ],
+    "forbiddenMethods": [
+      "fresh multi-frame character generation",
+      "fresh full-body redraw",
+      "deriving a frame from a previously modified frame",
+      "using Kineza as an appearance reference",
+      "using presentation sheets or older Prismel variants as visual references"
+    ],
+    "immutableZones": [
+      "entire face and head geometry",
+      "hairline and visible curls",
+      "hands and fingers",
+      "boots and foot contact",
+      "belt line and pouch anchors",
+      "chest crystal geometry and mounting",
+      "hood opening geometry"
+    ],
+    "localizedEditableZones": [
+      "upper torso breathing contour within tolerance",
+      "outer cloak fold response within tolerance",
+      "chest crystal luminance only"
+    ],
     "staff": "absent",
     "attackFx": "absent",
     "rootMotion": "none",
     "baseline": "fixed",
     "scale": "fixed",
     "horizontalDrift": "none",
-    "verticalBob": "none",
-    "poseIntent": "calm mystical readiness with restrained natural life, never energetic Kineza-style bounce"
+    "verticalBob": "none"
   },
   "framePlan": [
-    {
-      "frame": 1,
-      "beat": "anchor-neutral",
-      "allowedMotion": "none; canonical Master B idle anchor"
-    },
-    {
-      "frame": 2,
-      "beat": "micro-inhale",
-      "allowedMotion": "minimal upper-chest and shoulder breathing only; feet, head scale, facial geometry, belt line, and crystal position remain anchored"
-    },
-    {
-      "frame": 3,
-      "beat": "cloth-response",
-      "allowedMotion": "subtle outer-cloak fold response to breathing; no silhouette inflation or hem translation"
-    },
-    {
-      "frame": 4,
-      "beat": "micro-exhale",
-      "allowedMotion": "returning chest/shoulder breath with identical root and face geometry"
-    },
-    {
-      "frame": 5,
-      "beat": "crystal-life",
-      "allowedMotion": "very small luminance pulse in the chest crystal only; crystal geometry, scale, centroid, and mounting remain unchanged"
-    },
-    {
-      "frame": 6,
-      "beat": "return-anchor",
-      "allowedMotion": "visual return to frame 1 anchor suitable for a seamless loop"
-    }
+    {"frame": 1, "beat": "anchor-neutral", "source": "exact-master-b", "allowedMotion": "none"},
+    {"frame": 2, "beat": "micro-inhale", "source": "derive-independently-from-master-b", "allowedMotion": "minimal upper-torso breath only; face/head/feet remain pixel-stable"},
+    {"frame": 3, "beat": "cloth-response", "source": "derive-independently-from-master-b", "allowedMotion": "subtle outer-cloak fold response only; no silhouette inflation"},
+    {"frame": 4, "beat": "micro-exhale", "source": "derive-independently-from-master-b", "allowedMotion": "minimal upper-torso return only; face/head/feet remain pixel-stable"},
+    {"frame": 5, "beat": "crystal-life", "source": "derive-independently-from-master-b", "allowedMotion": "luminance pulse only; crystal geometry and centroid remain fixed"},
+    {"frame": 6, "beat": "return-anchor", "source": "exact-frame-1-copy", "allowedMotion": "none"}
   ],
   "absoluteLocks": [
     "Elijah facial geometry",
@@ -85,6 +92,7 @@
     "chest crystal as high-detail focal material"
   ],
   "hardReject": [
+    "fresh redraw of Prismel",
     "different-looking Prismel between frames",
     "eye enlargement or eye-spacing drift",
     "face narrowing",
@@ -105,16 +113,23 @@
     "frame-to-frame value-group wobble",
     "uniform cosmic-noise changes that read as texture flicker"
   ],
+  "sourceIntegrityChecks": {
+    "frame1MustMatchMasterB": "required",
+    "frame6MustMatchFrame1": "required",
+    "frames2Through5MustTraceDirectlyToMasterB": "required",
+    "noCumulativeGenerationChain": "required"
+  },
   "postRegistrationTolerances": {
     "characterHeightVariancePercentMax": 1.0,
-    "headDimensionVariancePercentMax": 1.5,
-    "eyeSpacingVariancePercentMax": 1.5,
-    "hoodOpeningDimensionVariancePercentMax": 2.0,
-    "chestCrystalCentroidDriftCharacterHeightPercentMax": 0.75,
-    "baselineFootContactDriftCharacterHeightPercentMax": 0.5,
-    "nonIntentionalCloakWidthVariancePercentMax": 2.0
+    "headDimensionVariancePercentMax": 0.5,
+    "eyeSpacingVariancePercentMax": 0.5,
+    "hoodOpeningDimensionVariancePercentMax": 1.0,
+    "chestCrystalCentroidDriftCharacterHeightPercentMax": 0.25,
+    "baselineFootContactDriftCharacterHeightPercentMax": 0.25,
+    "nonIntentionalCloakWidthVariancePercentMax": 1.5
   },
   "inspectionRequirements": {
+    "sourceIntegrityPass": "required",
     "visualIdentityPass": "required",
     "anatomyPass": "required",
     "renderingFamilyPass": "required",
@@ -122,6 +137,6 @@
     "postRegistrationTolerancePass": "required",
     "phonePlaybackPassBeforePromotion": "required"
   },
-  "promotionRule": "Idle stability must pass PriZim visual inspection, post-registration tolerances, and phone playback before Prismel proceeds to movement/pose stability or any staff/attack sequence adaptation.",
+  "promotionRule": "Idle stability must pass source-integrity checks, PriZim visual inspection, post-registration tolerances, and phone playback before Prismel proceeds to movement/pose stability or any staff/attack sequence adaptation.",
   "nextOnPass": "movement/pose stability test"
 }
