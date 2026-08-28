@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "authorityId": "prismel-herocel-production-v1",
+  "characterId": "prismel",
+  "status": "locked-production-character-authority",
+  "heroCelAuthority": "prismatic-herocel-v1",
+  "heroCelRevision": "1.2-animation-rendering-firewall",
+  "adapterProfile": "prismel-herocel-v1",
+  "adapterRevision": "1.2-same-artist-calibration",
+  "geometryAuthority": {
+    "master": "Prismel HeroCel Master A",
+    "inspection": "prismel-herocel-master-a-inspection",
+    "priority": "absolute",
+    "rule": "Master A owns frozen likeness/design geometry. No later rendering or motion asset may reshape or substitute it."
+  },
+  "productionMaster": {
+    "master": "Prismel HeroCel Master B",
+    "inspection": "prismel-herocel-master-b-inspection",
+    "generationId": "92b9cb0a-8d2a-4c46-8c87-47e9d727980a",
+    "sha256": "16e5c8f19c727c444486f4367e5cc6e7ab4b25905ca56a89483396b84aa378b9",
+    "priority": "production-rendering-authority",
+    "rule": "Master B owns the approved Prismel HeroCel rendering treatment while inheriting all Master A geometry locks."
+  },
+  "promotionEvidence": {
+    "elijahLikenessRetention": 9.3,
+    "overallSameArtistImpression": 9.2,
+    "requiredElijahLikeness": 9.3,
+    "requiredSameArtistImpression": 9.2,
+    "thresholdsMet": true,
+    "comparisonMethod": "untouched-master-composites-only"
+  },
+  "motionAuthority": {
+    "status": "cleared",
+    "allowedToChange": [
+      "pose",
+      "cloth dynamics",
+      "expression within Prismel expression authority",
+      "staff position",
+      "character-specific prismatic FX",
+      "camera-relative foreshortening that does not alter identity"
+    ],
+    "mustNotChange": [
+      "face geometry",
+      "eye size, shape, or spacing",
+      "nose family",
+      "cheek volume",
+      "jaw/chin geometry",
+      "age read",
+      "head-to-body ratio",
+      "hood opening identity",
+      "cloak dominant mass",
+      "chest crystal identity",
+      "Prismel body proportions",
+      "HeroCel Master B rendering family"
+    ]
+  },
+  "nextProductionOrder": [
+    "neutral idle stability test",
+    "movement/pose stability test",
+    "signature staff materialization adaptation",
+    "attack sequence rebuild"
+  ]
+}
