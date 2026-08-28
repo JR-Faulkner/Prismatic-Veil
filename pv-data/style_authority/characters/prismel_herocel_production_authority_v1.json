@@ -54,6 +54,17 @@
       "HeroCel Master B rendering family"
     ]
   },
+  "motionValidation": {
+    "currentStage": "neutral-idle-stability",
+    "idleStabilitySpec": "prismel-herocel-idle-stability-v1",
+    "idleStatus": "prepared-pending-hc-generation-and-prizim-inspection",
+    "sequenceFrameCount": 6,
+    "staffAllowed": false,
+    "attackFxAllowed": false,
+    "rootMotionAllowed": false,
+    "phonePlaybackRequired": true,
+    "blockLaterStagesUntilIdlePasses": true
+  },
   "nextProductionOrder": [
     "neutral idle stability test",
     "movement/pose stability test",
