@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "inspectionId": "sarallel-design-master-a-inspection",
+  "characterId": "sarallel",
+  "status": "approved-design-master-a-pending-herocel-retention-pass",
+  "master": {
+    "name": "Sarallel Design Master A",
+    "generationId": "c00bbc76-e08a-45c7-846b-b88f5ca21e43",
+    "sha256": "d45e49cdd8bae8bce2c506a7266d3cb3eedf47dae433f197ba301c8f65f2d725"
+  },
+  "likenessAuthority": "Sarallel Likeness Master A",
+  "designAuthority": {
+    "palette": "royal blue / black / gold",
+    "preserve": [
+      "hair-down primary presentation",
+      "elegant armored-caster silhouette",
+      "royal blue black and gold material hierarchy",
+      "blue diamond/crystal motif",
+      "long mantle/cape",
+      "geometric arcane magic structure",
+      "simulacrum / parallel-self visual language",
+      "refined rather than brute-force armor character"
+    ]
+  },
+  "pZInspection": {
+    "verdict": "conditional-pass-strong-candidate",
+    "scores": {
+      "sarahLikeness": 9.0,
+      "hairDownAuthority": 9.4,
+      "expressionIdentity": 9.2,
+      "sarallelDesignFidelity": 9.5,
+      "anatomyIntegrity": 9.6,
+      "crystalPropSeparation": 9.7,
+      "heroCelReadiness": 9.3
+    },
+    "watchItems": [
+      "slight fantasy-glam face narrowing",
+      "slightly increased jaw taper",
+      "nose may read marginally narrower than source",
+      "eyes may read slightly more polished/lifted than source",
+      "hair styling is more polished than real reference"
+    ]
+  },
+  "absoluteLocksForHeroCel": [
+    "Sarah face silhouette",
+    "cheek volume",
+    "jaw and chin geometry",
+    "natural adult eye scale and spacing",
+    "broader softer nose family",
+    "mouth width and smile geometry",
+    "adult age read",
+    "hair-down face framing",
+    "armor silhouette and crystal placement",
+    "cape/mantle geometry",
+    "royal blue black and gold palette family"
+  ],
+  "hardRejectDuringHeroCel": [
+    "additional face narrowing",
+    "additional jaw taper",
+    "cheek-volume loss",
+    "nose sharpening or narrowing",
+    "eye enlargement or upward tilt",
+    "generic glamorous heroine face",
+    "generic heroine smile",
+    "age regression",
+    "hair geometry redesign",
+    "armor redesign",
+    "crystal relocation",
+    "cape silhouette redesign"
+  ],
+  "nextStage": "Sarallel HeroCel rendering-only translation"
+}
