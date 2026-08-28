@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "attemptId": "sarallel-herocel-face-calibration-attempt-01",
+  "characterId": "sarallel",
+  "status": "reject-insufficient-animation-model-read",
+  "purpose": "Preserve the useful lesson from the first face-focused calibration: Sarah likeness improved, but the rendering remained premium fantasy portraiture rather than Prismatic HeroCel animation-model art.",
+  "asset": {
+    "generationId": "f8cabc3c-f317-4a47-aefe-82fc5e8bf419",
+    "sha256": "2ba4a0a339ce709217113fb1af33c843f9e63e69ca02fb3f5a9d2c139bcd1f3e",
+    "presentation": "upper-torso Sarah-as-Sarallel portrait"
+  },
+  "userAssessment": "No, we’re not getting the animation through on her.",
+  "pZAssessment": {
+    "likenessDirection": "improved relative to prior HeroCel attempts",
+    "heroCelAnimationRead": "fail",
+    "productionPromotion": false,
+    "useAsGeometryAuthority": false,
+    "useAsRenderingAuthority": false,
+    "useAsNegativeCalibrationEvidence": true
+  },
+  "whatWorked": [
+    "broader Sarah-specific face read improved relative to earlier HeroCel attempts",
+    "hair-down presentation remained recognizable",
+    "smile and warm expression moved closer to Sarah",
+    "upper-torso Sarallel design remained recognizable"
+  ],
+  "failureVectors": [
+    "too many soft skin transitions",
+    "painterly modeling remained in cheeks, nose, lips, and forehead",
+    "hair remained strand-by-strand instead of grouped animation-readable masses",
+    "armor retained realistic material gradients and gloss",
+    "highlights remained continuous rather than graphic restrained bands",
+    "facial planes were not simplified enough for animation-model readability",
+    "interior rendering remained illustration-first despite a clean silhouette"
+  ],
+  "futureHardRejectSignals": [
+    "strong Sarah likeness paired with painterly fantasy portrait rendering",
+    "continuous facial gradients as primary modeling language",
+    "strand-by-strand hair as primary hair language",
+    "realistic glossy armor gradients",
+    "portrait polish that could not sit beside Kineza and Prismel as the same animation artist"
+  ],
+  "nextRequiredMethod": "Use sarallel-herocel-v1 revision 1.1-face-rendering-calibration-v2 for a single face-and-upper-torso calibration. Preserve Sarah geometry while pushing decisively to 2-to-3 skin value groups, crisp shadow boundaries, grouped hair masses, simplified facial planes, and graphic armor materials."
+}
