@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "inspectionId": "prismel-herocel-master-b-inspection",
+  "characterId": "prismel",
+  "candidateName": "Prismel HeroCel Master B",
+  "styleAuthority": "prismatic-herocel-v1",
+  "styleRevision": "1.2-animation-rendering-firewall",
+  "adapterRevision": "1.2-same-artist-calibration",
+  "status": "approved-production-character-authority",
+  "generationEvidence": {
+    "genId": "92b9cb0a-8d2a-4c46-8c87-47e9d727980a",
+    "sha256": "16e5c8f19c727c444486f4367e5cc6e7ab4b25905ca56a89483396b84aa378b9",
+    "mode": "single-neutral-full-body-master-b-calibration"
+  },
+  "authorityRelationship": {
+    "geometryAuthority": "Prismel HeroCel Master A",
+    "productionRenderingAuthority": "Prismel HeroCel Master B",
+    "likenessAuthority": "Elijah / approved Prismel likeness authority",
+    "rule": "Master B may supersede Master A rendering, but may not supersede or reinterpret Master A likeness/design geometry."
+  },
+  "masterAVsBInspection": {
+    "method": "untouched Master A and untouched Master B placed side-by-side; no redraw",
+    "comparisonSha256": "05c750fb5b64ffdcfbb3f98524fbd46f11bdb804d472242d376b35ba925404ac",
+    "verdict": "pass",
+    "scores": {
+      "elijahLikenessRetention": 9.3,
+      "frozenFaceGeometryRetention": 9.4,
+      "frozenDesignGeometryRetention": 9.6,
+      "olderChildAgeRead": 9.3,
+      "prismelIdentity": 9.7
+    },
+    "finding": "Master B preserves the Master A identity/design anchors while simplifying surface rendering. No meaningful Kineza/Ezra geometry leakage is visible."
+  },
+  "sameArtistInspection": {
+    "method": "untouched Master B and untouched approved Kineza calibration master composited side-by-side on a neutral canvas; no redraw or shared generation",
+    "comparisonSha256": "bb9874029d6251cf5b6e85dfbb69e388fec4455908c64ef94d7da0b59812c2b4",
+    "kinezaCalibrationSha256": "08bfcf1f362283b9fba5ed1a5fbfdc48123d0621439651037acf0ed5205f2fef",
+    "verdict": "pass",
+    "scores": {
+      "silhouetteLanguage": 9.4,
+      "costumeConstruction": 9.2,
+      "detailHierarchy": 9.2,
+      "materialAbstraction": 9.2,
+      "shadowValueLanguage": 9.3,
+      "facialRendering": 9.2,
+      "overallSameArtistImpression": 9.2
+    },
+    "baselineOverallSameArtistImpression": 8.3,
+    "finding": "Master B closes the major facial/value/material rendering gap to the Kineza-established HeroCel hand while retaining Prismel-specific softness, mystical material language, and Elijah-owned geometry."
+  },
+  "promotionThresholds": {
+    "overallSameArtistImpressionMinimum": 9.2,
+    "elijahLikenessMinimum": 9.3,
+    "met": true
+  },
+  "productionLocks": {
+    "mustPreserve": [
+      "Master A face geometry",
+      "Master A hood opening and cloak mass",
+      "Master A body proportions and older-child age read",
+      "Master B 2-to-3 facial value-group rendering",
+      "Master B decisive graphic shadow grouping",
+      "Master B low facial microdetail",
+      "Master B broader cloak fold masses",
+      "Master B reduced nonfocal cosmic microdetail",
+      "Master B high-detail chest crystal focal hierarchy"
+    ],
+    "hardReject": [
+      "eye enlargement or spacing drift",
+      "face narrowing",
+      "nose sharpening",
+      "cheek-volume loss",
+      "age regression",
+      "Kineza/Ezra facial geometry leakage",
+      "painterly skin reversion",
+      "continuous facial gradient modeling",
+      "uniform cosmic microdetail",
+      "hood/cloak shrinkage",
+      "costume redesign"
+    ]
+  },
+  "nextStage": {
+    "status": "cleared-for-motion-production",
+    "order": [
+      "neutral idle stability test",
+      "movement/pose stability test",
+      "signature materialization adaptation",
+      "attack-sequence rebuild under Master B rendering authority"
+    ],
+    "rule": "Motion may change pose and cloth dynamics, never identity/design geometry or the Master B rendering family."
+  }
+}
