@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "testId": "prismel-herocel-idle-stability-v1",
+  "characterId": "prismel",
+  "status": "prepared-pending-hc-generation-and-prizim-inspection",
+  "purpose": "Prove that Prismel HeroCel production authority survives frame-to-frame motion without likeness, geometry, silhouette, or rendering-family drift before staff materialization or attack production begins.",
+  "authorityStack": {
+    "geometryAuthority": "Prismel HeroCel Master A",
+    "productionRenderingAuthority": "Prismel HeroCel Master B",
+    "heroCelAuthority": "prismatic-herocel-v1",
+    "adapterRevision": "1.2-same-artist-calibration"
+  },
+  "generationContract": {
+    "presentation": "single 6-frame neutral-idle sequence sheet",
+    "referenceRule": "Use Prismel HeroCel Master B as the only character visual reference. Master A geometry locks remain absolute through the production authority. Do not include Kineza, presentation sheets, attack art, or unrelated Prismel variants as visual references.",
+    "camera": "identical neutral full-body camera and perspective in all six frames",
+    "background": "plain neutral production background or transparent production field",
+    "staff": "absent",
+    "attackFx": "absent",
+    "rootMotion": "none",
+    "baseline": "fixed",
+    "scale": "fixed",
+    "horizontalDrift": "none",
+    "verticalBob": "none",
+    "poseIntent": "calm mystical readiness with restrained natural life, never energetic Kineza-style bounce"
+  },
+  "framePlan": [
+    {
+      "frame": 1,
+      "beat": "anchor-neutral",
+      "allowedMotion": "none; canonical Master B idle anchor"
+    },
+    {
+      "frame": 2,
+      "beat": "micro-inhale",
+      "allowedMotion": "minimal upper-chest and shoulder breathing only; feet, head scale, facial geometry, belt line, and crystal position remain anchored"
+    },
+    {
+      "frame": 3,
+      "beat": "cloth-response",
+      "allowedMotion": "subtle outer-cloak fold response to breathing; no silhouette inflation or hem translation"
+    },
+    {
+      "frame": 4,
+      "beat": "micro-exhale",
+      "allowedMotion": "returning chest/shoulder breath with identical root and face geometry"
+    },
+    {
+      "frame": 5,
+      "beat": "crystal-life",
+      "allowedMotion": "very small luminance pulse in the chest crystal only; crystal geometry, scale, centroid, and mounting remain unchanged"
+    },
+    {
+      "frame": 6,
+      "beat": "return-anchor",
+      "allowedMotion": "visual return to frame 1 anchor suitable for a seamless loop"
+    }
+  ],
+  "absoluteLocks": [
+    "Elijah facial geometry",
+    "eye size, shape, and spacing",
+    "nose family",
+    "full cheek volume",
+    "jaw and chin geometry",
+    "older-child age read",
+    "head-to-body ratio",
+    "hood opening shape",
+    "cloak shoulder mass",
+    "long cloak hem identity",
+    "central chest crystal size and placement",
+    "belt line",
+    "boot height",
+    "foot contact baseline",
+    "overall character scale",
+    "HeroCel Master B rendering family"
+  ],
+  "renderingLocks": [
+    "2-to-3 major skin value groups",
+    "maximum one restrained facial transition band",
+    "crisp animation-readable edge hierarchy",
+    "low facial microdetail",
+    "broad cloak fold masses",
+    "clustered cosmic detail subordinate to silhouette",
+    "graphic gold highlights",
+    "chest crystal as high-detail focal material"
+  ],
+  "hardReject": [
+    "different-looking Prismel between frames",
+    "eye enlargement or eye-spacing drift",
+    "face narrowing",
+    "nose sharpening or family change",
+    "cheek-volume loss",
+    "age regression",
+    "Kineza or Ezra facial leakage",
+    "head-size pumping",
+    "body-scale pumping",
+    "vertical bob or baseline drift",
+    "horizontal root drift",
+    "hood opening drift",
+    "cloak shoulder mass pumping",
+    "chest crystal relocation, resizing, or anatomy fusion",
+    "belt-line drift",
+    "boot-height drift",
+    "painterly rendering reversion",
+    "frame-to-frame value-group wobble",
+    "uniform cosmic-noise changes that read as texture flicker"
+  ],
+  "postRegistrationTolerances": {
+    "characterHeightVariancePercentMax": 1.0,
+    "headDimensionVariancePercentMax": 1.5,
+    "eyeSpacingVariancePercentMax": 1.5,
+    "hoodOpeningDimensionVariancePercentMax": 2.0,
+    "chestCrystalCentroidDriftCharacterHeightPercentMax": 0.75,
+    "baselineFootContactDriftCharacterHeightPercentMax": 0.5,
+    "nonIntentionalCloakWidthVariancePercentMax": 2.0
+  },
+  "inspectionRequirements": {
+    "visualIdentityPass": "required",
+    "anatomyPass": "required",
+    "renderingFamilyPass": "required",
+    "loopReturnPass": "required",
+    "postRegistrationTolerancePass": "required",
+    "phonePlaybackPassBeforePromotion": "required"
+  },
+  "promotionRule": "Idle stability must pass PriZim visual inspection, post-registration tolerances, and phone playback before Prismel proceeds to movement/pose stability or any staff/attack sequence adaptation.",
+  "nextOnPass": "movement/pose stability test"
+}
