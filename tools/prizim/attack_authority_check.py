@@ -34,19 +34,22 @@ def validate_markers(doc: dict, frame_count: int):
 def main():
     authority_text = (ROOT / "src/PartyAttackAuthority.js").read_text(encoding="utf-8")
 
-    # Current H2.8 promotion map. Prismel/Auryi runtime sheets are now ingested,
-    # but remain pending phone acceptance. Kineza is production-current.
+    # Prismel/Auryi are PZ-cleared local extractions but their runtime binaries
+    # are not yet ingested into this branch, so both MUST remain disabled and
+    # pending ingestion. Kineza remains production-current.
     require("id: 'prismel_attack_jrpg_10a'" in authority_text, "Prismel 10A target missing")
     require("id: 'auryi_attack_jrpg_10a'" in authority_text, "Auryi 10A target missing")
-    require(authority_text.count("status: 'runtime-ingested-pending-phone-acceptance'") >= 2,
-            "Prismel/Auryi runtime-ingested status drifted")
+    require(authority_text.count("status: 'conditional-pz-pass-pending-runtime-ingestion'") >= 2,
+            "Prismel/Auryi pending-ingestion status drifted")
+    require(authority_text.count("enabled: false") >= 2,
+            "pending Prismel/Auryi authorities must remain disabled")
     require("id: 'kineza_attack_master_a'" in authority_text, "Kineza Master A missing")
     require("status: 'production-current'" in authority_text, "Kineza must remain production-current")
     require(authority_text.count("mode: 'sheet'") >= 3, "all three Basic Attack contracts must be sheet-shaped")
     require("assets/sequences/runtime/prismel_attack_jrpg_10a.webp" in authority_text,
-            "Prismel runtime WebP path missing")
+            "Prismel intended runtime path missing")
     require("assets/sequences/runtime/auryi_attack_jrpg_10a.webp" in authority_text,
-            "Auryi runtime WebP path missing")
+            "Auryi intended runtime path missing")
 
     prismel = load_json("pv-data/sequence_authority/prismel_attack_jrpg_10a.registration.json")
     require(prismel.get("id") == "PRISMEL_ATTACK_JRPG_10A", "Prismel PZ id mismatch")
@@ -79,18 +82,18 @@ def main():
 
     require((ROOT / "assets/sequences/production/kineza_attack_master_a.png").exists(),
             "Kineza production attack asset missing")
-    require((ROOT / "assets/sequences/runtime/prismel_attack_jrpg_10a.webp").exists(),
-            "Prismel runtime attack asset missing")
-    require((ROOT / "assets/sequences/runtime/auryi_attack_jrpg_10a.webp").exists(),
-            "Auryi runtime attack asset missing")
+    require(not (ROOT / "assets/sequences/runtime/prismel_attack_jrpg_10a.webp").exists(),
+            "Prismel runtime asset exists but authority is still marked pending ingestion")
+    require(not (ROOT / "assets/sequences/runtime/auryi_attack_jrpg_10a.webp").exists(),
+            "Auryi runtime asset exists but authority is still marked pending ingestion")
     require((ROOT / "assets/party_formation/PRISMEL_JRPG_NORMALIZED_900x900.png").exists(),
             "Prismel JRPG visual anchor missing")
     require((ROOT / "assets/party_formation/AURYI_JRPG_NORMALIZED_900x900.png").exists(),
             "Auryi JRPG visual anchor missing")
 
     print("PZ ATTACK AUTHORITY PASS")
-    print("- Prismel: JRPG 10A runtime-ingested, pending phone acceptance")
-    print("- Auryi: JRPG 10A runtime-ingested, pending phone acceptance")
+    print("- Prismel: JRPG 10A conditional, pending runtime ingestion")
+    print("- Auryi: JRPG 10A conditional, pending runtime ingestion")
     print("- Kineza: Master A production-current")
 
 
