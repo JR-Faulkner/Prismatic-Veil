@@ -1,14 +1,15 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "profileId": "prismel-herocel-v1",
+  "profileRevision": "1.1-identity-firewall",
   "characterId": "prismel",
   "status": "locked-character-style-translation-profile",
   "inherits": "prismatic-herocel-v1",
-  "purpose": "Translate Prismel's approved Elijah likeness and locked cosmic-cloak design through Prismatic HeroCel v1 without redesigning the character or weakening likeness.",
+  "purpose": "Render Prismel in the Prismatic HeroCel artist style while Elijah alone owns facial geometry and Prismel canon alone owns character design. HeroCel changes rendering language, never identity geometry.",
   "authorityStack": {
     "likenessAuthority": {
       "subject": "Elijah",
-      "priority": "highest",
+      "priority": "absolute-geometry-authority",
       "identityAnchors": [
         "broad youthful face",
         "full cheeks",
@@ -21,22 +22,44 @@
         "warm brown skin tone",
         "older-child age read"
       ],
-      "expressionAuthority": "calm, thoughtful, compassionate, determined; never blank, solemn, or generic-anime neutral",
+      "geometryOwned": [
+        "face silhouette",
+        "forehead and brow geometry",
+        "eye shape",
+        "eye size",
+        "eye spacing",
+        "eyebrow geometry",
+        "cheek contour and volume",
+        "nose width, bridge, tip, and placement",
+        "lip proportions and mouth geometry",
+        "smile geometry",
+        "jaw width and contour",
+        "chin shape and dimple",
+        "ear shape and prominence",
+        "hairline and curl geometry",
+        "head shape and head-to-body relationship",
+        "age read"
+      ],
+      "expressionAuthority": "calm, thoughtful, compassionate, determined; readable and alive without borrowing Kineza's grin or facial energy",
       "forbiddenLikenessDrift": [
         "narrowing cheeks",
         "sharpening jaw into adult or heroic angularity",
         "deep chin cleft",
-        "generic oversized anime eyes",
-        "tiny photoreal eyes",
+        "changing Elijah's eye shape, size, or spacing to match Kineza",
         "changing nose family",
         "thinning lips",
+        "copying Kineza smile geometry",
+        "copying Kineza cheek contour",
+        "copying Kineza head proportions",
         "age regression toward Kineza",
         "adult facial maturation",
+        "generic anime boy face",
         "generic fantasy-boy face"
       ]
     },
     "characterDesignAuthority": {
       "source": "approved Prismel HD+ hooded cosmic-cloak design",
+      "priority": "absolute-design-authority",
       "preserveExactly": [
         "hood-up silhouette",
         "deep navy to near-black cosmic cloak",
@@ -68,65 +91,87 @@
     },
     "renderingAuthority": "prismatic-herocel-v1"
   },
-  "ageAdapter": "olderChild",
-  "translationBalance": {
-    "likenessAndDesignPercent": 90,
-    "HeroCelNormalizationPercent": 10,
-    "maximumNormalizationPercentWithoutNewApproval": 15
+  "identityFirewall": {
+    "rule": "HeroCel may render Elijah's features, but may not resize, reshape, reposition, or substitute them with calibration-master geometry.",
+    "subjectGeometryOwner": "likenessAuthority",
+    "characterGeometryOwner": "characterDesignAuthority",
+    "styleOwner": "prismatic-herocel-v1",
+    "kinezaGeometryContributionPercent": 0,
+    "kinezaLikenessContributionPercent": 0,
+    "heroCelStyleApplicationPercent": 100,
+    "meaningOfHeroCelStyleApplicationPercent": "Apply the complete HeroCel rendering grammar to the geometry supplied by Elijah likeness and Prismel design authorities. This percentage grants zero geometry ownership."
   },
-  "HeroCelOverrides": {
-    "face": {
-      "eyeScale": "light-to-moderate enlargement from Elijah's real eye shape, smaller than Kineza's young-child treatment",
-      "cheekRetention": "high",
-      "chin": "soft rounded with a subtle dimple",
-      "nose": "simplified animation planes while preserving Elijah's broader soft nose family",
-      "mouth": "full lips, readable but restrained expression",
-      "skin": "smooth broad cel-like value groups with minimal painterly microtexture"
+  "ageAdapter": "olderChild",
+  "heroCelRenderingAdapter": {
+    "facialSurfaceRendering": {
+      "rule": "Render Elijah's unchanged face geometry with cleaner animated surface modeling.",
+      "eyes": "increase edge clarity, catchlight readability, iris/pupil contrast, and lid definition without changing Elijah's eye dimensions or spacing",
+      "skin": "smooth broad value groups with restrained painterly highlights and no pore-level realism",
+      "nose": "simplify light and shadow planes only; geometry remains Elijah-owned",
+      "mouth": "clean contour and shadow separation only; lip proportions and smile geometry remain Elijah-owned",
+      "cheeksJawChin": "simplify shading noise only; facial contour remains Elijah-owned"
     },
-    "proportions": {
-      "headRatio": "slightly animation-enlarged, but clearly older/taller than Kineza",
-      "bodyBuild": "slender and composed",
-      "handsFeet": "readable but not chunky or oversized to Kineza levels"
+    "edgeTreatment": {
+      "rule": "crisp controlled silhouette and material boundaries with selective softness in atmospheric light",
+      "priorityAreas": [
+        "hood and face opening",
+        "hands",
+        "boots",
+        "chest crystal",
+        "staff",
+        "cloak layers"
+      ]
     },
-    "silhouette": {
-      "primaryMass": "hood plus long cosmic mantle",
-      "secondaryMass": "slender robed body beneath cloak",
-      "propPriority": "staff readable as separate silhouette when present",
-      "movementCharacter": "restrained, mystical, deliberate rather than kinetic"
+    "valueGrouping": {
+      "skin": "broad intentional light, midtone, and shadow masses",
+      "cloak": "large fold groups before texture",
+      "underRobe": "simple readable values",
+      "crystalAndGold": "high-contrast focal accents"
     },
-    "detailDensity": {
-      "face": "low-to-medium",
+    "detailHierarchy": {
+      "face": "low-to-medium surface detail while geometry remains exact",
       "cloak": "medium with organized cosmic focal clusters",
       "filigree": "medium and graphic",
       "crystal": "high focal detail",
       "underRobe": "low-to-medium"
     },
-    "expression": {
-      "baseline": "calm attentive confidence",
-      "animationRead": "eyes and mouth must remain readable at gameplay scale without becoming exaggeratedly cheerful",
-      "avoid": [
-        "blank solemnity",
-        "generic stoic mage expression",
-        "Kineza grin",
-        "adult intensity"
+    "materialStylization": {
+      "cosmicFabric": "graphic dark fabric mass with controlled larger star clusters, not uniform glitter noise",
+      "gold": "clean warm edge planes and selective highlights",
+      "crystal": "faceted luminous geometry with clear silhouette and prismatic internal light",
+      "skin": "soft dimensional volume using HeroCel value grouping"
+    },
+    "animationReadability": {
+      "movementCharacter": "restrained, mystical, deliberate rather than kinetic",
+      "requirements": [
+        "Elijah's eye direction remains readable",
+        "hands and staff remain separate silhouettes",
+        "hood and cloak retain Prismel identity across poses",
+        "FX does not erase anatomy or staff boundaries",
+        "expression remains calm but visibly alive at gameplay scale"
       ]
     }
   },
   "generationContract": {
-    "instruction": "Use Elijah likeness as face authority, Prismel HD+ hooded cosmic-cloak design as design authority, and Prismatic HeroCel v1 as rendering authority. Translate Elijah into animated Prismel; do not redesign Prismel and do not copy Kineza's face or anatomy.",
+    "artistInstruction": "Prismatic HeroCel is the artist. Draw Elijah as Prismel using the HeroCel rendering grammar. Do not use Kineza as an appearance, anatomy, facial, proportional, or expression reference.",
+    "authorityInstruction": "Elijah supplies all likeness geometry. Prismel canon supplies costume, build, props, and magic. HeroCel supplies only rendering treatment.",
     "preferredPresentation": "single polished character master or turnaround/model sheet before any animation sequence",
     "requiredBeforeAnimation": [
-      "likeness pass",
+      "likeness geometry pass",
       "design fidelity pass",
-      "HeroCel fingerprint pass",
-      "age read pass",
+      "HeroCel style-only fingerprint pass",
+      "identity firewall pass",
+      "older-child age read pass",
       "expression pass"
     ]
   },
   "prizimGates": {
     "likenessRetention": "required",
+    "subjectGeometryOwnership": "required",
     "designFidelity": "required",
     "HeroCelFingerprintMatch": "required",
+    "identityFirewall": "hard-reject",
+    "zeroKinezaGeometryTransfer": "hard-reject",
     "olderChildAgeRead": "required",
     "hoodDominantSilhouette": "required",
     "expressionIdentity": "required",
