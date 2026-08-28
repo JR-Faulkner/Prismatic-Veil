@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "inspectionId": "sarallel-herocel-candidate-g-inspection",
+  "characterId": "sarallel",
+  "status": "pass-lock-candidate",
+  "candidate": {
+    "name": "Sarallel HeroCel Candidate G",
+    "generationId": "7882f852-8c45-4ff4-a4ff-cd392056d3dc",
+    "sourceMode": "single-source-hc-edit",
+    "singleVisualSource": "Sarallel HeroCel Candidate D"
+  },
+  "pzAssessment": {
+    "sarahLikeness": 9.0,
+    "heroCelAnimationRead": 9.4,
+    "sarallelDesignFidelity": 9.3,
+    "sameArtistImpression": 9.2,
+    "visualIntegrity": "pass",
+    "productionVerdict": "pass-lock-candidate"
+  },
+  "strengths": [
+    "clear premium animated-game read",
+    "strong 2-to-3 value grouping across face and materials",
+    "clean graphic shadow boundaries",
+    "hair treatment is grouped and animation-readable",
+    "blue-black-gold Sarallel design language preserved",
+    "crystal language remains distinct and readable",
+    "single-source edit materially reduced cross-character contamination"
+  ],
+  "remainingMinorDrift": [
+    "face remains fractionally more tapered than Sarah photo authority",
+    "nose is slightly more graphic than real-photo geometry",
+    "smile is mildly stylized but still Sarah-readable"
+  ],
+  "lockedInterpretation": {
+    "identityAuthority": "Sarallel Likeness Master A",
+    "designAuthority": "Sarallel Design Master A",
+    "animationRenderingAuthority": "Sarallel HeroCel Candidate G",
+    "rule": "Do not push stylization harder. Candidate G is sufficient HeroCel animation intensity; any future refinement must preserve or improve Sarah likeness without increasing abstraction."
+  },
+  "nextStep": "untouched same-artist comparison against Auryi HeroCel Master A, Prismel HeroCel Master B, and Kineza master before final production promotion"
+}
