@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "calibrationId": "sarallel-herocel-hybrid-calibration-v1",
+  "characterId": "sarallel",
+  "status": "locked-hybrid-target-pending-candidate-f",
+  "purpose": "Combine Candidate D identity/design retention with the latest HC pass rendering intensity without allowing either reference to transfer unauthorized geometry or style drift.",
+  "identityDesignReference": {
+    "name": "Sarallel HeroCel Candidate D",
+    "generationId": "75f69ea3-fe00-4f75-af51-a06667b25be5",
+    "sha256": "363f82108a1280c11037491ffda3a1cb0d0485ed7bc63bcd877df8469edbdb7b",
+    "role": "identity-and-design-near-pass-reference",
+    "owns": [
+      "Sarah-specific face width",
+      "cheek fullness",
+      "softer broader jaw transition",
+      "rounded chin",
+      "broader softer nose family",
+      "Sarah-specific smile width and cheek lift",
+      "hair-down face framing",
+      "Sarallel Design Master A costume and silhouette fidelity"
+    ],
+    "doesNotOwn": [
+      "HeroCel intensity target beyond its own rendering",
+      "new geometry outside approved likeness/design authority"
+    ]
+  },
+  "renderingIntensityReference": {
+    "name": "Sarallel HeroCel Rendering Pass E",
+    "generationId": "646feea9-b459-4817-afde-0080af1cd88d",
+    "sha256": "bd141c80ac8969ce991a64c86cb4a1ddc1a0dcea3cb1481191b12c4708d61b3d",
+    "role": "rendering-intensity-reference-only",
+    "heroCelAnimationRead": 9.4,
+    "owns": [
+      "2-to-3 major facial value grouping strength",
+      "clean graphic shadow boundaries",
+      "grouped hair mass rendering",
+      "animation-readable armor material blocking",
+      "restrained highlight language",
+      "premium animated-game-character read"
+    ],
+    "geometryContributionPercent": 0,
+    "likenessContributionPercent": 0,
+    "designGeometryContributionPercent": 0,
+    "mustNeverContribute": [
+      "narrower face geometry",
+      "reduced cheek volume",
+      "increased jaw taper",
+      "sharper or narrower nose geometry",
+      "generic animated-heroine smile geometry",
+      "eye geometry drift",
+      "costume geometry drift",
+      "crystal placement drift"
+    ]
+  },
+  "hybridTarget": {
+    "nextAsset": "Sarallel HeroCel Candidate F",
+    "formula": "Candidate D identity/design + Rendering Pass E animation intensity",
+    "primaryRule": "Recover and preserve Candidate D Sarah-specific identity/design while matching Rendering Pass E animation-model strength. Rendering Pass E may contribute rendering grammar only and zero geometry.",
+    "requiredIdentityCorrections": [
+      "keep Candidate D face width",
+      "keep Candidate D cheek fullness",
+      "keep Candidate D softer broader jaw transition",
+      "keep Candidate D rounded chin",
+      "keep Candidate D broader softer nose family",
+      "keep Candidate D Sarah-specific smile geometry"
+    ],
+    "requiredRenderingLocks": [
+      "match Rendering Pass E cel-value strength",
+      "match Rendering Pass E graphic shadow clarity",
+      "match Rendering Pass E grouped hair treatment",
+      "match Rendering Pass E material abstraction",
+      "match Rendering Pass E edge hierarchy"
+    ],
+    "hardReject": [
+      "Sarah likeness below 9.0",
+      "HeroCel animation read below 9.2",
+      "HeroCel animation pushed materially beyond Rendering Pass E",
+      "face narrower than Candidate D",
+      "cheek volume below Candidate D",
+      "jaw more tapered than Candidate D",
+      "nose sharper or narrower than Candidate D",
+      "generic heroine smile substitution",
+      "design geometry drift from Sarallel Design Master A"
+    ]
+  },
+  "passTarget": {
+    "sarahLikenessMinimum": 9.0,
+    "heroCelAnimationReadMinimum": 9.2,
+    "sarallelDesignFidelityMinimum": 9.3,
+    "sameArtistImpressionMinimum": 9.2
+  }
+}
