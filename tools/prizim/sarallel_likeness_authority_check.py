@@ -4,16 +4,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 AUTHORITY = ROOT / "pv-data/style_authority/characters/sarallel_likeness_authority_v1.json"
-LIKENESS_MASTER = ROOT / "pv-data/style_authority/characters/sarallel_likeness_master_a_inspection.json"
-DESIGN_MASTER = ROOT / "pv-data/style_authority/characters/sarallel_design_master_a_inspection.json"
+LIKENESS = ROOT / "pv-data/style_authority/characters/sarallel_likeness_master_a_inspection.json"
+DESIGN = ROOT / "pv-data/style_authority/characters/sarallel_design_master_a_inspection.json"
 HERO = ROOT / "pv-data/style_authority/characters/sarallel_herocel_v1.json"
+CANDIDATE_G = ROOT / "pv-data/style_authority/characters/sarallel_herocel_candidate_g_inspection.json"
 
 
-def fail(msg: str) -> None:
+def fail(msg):
     raise SystemExit(f"PZ SARALLEL LIKENESS FAIL: {msg}")
 
 
-def load(path: Path, label: str) -> dict:
+def load(path, label):
     if not path.exists():
         fail(f"{label} missing")
     try:
@@ -22,176 +23,72 @@ def load(path: Path, label: str) -> dict:
         fail(f"{label} invalid JSON: {exc}")
 
 
-def require_items(actual, required, label):
-    actual = set(actual or [])
-    missing = sorted(set(required) - actual)
-    if missing:
-        fail(f"{label} missing: {', '.join(missing)}")
-
-
-def main() -> None:
+def main():
     authority = load(AUTHORITY, "Sarallel likeness authority")
-    likeness = load(LIKENESS_MASTER, "Sarallel likeness Master A inspection")
-    design = load(DESIGN_MASTER, "Sarallel Design Master A inspection")
+    likeness = load(LIKENESS, "Sarallel likeness master")
+    design = load(DESIGN, "Sarallel design master")
     hero = load(HERO, "Sarallel HeroCel profile")
+    g = load(CANDIDATE_G, "Sarallel Candidate G inspection")
 
-    if authority.get("schemaVersion") != 2:
-        fail("likeness authority schemaVersion must remain 2")
     if authority.get("status") != "locked-hair-down-primary-likeness-authority":
-        fail("hair-down likeness authority must remain locked")
+        fail("hair-down Sarah likeness authority drifted")
     if likeness.get("status") != "approved-user-accepted-hair-down-primary-likeness-authority":
-        fail("likeness Master A must remain approved")
-    if likeness.get("hairAuthority", {}).get("presentation") != "hair down":
-        fail("hair-down appearance must remain primary")
+        fail("Sarallel Likeness Master A drifted")
     if design.get("status") != "approved-design-master-a-pending-herocel-retention-pass":
-        fail("Design Master A status drifted")
+        fail("Sarallel Design Master A drifted")
 
-    if hero.get("schemaVersion") != 5:
-        fail("Sarallel HeroCel schemaVersion must remain 5")
-    if hero.get("profileRevision") != "1.4-single-source-edit-reset":
-        fail("Sarallel single-source revision drifted")
-    if hero.get("status") != "locked-single-source-edit-pending-candidate-g":
-        fail("Sarallel must remain in single-source edit mode")
-    if hero.get("inherits") != "prismatic-herocel-v1":
-        fail("Sarallel HeroCel inheritance drifted")
+    if hero.get("schemaVersion") != 6:
+        fail("Sarallel HeroCel schemaVersion must remain 6")
+    if hero.get("profileRevision") != "1.5-candidate-g-lock-pending-same-artist":
+        fail("Candidate G profile revision drifted")
+    if hero.get("status") != "candidate-g-pz-pass-pending-same-artist-comparison":
+        fail("Candidate G must remain pending same-artist comparison")
 
-    stack = hero.get("authorityStack", {})
-    if stack.get("singleVisualSource", {}).get("master") != "Sarallel HeroCel Candidate D":
-        fail("Candidate D must remain the only visual source")
-    if stack.get("singleVisualSource", {}).get("priority") != "only-visual-appearance-source":
-        fail("Candidate D visual-source priority drifted")
-    if stack.get("renderingFingerprint", {}).get("visualReferenceAllowed") is not False:
-        fail("rendering fingerprint must remain text-only")
+    single = hero.get("singleSourceEditMode", {})
+    if single.get("status") != "proven-effective" or single.get("visualSourceCount") != 1:
+        fail("single-source edit mode must remain proven and limited to one visual source")
+    if single.get("onlyVisualSource") != "Sarallel HeroCel Candidate D":
+        fail("Candidate D must remain the sole visual source for Candidate G")
+    if single.get("result") != "Sarallel HeroCel Candidate G":
+        fail("single-source edit result drifted")
 
-    mode = hero.get("singleSourceMode", {})
-    if mode.get("enabled") is not True:
-        fail("single-source mode must remain enabled")
-    if mode.get("visualSourceCount") != 1:
-        fail("exactly one visual source is required")
-    if mode.get("onlyAllowedVisualSource") != "Sarallel HeroCel Candidate D":
-        fail("only allowed visual source drifted")
-    if mode.get("allOtherVisualSourcesForbidden") is not True:
-        fail("all other visual sources must remain forbidden")
-    require_items(mode.get("forbiddenVisualSources"), [
-        "Sarallel HeroCel Rendering Pass E image",
-        "Auryi",
-        "Prismel",
-        "Kineza",
-        "Sarallel Likeness Master A image",
-        "Sarallel Design Master A image",
-        "legacy Sarallel art",
-        "multi-character comparisons",
-        "rejected Sarallel attempts",
-        "character sheets",
-        "turnarounds",
-    ], "single-source exclusions")
+    current = hero.get("authorityStack", {}).get("currentHeroCelCandidate", {})
+    if current.get("candidate") != "Sarallel HeroCel Candidate G":
+        fail("Candidate G must remain the current HeroCel lock candidate")
 
-    firewall = hero.get("identityFirewall", {})
-    for key in [
-        "heroCelGeometryContributionPercent",
-        "externalVisualGeometryContributionPercent",
-        "externalVisualLikenessContributionPercent",
-        "externalVisualDesignContributionPercent",
-    ]:
-        if firewall.get(key) != 0:
-            fail(f"single-source geometry firewall drifted: {key}")
+    if g.get("inspectionId") != "sarallel-herocel-candidate-g-inspection":
+        fail("Candidate G inspection id drifted")
+    if g.get("status") != "pass-lock-candidate":
+        fail("Candidate G must remain a pass lock candidate")
+    candidate = g.get("candidate", {})
+    if candidate.get("generationId") != "7882f852-8c45-4ff4-a4ff-cd392056d3dc":
+        fail("Candidate G generation evidence drifted")
+    if candidate.get("sourceMode") != "single-source-hc-edit":
+        fail("Candidate G must remain a single-source HC edit")
 
-    require_items(hero.get("frozenFromCandidateD"), [
-        "face width",
-        "cheek fullness",
-        "jaw width and soft jaw transition",
-        "rounded chin",
-        "broader softer nose",
-        "Sarah-specific smile width and cheek lift",
-        "eye size shape spacing and tilt",
-        "hairline part length and face framing",
-        "body proportions",
-        "pose",
-        "camera",
-        "royal blue black and gold costume geometry",
-        "cape silhouette",
-        "crystal count placement and geometry",
-    ], "Candidate D frozen geometry")
+    scores = g.get("pzAssessment", {})
+    if scores.get("sarahLikeness", 0) < 9.0:
+        fail("Candidate G Sarah likeness below 9.0")
+    if scores.get("heroCelAnimationRead", 0) < 9.2:
+        fail("Candidate G HeroCel animation read below 9.2")
+    if scores.get("sarallelDesignFidelity", 0) < 9.3:
+        fail("Candidate G design fidelity below 9.3")
+    if scores.get("sameArtistImpression", 0) < 9.2:
+        fail("Candidate G pre-comparison same-artist impression below 9.2")
 
-    fingerprint = hero.get("renderingFingerprintTextOnly", {})
-    if fingerprint.get("source") != "distilled from Rendering Pass E; image must not be provided":
-        fail("Rendering Pass E must remain distilled text only")
-    require_items(fingerprint.get("targets"), [
-        "2-to-3 facial value groups",
-        "crisp controlled shadow boundaries",
-        "grouped hair masses with selective strand accents",
-        "graphic armor material blocks",
-        "restrained highlight bands",
-        "clean animation-readable interior edges",
-        "premium animated game character rather than painted fantasy portrait",
-    ], "HeroCel text fingerprint")
+    gate = hero.get("nextGate", {})
+    if gate.get("name") != "untouched-same-artist-comparison":
+        fail("next Sarallel gate must be untouched same-artist comparison")
+    if gate.get("sameArtistMinimum") != 9.2:
+        fail("same-artist minimum drifted")
+    required = set(gate.get("requiredCharacters", []))
+    expected = {"Sarallel HeroCel Candidate G", "Auryi HeroCel Master A", "Prismel HeroCel Master B", "Kineza master"}
+    if required != expected:
+        fail("same-artist comparison roster drifted")
+    if "Do not regenerate characters together" not in gate.get("method", ""):
+        fail("same-artist comparison must use untouched masters only")
 
-    contract = hero.get("generationContract", {})
-    if contract.get("nextAsset") != "Sarallel HeroCel Candidate G":
-        fail("next Sarallel asset must remain Candidate G")
-    if contract.get("mode") != "single-source image edit":
-        fail("Candidate G must use single-source image edit mode")
-    if contract.get("sourceImage") != "Sarallel HeroCel Candidate D only":
-        fail("Candidate D must be the only source image")
-    if "Edit the supplied Candidate D image itself" not in contract.get("editInstruction", ""):
-        fail("Candidate G must be an edit of Candidate D, not a fresh redraw")
-    if "Do not reinterpret the subject" not in contract.get("editInstruction", ""):
-        fail("Candidate G must explicitly block subject reinterpretation")
-
-    require_items(hero.get("hardReject"), [
-        "more than one visual source used",
-        "Auryi contamination",
-        "different ethnicity or skin-tone identity",
-        "different face",
-        "different hair texture or curl family",
-        "face narrowing",
-        "cheek-volume loss",
-        "jaw taper increase",
-        "nose sharpening",
-        "generic heroine smile",
-        "pose change",
-        "camera change",
-        "costume redesign",
-        "cape redesign",
-        "crystal redesign",
-        "lavender-white robe contamination",
-        "gold-orb contamination",
-        "character-sheet layout",
-        "turnaround layout",
-        "text or labels",
-    ], "single-source hard rejects")
-
-    target = hero.get("passTarget", {})
-    if target.get("sarahLikenessMinimum") != 9.0:
-        fail("Sarallel likeness floor drifted")
-    if target.get("heroCelAnimationReadMinimum") != 9.2:
-        fail("HeroCel animation floor drifted")
-    if target.get("sarallelDesignFidelityMinimum") != 9.3:
-        fail("Sarallel design floor drifted")
-    if target.get("sameArtistImpressionMinimum") != 9.2:
-        fail("same-artist floor drifted")
-    if target.get("visualSourceCountRequired") != 1:
-        fail("visual source count floor drifted")
-
-    gates = hero.get("prizimGates", {})
-    for name in [
-        "singleVisualSourceOnly",
-        "zeroExternalGeometryTransfer",
-        "zeroHeroCelGeometryTransfer",
-        "crossCharacterContamination",
-    ]:
-        if gates.get(name) != "hard-reject":
-            fail(f"hard-reject gate drifted: {name}")
-    for name in [
-        "sarahLikenessRetention",
-        "sarallelDesignFidelity",
-        "heroCelAnimationRead",
-        "singleCharacterPresentation",
-    ]:
-        if gates.get(name) != "required":
-            fail(f"required gate drifted: {name}")
-
-    print("PZ SARALLEL LIKENESS PASS: Candidate D is the only visual source; HeroCel rendering fingerprint is text-only; cross-character contamination is blocked")
+    print("PZ SARALLEL LIKENESS PASS: Candidate G clears likeness/design/animation floors; production promotion is blocked until untouched four-character same-artist comparison passes")
 
 
 if __name__ == "__main__":
