@@ -14,6 +14,7 @@ on:
       - 'tools/prizim/visual_integrity_check.py'
       - 'tools/prizim/style_authority_check.py'
       - 'tools/prizim/prismel_production_authority_check.py'
+      - 'tools/prizim/sarallel_likeness_authority_check.py'
       - 'assets/party_formation/**'
       - 'assets/sequences/production/**'
       - '.github/workflows/prizim-attack-authority.yml'
@@ -28,6 +29,7 @@ on:
       - 'tools/prizim/visual_integrity_check.py'
       - 'tools/prizim/style_authority_check.py'
       - 'tools/prizim/prismel_production_authority_check.py'
+      - 'tools/prizim/sarallel_likeness_authority_check.py'
       - 'assets/party_formation/**'
       - 'assets/sequences/production/**'
       - '.github/workflows/prizim-attack-authority.yml'
@@ -48,3 +50,5 @@ jobs:
         run: python tools/prizim/style_authority_check.py
       - name: PriZim Prismel production authority gate
         run: python tools/prizim/prismel_production_authority_check.py
+      - name: PriZim Sarallel likeness authority gate
+        run: python tools/prizim/sarallel_likeness_authority_check.py
