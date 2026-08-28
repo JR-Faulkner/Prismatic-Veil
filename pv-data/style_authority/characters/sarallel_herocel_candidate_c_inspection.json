@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "inspectionId": "sarallel-herocel-candidate-c-inspection",
+  "characterId": "sarallel",
+  "status": "near-pass-animation-sufficient-identity-refinement-required",
+  "candidate": {
+    "name": "Sarallel HeroCel Candidate C",
+    "generationId": "9006ca69-1ac7-428c-9418-d2d3162abc25",
+    "sha256": "7a4dcf77d0622a7d3621fbb66e2a05b4eb1fda3810939c8f9baa41f49988aaad",
+    "source": "direct full-body HeroCel translation of approved Sarallel Design Master A"
+  },
+  "inspection": {
+    "heroCelAnimationRead": 9.3,
+    "sarahLikeness": 8.8,
+    "sarallelDesignFidelity": 9.0,
+    "verdict": "near-pass",
+    "animationVerdict": "sufficient-lock-current-intensity",
+    "identityVerdict": "refine-only",
+    "notes": [
+      "animation-model read is now sufficient and must not be pushed harder",
+      "face remains slightly too narrow relative to Sarah authority",
+      "jaw and chin remain slightly over-tapered",
+      "cheek fullness needs recovery",
+      "nose should be slightly softer and broader",
+      "smile should recover Sarah-specific width and cheek lift",
+      "design drift exists but is secondary to identity correction"
+    ]
+  },
+  "nextStage": {
+    "name": "identity-correction-at-fixed-herocel-intensity",
+    "allowedChanges": [
+      "restore cheek fullness",
+      "restore jaw width and softer transition",
+      "restore rounded chin read",
+      "restore broader softer nose family",
+      "restore Sarah-specific smile width and cheek lift",
+      "minor design correction back toward Sarallel Design Master A"
+    ],
+    "mustRemainFixed": [
+      "current HeroCel animation intensity",
+      "current graphic shadow language",
+      "current grouped hair rendering language",
+      "current material abstraction level",
+      "current edge hierarchy",
+      "current overall pose and camera"
+    ]
+  },
+  "promotionTarget": {
+    "sarahLikenessMinimum": 9.0,
+    "heroCelAnimationReadMinimum": 9.2,
+    "sarallelDesignFidelityMinimum": 9.3,
+    "rule": "Candidate D may only improve identity/design retention. It must not increase or decrease HeroCel intensity materially."
+  }
+}
