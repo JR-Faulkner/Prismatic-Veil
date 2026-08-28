@@ -8,6 +8,7 @@ LIKENESS_MASTER = ROOT / "pv-data/style_authority/characters/sarallel_likeness_m
 DESIGN_MASTER = ROOT / "pv-data/style_authority/characters/sarallel_design_master_a_inspection.json"
 HERO = ROOT / "pv-data/style_authority/characters/sarallel_herocel_v1.json"
 REJECT = ROOT / "pv-data/style_authority/characters/sarallel_herocel_attempt_01_reject.json"
+FACE_REJECT = ROOT / "pv-data/style_authority/characters/sarallel_herocel_face_calibration_attempt_01_reject.json"
 
 
 def fail(msg: str) -> None:
@@ -35,7 +36,8 @@ def main() -> None:
     likeness = load(LIKENESS_MASTER, "Sarallel likeness Master A inspection")
     design = load(DESIGN_MASTER, "Sarallel Design Master A inspection")
     hero = load(HERO, "Sarallel HeroCel profile")
-    reject = load(REJECT, "Sarallel rejected HeroCel attempt")
+    reject = load(REJECT, "Sarallel rejected HeroCel full-body attempt")
+    face_reject = load(FACE_REJECT, "Sarallel rejected face calibration attempt")
 
     if data.get("schemaVersion") != 2:
         fail("likeness authority schemaVersion must remain 2")
@@ -104,46 +106,50 @@ def main() -> None:
         fail("Design Master A Sarah likeness fell below 9.0")
     if scores.get("sarallelDesignFidelity", 0) < 9.3:
         fail("Design Master A design fidelity fell below 9.3")
-    require_items(
-        design.get("hardRejectDuringHeroCel"),
-        [
-            "additional face narrowing",
-            "additional jaw taper",
-            "cheek-volume loss",
-            "nose sharpening or narrowing",
-            "eye enlargement or upward tilt",
-            "generic glamorous heroine face",
-            "generic heroine smile",
-            "age regression",
-            "hair geometry redesign",
-            "armor redesign",
-        ],
-        "Sarallel Design Master A HeroCel rejects",
-    )
 
     if reject.get("attemptId") != "sarallel-herocel-attempt-01":
-        fail("rejected HeroCel attempt id drifted")
+        fail("rejected full-body HeroCel attempt id drifted")
     if reject.get("status") != "hard-reject-likeness-drift":
         fail("HeroCel attempt 01 must remain a hard reject")
     if reject.get("sha256") != "f672a54bd4433bbfde13bacbdfcc7429aa3048e15ce575136e5d0cca5de8bb8e":
         fail("rejected HeroCel attempt evidence hash drifted")
+
+    if face_reject.get("attemptId") != "sarallel-herocel-face-calibration-attempt-01":
+        fail("face calibration reject id drifted")
+    if face_reject.get("status") != "reject-insufficient-animation-model-read":
+        fail("face calibration attempt 01 must remain rejected for insufficient animation read")
+    asset = face_reject.get("asset", {})
+    if asset.get("generationId") != "f8cabc3c-f317-4a47-aefe-82fc5e8bf419":
+        fail("face calibration reject generation evidence drifted")
+    if asset.get("sha256") != "2ba4a0a339ce709217113fb1af33c843f9e63e69ca02fb3f5a9d2c139bcd1f3e":
+        fail("face calibration reject image hash drifted")
+    pz = face_reject.get("pZAssessment", {})
+    if pz.get("heroCelAnimationRead") != "fail":
+        fail("face calibration attempt must remain a HeroCel animation-read failure")
+    if pz.get("productionPromotion") is not False:
+        fail("rejected face calibration cannot be production-promoted")
+    if pz.get("useAsGeometryAuthority") is not False or pz.get("useAsRenderingAuthority") is not False:
+        fail("rejected face calibration cannot become geometry/rendering authority")
     require_items(
-        reject.get("failureVectors"),
+        face_reject.get("failureVectors"),
         [
-            "face narrowed during style translation",
-            "jaw became more tapered",
-            "eyes became more stylized and lifted",
-            "cheeks lost Sarah-specific fullness",
-            "nose became slightly sharper and narrower",
-            "smile became a generic animated-heroine smile",
+            "too many soft skin transitions",
+            "painterly modeling remained in cheeks, nose, lips, and forehead",
+            "hair remained strand-by-strand instead of grouped animation-readable masses",
+            "armor retained realistic material gradients and gloss",
+            "facial planes were not simplified enough for animation-model readability",
         ],
-        "HeroCel attempt 01 negative calibration",
+        "face calibration negative evidence",
     )
 
+    if hero.get("schemaVersion") != 2:
+        fail("Sarallel HeroCel schemaVersion must remain 2")
     if hero.get("profileId") != "sarallel-herocel-v1":
         fail("Sarallel HeroCel profile id drifted")
-    if hero.get("profileRevision") != "1.0-identity-firewall":
-        fail("Sarallel HeroCel identity firewall revision drifted")
+    if hero.get("profileRevision") != "1.1-face-rendering-calibration-v2":
+        fail("Sarallel Face Adapter v2 revision drifted")
+    if hero.get("status") != "locked-face-calibration-profile-pending-pass":
+        fail("Sarallel must remain in face-calibration stage until pass")
     if hero.get("inherits") != "prismatic-herocel-v1" or hero.get("ageAdapter") != "adult":
         fail("Sarallel must inherit HeroCel with adult age adapter")
 
@@ -169,6 +175,52 @@ def main() -> None:
     if firewall.get("heroCelStyleApplicationPercent") != 100:
         fail("HeroCel style application must remain 100% rendering-only")
 
+    mode = hero.get("faceCalibrationMode", {})
+    if mode.get("priority") != "current-production-stage":
+        fail("face calibration must remain the current Sarallel production stage")
+    if mode.get("scope") != "face-and-upper-torso-rendering-only":
+        fail("Sarallel calibration scope must remain face-and-upper-torso only")
+    for key in ["fullBodyGenerationAllowed", "multiViewSheetAllowed", "actionPoseAllowed", "magicFxAllowed", "alternateExpressionAllowed"]:
+        if mode.get(key) is not False:
+            fail(f"Sarallel face calibration must block {key}")
+    if mode.get("nextAsset") != "Sarallel HeroCel Face Calibration B":
+        fail("next Sarallel asset must remain Face Calibration B")
+    if "upper-torso portrait" not in mode.get("presentation", "") or "no sheet" not in mode.get("presentation", ""):
+        fail("Face Calibration B presentation drifted")
+    if "Do not return to full-body" not in mode.get("promotionRule", ""):
+        fail("full-body Sarallel must remain blocked until face pass")
+
+    targets = hero.get("renderingOnlyTargets", {})
+    if not targets.get("facialValueGrouping", "").startswith("2-to-3 major skin value groups"):
+        fail("Sarallel face value-group target drifted")
+    if targets.get("facialTransitionBands") != "maximum one restrained transition band between major skin value groups":
+        fail("Sarallel facial transition-band limit drifted")
+    if "no airbrushed skin" not in targets.get("skinRendering", ""):
+        fail("Sarallel skin rendering must explicitly reject airbrushing")
+    if "group hair into large animation-readable masses" not in targets.get("hairTreatment", ""):
+        fail("Sarallel hair must use grouped animation-readable masses")
+    if targets.get("hairMicrodetailRule") != "strand-by-strand rendering may not be the primary hair language":
+        fail("Sarallel hair microdetail rule drifted")
+    if not targets.get("armorTreatment", "").startswith("2-to-4 major value groups per material"):
+        fail("Sarallel armor value-group target drifted")
+
+    animation = hero.get("animationModelFirewall", {})
+    if animation.get("requiredRead") != "clean premium animated game character, not painted fantasy portraiture":
+        fail("Sarallel required animation-model read drifted")
+    require_items(
+        animation.get("hardReject"),
+        [
+            "photoreal portrait rendering",
+            "painterly concept-art facial finish",
+            "continuous soft facial gradients as the primary form language",
+            "airbrushed cheek or forehead modeling",
+            "strand-by-strand hair rendering as the dominant hair treatment",
+            "realistic glossy armor gradients dominating over graphic value blocks",
+            "illustration polish that weakens animation-model readability",
+        ],
+        "Sarallel animation-model firewall",
+    )
+
     require_items(
         hero.get("hardReject"),
         [
@@ -177,41 +229,46 @@ def main() -> None:
             "cheek-volume loss",
             "nose narrowing or sharpening",
             "eye enlargement",
-            "eye upward-tilt increase",
             "generic animated-heroine eye construction",
             "generic heroine smile substitution",
-            "beauty normalization that weakens Sarah likeness",
             "age regression",
-            "hair-up substitution",
             "hairline or face-framing redesign",
-            "armor redesign",
-            "legacy Sarallel fantasy face reintroduced",
+            "hair curl-pattern redesign that changes Sarah appearance",
+            "strong likeness with insufficient HeroCel animation rendering",
+            "strong HeroCel rendering with insufficient Sarah likeness",
         ],
-        "Sarallel HeroCel hard rejects",
+        "Sarallel Face Adapter v2 hard rejects",
     )
 
     contract = hero.get("generationContract", {})
-    if contract.get("nextAsset") != "Sarallel HeroCel Master B":
-        fail("next Sarallel HeroCel asset must remain Master B")
+    if contract.get("nextAsset") != "Sarallel HeroCel Face Calibration B":
+        fail("generation contract next asset must remain Face Calibration B")
     presentation = contract.get("presentation", "")
-    if "single neutral full-body Sarallel character master only" not in presentation or "no sheet" not in presentation:
-        fail("Sarallel HeroCel Master B must remain single-character, no-sheet presentation")
-    if "Do not normalize Sarah toward a generic animated heroine" not in contract.get("artistInstruction", ""):
-        fail("Sarallel artist instruction must explicitly reject generic heroine normalization")
+    for required in ["single upper-torso Sarallel portrait only", "no sheet", "no full body", "no magic FX"]:
+        if required not in presentation:
+            fail(f"Face Calibration B presentation missing: {required}")
+    if "2-to-3 facial value groups" not in contract.get("styleInstruction", ""):
+        fail("Face Calibration B style instruction must enforce 2-to-3 facial value groups")
     excluded = set(contract.get("excludeAsVisualAppearanceReferences", []))
-    for item in ["Kineza", "Prismel", "legacy Sarallel fantasy iterations", "rejected Sarallel HeroCel attempt 01"]:
+    for item in ["Kineza", "Prismel", "legacy Sarallel fantasy iterations", "generated portraits as replacement likeness authority"]:
         if item not in excluded:
             fail(f"Sarallel visual reference exclusion missing: {item}")
 
     target = hero.get("passTarget", {})
     if target.get("sarahLikenessMinimum") != 9.0:
         fail("Sarallel likeness floor drifted")
-    if target.get("sarallelDesignFidelityMinimum") != 9.3:
-        fail("Sarallel design fidelity floor drifted")
-    if target.get("heroCelStyleMinimum") != 9.2 or target.get("sameArtistImpressionMinimum") != 9.2:
-        fail("Sarallel HeroCel/same-artist target drifted")
-    if "Never regenerate the characters together" not in target.get("comparisonMethod", ""):
-        fail("Sarallel same-artist comparison must remain untouched-master only")
+    if target.get("heroCelAnimationReadMinimum") != 9.2:
+        fail("Sarallel HeroCel animation-read floor drifted")
+    if target.get("faceGeometryRetentionMinimum") != 9.2:
+        fail("Sarallel face-geometry retention floor drifted")
+    if target.get("hairDownAppearanceMinimum") != 9.2:
+        fail("Sarallel hair-down floor drifted")
+    if target.get("upperTorsoDesignFidelityMinimum") != 9.3:
+        fail("Sarallel upper-torso design floor drifted")
+    if target.get("bothIdentityAndAnimationMustPass") is not True:
+        fail("identity and animation must both pass")
+    if target.get("fullBodyRemainsBlockedUntilMet") is not True:
+        fail("full-body must remain blocked until face calibration passes")
 
     gates = hero.get("prizimGates", {})
     for name in [
@@ -219,6 +276,8 @@ def main() -> None:
         "zeroHeroCelGeometryTransfer",
         "zeroKinezaGeometryTransfer",
         "zeroLegacyFantasyFaceTransfer",
+        "animationModelFirewall",
+        "identityVsStyleTradeoff",
     ]:
         if gates.get(name) != "hard-reject":
             fail(f"Sarallel hard-reject gate drifted: {name}")
@@ -226,15 +285,14 @@ def main() -> None:
         "hairDownAppearanceRetention",
         "sarahLikenessRetention",
         "adultAgeRead",
-        "sarallelDesignFidelity",
-        "heroCelRenderingFingerprint",
-        "singleCharacterPresentation",
-        "untouchedSameArtistComparison",
+        "upperTorsoDesignFidelity",
+        "heroCelAnimationRead",
+        "singlePortraitPresentation",
     ]:
         if gates.get(name) != "required":
             fail(f"Sarallel required gate drifted: {name}")
 
-    print("PZ SARALLEL LIKENESS PASS: hair-down Sarah geometry + Sarallel Design Master A are locked; rejected HeroCel drift is quarantined; Master B must be rendering-only")
+    print("PZ SARALLEL LIKENESS PASS: Sarah geometry + hair-down appearance are locked; Face Adapter v2 enforces animation-model rendering; full-body HC remains blocked pending Face Calibration B pass")
 
 
 if __name__ == "__main__":
