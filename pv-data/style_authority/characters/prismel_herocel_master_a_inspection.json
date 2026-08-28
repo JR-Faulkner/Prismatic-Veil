@@ -5,8 +5,8 @@
   "candidateName": "Prismel HeroCel Master A",
   "styleAuthority": "prismatic-herocel-v1",
   "styleRevision": "1.2-animation-rendering-firewall",
-  "status": "approved-master-candidate-pending-multiview-stress-test",
-  "inspectionScope": "single-view production inspection only",
+  "status": "approved-master-a-geometry-authority-pending-same-artist-rendering-calibration",
+  "inspectionScope": "single-view + multiview identity stress test + untouched same-artist comparison",
   "generationEvidence": {
     "genId": "ec89eda4-1804-45d8-a181-446e0a0ed7ac",
     "sourceMode": "single-master-reference-to-herocel-transition",
@@ -82,7 +82,7 @@
   },
   "multiviewStressTest": {
     "required": true,
-    "status": "pending",
+    "status": "conditional-pass",
     "requiredViews": [
       "front-neutral",
       "rear-three-quarter",
@@ -109,7 +109,69 @@
       "uniform costume micro-detail",
       "cross-view identity inconsistency"
     ],
-    "passCondition": "All alternate views and expressions read as the same Elijah-based Prismel while retaining HeroCel 1.2 animation-model rendering without geometry substitution or painterly drift."
+    "passCondition": "All alternate views and expressions read as the same Elijah-based Prismel while retaining HeroCel 1.2 animation-model rendering without geometry substitution or painterly drift.",
+    "generationEvidence": {
+      "genId": "c9a85deb-8e8a-4050-bec3-e674a38cf008",
+      "note": "validation-sheet presentation metadata is non-authoritative"
+    },
+    "scores": {
+      "elijahLikenessRetention": 9.2,
+      "crossViewIdentity": 9.2,
+      "expressionIdentity": 9.4,
+      "olderChildAgeRead": 9.2,
+      "heroCelAnimationRendering": 9.4,
+      "costumeContinuity": 9.5,
+      "kinezaEzraLeakage": 0.2,
+      "painterlyRegression": 0.5,
+      "productionStability": 9.3
+    },
+    "watchItems": [
+      "side-profile facial geometry must inherit front/three-quarter authority more strictly",
+      "three-quarter bust may not mature the face when render scale increases"
+    ]
   },
-  "promotionRule": "Do not promote to final production likeness/style master until the multiview stress test passes. Until then this image is the strongest approved single-view HeroCel master candidate."
+  "promotionRule": "Master A geometry remains authoritative. Do not promote Master B to production authority until the same-artist comparison reaches at least 9.2 while Elijah likeness remains at or above 9.3 and all identity/design firewalls pass.",
+  "sameArtistComparison": {
+    "required": true,
+    "status": "calibration-required",
+    "comparisonMethod": "untouched Prismel Master A and untouched approved Kineza calibration master composited side-by-side on a neutral canvas; no redraw or shared generation",
+    "currentScores": {
+      "silhouetteLanguage": 9.3,
+      "costumeConstruction": 9.0,
+      "detailHierarchy": 8.6,
+      "materialAbstraction": 8.3,
+      "shadowValueLanguage": 8.1,
+      "facialRendering": 7.8,
+      "overallSameArtistImpression": 8.3
+    },
+    "finding": "Same game and same studio read is strong, but Prismel remains softer and more illustrated in facial/value/material rendering than the Kineza-established HeroCel hand.",
+    "doNotChange": [
+      "Elijah likeness geometry",
+      "Prismel body proportions",
+      "Prismel costume geometry",
+      "hood/cloak silhouette",
+      "character age",
+      "expression identity"
+    ],
+    "calibrateRenderingOnly": [
+      "reduce facial transition shading",
+      "increase decisive graphic shadow grouping",
+      "simplify nose and mouth surface modeling without geometry change",
+      "reduce nonfocal cosmic and costume microdetail",
+      "use broader fold masses",
+      "make gold highlights more designed and less physically rendered",
+      "preserve chest crystal as high-detail focal point"
+    ],
+    "passTarget": {
+      "overallSameArtistImpressionMinimum": 9.2,
+      "elijahLikenessMinimum": 9.3
+    }
+  },
+  "nextCandidate": {
+    "name": "Prismel HeroCel Master B",
+    "generationMode": "single neutral full-body character only",
+    "referenceRule": "Prismel Master A / approved likeness authority only as character visual authority; do not visually combine with Kineza",
+    "renderingRule": "apply prismel-herocel-v1 revision 1.2-same-artist-calibration",
+    "comparisonAfterGeneration": "compose Master B and untouched Kineza master side-by-side without redraw, then PriZim inspect"
+  }
 }
