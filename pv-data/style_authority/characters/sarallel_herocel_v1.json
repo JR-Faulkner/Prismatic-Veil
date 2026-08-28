@@ -1,93 +1,96 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 8,
   "profileId": "sarallel-herocel-v1",
-  "profileRevision": "1.6-master-b-likeness-transition-reset",
+  "profileRevision": "1.7-transition-a-approved-design-reintroduction",
   "characterId": "sarallel",
   "inherits": "prismatic-herocel-v1",
   "ageAdapter": "adult",
-  "status": "master-b-locked-pending-likeness-only-herocel-transition",
+  "status": "transition-a-approved-pending-sarallel-design-reintroduction",
   "authorityStack": {
-    "likenessAuthority": {
-      "master": "Sarah Likeness Master B",
-      "source": "sarallel-likeness-master-b-inspection",
-      "priority": "current-derived-calibration-under-real-photo-supremacy"
-    },
     "realPhotoAuthority": {
       "priority": "absolute-geometry-and-facial-surface-truth",
       "pulledBackRole": "primary geometry truth",
       "hairDownRole": "primary Sarallel presentation and secondary geometry confirmation"
     },
+    "derivedLikenessCalibration": {
+      "master": "Sarah Likeness Master B",
+      "source": "sarallel-likeness-master-b-inspection",
+      "priority": "derived-geometry-calibration-under-real-photo-supremacy"
+    },
+    "animatedLikenessAuthority": {
+      "master": "Sarah HeroCel Likeness Transition A",
+      "source": "sarallel-herocel-likeness-transition-a-inspection",
+      "priority": "face-authority-for-design-reintroduction-under-real-photo-supremacy"
+    },
     "characterDesignAuthority": {
       "master": "Sarallel Design Master A",
       "source": "sarallel-design-master-a-inspection",
-      "priority": "retained-but-withheld-until-likeness-transition-passes"
+      "priority": "active-for-costume-body-cape-crystal-design-zero-face-authority"
     },
     "renderingAuthority": "prismatic-herocel-v1",
     "historicalAnimationReference": {
       "candidate": "Sarallel HeroCel Candidate G",
       "source": "sarallel-herocel-candidate-g-human-review",
-      "priority": "animation-intensity-reference-only-zero-face-authority"
+      "priority": "historical-animation-intensity-reference-only-zero-face-authority"
     }
   },
   "identityFirewall": {
     "priority": "absolute",
     "subjectGeometryOwner": "realPhotoAuthority",
-    "derivedLikenessCalibration": "Sarah Likeness Master B",
-    "characterGeometryOwner": "Sarallel Design Master A after likeness-only transition passes",
+    "animatedFaceOwner": "Sarah HeroCel Likeness Transition A",
+    "characterDesignOwner": "Sarallel Design Master A excluding all facial geometry",
     "styleOwner": "prismatic-herocel-v1",
     "heroCelGeometryContributionPercent": 0,
+    "sarallelDesignFaceContributionPercent": 0,
     "legacySarallelFaceContributionPercent": 0,
     "candidateGFaceContributionPercent": 0,
     "kinezaGeometryContributionPercent": 0,
     "kinezaLikenessContributionPercent": 0,
-    "rule": "HeroCel may change rendering language only. Real Sarah references own geometry and facial-surface truth. Master B is the current derived likeness calibration. Candidate G may inform animation intensity but must not teach the face."
+    "rule": "Dress the approved animated Sarah likeness as Sarallel. Do not rediscover, normalize, beautify, age, de-age, or redesign the face."
   },
-  "currentTransition": {
+  "approvedTransition": {
     "name": "Sarah HeroCel Likeness Transition A",
-    "stage": "likeness-only",
-    "visualBase": "Sarah Likeness Master B",
-    "allowedChanges": [
-      "cleaner two-to-three facial value groups",
-      "crisper cel-shadow boundaries without age implication",
-      "grouped hair masses",
-      "simplified highlight hierarchy",
-      "animation-readable edges"
-    ],
-    "frozen": [
-      "face width",
-      "cheek fullness",
+    "inspection": "sarallel-herocel-likeness-transition-a-inspection",
+    "generationId": "860801ab-5670-45cc-aec1-2f9b0cdd6c93",
+    "sha256": "b99ab75732bd7066ee1f92b3c2cf05ea8fc0ed3879c3dab59b2f4ef64c0c45a5",
+    "status": "user-approved-animated-likeness-transition",
+    "separateSarahApprovalRecorded": false,
+    "retainedUse": "primary animated face authority for next Sarallel pass"
+  },
+  "currentStage": {
+    "name": "Sarallel HeroCel Design Reintroduction A",
+    "goal": "Apply Sarallel Design Master A to the approved Sarah HeroCel likeness without altering the face.",
+    "faceSource": "Sarah HeroCel Likeness Transition A",
+    "designSource": "Sarallel Design Master A",
+    "renderingSource": "prismatic-herocel-v1",
+    "faceFrozen": [
+      "face silhouette",
+      "cheek width and fullness",
       "jaw transition",
       "chin shape",
       "eye size and spacing",
       "nose family",
       "mouth width",
       "smile geometry",
-      "recognizable adult Sarah age read"
+      "adult age read",
+      "absence of invented dimples",
+      "absence of invented age-signaling crease lines"
     ],
-    "explicitlyForbidden": [
-      "invented dimples",
-      "deepened dimple hints from Master B",
-      "invented nasolabial lines",
-      "invented cheek crease lines",
-      "invented under-eye crease lines",
-      "generic fantasy heroine normalization",
-      "face narrowing",
-      "eye enlargement or upturn",
-      "nose narrowing or sharpening",
-      "chin taper increase",
-      "Sarallel armor",
-      "Sarallel crystals",
-      "Sarallel cape",
-      "fantasy scene or FX"
+    "designMayChange": [
+      "blue-black-gold costume",
+      "armor and robe layering",
+      "cape",
+      "blue crystal motifs",
+      "simulacrum magic language",
+      "full-body pose and presentation consistent with Sarallel Design Master A"
+    ],
+    "renderingMayChange": [
+      "material-specific HeroCel value grouping",
+      "armor highlight simplification",
+      "cape shadow grouping",
+      "crystal FX separation",
+      "full-body animation-readable edge treatment"
     ]
-  },
-  "historicalCandidateG": {
-    "inspection": "sarallel-herocel-candidate-g-inspection",
-    "humanReview": "sarallel-herocel-candidate-g-human-review",
-    "generationId": "7882f852-8c45-4ff4-a4ff-cd392056d3dc",
-    "status": "superseded-after-human-age-read-feedback",
-    "retainedUse": "animation-intensity reference only",
-    "blockedUse": "facial geometry, facial linework, dimples, age read, production promotion"
   },
   "hardReject": [
     "face narrowing",
@@ -100,38 +103,51 @@
     "invented nasolabial lines",
     "invented cheek creases",
     "invented under-eye lines",
-    "hair geometry redesign that weakens recognition",
+    "smile redesign",
+    "eye enlargement or upturn",
+    "hair framing that weakens Sarah recognition",
     "Auryi visual contamination",
     "Kineza geometry transfer",
     "Prismel geometry transfer",
     "legacy Sarallel face transfer",
     "Candidate G face transfer",
-    "Sarallel costume/design introduction before likeness-only transition approval"
+    "Sarallel Design Master A contributing facial geometry"
   ],
+  "historicalCandidateG": {
+    "inspection": "sarallel-herocel-candidate-g-inspection",
+    "humanReview": "sarallel-herocel-candidate-g-human-review",
+    "generationId": "7882f852-8c45-4ff4-a4ff-cd392056d3dc",
+    "status": "superseded-after-human-age-read-feedback",
+    "retainedUse": "historical animation-intensity reference only",
+    "blockedUse": "facial geometry, facial linework, dimples, age read, production promotion"
+  },
   "nextGate": {
-    "name": "human-reviewed-likeness-only-herocel-transition",
-    "candidateName": "Sarah HeroCel Likeness Transition A",
-    "requiredSource": "Sarah Likeness Master B",
+    "name": "sarallel-design-reintroduction-with-frozen-transition-a-face",
+    "candidateName": "Sarallel HeroCel Design Reintroduction A",
+    "requiredFaceSource": "Sarah HeroCel Likeness Transition A",
+    "requiredDesignSource": "Sarallel Design Master A",
     "requiredChecks": [
       "still unmistakably Sarah",
+      "Transition A facial geometry retained",
       "no age-signaling line amplification",
       "no invented dimples",
       "no generic heroine face normalization",
-      "HeroCel animation language visibly stronger than Master B"
+      "Sarallel blue-black-gold design restored",
+      "HeroCel animation language remains strong at full-body scale"
     ],
-    "designReintroductionOnPass": "Sarallel Design Master A may be reintroduced only after this gate passes",
-    "finalSequence": "Sarah Likeness Master B -> Sarah HeroCel Likeness Transition -> human approval -> Sarallel design reintroduction -> same-artist comparison"
+    "promotionOnPass": "Sarallel HeroCel production candidate eligible for untouched same-artist comparison"
   },
   "prizimGates": {
     "realPhotoGeometryOwnership": "hard-reject",
-    "masterBCurrentCalibration": "required",
-    "realPhotoSurfaceTruth": "required",
+    "masterBCalibrationRetention": "required",
+    "transitionAAnimatedFaceAuthority": "required",
     "zeroHeroCelGeometryTransfer": "hard-reject",
+    "zeroSarallelDesignFaceTransfer": "hard-reject",
     "zeroCandidateGFaceTransfer": "hard-reject",
     "zeroLegacyFantasyFaceTransfer": "hard-reject",
     "noInventedDimples": "hard-reject",
     "noInventedAgeLines": "hard-reject",
-    "likenessOnlyTransitionBeforeDesign": "required",
-    "humanLikenessReviewBeforeSarallelDesign": "required"
+    "designReintroductionUsesFrozenTransitionAFace": "required",
+    "untouchedSameArtistComparisonAfterDesignPass": "required"
   }
 }
