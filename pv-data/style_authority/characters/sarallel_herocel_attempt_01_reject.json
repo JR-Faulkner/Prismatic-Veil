@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "attemptId": "sarallel-herocel-attempt-01",
+  "characterId": "sarallel",
+  "status": "hard-reject-likeness-drift",
+  "generationId": "d993f207-1924-4e45-8d7a-de966cd2f93f",
+  "sha256": "f672a54bd4433bbfde13bacbdfcc7429aa3048e15ce575136e5d0cca5de8bb8e",
+  "sourceAuthority": {
+    "likeness": "Sarallel Likeness Master A",
+    "design": "Sarallel Design Master A",
+    "intendedStyle": "Prismatic HeroCel"
+  },
+  "inspection": {
+    "heroCelStyle": 9.1,
+    "sarallelDesign": 9.4,
+    "sarahLikenessRetentionRange": "8.3-to-8.5",
+    "productionAuthority": false
+  },
+  "failureVectors": [
+    "face narrowed during style translation",
+    "jaw became more tapered",
+    "eyes became more stylized and lifted",
+    "cheeks lost Sarah-specific fullness",
+    "nose became slightly sharper and narrower",
+    "smile became a generic animated-heroine smile",
+    "beauty normalization increased while identity specificity decreased"
+  ],
+  "lesson": "HeroCel may alter rendering treatment only. Any geometry normalization toward a generic heroine face is a hard reject even when the style match improves.",
+  "reusePolicy": "Do not use this attempt as likeness, geometry, hair, or design authority. It may be retained only as negative calibration evidence for forbidden HeroCel drift."
+}
