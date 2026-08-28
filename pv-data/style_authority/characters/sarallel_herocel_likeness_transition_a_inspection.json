@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "inspectionId": "sarallel-herocel-likeness-transition-a-inspection",
+  "characterId": "sarallel",
+  "transition": {
+    "name": "Sarah HeroCel Likeness Transition A",
+    "generationId": "860801ab-5670-45cc-aec1-2f9b0cdd6c93",
+    "sha256": "b99ab75732bd7066ee1f92b3c2cf05ea8fc0ed3879c3dab59b2f4ef64c0c45a5",
+    "dimensions": "1122x1402",
+    "localEvidenceFilename": "smiling_blonde_woman_portrait.png",
+    "sourceBase": "Sarah Likeness Master B"
+  },
+  "status": "user-approved-animated-likeness-transition",
+  "humanReview": {
+    "userVerdict": "Good!",
+    "likenessRetained": true,
+    "heroCelTransitionVisible": true,
+    "separateSarahApprovalRecorded": false
+  },
+  "pzAssessment": {
+    "likeness": "pass",
+    "animationLanguage": "pass",
+    "ageRead": "pass",
+    "dimpleAndCreaseControl": "pass",
+    "fantasyDesignLeakage": "none",
+    "productionVerdict": "approved-as-animated-likeness-authority"
+  },
+  "lockedStrengths": [
+    "Sarah identity remains recognizable",
+    "broader shorter face and fuller cheek read are retained",
+    "jaw and chin remain soft rather than fantasy-tapered",
+    "eye scale and spacing remain natural",
+    "nose and mouth geometry remain within Sarah authority",
+    "HeroCel value grouping is visibly stronger than Master B",
+    "hair is more grouped and animation-readable",
+    "skin rendering is simplified without carving in extra age lines",
+    "no Sarallel costume or crystal design was introduced during likeness calibration"
+  ],
+  "surfaceTruthRule": {
+    "authority": "real-photo references",
+    "rule": "Transition A may carry HeroCel rendering language but may not amplify dimples, smile creases, nasolabial lines, under-eye lines, or any age-signaling marks beyond what is present in the real Sarah references."
+  },
+  "authorityRole": {
+    "role": "approved animated likeness authority for Sarallel design reintroduction",
+    "geometrySupremacy": "real-photo Sarah references",
+    "derivedBase": "Sarah Likeness Master B",
+    "faceAuthorityForNextStage": "Sarah HeroCel Likeness Transition A",
+    "candidateGFaceContributionPercent": 0,
+    "legacySarallelFaceContributionPercent": 0
+  },
+  "nextStep": {
+    "name": "Sarallel Design Master A reintroduction",
+    "rule": "Dress Transition A as Sarallel. Do not rediscover or redesign the face.",
+    "faceFrozen": [
+      "face silhouette",
+      "cheek fullness",
+      "jaw transition",
+      "chin",
+      "eye size and spacing",
+      "nose family",
+      "mouth width",
+      "smile geometry",
+      "adult age read",
+      "absence of invented dimples and age lines"
+    ],
+    "designMayChange": [
+      "blue-black-gold Sarallel costume",
+      "armor and robe layering",
+      "cape",
+      "blue crystal motifs",
+      "simulacrum magic language",
+      "full-body character presentation"
+    ]
+  }
+}
