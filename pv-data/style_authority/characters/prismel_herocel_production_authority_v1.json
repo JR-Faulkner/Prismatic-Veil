@@ -55,18 +55,24 @@
     ]
   },
   "motionValidation": {
-    "currentStage": "neutral-idle-stability",
+    "currentStage": "neutral-idle-stability-source-preserving",
     "idleStabilitySpec": "prismel-herocel-idle-stability-v1",
-    "idleStatus": "prepared-pending-hc-generation-and-prizim-inspection",
+    "idleStatus": "prepared-source-preserving-derivation-pending-frame-build-and-prizim-inspection",
     "sequenceFrameCount": 6,
+    "derivationMode": "independent-from-master-b-no-fresh-redraw",
+    "frame1ExactMasterB": true,
+    "frame6ExactFrame1": true,
     "staffAllowed": false,
     "attackFxAllowed": false,
     "rootMotionAllowed": false,
     "phonePlaybackRequired": true,
     "blockLaterStagesUntilIdlePasses": true
   },
+  "rejectedMotionAttempts": [
+    "prismel-idle-attempt-01-reject"
+  ],
   "nextProductionOrder": [
-    "neutral idle stability test",
+    "neutral idle stability source-preserving derivation",
     "movement/pose stability test",
     "signature staff materialization adaptation",
     "attack sequence rebuild"
