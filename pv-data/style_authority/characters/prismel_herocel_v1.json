@@ -1,11 +1,11 @@
 {
   "schemaVersion": 2,
   "profileId": "prismel-herocel-v1",
-  "profileRevision": "1.1-identity-firewall",
+  "profileRevision": "1.2-same-artist-calibration",
   "characterId": "prismel",
   "status": "locked-character-style-translation-profile",
   "inherits": "prismatic-herocel-v1",
-  "purpose": "Render Prismel in the Prismatic HeroCel artist style while Elijah alone owns facial geometry and Prismel canon alone owns character design. HeroCel changes rendering language, never identity geometry.",
+  "purpose": "Render Prismel in the Prismatic HeroCel artist style while Elijah alone owns facial geometry and Prismel canon alone owns character design. HeroCel changes rendering language, never identity geometry. Prismel-specific calibration tightens animation abstraction to the Kineza-established HeroCel rendering economy without transferring Kineza appearance or geometry.",
   "authorityStack": {
     "likenessAuthority": {
       "subject": "Elijah",
@@ -106,10 +106,10 @@
     "facialSurfaceRendering": {
       "rule": "Render Elijah's unchanged face geometry with cleaner animated surface modeling.",
       "eyes": "increase edge clarity, catchlight readability, iris/pupil contrast, and lid definition without changing Elijah's eye dimensions or spacing",
-      "skin": "smooth broad value groups with restrained painterly highlights and no pore-level realism",
-      "nose": "simplify light and shadow planes only; geometry remains Elijah-owned",
-      "mouth": "clean contour and shadow separation only; lip proportions and smile geometry remain Elijah-owned",
-      "cheeksJawChin": "simplify shading noise only; facial contour remains Elijah-owned"
+      "skin": "2-to-3 broad animation value groups with at most one restrained transition band; no painterly highlight modeling and no pore-level realism",
+      "nose": "reduce to a few clear light/shadow planes only; geometry remains Elijah-owned",
+      "mouth": "principal contour and light/shadow shapes only; lip proportions and smile geometry remain Elijah-owned",
+      "cheeksJawChin": "broad graphic plane grouping only; facial contour remains Elijah-owned"
     },
     "edgeTreatment": {
       "rule": "crisp controlled silhouette and material boundaries with selective softness in atmospheric light",
@@ -123,23 +123,23 @@
       ]
     },
     "valueGrouping": {
-      "skin": "broad intentional light, midtone, and shadow masses",
-      "cloak": "large fold groups before texture",
+      "skin": "2-to-3 major light/midtone/shadow groups with at most one restrained transition band",
+      "cloak": "broad fold masses before texture; avoid small modeled transitions",
       "underRobe": "simple readable values",
       "crystalAndGold": "high-contrast focal accents"
     },
     "detailHierarchy": {
-      "face": "low-to-medium surface detail while geometry remains exact",
-      "cloak": "medium with organized cosmic focal clusters",
-      "filigree": "medium and graphic",
+      "face": "low surface detail while geometry remains exact",
+      "cloak": "low-to-medium nonfocal detail with organized cosmic focal clusters",
+      "filigree": "medium at focal boundaries, simplified elsewhere",
       "crystal": "high focal detail",
       "underRobe": "low-to-medium"
     },
     "materialStylization": {
-      "cosmicFabric": "graphic dark fabric mass with controlled larger star clusters, not uniform glitter noise",
-      "gold": "clean warm edge planes and selective highlights",
+      "cosmicFabric": "graphic dark fabric mass with organized star clusters; reduce nonfocal cosmic microdetail approximately 25-to-35 percent relative to Master A",
+      "gold": "designed graphic edge planes and selective highlights, not physically rendered metal response",
       "crystal": "faceted luminous geometry with clear silhouette and prismatic internal light",
-      "skin": "soft dimensional volume using HeroCel value grouping"
+      "skin": "clean animation-model planes; no painterly or photographic surface modeling"
     },
     "animationReadability": {
       "movementCharacter": "restrained, mystical, deliberate rather than kinetic",
@@ -153,16 +153,19 @@
     }
   },
   "generationContract": {
-    "artistInstruction": "Prismatic HeroCel is the artist. Draw Elijah as Prismel using the HeroCel rendering grammar. Do not use Kineza as an appearance, anatomy, facial, proportional, or expression reference.",
-    "authorityInstruction": "Elijah supplies all likeness geometry. Prismel canon supplies costume, build, props, and magic. HeroCel supplies only rendering treatment.",
-    "preferredPresentation": "single polished character master or turnaround/model sheet before any animation sequence",
+    "artistInstruction": "Prismatic HeroCel is the artist. Draw Elijah as Prismel using the HeroCel rendering grammar and the Prismel same-artist calibration layer. Freeze Master A likeness/design geometry. Do not use Kineza as an appearance, anatomy, facial, proportional, expression, costume, or FX reference.",
+    "authorityInstruction": "Elijah and Prismel Master A supply all likeness geometry. Prismel canon supplies costume, build, props, and magic. HeroCel supplies rendering treatment only. Kineza may be used only as an abstract rendering-economy measurement stick, never as a visual ingredient.",
+    "preferredPresentation": "single neutral full-body Prismel Master B candidate on a simple background; no turnaround, expression sheet, attack pose, or multi-character generation for the calibration pass",
     "requiredBeforeAnimation": [
       "likeness geometry pass",
       "design fidelity pass",
       "HeroCel style-only fingerprint pass",
       "identity firewall pass",
       "older-child age read pass",
-      "expression pass"
+      "expression pass",
+      "Master A geometry freeze pass",
+      "same-artist rendering calibration pass",
+      "untouched side-by-side comparison pass"
     ]
   },
   "prizimGates": {
@@ -176,6 +179,87 @@
     "hoodDominantSilhouette": "required",
     "expressionIdentity": "required",
     "forbiddenLikenessDrift": "hard-reject",
-    "forbiddenDesignDrift": "hard-reject"
+    "forbiddenDesignDrift": "hard-reject",
+    "masterGeometryFreeze": "hard-reject",
+    "sameArtistRenderingCalibration": "required",
+    "singleCharacterCalibrationPresentation": "required",
+    "untouchedComparisonMethod": "required"
+  },
+  "masterGeometryFreeze": {
+    "authority": "Prismel HeroCel Master A",
+    "priority": "absolute",
+    "rule": "The Master A likeness and design geometry are frozen. Same-artist calibration may change rendering abstraction only and must not redesign, resize, reshape, reposition, or substitute any character-owned feature.",
+    "frozenFace": [
+      "face silhouette",
+      "eye size, shape, and spacing",
+      "brow geometry",
+      "nose width, softness, bridge, tip, and placement",
+      "full cheek volume",
+      "lip proportions and mouth geometry",
+      "rounded older-child jaw",
+      "chin shape and subtle dimple",
+      "hairline and curl geometry",
+      "head-to-body ratio",
+      "older-child age read"
+    ],
+    "frozenDesign": [
+      "hood opening shape",
+      "hood-up silhouette",
+      "cloak shoulder volume",
+      "long cloak hem length",
+      "central chest crystal size and placement",
+      "belt and pouch placement",
+      "boot height",
+      "slender Prismel build",
+      "cloak as dominant visual mass"
+    ],
+    "forbiddenDuringCalibration": [
+      "larger or more anime-like eyes",
+      "face narrowing",
+      "nose sharpening",
+      "cheek-volume loss",
+      "jaw angularization",
+      "age regression",
+      "Kineza or Ezra facial leakage",
+      "hair redesign",
+      "costume redesign",
+      "hood or cloak shrinkage",
+      "new utility gear",
+      "new character-specific FX"
+    ]
+  },
+  "sameArtistCalibration": {
+    "calibrationId": "prismel-to-herocel-rendering-economy-v1",
+    "scope": "rendering-only",
+    "comparisonAuthority": "approved Kineza HeroCel calibration master is a rendering measurement stick only, never an image/appearance ingredient",
+    "target": "Move Prismel approximately 10-to-15 percent toward the established HeroCel rendering abstraction while moving 0 percent toward Kineza identity, anatomy, proportions, expression, costume, or FX.",
+    "renderingTargets": {
+      "skinMajorValueGroups": "2-to-3",
+      "facialTransitionBands": "maximum-1-restrained-band",
+      "shadowLanguage": "more decisive graphic shadow boundaries while preserving Elijah-owned contours",
+      "eyes": "slightly stronger contrast and lid/iris readability with zero size, shape, or spacing change",
+      "nose": "few clear animation planes with zero geometry change",
+      "mouth": "principal light/shadow shapes only with zero lip or smile geometry change",
+      "cheeksJawChin": "broad plane grouping with zero contour change",
+      "gold": "designed graphic highlights rather than physically rendered metal response",
+      "robeAndCloak": "broader fold masses and fewer small modeled transitions",
+      "cosmicMicrodetail": "reduce nonfocal star and surface microdetail approximately 25-to-35 percent; retain organized focal clusters",
+      "secondaryGear": "suppress nonfocal surface detail without changing geometry",
+      "chestCrystal": "retain high focal detail and prismatic clarity"
+    },
+    "hardReject": [
+      "any facial or body geometry change",
+      "any likeness loss caused by style normalization",
+      "painterly skin reversion",
+      "continuous facial gradient modeling",
+      "uniform cosmic microdetail",
+      "costume microdetail competing with the face or chest crystal",
+      "Kineza likeness, smile, eye, cheek, nose, jaw, or proportion transfer"
+    ],
+    "passTarget": {
+      "sameArtistImpressionMinimum": 9.2,
+      "likenessRetentionFloor": 9.3,
+      "method": "compare the new untouched Prismel candidate beside the untouched Kineza calibration master on a neutral canvas; do not regenerate either character for the comparison"
+    }
   }
 }
