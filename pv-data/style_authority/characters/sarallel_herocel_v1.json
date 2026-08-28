@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "profileId": "sarallel-herocel-v1",
+  "profileRevision": "1.0-identity-firewall",
+  "characterId": "sarallel",
+  "inherits": "prismatic-herocel-v1",
+  "ageAdapter": "adult",
+  "status": "locked-calibration-profile-pending-master-b",
+  "authorityStack": {
+    "likenessAuthority": {
+      "master": "Sarallel Likeness Master A",
+      "source": "sarallel-likeness-master-a-inspection",
+      "priority": "absolute-geometry-authority"
+    },
+    "characterDesignAuthority": {
+      "master": "Sarallel Design Master A",
+      "source": "sarallel-design-master-a-inspection",
+      "priority": "absolute-design-authority"
+    },
+    "renderingAuthority": "prismatic-herocel-v1"
+  },
+  "identityFirewall": {
+    "priority": "absolute",
+    "subjectGeometryOwner": "likenessAuthority",
+    "characterGeometryOwner": "characterDesignAuthority",
+    "styleOwner": "prismatic-herocel-v1",
+    "kinezaGeometryContributionPercent": 0,
+    "kinezaLikenessContributionPercent": 0,
+    "legacySarallelFaceContributionPercent": 0,
+    "heroCelGeometryContributionPercent": 0,
+    "heroCelStyleApplicationPercent": 100,
+    "rule": "HeroCel may change only how Sarah-as-Sarallel is rendered. It may not change whose facial geometry, hair geometry, body identity, costume geometry, or expression geometry is present."
+  },
+  "frozenLikenessGeometry": [
+    "broader shorter face through cheek region",
+    "full cheek volume",
+    "soft broad jaw transition",
+    "rounded chin",
+    "natural adult eye size, shape, and spacing",
+    "soft eyebrow geometry",
+    "broader softer nose width, base, and tip",
+    "wider mouth geometry",
+    "warm broad smile with strong cheek lift",
+    "adult age read",
+    "hair-down face framing and part geometry"
+  ],
+  "frozenCharacterDesign": [
+    "royal blue black and gold palette family",
+    "elegant armored-caster silhouette",
+    "blue diamond/crystal motif",
+    "long cape/mantle geometry",
+    "geometric arcane magic language",
+    "simulacrum / parallel-self visual identity",
+    "armor and crystal placement from Sarallel Design Master A"
+  ],
+  "renderingOnlyTargets": {
+    "facialValueGrouping": "broad clean HeroCel planes while preserving all Sarah geometry",
+    "skinRendering": "2-to-4 major value groups with restrained transitions; no photoreal continuous gradients",
+    "edgeTreatment": "crisp controlled animated-character edges",
+    "eyeTreatment": "contrast, catchlight, iris and lid readability only; never alter Sarah eye size, shape, spacing, tilt, or lid geometry",
+    "noseTreatment": "simplify light and shadow planes only; never narrow or sharpen nose geometry",
+    "mouthTreatment": "simplify contour and shadow treatment only; preserve mouth width and Sarah smile construction",
+    "cheekJawTreatment": "reduce shading noise only; preserve cheek fullness, jaw width, and rounded chin",
+    "hairTreatment": "group strands into animation-readable masses while preserving hairline, part, length family, and face framing",
+    "armorTreatment": "graphic material separation, broad value blocks, selective highlights, no geometry redesign",
+    "crystalTreatment": "high-contrast focal material with clean internal facets; preserve crystal geometry and placement",
+    "detailHierarchy": "face first, primary chest/waist crystals second, silhouette third, secondary armor detail last"
+  },
+  "hardReject": [
+    "face narrowing",
+    "jaw taper increase",
+    "cheek-volume loss",
+    "nose narrowing or sharpening",
+    "eye enlargement",
+    "eye upward-tilt increase",
+    "generic animated-heroine eye construction",
+    "generic heroine smile substitution",
+    "beauty normalization that weakens Sarah likeness",
+    "age regression",
+    "hair-up substitution",
+    "hairline or face-framing redesign",
+    "armor redesign",
+    "cape silhouette redesign",
+    "crystal relocation or geometry substitution",
+    "legacy Sarallel fantasy face reintroduced",
+    "Kineza or other HeroCel calibration-character geometry transfer"
+  ],
+  "generationContract": {
+    "nextAsset": "Sarallel HeroCel Master B",
+    "presentation": "single neutral full-body Sarallel character master only; no sheet, no comparison layout, no alternate views, no text",
+    "visualReferenceStack": [
+      "Sarallel Likeness Master A for Sarah likeness and hair-down appearance",
+      "Sarallel Design Master A for costume, body silhouette, crystals, cape, and magic"
+    ],
+    "excludeAsVisualAppearanceReferences": [
+      "Kineza",
+      "Prismel",
+      "legacy Sarallel fantasy iterations",
+      "rejected Sarallel HeroCel attempt 01",
+      "multi-character sheets"
+    ],
+    "artistInstruction": "Draw Sarah as Sarallel using Prismatic HeroCel rendering grammar. Sarah supplies all facial and hair geometry. Sarallel Design Master A supplies costume, silhouette, crystals, cape, and magic. HeroCel supplies rendering treatment only. Do not normalize Sarah toward a generic animated heroine.",
+    "geometryInstruction": "No facial, hair, body-identity, costume, crystal, or cape geometry may be redesigned for style consistency.",
+    "styleInstruction": "Move the existing Sarallel Design Master A into HeroCel through value grouping, edge discipline, material abstraction, and detail hierarchy only."
+  },
+  "passTarget": {
+    "sarahLikenessMinimum": 9.0,
+    "sarallelDesignFidelityMinimum": 9.3,
+    "heroCelStyleMinimum": 9.2,
+    "sameArtistImpressionMinimum": 9.2,
+    "comparisonMethod": "After likeness/design retention passes, compare untouched Sarallel HeroCel Master B beside untouched Prismel HeroCel Master B and untouched Kineza master. Never regenerate the characters together for the same-artist test."
+  },
+  "prizimGates": {
+    "sarahGeometryOwnership": "hard-reject",
+    "zeroHeroCelGeometryTransfer": "hard-reject",
+    "zeroKinezaGeometryTransfer": "hard-reject",
+    "zeroLegacyFantasyFaceTransfer": "hard-reject",
+    "hairDownAppearanceRetention": "required",
+    "sarahLikenessRetention": "required",
+    "adultAgeRead": "required",
+    "sarallelDesignFidelity": "required",
+    "heroCelRenderingFingerprint": "required",
+    "singleCharacterPresentation": "required",
+    "untouchedSameArtistComparison": "required"
+  }
+}
