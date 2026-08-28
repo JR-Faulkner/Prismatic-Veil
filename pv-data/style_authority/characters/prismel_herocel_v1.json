@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "profileId": "prismel-herocel-v1",
+  "characterId": "prismel",
+  "status": "locked-character-style-translation-profile",
+  "inherits": "prismatic-herocel-v1",
+  "purpose": "Translate Prismel's approved Elijah likeness and locked cosmic-cloak design through Prismatic HeroCel v1 without redesigning the character or weakening likeness.",
+  "authorityStack": {
+    "likenessAuthority": {
+      "subject": "Elijah",
+      "priority": "highest",
+      "identityAnchors": [
+        "broad youthful face",
+        "full cheeks",
+        "soft rounded youthful jaw",
+        "subtle chin dimple",
+        "relaxed natural eye shape and spacing",
+        "broader soft nose family",
+        "full lips with restrained calm expression",
+        "short textured curls visible naturally inside the hood",
+        "warm brown skin tone",
+        "older-child age read"
+      ],
+      "expressionAuthority": "calm, thoughtful, compassionate, determined; never blank, solemn, or generic-anime neutral",
+      "forbiddenLikenessDrift": [
+        "narrowing cheeks",
+        "sharpening jaw into adult or heroic angularity",
+        "deep chin cleft",
+        "generic oversized anime eyes",
+        "tiny photoreal eyes",
+        "changing nose family",
+        "thinning lips",
+        "age regression toward Kineza",
+        "adult facial maturation",
+        "generic fantasy-boy face"
+      ]
+    },
+    "characterDesignAuthority": {
+      "source": "approved Prismel HD+ hooded cosmic-cloak design",
+      "preserveExactly": [
+        "hood-up silhouette",
+        "deep navy to near-black cosmic cloak",
+        "fine gold filigree and edging",
+        "central prismatic chest crystal",
+        "dark ceremonial under-robe",
+        "grounded dark boots",
+        "slender Prismel build",
+        "cloak as dominant visual mass",
+        "prismatic staff when the scene or pose calls for it"
+      ],
+      "designSimplificationAllowed": [
+        "reduce tiny fold noise for animation readability",
+        "organize galaxy texture into controlled larger star clusters",
+        "simplify micro-filigree only when necessary at reduced gameplay scale"
+      ],
+      "forbiddenDesignDrift": [
+        "hood-down redesign",
+        "exposed-hair adventurer redesign",
+        "armor-heavy redesign",
+        "utility-belt overload",
+        "random dangling crystals or bottles",
+        "short cape replacing long mantle",
+        "Kineza armor borrowing",
+        "Auryi robe borrowing",
+        "generic wizard robes",
+        "pixel-art conversion unless explicitly requested"
+      ]
+    },
+    "renderingAuthority": "prismatic-herocel-v1"
+  },
+  "ageAdapter": "olderChild",
+  "translationBalance": {
+    "likenessAndDesignPercent": 90,
+    "HeroCelNormalizationPercent": 10,
+    "maximumNormalizationPercentWithoutNewApproval": 15
+  },
+  "HeroCelOverrides": {
+    "face": {
+      "eyeScale": "light-to-moderate enlargement from Elijah's real eye shape, smaller than Kineza's young-child treatment",
+      "cheekRetention": "high",
+      "chin": "soft rounded with a subtle dimple",
+      "nose": "simplified animation planes while preserving Elijah's broader soft nose family",
+      "mouth": "full lips, readable but restrained expression",
+      "skin": "smooth broad cel-like value groups with minimal painterly microtexture"
+    },
+    "proportions": {
+      "headRatio": "slightly animation-enlarged, but clearly older/taller than Kineza",
+      "bodyBuild": "slender and composed",
+      "handsFeet": "readable but not chunky or oversized to Kineza levels"
+    },
+    "silhouette": {
+      "primaryMass": "hood plus long cosmic mantle",
+      "secondaryMass": "slender robed body beneath cloak",
+      "propPriority": "staff readable as separate silhouette when present",
+      "movementCharacter": "restrained, mystical, deliberate rather than kinetic"
+    },
+    "detailDensity": {
+      "face": "low-to-medium",
+      "cloak": "medium with organized cosmic focal clusters",
+      "filigree": "medium and graphic",
+      "crystal": "high focal detail",
+      "underRobe": "low-to-medium"
+    },
+    "expression": {
+      "baseline": "calm attentive confidence",
+      "animationRead": "eyes and mouth must remain readable at gameplay scale without becoming exaggeratedly cheerful",
+      "avoid": [
+        "blank solemnity",
+        "generic stoic mage expression",
+        "Kineza grin",
+        "adult intensity"
+      ]
+    }
+  },
+  "generationContract": {
+    "instruction": "Use Elijah likeness as face authority, Prismel HD+ hooded cosmic-cloak design as design authority, and Prismatic HeroCel v1 as rendering authority. Translate Elijah into animated Prismel; do not redesign Prismel and do not copy Kineza's face or anatomy.",
+    "preferredPresentation": "single polished character master or turnaround/model sheet before any animation sequence",
+    "requiredBeforeAnimation": [
+      "likeness pass",
+      "design fidelity pass",
+      "HeroCel fingerprint pass",
+      "age read pass",
+      "expression pass"
+    ]
+  },
+  "prizimGates": {
+    "likenessRetention": "required",
+    "designFidelity": "required",
+    "HeroCelFingerprintMatch": "required",
+    "olderChildAgeRead": "required",
+    "hoodDominantSilhouette": "required",
+    "expressionIdentity": "required",
+    "forbiddenLikenessDrift": "hard-reject",
+    "forbiddenDesignDrift": "hard-reject"
+  }
+}
