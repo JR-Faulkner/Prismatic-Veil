@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "inspectionId": "sarallel-likeness-master-b-inspection",
+  "characterId": "sarallel",
+  "master": {
+    "name": "Sarah Likeness Master B",
+    "role": "derived HeroCel-transition likeness base",
+    "generationId": "7ae81a0a-4bba-47cc-a523-70751f1374a0",
+    "sha256": "c5bb063d958eebf6af676c3390ec524cc3f9eccfcc4d2724e0e21ffbc7a7f7e0",
+    "dimensions": "1122x1402",
+    "localEvidenceFilename": "friendly_blonde_woman_portrait.png"
+  },
+  "status": "user-accepted-strongest-current-likeness-base-pending-separate-sarah-approval",
+  "humanReview": {
+    "userVerdict": "There it is; good base of actual likeness",
+    "separateSarahApprovalRecorded": false,
+    "requiredCaution": "Do not lean further into facial lines or dimples."
+  },
+  "likenessStrengths": [
+    "broader shorter face read is restored",
+    "fuller cheeks and softer jaw transition are retained",
+    "rounded chin reads closer to real-photo authority",
+    "eye scale and spacing remain natural rather than fantasy-enlarged",
+    "nose family is broader and softer than rejected fantasy-normalized attempts",
+    "mouth width and broad warm smile return closer to Sarah",
+    "overall age read is materially closer to the real references than the rejected Sarallel edit lineage"
+  ],
+  "surfaceRenderingCautions": [
+    "any residual smile-line shading is rendering only and may not be amplified",
+    "any residual dimple-like marks are not identity anchors and may not be amplified",
+    "under-eye definition is not likeness geometry authority",
+    "facial texture and crease placement must defer to the real-photo references",
+    "do not infer age by deepening cel-shaded face-plane boundaries"
+  ],
+  "authoritySplit": {
+    "masterBOwns": [
+      "face silhouette",
+      "cheek volume",
+      "jaw and chin relationship",
+      "eye scale and spacing",
+      "nose family",
+      "mouth width",
+      "smile geometry",
+      "overall recognizable Sarah identity"
+    ],
+    "realPhotosOverrideMasterBFor": [
+      "facial crease presence",
+      "dimple presence",
+      "under-eye line presence",
+      "nasolabial line presence",
+      "fine skin texture",
+      "age-signaling surface detail"
+    ]
+  },
+  "nextStep": {
+    "name": "HeroCel likeness-only animation transition",
+    "sourcePolicy": "Use Sarah Likeness Master B as the single derived likeness base while real-photo authority constrains facial geometry and forbids invented age lines/dimples.",
+    "forbiddenUntilPass": [
+      "Sarallel armor",
+      "Sarallel crystals",
+      "Sarallel cape",
+      "fantasy redesign",
+      "full-character design transformation"
+    ],
+    "passQuestion": "Does the animated portrait still unmistakably read as Sarah without adding age-signaling lines, dimples, or generic heroine normalization?"
+  }
+}
