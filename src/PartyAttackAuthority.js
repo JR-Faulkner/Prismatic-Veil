@@ -2,7 +2,8 @@
 //
 // H2.8 migrates Party Battle away from the old BP03 five-pose attack fallback.
 // PriZim promotion is hero-specific: an attack becomes current only after its
-// visual-family review, registration, runtime extraction, and phone acceptance.
+// visual-family review, registration, runtime extraction, repo ingestion, and
+// phone acceptance.
 //
 // IMPORTANT:
 // - formation idle art remains assets/party_formation/*
@@ -14,8 +15,8 @@ export const PARTY_ATTACK_AUTHORITY = Object.freeze({
   prismel: Object.freeze({
     id: 'prismel_attack_jrpg_10a',
     heroId: 'prismel',
-    enabled: true,
-    status: 'runtime-ingested-pending-phone-acceptance',
+    enabled: false,
+    status: 'conditional-pz-pass-pending-runtime-ingestion',
     mode: 'sheet',
     key: 'prismel_party_attack_jrpg_10a',
     path: './assets/sequences/runtime/prismel_attack_jrpg_10a.webp',
@@ -39,8 +40,8 @@ export const PARTY_ATTACK_AUTHORITY = Object.freeze({
   auryi: Object.freeze({
     id: 'auryi_attack_jrpg_10a',
     heroId: 'auryi',
-    enabled: true,
-    status: 'runtime-ingested-pending-phone-acceptance',
+    enabled: false,
+    status: 'conditional-pz-pass-pending-runtime-ingestion',
     mode: 'sheet',
     key: 'auryi_party_attack_jrpg_10a',
     path: './assets/sequences/runtime/auryi_attack_jrpg_10a.webp',
