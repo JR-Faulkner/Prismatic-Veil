@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "sarallel-herocel-candidate-g-human-review",
+  "characterId": "sarallel",
+  "candidate": "Sarallel HeroCel Candidate G",
+  "generationId": "7882f852-8c45-4ff4-a4ff-cd392056d3dc",
+  "status": "superseded-after-human-age-read-feedback",
+  "reviewSequence": [
+    {
+      "reviewer": "Sarah",
+      "verdict": "looks good but looks old",
+      "specificCause": "visible lines in the face"
+    },
+    {
+      "reviewer": "user",
+      "verdict": "agreed age read remained too old and later identified dimple/crease invention as additional drift"
+    }
+  ],
+  "technicalInterpretation": {
+    "animationRead": "retained as a useful strength reference",
+    "likenessPromotion": "blocked",
+    "productionPromotion": "blocked",
+    "reason": "Human likeness review exposed age-signaling linework and facial-detail invention not captured by the earlier technical score."
+  },
+  "mayStillContribute": [
+    "HeroCel animation intensity reference",
+    "graphic value grouping reference",
+    "hair mass simplification reference",
+    "armor/cape animation readability reference"
+  ],
+  "mustNotContribute": [
+    "facial crease placement",
+    "dimple placement",
+    "under-eye line placement",
+    "nasolabial line placement",
+    "age read",
+    "facial geometry when it conflicts with Sarah Likeness Master B or real photos"
+  ],
+  "replacementPath": "Sarah Likeness Master B -> likeness-only HeroCel transition -> human likeness approval -> Sarallel design reintroduction"
+}
