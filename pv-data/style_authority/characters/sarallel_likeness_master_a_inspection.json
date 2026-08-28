@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "inspectionId": "sarallel-likeness-master-a-inspection",
+  "characterId": "sarallel",
+  "status": "approved-user-accepted-hair-down-primary-likeness-authority",
+  "master": {
+    "name": "Sarallel Likeness Master A",
+    "subject": "Sarah",
+    "presentation": "hair-down primary likeness basis",
+    "generationId": "c536-4efb-a6b7-8eed618c44d6",
+    "sha256": "6a386387d712fcfdac6e34738842e79dc4df1f2788567ff11f602c25a1f63024"
+  },
+  "approvalScope": {
+    "userAcceptedInChat": true,
+    "separateSarahApprovalRecorded": false,
+    "rule": "This master is approved as the current production likeness basis by the user. Do not claim separate Sarah approval unless it is explicitly provided later."
+  },
+  "authorityRelationship": {
+    "realPhotos": "absolute source-of-truth geometry authority",
+    "hairDownMasterA": "primary derived likeness presentation authority",
+    "pulledBackLikenessVariant": "secondary geometry confirmation only",
+    "realVideo": "expression-behavior authority only",
+    "legacySarallelFantasyFaces": "zero likeness authority"
+  },
+  "lockedAppearance": [
+    "hair-down presentation as primary Sarallel appearance basis",
+    "broader shorter face through cheek region",
+    "full cheek volume",
+    "soft broad jaw transition",
+    "rounded chin",
+    "natural adult eye size and spacing",
+    "soft eyebrow geometry",
+    "broader softer nose family",
+    "wider mouth geometry",
+    "warm broad smile with strong cheek lift",
+    "adult age read"
+  ],
+  "hairAuthority": {
+    "priority": "primary-appearance-authority",
+    "presentation": "hair down",
+    "preserve": [
+      "side-parted face framing",
+      "natural shoulder-length-to-long layered fall",
+      "realistic highlighted brown/blonde color family",
+      "face remains fully recognizable within hair framing"
+    ],
+    "secondaryPulledBackUse": "geometry verification only; not primary Sarallel presentation"
+  },
+  "hardReject": [
+    "face narrowing",
+    "jaw taper increase",
+    "cheek-volume loss",
+    "nose narrowing or sharpening",
+    "eye enlargement or dramatic upward tilt",
+    "generic fantasy-heroine smile substitution",
+    "age reduction",
+    "hair-up substitution as default Sarallel presentation",
+    "beauty normalization that weakens Sarah likeness"
+  ],
+  "nextStage": "Sarallel Design Master A integration"
+}
