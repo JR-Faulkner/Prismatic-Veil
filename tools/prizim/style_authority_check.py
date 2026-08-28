@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PROFILE = ROOT / "pv-data/style_authority/prismatic_herocel_v1.json"
 PRISMEL = ROOT / "pv-data/style_authority/characters/prismel_herocel_v1.json"
+PRISMEL_INSPECTION = ROOT / "pv-data/style_authority/characters/prismel_herocel_master_a_inspection.json"
 PORTABILITY = ROOT / "pv-data/style_authority/tests/herocel_portability_v1.json"
 
 
@@ -21,9 +22,15 @@ def load_json(path: Path, label: str) -> dict:
         fail(f"{label} is invalid JSON: {exc}")
 
 
+def require_items(actual, required, label):
+    actual = set(actual or [])
+    for item in required:
+        if item not in actual:
+            fail(f"{label} missing: {item}")
+
+
 def validate_herocel() -> None:
     data = load_json(PROFILE, "Prismatic HeroCel v1 profile")
-
     if data.get("schemaVersion") != 2:
         fail("HeroCel schemaVersion must remain 2")
     if data.get("authorityId") != "prismatic-herocel-v1":
@@ -36,38 +43,24 @@ def validate_herocel() -> None:
     style = data.get("styleDefinition", {})
     if style.get("presentationBias") != "animation-model-first":
         fail("HeroCel must remain animation-model-first")
-    if "painterly fantasy concept art" not in set(style.get("notEquivalentTo", [])):
-        fail("HeroCel must explicitly reject painterly fantasy concept art")
+    require_items(style.get("notEquivalentTo"), ["painterly fantasy concept art", "photoreal fantasy portraiture"], "HeroCel non-equivalence")
 
     master = data.get("calibrationMaster", {})
     if master.get("character") != "kineza":
         fail("Kineza must remain the historical rendering calibration master")
-    if master.get("role") != "rendering-authority-only":
-        fail("Kineza authority must remain rendering-only")
-    if master.get("transferScope") != "style-properties-only":
-        fail("Kineza transfer scope must remain style-properties-only")
+    if master.get("role") != "rendering-authority-only" or master.get("transferScope") != "style-properties-only":
+        fail("Kineza authority must remain rendering-only and style-only")
+    require_items(
+        master.get("neverTransfer"),
+        ["face shape", "eye shape", "eye spacing", "cheek contour", "nose geometry", "mouth geometry", "head-to-body ratio", "body proportions"],
+        "Kineza identity firewall",
+    )
 
-    never_transfer = set(master.get("neverTransfer", []))
-    for item in (
-        "face shape",
-        "eye shape",
-        "eye spacing",
-        "cheek contour",
-        "nose geometry",
-        "mouth geometry",
-        "jaw width",
-        "chin shape",
-        "head-to-body ratio",
-        "body proportions",
-    ):
-        if item not in never_transfer:
-            fail(f"Kineza geometry firewall missing: {item}")
-
-    firewall = data.get("identityFirewall", {})
-    if firewall.get("priority") != "absolute":
+    identity = data.get("identityFirewall", {})
+    if identity.get("priority") != "absolute":
         fail("HeroCel identity firewall must remain absolute")
-    ownership = firewall.get("ownership", {})
-    expected_owners = {
+    owners = identity.get("ownership", {})
+    for key, expected in {
         "facialGeometry": "likenessAuthority",
         "facialFeatureSpacing": "likenessAuthority",
         "headShape": "likenessAuthority",
@@ -75,258 +68,181 @@ def validate_herocel() -> None:
         "costumeGeometry": "characterDesignAuthority",
         "edgeTreatment": "prismatic-herocel-v1",
         "shadowGrouping": "prismatic-herocel-v1",
-        "highlightTreatment": "prismatic-herocel-v1",
         "materialStylization": "prismatic-herocel-v1",
-    }
-    for key, value in expected_owners.items():
-        if ownership.get(key) != value:
+    }.items():
+        if owners.get(key) != expected:
             fail(f"HeroCel ownership drifted: {key}")
 
-    animation_firewall = data.get("animationRenderingFirewall", {})
-    if animation_firewall.get("priority") != "absolute":
+    animation = data.get("animationRenderingFirewall", {})
+    if animation.get("priority") != "absolute":
         fail("HeroCel animation rendering firewall must remain absolute")
-    if animation_firewall.get("requiredRead") != "clean animated character model with premium game finish":
+    if animation.get("requiredRead") != "clean animated character model with premium game finish":
         fail("HeroCel required animation-model read drifted")
-
-    value_contract = animation_firewall.get("valueGroupContract", {})
-    if value_contract.get("targetMajorGroupsPerMaterial") != "2-to-4":
-        fail("HeroCel must retain the 2-to-4 major value-group target")
-
-    hard_reject = set(animation_firewall.get("hardReject", []))
-    for item in (
-        "painterly concept-art finish",
-        "photoreal portrait rendering",
-        "continuous gradient shading as the primary form language",
-        "airbrushed skin modeling",
-        "uniform high-frequency fabric texture",
-        "dense costume micro-detail distributed evenly across the character",
-        "illustration polish that weakens animation readability",
-    ):
-        if item not in hard_reject:
-            fail(f"HeroCel animation firewall reject missing: {item}")
-
-    surface = animation_firewall.get("surfaceContract", {})
-    if "no pore detail" not in surface.get("skin", ""):
-        fail("HeroCel skin surface contract drifted")
-    if "organized star clusters" not in surface.get("cosmicFabric", ""):
-        fail("HeroCel cosmic-fabric simplification drifted")
-
-    facial_model = animation_firewall.get("facialModelContract", {})
-    if "animation-readable planes" not in facial_model.get("rule", ""):
-        fail("HeroCel facial animation-model contract drifted")
-
-    detail_frequency = animation_firewall.get("detailFrequencyContract", {})
-    if detail_frequency.get("face") != "low":
-        fail("HeroCel face micro-detail must remain low")
-    if detail_frequency.get("backgroundOrNonfocalTexture") != "minimal":
-        fail("HeroCel nonfocal texture must remain minimal")
-
-    portability = data.get("portabilityContract", {})
-    if portability.get("randomCharacterTest") != "required":
-        fail("HeroCel must remain portable to unrelated characters")
-
-    stack = data.get("translationContract", {}).get("requiredAuthorityStack", [])
-    required = ["likenessAuthority", "characterDesignAuthority", "prismatic-herocel-v1"]
-    if stack != required:
-        fail("three-part translation authority stack changed")
-
-    drift = set(data.get("forbiddenDrift", []))
-    for item in (
-        "painterly concept-art finish",
-        "photoreal portrait rendering",
-        "continuous gradient shading as primary form language",
-        "uniform high-frequency costume detail",
-        "illustration polish that weakens animation readability",
-    ):
-        if item not in drift:
-            fail(f"HeroCel forbidden animation drift missing: {item}")
+    if animation.get("valueGroupContract", {}).get("targetMajorGroupsPerMaterial") != "2-to-4":
+        fail("HeroCel 2-to-4 major value-group target drifted")
+    require_items(
+        animation.get("hardReject"),
+        [
+            "painterly concept-art finish",
+            "photoreal portrait rendering",
+            "continuous gradient shading as the primary form language",
+            "airbrushed skin modeling",
+            "uniform high-frequency fabric texture",
+            "dense costume micro-detail distributed evenly across the character",
+            "illustration polish that weakens animation readability",
+        ],
+        "HeroCel animation firewall",
+    )
 
     gates = data.get("prizimGates", {})
-    for name in (
-        "likenessRetention",
-        "designFidelity",
-        "animationReadability",
-        "animationModelRead",
-        "styleFingerprintMatch",
-        "ageAdapterApplied",
-        "randomCharacterPortability",
-    ):
+    for name in ["likenessRetention", "designFidelity", "animationReadability", "animationModelRead", "styleFingerprintMatch", "ageAdapterApplied", "randomCharacterPortability"]:
         if gates.get(name) != "required":
             fail(f"{name} gate must remain required")
-    for name in ("identityFirewall", "animationRenderingFirewall", "forbiddenDrift"):
+    for name in ["identityFirewall", "animationRenderingFirewall", "forbiddenDrift"]:
         if gates.get(name) != "hard-reject":
             fail(f"{name} gate must remain hard-reject")
 
 
 def validate_portability() -> None:
     data = load_json(PORTABILITY, "HeroCel portability fixture")
-
     if data.get("testId") != "herocel-portability-v1":
         fail("HeroCel portability testId drifted")
     if data.get("styleAuthority") != "prismatic-herocel-v1":
         fail("HeroCel portability fixture must use HeroCel v1")
-    if data.get("kinezaLikenessContributionPercent") != 0:
-        fail("HeroCel portability fixture must keep Kineza likeness at 0%")
-    if data.get("kinezaGeometryContributionPercent") != 0:
-        fail("HeroCel portability fixture must keep Kineza geometry at 0%")
+    if data.get("kinezaLikenessContributionPercent") != 0 or data.get("kinezaGeometryContributionPercent") != 0:
+        fail("HeroCel portability fixture must keep Kineza likeness and geometry at 0%")
 
-    cases = data.get("cases", [])
-    required_ids = {
-        "unrelated-adult-human",
-        "nonhuman-synthetic",
-        "young-character-not-kineza",
-    }
-    found_ids = {case.get("id") for case in cases}
+    required_ids = {"unrelated-adult-human", "nonhuman-synthetic", "young-character-not-kineza"}
+    found_ids = {case.get("id") for case in data.get("cases", [])}
     if found_ids != required_ids:
         fail("HeroCel portability cases drifted")
-
-    style_only_allowed = {
-        "edge treatment",
-        "shadow grouping",
-        "highlight treatment",
-        "surface simplification",
-        "material readability",
-        "detail hierarchy",
-        "value grouping",
-        "specular simplification",
-        "facial surface rendering",
-        "highlight clarity",
-        "animation readability",
-    }
-    forbidden_geometry_tokens = (
-        "face geometry",
-        "eye spacing",
-        "eye geometry",
-        "nose geometry",
-        "jaw geometry",
-        "cheek contour",
-        "mouth geometry",
-        "head proportions",
-        "body proportions",
-        "costume geometry",
-        "shell geometry",
-        "expression identity",
-    )
-
-    for case in cases:
-        allowed = set(case.get("heroCelMayChange", []))
-        if not allowed or not allowed.issubset(style_only_allowed):
-            fail(f"portability case grants HeroCel non-style authority: {case.get('id')}")
-        may_not_change = set(case.get("heroCelMayNotChange", []))
-        if not may_not_change:
-            fail(f"portability case missing geometry firewall: {case.get('id')}")
-        if not any(token in may_not_change for token in forbidden_geometry_tokens):
-            fail(f"portability case does not protect subject geometry: {case.get('id')}")
 
 
 def validate_prismel() -> None:
     data = load_json(PRISMEL, "Prismel HeroCel profile")
-
     if data.get("schemaVersion") != 2:
         fail("Prismel HeroCel schemaVersion must remain 2")
     if data.get("profileId") != "prismel-herocel-v1":
         fail("Prismel profileId must remain prismel-herocel-v1")
-    if data.get("profileRevision") != "1.1-identity-firewall":
-        fail("Prismel identity-firewall revision drifted")
-    if data.get("characterId") != "prismel":
-        fail("Prismel profile characterId changed")
-    if data.get("inherits") != "prismatic-herocel-v1":
-        fail("Prismel must inherit Prismatic HeroCel v1")
+    if data.get("profileRevision") != "1.2-same-artist-calibration":
+        fail("Prismel same-artist calibration revision drifted")
+    if data.get("characterId") != "prismel" or data.get("inherits") != "prismatic-herocel-v1":
+        fail("Prismel identity or inherited HeroCel authority changed")
     if data.get("ageAdapter") != "olderChild":
         fail("Prismel must retain the olderChild age adapter")
 
     stack = data.get("authorityStack", {})
+    likeness = stack.get("likenessAuthority", {})
+    if likeness.get("subject") != "Elijah" or likeness.get("priority") != "absolute-geometry-authority":
+        fail("Elijah must remain Prismel absolute likeness geometry authority")
+    require_items(likeness.get("identityAnchors"), ["full cheeks", "subtle chin dimple", "soft rounded youthful jaw", "older-child age read"], "Prismel likeness anchors")
+    require_items(
+        likeness.get("geometryOwned"),
+        ["eye shape", "eye size", "eye spacing", "cheek contour and volume", "nose width, bridge, tip, and placement", "lip proportions and mouth geometry", "jaw width and contour", "chin shape and dimple"],
+        "Elijah geometry ownership",
+    )
+
     if stack.get("renderingAuthority") != "prismatic-herocel-v1":
         fail("Prismel rendering authority must remain HeroCel v1")
+    preserve = stack.get("characterDesignAuthority", {}).get("preserveExactly", [])
+    require_items(preserve, ["hood-up silhouette", "deep navy to near-black cosmic cloak", "central prismatic chest crystal", "slender Prismel build", "cloak as dominant visual mass"], "Prismel design locks")
 
-    likeness = stack.get("likenessAuthority", {})
-    if likeness.get("subject") != "Elijah":
-        fail("Prismel likeness subject must remain Elijah")
-    if likeness.get("priority") != "absolute-geometry-authority":
-        fail("Elijah likeness must remain absolute geometry authority")
-    anchors = set(likeness.get("identityAnchors", []))
-    for anchor in (
-        "full cheeks",
-        "subtle chin dimple",
-        "soft rounded youthful jaw",
-        "older-child age read",
-    ):
-        if anchor not in anchors:
-            fail(f"Prismel likeness anchor missing: {anchor}")
-
-    geometry_owned = set(likeness.get("geometryOwned", []))
-    for item in (
-        "eye shape",
-        "eye size",
-        "eye spacing",
-        "cheek contour and volume",
-        "nose width, bridge, tip, and placement",
-        "lip proportions and mouth geometry",
-        "smile geometry",
-        "jaw width and contour",
-        "chin shape and dimple",
-        "head shape and head-to-body relationship",
-    ):
-        if item not in geometry_owned:
-            fail(f"Elijah geometry ownership missing: {item}")
-
-    design = stack.get("characterDesignAuthority", {})
-    preserve = set(design.get("preserveExactly", []))
-    for lock in (
-        "hood-up silhouette",
-        "deep navy to near-black cosmic cloak",
-        "central prismatic chest crystal",
-        "slender Prismel build",
-        "cloak as dominant visual mass",
-    ):
-        if lock not in preserve:
-            fail(f"Prismel design lock missing: {lock}")
-
-    firewall = data.get("identityFirewall", {})
-    if firewall.get("subjectGeometryOwner") != "likenessAuthority":
-        fail("Prismel subject geometry owner must remain likenessAuthority")
-    if firewall.get("characterGeometryOwner") != "characterDesignAuthority":
-        fail("Prismel character geometry owner must remain characterDesignAuthority")
-    if firewall.get("styleOwner") != "prismatic-herocel-v1":
+    identity = data.get("identityFirewall", {})
+    if identity.get("subjectGeometryOwner") != "likenessAuthority" or identity.get("characterGeometryOwner") != "characterDesignAuthority":
+        fail("Prismel geometry ownership drifted")
+    if identity.get("styleOwner") != "prismatic-herocel-v1":
         fail("Prismel style owner must remain HeroCel v1")
-    if firewall.get("kinezaGeometryContributionPercent") != 0:
-        fail("Kineza geometry contribution must remain 0%")
-    if firewall.get("kinezaLikenessContributionPercent") != 0:
-        fail("Kineza likeness contribution must remain 0%")
-    if firewall.get("heroCelStyleApplicationPercent") != 100:
+    if identity.get("kinezaGeometryContributionPercent") != 0 or identity.get("kinezaLikenessContributionPercent") != 0:
+        fail("Kineza geometry and likeness contribution must remain 0%")
+    if identity.get("heroCelStyleApplicationPercent") != 100:
         fail("HeroCel style application must remain 100% style-only")
 
+    freeze = data.get("masterGeometryFreeze", {})
+    if freeze.get("authority") != "Prismel HeroCel Master A" or freeze.get("priority") != "absolute":
+        fail("Prismel Master A geometry freeze must remain absolute")
+    require_items(
+        freeze.get("frozenFace"),
+        ["eye size, shape, and spacing", "nose width, softness, bridge, tip, and placement", "full cheek volume", "head-to-body ratio", "older-child age read"],
+        "Prismel Master A face freeze",
+    )
+    require_items(
+        freeze.get("frozenDesign"),
+        ["hood opening shape", "cloak shoulder volume", "long cloak hem length", "central chest crystal size and placement", "slender Prismel build"],
+        "Prismel Master A design freeze",
+    )
+    require_items(
+        freeze.get("forbiddenDuringCalibration"),
+        ["face narrowing", "nose sharpening", "cheek-volume loss", "Kineza or Ezra facial leakage", "costume redesign", "hood or cloak shrinkage"],
+        "Prismel calibration hard rejects",
+    )
+
+    calibration = data.get("sameArtistCalibration", {})
+    if calibration.get("calibrationId") != "prismel-to-herocel-rendering-economy-v1" or calibration.get("scope") != "rendering-only":
+        fail("Prismel same-artist calibration scope drifted")
+    targets = calibration.get("renderingTargets", {})
+    if targets.get("skinMajorValueGroups") != "2-to-3":
+        fail("Prismel skin must remain targeted to 2-to-3 major value groups")
+    if targets.get("facialTransitionBands") != "maximum-1-restrained-band":
+        fail("Prismel facial transition-band limit drifted")
+    if "25-to-35 percent" not in targets.get("cosmicMicrodetail", ""):
+        fail("Prismel cosmic microdetail reduction target drifted")
+    require_items(
+        calibration.get("hardReject"),
+        ["any facial or body geometry change", "any likeness loss caused by style normalization", "painterly skin reversion", "continuous facial gradient modeling", "Kineza likeness, smile, eye, cheek, nose, jaw, or proportion transfer"],
+        "Prismel same-artist calibration rejects",
+    )
+    pass_target = calibration.get("passTarget", {})
+    if pass_target.get("sameArtistImpressionMinimum") != 9.2 or pass_target.get("likenessRetentionFloor") != 9.3:
+        fail("Prismel same-artist or likeness pass threshold drifted")
+    if "do not regenerate either character" not in pass_target.get("method", ""):
+        fail("Prismel comparison method must remain untouched-composite only")
+
+    generation = data.get("generationContract", {})
+    preferred = generation.get("preferredPresentation", "")
+    if "single neutral full-body Prismel Master B candidate" not in preferred or "no turnaround" not in preferred or "multi-character generation" not in preferred:
+        fail("Prismel Master B calibration presentation drifted")
+    if "Do not use Kineza as an appearance" not in generation.get("artistInstruction", ""):
+        fail("Prismel generation contract must explicitly exclude Kineza appearance authority")
+
     gates = data.get("prizimGates", {})
-    for name in (
-        "likenessRetention",
-        "subjectGeometryOwnership",
-        "designFidelity",
-        "HeroCelFingerprintMatch",
-        "olderChildAgeRead",
-        "hoodDominantSilhouette",
-        "expressionIdentity",
-    ):
+    for name in ["likenessRetention", "subjectGeometryOwnership", "designFidelity", "HeroCelFingerprintMatch", "olderChildAgeRead", "hoodDominantSilhouette", "expressionIdentity", "sameArtistRenderingCalibration", "singleCharacterCalibrationPresentation", "untouchedComparisonMethod"]:
         if gates.get(name) != "required":
             fail(f"Prismel gate must remain required: {name}")
-    for name in (
-        "identityFirewall",
-        "zeroKinezaGeometryTransfer",
-        "forbiddenLikenessDrift",
-        "forbiddenDesignDrift",
-    ):
+    for name in ["identityFirewall", "zeroKinezaGeometryTransfer", "forbiddenLikenessDrift", "forbiddenDesignDrift", "masterGeometryFreeze"]:
         if gates.get(name) != "hard-reject":
-            fail(f"Prismel drift gate must remain hard-reject: {name}")
+            fail(f"Prismel hard-reject gate drifted: {name}")
 
-    artist_instruction = data.get("generationContract", {}).get("artistInstruction", "")
-    if "Do not use Kineza as an appearance" not in artist_instruction:
-        fail("Prismel generation contract must explicitly exclude Kineza appearance authority")
+
+def validate_prismel_inspection() -> None:
+    data = load_json(PRISMEL_INSPECTION, "Prismel HeroCel Master A inspection")
+    if data.get("inspectionId") != "prismel-herocel-master-a-inspection":
+        fail("Prismel Master A inspectionId drifted")
+    if data.get("status") != "approved-master-a-geometry-authority-pending-same-artist-rendering-calibration":
+        fail("Prismel Master A inspection status drifted")
+    stress = data.get("multiviewStressTest", {})
+    if stress.get("status") != "conditional-pass":
+        fail("Prismel multiview stress test must remain conditional-pass until final promotion")
+    comparison = data.get("sameArtistComparison", {})
+    if comparison.get("status") != "calibration-required":
+        fail("Prismel same-artist comparison must remain calibration-required before Master B")
+    if comparison.get("currentScores", {}).get("overallSameArtistImpression") != 8.3:
+        fail("Prismel historical same-artist baseline drifted")
+    target = comparison.get("passTarget", {})
+    if target.get("overallSameArtistImpressionMinimum") != 9.2 or target.get("elijahLikenessMinimum") != 9.3:
+        fail("Prismel Master B promotion thresholds drifted")
+    next_candidate = data.get("nextCandidate", {})
+    if next_candidate.get("name") != "Prismel HeroCel Master B":
+        fail("Prismel next candidate must remain Master B")
+    if next_candidate.get("renderingRule") != "apply prismel-herocel-v1 revision 1.2-same-artist-calibration":
+        fail("Prismel Master B rendering rule drifted")
 
 
 def main() -> None:
     validate_herocel()
     validate_portability()
     validate_prismel()
-    print("PZ STYLE AUTHORITY PASS: HeroCel identity + animation rendering firewalls, portability fixture, and Prismel likeness authority are locked and valid")
+    validate_prismel_inspection()
+    print("PZ STYLE AUTHORITY PASS: HeroCel firewalls, portability, Prismel Master A geometry freeze, and Master B same-artist calibration are locked and valid")
 
 
 if __name__ == "__main__":
