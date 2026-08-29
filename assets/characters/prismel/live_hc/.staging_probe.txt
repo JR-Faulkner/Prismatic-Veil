@@ -1,0 +1,1 @@
+Prismel live HC binary verification marker. Safe to remove after staging verification.
