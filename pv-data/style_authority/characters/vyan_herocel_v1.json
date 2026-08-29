@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "profileId": "vyan-herocel-v1",
+  "profileRevision": "1.0-candidate-a-lock-pending-same-artist",
+  "characterId": "vyan",
+  "inherits": "prismatic-herocel-v1",
+  "ageAdapter": "adult",
+  "status": "candidate-a-pz-pass-pending-same-artist-comparison",
+  "authorityStack": {
+    "likenessAuthority": {
+      "subject": "Vyan",
+      "priority": "absolute-identity-authority",
+      "identityAnchors": [
+        "adult Black male",
+        "bald head",
+        "short goatee",
+        "calm controlled expression",
+        "adult heroic proportions"
+      ]
+    },
+    "characterDesignAuthority": {
+      "priority": "absolute-design-authority",
+      "preserveExactly": [
+        "burgundy black and gold palette",
+        "layered armored robe silhouette",
+        "gold geometric trim",
+        "orange-gold geometric arcana",
+        "raised-hand controlled casting posture"
+      ]
+    },
+    "renderingAuthority": "prismatic-herocel-v1",
+    "currentHeroCelCandidate": {
+      "candidate": "Vyan HeroCel Candidate A",
+      "source": "vyan-herocel-candidate-a-inspection",
+      "priority": "current-lock-candidate"
+    }
+  },
+  "identityFirewall": {
+    "priority": "absolute",
+    "subjectGeometryOwner": "likenessAuthority",
+    "characterGeometryOwner": "characterDesignAuthority",
+    "styleOwner": "prismatic-herocel-v1",
+    "heroCelGeometryContributionPercent": 0,
+    "kinezaGeometryContributionPercent": 0,
+    "prismelGeometryContributionPercent": 0,
+    "auryiGeometryContributionPercent": 0,
+    "sarallelGeometryContributionPercent": 0,
+    "rule": "HeroCel may change rendering language only. It may not normalize Vyan into another character or generic fantasy-mage geometry."
+  },
+  "candidateA": {
+    "inspection": "vyan-herocel-candidate-a-inspection",
+    "generationId": "1c806e0f-da38-490d-a84a-01bcee979f0c",
+    "sha256": "aad0e3e6740a17f4f89b0c8d486140110c77418b9fb929ab7a7a40a139bc3ea2",
+    "status": "pz-pass-lock-candidate",
+    "scores": {
+      "identityRetention": 9.4,
+      "heroCelAnimationRead": 9.5,
+      "designFidelity": 9.4,
+      "magicIdentityRead": 9.6,
+      "sameArtistImpressionPreComparison": 9.3
+    }
+  },
+  "hardReject": [
+    "generic fantasy mage face substitution",
+    "hair introduction",
+    "goatee removal or redesign",
+    "age regression",
+    "face narrowing or glamorization",
+    "burgundy black gold palette drift",
+    "orange-gold geometric magic replaced by another character's FX",
+    "robe silhouette redesign",
+    "cross-character geometry contamination"
+  ],
+  "nextGate": {
+    "name": "untouched-same-artist-comparison",
+    "requiredCharacters": [
+      "Vyan HeroCel Candidate A",
+      "Sarah HeroCel Likeness Transition A / Sarallel current approved HeroCel face authority",
+      "Auryi HeroCel Master A",
+      "Prismel HeroCel Master B",
+      "Kineza master"
+    ],
+    "method": "Use untouched masters/candidates on one neutral comparison canvas. Scaling and positioning only. Do not regenerate characters together.",
+    "sameArtistMinimum": 9.2,
+    "promotionOnPass": "Vyan HeroCel Production Authority"
+  },
+  "prizimGates": {
+    "identityRetention": "required",
+    "designFidelity": "required",
+    "heroCelAnimationRead": "required",
+    "magicIdentityRetention": "required",
+    "sameArtistComparison": "required-before-production-promotion",
+    "identityFirewall": "hard-reject",
+    "crossCharacterGeometryTransfer": "hard-reject"
+  }
+}
