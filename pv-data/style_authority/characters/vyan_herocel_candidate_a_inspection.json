@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "inspectionId": "vyan-herocel-candidate-a-inspection",
+  "characterId": "vyan",
+  "status": "pz-pass-lock-candidate-pending-same-artist-comparison",
+  "candidate": {
+    "name": "Vyan HeroCel Candidate A",
+    "generationId": "1c806e0f-da38-490d-a84a-01bcee979f0c",
+    "sha256": "aad0e3e6740a17f4f89b0c8d486140110c77418b9fb929ab7a7a40a139bc3ea2",
+    "dimensions": "1122x1402",
+    "localEvidenceFilename": "golden_vortex_mage_knight.png"
+  },
+  "pzAssessment": {
+    "identityRetention": 9.4,
+    "heroCelAnimationRead": 9.5,
+    "designFidelity": 9.4,
+    "magicIdentityRead": 9.6,
+    "silhouetteStability": 9.4,
+    "sameArtistImpressionPreComparison": 9.3,
+    "visualIntegrity": "pass",
+    "productionVerdict": "pass-lock-candidate"
+  },
+  "identityAnchorsRetained": [
+    "adult Black male read",
+    "bald head",
+    "short goatee",
+    "calm controlled expression",
+    "strong adult heroic proportions"
+  ],
+  "designAnchorsRetained": [
+    "burgundy black and gold palette",
+    "layered armored robe silhouette",
+    "gold-trimmed geometric panel language",
+    "orange-gold geometric arcana",
+    "raised casting hand with controlled vortex geometry"
+  ],
+  "heroCelStrengths": [
+    "clean animation-model silhouette",
+    "crisp cel-shadow boundaries",
+    "broad readable material value groups",
+    "facial rendering remains adult and character-specific",
+    "magic FX is distinct from Prismel, Auryi, Kineza, and Sarallel",
+    "full-body presentation is production-readable"
+  ],
+  "hardRejectForFuturePasses": [
+    "generic fantasy mage face substitution",
+    "hair growth or hairstyle introduction",
+    "goatee removal or redesign",
+    "age regression",
+    "burgundy-to-red palette drift",
+    "orange-gold arcana replaced by another character's FX language",
+    "robe silhouette simplification that weakens Vyan identity",
+    "Kineza, Prismel, Auryi, or Sarallel geometry contamination"
+  ],
+  "nextStep": "untouched same-artist comparison against approved HeroCel masters before final production promotion"
+}
