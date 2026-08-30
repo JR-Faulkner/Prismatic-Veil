@@ -1,0 +1,17 @@
+{
+  "chunk_chars": 32768,
+  "frames": [
+    {"frame":1,"filename":"prismel_attack_01.webp","bytes":158708,"sha256":"1747724ff91f7620c6569c6046389e809356892408ef5cb07629f6ef33079582","chunks":7},
+    {"frame":2,"filename":"prismel_attack_02.webp","bytes":167960,"sha256":"9ec6ce51719556e1708ae6e2a9acf81fba479ba3e3fc158e3ab84fa8d49cc829","chunks":7},
+    {"frame":3,"filename":"prismel_attack_03.webp","bytes":210110,"sha256":"18b4aea7d1cac188a59f5dce81ab75c49dc28762172c1c5b3558562b14559a1d","chunks":9},
+    {"frame":4,"filename":"prismel_attack_04.webp","bytes":254004,"sha256":"036bf70ecab40d99f3f493e9ef2823d36190b129a2cb77bc6d385c336a80b00c","chunks":11},
+    {"frame":5,"filename":"prismel_attack_05.webp","bytes":226440,"sha256":"75f622917d5a614195e25edbd6edff7b982505f3640c3723363a4dff458aaf33","chunks":10},
+    {"frame":6,"filename":"prismel_attack_06.webp","bytes":247208,"sha256":"f408f2fef48d8a60a07abce29f5523db79ff861115bdf428be52704ab75ae783","chunks":11},
+    {"frame":7,"filename":"prismel_attack_07.webp","bytes":128976,"sha256":"07e8482fe52097e559d9bd314f75eb0b04eae1ce74dac0801d0f4e3f25b83b4f","chunks":6},
+    {"frame":8,"filename":"prismel_attack_08.webp","bytes":174508,"sha256":"34ca02227d94d78a581c96b8296c07d135dc38cfdfd5a44e092698f2c90fe342","chunks":8},
+    {"frame":9,"filename":"prismel_attack_09.webp","bytes":198864,"sha256":"657b124368993834c08594f9dcf1ada905a27d7c7c61b7079dd5a6ef7c9ed6bc","chunks":9},
+    {"frame":10,"filename":"prismel_attack_10.webp","bytes":137336,"sha256":"9eddcbbb0dd099adbbd38932abaab45024d1822529031d240dd621ef85419897","chunks":6},
+    {"frame":11,"filename":"prismel_attack_11.webp","bytes":218870,"sha256":"740c606565afdfccf8cced0e27c9d4b77f7c1ad23b3ba8a77dddf6e3b35aaeb6","chunks":9},
+    {"frame":12,"filename":"prismel_attack_12.webp","bytes":158692,"sha256":"b603c213786acb23da1406226c69343ebdc88b3b74dc2590b5ee30678cf5e7c4","chunks":7}
+  ]
+}
