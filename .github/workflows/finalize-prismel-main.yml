@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'prizim-staging/prismel-zip/READY.txt'
+      - 'prizim-staging/prismel-dropbox/DROPBOX_READY.txt'
 
 permissions:
   contents: write
@@ -18,16 +18,15 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Rebuild and verify exact ZIP carrier
+      - name: Download and verify exact ZIP carrier
         shell: bash
         run: |
           set -euo pipefail
-          test -f prizim-staging/prismel-zip/READY.txt
-          count=$(find prizim-staging/prismel-zip -maxdepth 1 -name 'chunk_*.b64' | wc -l)
-          test "$count" -eq 191
-          cat prizim-staging/prismel-zip/chunk_*.b64 > /tmp/prismel_bundle.b64
-          test "$(wc -c < /tmp/prismel_bundle.b64)" -eq 3044556
-          base64 -d /tmp/prismel_bundle.b64 > /tmp/prismel_basic_attack_lossless_bundle.zip
+          trigger='prizim-staging/prismel-dropbox/DROPBOX_READY.txt'
+          test -f "$trigger"
+          url=$(cat "$trigger")
+          test -n "$url"
+          curl --fail --location --silent --show-error "$url" -o /tmp/prismel_basic_attack_lossless_bundle.zip
           test "$(wc -c < /tmp/prismel_basic_attack_lossless_bundle.zip)" -eq 2283417
           echo 'f8a6b511f20b9c17ddc80e19bb564dc866be038770f0e9c2e50751d20769f5cb  /tmp/prismel_basic_attack_lossless_bundle.zip' | sha256sum -c -
           rm -rf /tmp/prismel_frames
@@ -134,6 +133,7 @@ jobs:
           Timing ms: 167,167,167,167,167,167,167,133,133,133,167,167
           ZIP SHA256: f8a6b511f20b9c17ddc80e19bb564dc866be038770f0e9c2e50751d20769f5cb
           EOF
+          rm -rf prizim-staging/prismel-dropbox
           rm -rf prizim-staging/prismel-zip
           rm -rf prizim-staging/prismel-main
           rm -rf prizim-staging/prismel-avif
