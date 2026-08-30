@@ -2,9 +2,10 @@ name: Finalize Kineza Sprint A
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
-      - 'prizim-staging/kineza-sprintA/DROPBOX_READY.txt'
+      - 'prizim-staging/kineza-sprintA/TRIGGER.txt'
 
 permissions:
   contents: write
@@ -13,336 +14,61 @@ jobs:
   finalize:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main
+        uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Download and verify Kineza runtime bundle
+      - name: Download verified carrier
         shell: bash
         run: |
           set -euo pipefail
-          trigger='prizim-staging/kineza-sprintA/DROPBOX_READY.txt'
-          test -f "$trigger"
-          url=$(cat "$trigger")
-          test -n "$url"
-          curl --fail --location --silent --show-error "$url" -o /tmp/kineza_sprintA_runtime_bundle.zip
-          test "$(wc -c < /tmp/kineza_sprintA_runtime_bundle.zip)" -eq 3086538
-          echo '31133f3c896295905a5d43cd9f377c69d6961d69e0c0e6f3e1db363277d5a4fe  /tmp/kineza_sprintA_runtime_bundle.zip' | sha256sum -c -
-          rm -rf /tmp/kineza_sprintA
-          mkdir -p /tmp/kineza_sprintA
-          unzip -q /tmp/kineza_sprintA_runtime_bundle.zip -d /tmp/kineza_sprintA
-          echo 'bacf816ecfd936c37931ed7ba6c0d0b135d1fbb7f1688ad91a3900ab92a39e14  /tmp/kineza_sprintA/kineza_basic_attack_v2.png' | sha256sum -c -
-          echo '426e87770bc8d51135a44b291ca68d380a1118f69e0d092ca85bfbf7ced02975  /tmp/kineza_sprintA/kineza_battle_states_v1.png' | sha256sum -c -
+          url="$(cat prizim-staging/kineza-sprintA/DROPBOX_READY.txt)"
+          curl --fail --location --silent --show-error "$url" -o /tmp/kineza.zip
+          test "$(wc -c < /tmp/kineza.zip)" -eq 3086538
+          echo '31133f3c896295905a5d43cd9f377c69d6961d69e0c0e6f3e1db363277d5a4fe  /tmp/kineza.zip' | sha256sum -c -
+          rm -rf /tmp/kineza
+          mkdir -p /tmp/kineza
+          unzip -q /tmp/kineza.zip -d /tmp/kineza
+          echo 'bacf816ecfd936c37931ed7ba6c0d0b135d1fbb7f1688ad91a3900ab92a39e14  /tmp/kineza/kineza_basic_attack_v2.png' | sha256sum -c -
+          echo '426e87770bc8d51135a44b291ca68d380a1118f69e0d092ca85bfbf7ced02975  /tmp/kineza/kineza_battle_states_v1.png' | sha256sum -c -
 
-      - name: Install verified Kineza authorities
+      - name: Install authority assets
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p assets/characters/kineza/animations assets/characters/kineza/battle
-          cp /tmp/kineza_sprintA/kineza_basic_attack_v2.png assets/characters/kineza/animations/kineza_basic_attack_v2.png
-          cp /tmp/kineza_sprintA/kineza_battle_states_v1.png assets/characters/kineza/battle/kineza_battle_states_v1.png
-          cp /tmp/kineza_sprintA/runtime_manifest.json assets/characters/kineza/battle/KINEZA_SPRINT_A_RUNTIME_AUTHORITY.json
+          cp /tmp/kineza/kineza_basic_attack_v2.png assets/characters/kineza/animations/kineza_basic_attack_v2.png
+          cp /tmp/kineza/kineza_battle_states_v1.png assets/characters/kineza/battle/kineza_battle_states_v1.png
+          cp /tmp/kineza/runtime_manifest.json assets/characters/kineza/battle/KINEZA_SPRINT_A_RUNTIME_AUTHORITY.json
 
-      - name: Wire Kineza state chain, scale lock, and POV
+      - name: Apply runtime wiring
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          import re
+          python tools/finalize_kineza_sprintA.py
 
-          # ---- PartyBattleConfig.js ----
-          p=Path('src/PartyBattleConfig.js')
-          s=p.read_text()
-          new_attack="""export const KINEZA_ATTACK_SHEET = Object.freeze({
-            key: 'kineza_basic_attack_v2',
-            path: './assets/characters/kineza/animations/kineza_basic_attack_v2.png',
-            frameWidth: 720,
-            frameHeight: 580,
-            frameCount: 12,
-            baselinePx: 525,
-            contentHeightPx: 350,
-            frameDurations: Object.freeze([150,150,150,150,150,150,120,110,125,125,145,160]),
-            markerFrames: Object.freeze({ gather: [1,2,3,4,5], release: [6,7], impact: [8], recover: [9,10,11] }),
-            povFrames: Object.freeze([6,7,8,9])
-          });"""
-          s,n=re.subn(r"export const KINEZA_ATTACK_SHEET = Object\.freeze\(\{.*?\n\}\);",new_attack,s,count=1,flags=re.S)
-          assert n==1, 'KINEZA_ATTACK_SHEET block not found'
-
-          state_block="""
-
-          export const KINEZA_STATE_SHEET = Object.freeze({
-            key: 'kineza_battle_states_v1',
-            path: './assets/characters/kineza/battle/kineza_battle_states_v1.png',
-            frameWidth: 640,
-            frameHeight: 520,
-            frameCount: 8,
-            baselinePx: 474,
-            contentHeightPx: 335,
-            passiveFrame: 0,
-            activeFrame: 1,
-            turnFrames: Object.freeze([2,3,4,5,6,7]),
-            turnDurations: Object.freeze([90,95,110,120,120,155])
-          });
-
-          export const HERO_STATE_SHEETS = Object.freeze({ kineza: KINEZA_STATE_SHEET });
-          """
-          if 'export const KINEZA_STATE_SHEET' not in s:
-              marker='// Keyed lookup so PartyFormationView'
-              assert marker in s
-              s=s.replace(marker,state_block+'\n'+marker,1)
-          p.write_text(s)
-
-          # ---- PartyFormationView.js ----
-          p=Path('src/PartyFormationView.js')
-          s=p.read_text()
-          s=s.replace(
-            "import { PARTY_SLOTS, PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, heightScaleFor } from './PartyBattleConfig.js?v=prismel-live-1';",
-            "import { PARTY_SLOTS, PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, HERO_STATE_SHEETS, heightScaleFor } from './PartyBattleConfig.js?v=kineza-sprintA-1';"
-          )
-          s=s.replace('const sprite = this.scene.add.image(0, 0, texKey).setOrigin(0.5, originY);','const sprite = this.scene.add.sprite(0, 0, texKey).setOrigin(0.5, originY);')
-          s=s.replace('const ghost = this.scene.add.image(0, 0, texKey).setOrigin(0.5, originY).setAlpha(0);','const ghost = this.scene.add.sprite(0, 0, texKey).setOrigin(0.5, originY).setAlpha(0);')
-
-          needle="""      this.actors.set(heroId, {
-        sprite, ghost, ring, slot, hero, poseTex,
-        standbyTex: texKey, standbyOriginY: originY,
-        _snapshot: null, _poseScale: null,
-        attackSprite, attackSheetConfig
-      });"""
-          replacement="""      // Sprint A: Kineza's passive/active/turn-entry authority uses the
-      // same main Sprite as standby art. Sheet coordinates are runtime
-      // frames only; all source extraction was individually PZ-cleared.
-      let stateSheetConfig = null;
-      let stateAnimKey = null;
-      const stateCfg = HERO_STATE_SHEETS[heroId];
-      if (stateCfg && this.scene.textures.exists(stateCfg.key)) {
-        stateSheetConfig = stateCfg;
-        const stateOriginY = stateCfg.baselinePx / stateCfg.frameHeight;
-        sprite.setTexture(stateCfg.key, stateCfg.passiveFrame).setOrigin(0.5, stateOriginY);
-        ghost.setTexture(stateCfg.key, stateCfg.passiveFrame).setOrigin(0.5, stateOriginY);
-        stateAnimKey = `${stateCfg.key}_turn_entry`;
-        if (!this.scene.anims.exists(stateAnimKey)) {
-          const frames = stateCfg.turnFrames.map((frame, i) => ({
-            key: stateCfg.key, frame, duration: stateCfg.turnDurations[i] || 110
-          }));
-          this.scene.anims.create({ key: stateAnimKey, frames, repeat: 0 });
-        }
-      }
-
-      this.actors.set(heroId, {
-        sprite, ghost, ring, slot, hero, poseTex,
-        standbyTex: stateSheetConfig ? stateSheetConfig.key : texKey,
-        standbyOriginY: stateSheetConfig ? stateSheetConfig.baselinePx / stateSheetConfig.frameHeight : originY,
-        _snapshot: null, _poseScale: null,
-        attackSprite, attackSheetConfig,
-        stateSheetConfig, stateAnimKey
-      });"""
-          assert needle in s, 'actors.set block not found'
-          s=s.replace(needle,replacement,1)
-
-          s=s.replace(
-            'const scale = heightScaleFor(heroId, commonScale);',
-            "const scale = actor.stateSheetConfig\n        ? (PARTY_ASSET_LOCK.normalizedHeightPx[heroId] * commonScale) / actor.stateSheetConfig.contentHeightPx\n        : heightScaleFor(heroId, commonScale);"
-          )
-
-          old_setactive="""  setActive(heroId) {
-    this.actors.forEach((actor, id) => {
-      const on = id === heroId;
-      this.scene.tweens.killTweensOf(actor.ring);
-      this.scene.tweens.add({
-        targets: actor.ring,
-        alpha: on ? 1 : 0,
-        duration: 180,
-        ease: 'Sine.easeOut'
-      });
-      // Manually drive strokeAlpha via a plain tween target object, since
-      // Graphics/Shape stroke alpha isn't itself tweenable as `alpha` on
-      // an Ellipse's stroke — setStrokeStyle again each tick is cheapest.
-      actor.ring.setStrokeStyle(2.2, 0xffe8a0, on ? 0.85 : 0);
-    });
-  }"""
-          new_setactive="""  setActive(heroId) {
-    this.actors.forEach((actor, id) => {
-      const on = id === heroId;
-      this.scene.tweens.killTweensOf(actor.ring);
-      this.scene.tweens.add({
-        targets: actor.ring,
-        alpha: on ? 1 : 0,
-        duration: 180,
-        ease: 'Sine.easeOut'
-      });
-      actor.ring.setStrokeStyle(on ? 3.2 : 2.2, on ? 0x9fefff : 0xffe8a0, on ? 0.95 : 0);
-      if (actor.stateSheetConfig && actor.sprite.visible && !actor.sprite.anims?.isPlaying) {
-        actor.sprite.setFrame(on ? actor.stateSheetConfig.activeFrame : actor.stateSheetConfig.passiveFrame);
-      }
-    });
-  }
-
-  hasTurnEntry(heroId) {
-    const actor = this.actors.get(heroId);
-    return !!(actor && actor.stateSheetConfig && actor.stateAnimKey);
-  }
-
-  playTurnEntry(heroId) {
-    const actor = this.actors.get(heroId);
-    if (!actor || !actor.stateSheetConfig || !actor.stateAnimKey) return Promise.resolve();
-    const { sprite, stateSheetConfig } = actor;
-    sprite.setVisible(true).setAlpha(1).setFrame(stateSheetConfig.turnFrames[0]);
-    return new Promise(resolve => {
-      const done = () => {
-        sprite.off('animationcomplete', done);
-        sprite.setFrame(stateSheetConfig.activeFrame);
-        resolve();
-      };
-      sprite.once('animationcomplete', done);
-      sprite.play(actor.stateAnimKey);
-    });
-  }
-
-  setPovFocus(heroId, on) {
-    this.actors.forEach((actor, id) => {
-      if (id === heroId) return;
-      const target = on ? 0.72 : 1;
-      this.scene.tweens.killTweensOf(actor.sprite);
-      this.scene.tweens.add({ targets: actor.sprite, alpha: target, duration: on ? 110 : 160, ease: 'Sine.easeOut' });
-    });
-  }"""
-          assert old_setactive in s, 'setActive block not found'
-          s=s.replace(old_setactive,new_setactive,1)
-
-          old_scale="const scale = (sprite.displayHeight / cfg.frameHeight) * (hero.scaleMul || 1);"
-          new_scale="""const scale = (actor.stateSheetConfig && cfg.contentHeightPx)
-      ? (sprite.scaleY * actor.stateSheetConfig.contentHeightPx) / cfg.contentHeightPx
-      : (sprite.displayHeight / cfg.frameHeight) * (hero.scaleMul || 1);"""
-          assert old_scale in s
-          s=s.replace(old_scale,new_scale,1)
-          p.write_text(s)
-
-          # ---- PartyBattleScene.js ----
-          p=Path('src/PartyBattleScene.js')
-          s=p.read_text()
-          s=s.replace("PartyFormationView from './PartyFormationView.js?v=prismel-live-1';","PartyFormationView from './PartyFormationView.js?v=kineza-sprintA-1';")
-          s=s.replace('PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, projectedDamage, hitChanceFor',
-                      'PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, HERO_STATE_SHEETS, projectedDamage, hitChanceFor')
-          s=s.replace("} from './PartyBattleConfig.js?v=prismel-live-1';","} from './PartyBattleConfig.js?v=kineza-sprintA-1';")
-
-          attack_preload="""    Object.values(HERO_ATTACK_SHEETS).forEach(sheet => {
-      this.load.spritesheet(sheet.key, sheet.path, {
-        frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight
-      });
-    });"""
-          state_preload=attack_preload+"""
-    Object.values(HERO_STATE_SHEETS).forEach(sheet => {
-      this.load.spritesheet(sheet.key, sheet.path, {
-        frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight
-      });
-    });"""
-          assert attack_preload in s
-          s=s.replace(attack_preload,state_preload,1)
-
-          wait_needle="""  _wait(ms) {
-    return new Promise(resolve => this.time.delayedCall(ms, resolve));
-  }"""
-          wait_repl=wait_needle+"""
-
-  _setAttackPov(heroId, on) {
-    if (heroId !== 'kineza') return;
-    if (on && this._attackPovActive) return;
-    if (!on && !this._attackPovActive) return;
-    this._attackPovActive = on;
-    this.cameras.main.zoomTo(on ? 1.045 : 1, on ? 120 : 170, 'Sine.easeOut');
-    this.formation?.setPovFocus(heroId, on);
-  }"""
-          assert wait_needle in s
-          s=s.replace(wait_needle,wait_repl,1)
-
-          old_turn="""    this._highlightHeroCard(actor);
-    this.formation.setActive(actor);
-    this._setBanner(`${hero.name}'s Turn`);
-    this._showCommandRail();
-    this.audio.turnStart(actor);"""
-          new_turn="""    this._highlightHeroCard(actor);
-    this.formation.setActive(actor);
-    this._setBanner(`${hero.name}'s Turn`);
-    this.audio.turnStart(actor);
-    if (this.formation.hasTurnEntry(actor)) {
-      this._turnLock = true;
-      this._hideCommandRail();
-      this.formation.playTurnEntry(actor).then(() => {
-        if (this.activeHeroId !== actor) return;
-        this._turnLock = false;
-        this._showCommandRail();
-      });
-    } else {
-      this._showCommandRail();
-    }"""
-          assert old_turn in s
-          s=s.replace(old_turn,new_turn,1)
-
-          s=s.replace('if (this.formation.hasAttackSheet(hero.id)) {',"if (command === 'Attack' && this.formation.hasAttackSheet(hero.id)) {",1)
-
-          marker_needle="""      await this.formation.playAttackSheet(hero.id, frameIndex => {
-        if (isMarkerFrame(frameIndex, 'gather') && !seen.has('gather')) {"""
-          marker_repl="""      await this.formation.playAttackSheet(hero.id, frameIndex => {
-        const povFrames = cfg.povFrames || [];
-        if (povFrames.length) {
-          if (frameIndex === povFrames[0]) this._setAttackPov(hero.id, true);
-          if (frameIndex > povFrames[povFrames.length - 1]) this._setAttackPov(hero.id, false);
-        }
-        if (isMarkerFrame(frameIndex, 'gather') && !seen.has('gather')) {"""
-          assert marker_needle in s
-          s=s.replace(marker_needle,marker_repl,1)
-
-          end_sheet="""      });
-
-      this._turnLock = false;
-      this._endHeroTurn();
-      return;
-    }"""
-          end_repl="""      });
-      this._setAttackPov(hero.id, false);
-
-      this._turnLock = false;
-      this._endHeroTurn();
-      return;
-    }"""
-          assert end_sheet in s
-          s=s.replace(end_sheet,end_repl,1)
-          p.write_text(s)
-
-          # ---- hybrid cache bust ----
-          p=Path('hybrid-battle-live.html')
-          h=p.read_text()
-          h=h.replace('./src/PartyBattleScene.js?v=prismel-live-1','./src/PartyBattleScene.js?v=kineza-sprintA-1')
-          h=h.replace('./src/PartyBattleConfig.js?v=prismel-live-1','./src/PartyBattleConfig.js?v=kineza-sprintA-1')
-          p.write_text(h)
-          PY
-
-      - name: Record authority and clean transport
+      - name: Syntax and authority checks
         shell: bash
         run: |
           set -euo pipefail
-          cat > assets/characters/kineza/battle/KINEZA_SPRINT_A_AUTHORITY.txt <<'EOF'
-          KINEZA SPRINT A BATTLE AUTHORITY
-          Passive idle: PZ single-frame cleared.
-          Active idle: PZ single-frame cleared.
-          Turn-entry: 6 distinct PZ single-frame-cleared frames.
-          Basic Attack: 12 distinct PZ single-frame-cleared frames.
-          Runtime attack atlas SHA256: bacf816ecfd936c37931ed7ba6c0d0b135d1fbb7f1688ad91a3900ab92a39e14
-          Runtime state atlas SHA256: 426e87770bc8d51135a44b291ca68d380a1118f69e0d092ca85bfbf7ced02975
-          Runtime bundle SHA256: 31133f3c896295905a5d43cd9f377c69d6961d69e0c0e6f3e1db363277d5a4fe
-          State flow: passive -> turn-entry -> active -> attack -> active -> passive.
-          POV: frames 7-10 (0-based 6-9) use restrained camera zoom/focus.
-          EOF
+          node --check src/PartyBattleConfig.js
+          node --check src/PartyFormationView.js
+          node --check src/PartyBattleScene.js
+          grep -q "kineza_basic_attack_v2" src/PartyBattleConfig.js
+          grep -q "KINEZA_STATE_SHEET" src/PartyBattleConfig.js
+          grep -q "playTurnEntry" src/PartyFormationView.js
+          grep -q "_setAttackPov" src/PartyBattleScene.js
+          grep -q "kineza-sprintA-1" hybrid-battle-live.html
+
+      - name: Commit Sprint A integration
+        shell: bash
+        run: |
+          set -euo pipefail
           rm -rf prizim-staging/kineza-sprintA
-
-      - name: Commit Kineza Sprint A live integration
-        shell: bash
-        run: |
-          set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'Live: Kineza Sprint A state chain and 12-frame attack'
+          git commit -m 'Live: Kineza Sprint A battle presentation'
           git push origin HEAD:main
