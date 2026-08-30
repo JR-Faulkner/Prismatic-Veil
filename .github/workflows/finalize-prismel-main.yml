@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'prizim-staging/prismel-main/READY.txt'
+      - 'prizim-staging/prismel-zip/READY.txt'
 
 permissions:
   contents: write
@@ -18,40 +18,63 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Rebuild verified lossless carrier
+      - name: Rebuild and verify exact ZIP carrier
         shell: bash
         run: |
           set -euo pipefail
-          test -f prizim-staging/prismel-main/READY.txt
-          count=$(find prizim-staging/prismel-main -maxdepth 1 -name 'chunk_*.b64' | wc -l)
-          test "$count" -eq 54
-          cat prizim-staging/prismel-main/chunk_*.b64 > /tmp/prismel_atlas.b64
-          test "$(wc -c < /tmp/prismel_atlas.b64)" -eq 2153140
-          base64 -d /tmp/prismel_atlas.b64 > /tmp/prismel_atlas.avif
-          test "$(wc -c < /tmp/prismel_atlas.avif)" -eq 1614854
-          echo '742a3518915a83ffcb320f74ee7fd57a38dd7a2c7fa44efc7d2772e45fe42935  /tmp/prismel_atlas.avif' | sha256sum -c -
+          test -f prizim-staging/prismel-zip/READY.txt
+          count=$(find prizim-staging/prismel-zip -maxdepth 1 -name 'chunk_*.b64' | wc -l)
+          test "$count" -eq 381
+          cat prizim-staging/prismel-zip/chunk_*.b64 > /tmp/prismel_bundle.b64
+          test "$(wc -c < /tmp/prismel_bundle.b64)" -eq 3044556
+          base64 -d /tmp/prismel_bundle.b64 > /tmp/prismel_basic_attack_lossless_bundle.zip
+          test "$(wc -c < /tmp/prismel_basic_attack_lossless_bundle.zip)" -eq 2283417
+          echo 'f8a6b511f20b9c17ddc80e19bb564dc866be038770f0e9c2e50751d20769f5cb  /tmp/prismel_basic_attack_lossless_bundle.zip' | sha256sum -c -
+          rm -rf /tmp/prismel_frames
+          mkdir -p /tmp/prismel_frames
+          unzip -q /tmp/prismel_basic_attack_lossless_bundle.zip -d /tmp/prismel_frames
+          cd /tmp/prismel_frames
+          echo '1747724ff91f7620c6569c6046389e809356892408ef5cb07629f6ef33079582  prismel_attack_01.webp' | sha256sum -c -
+          echo '9ec6ce51719556e1708ae6e2a9acf81fba479ba3e3fc158e3ab84fa8d49cc829  prismel_attack_02.webp' | sha256sum -c -
+          echo '18b4aea7d1cac188a59f5dce81ab75c49dc28762172c1c5b3558562b14559a1d  prismel_attack_03.webp' | sha256sum -c -
+          echo '036bf70ecab40d99f3f493e9ef2823d36190b129a2cb77bc6d385c336a80b00c  prismel_attack_04.webp' | sha256sum -c -
+          echo '75f622917d5a614195e25edbd6edff7b982505f3640c3723363a4dff458aaf33  prismel_attack_05.webp' | sha256sum -c -
+          echo 'f408f2fef48d8a60a07abce29f5523db79ff861115bdf428be52704ab75ae783  prismel_attack_06.webp' | sha256sum -c -
+          echo '07e8482fe52097e559d9bd314f75eb0b04eae1ce74dac0801d0f4e3f25b83b4f  prismel_attack_07.webp' | sha256sum -c -
+          echo '34ca02227d94d78a581c96b8296c07d135dc38cfdfd5a44e092698f2c90fe342  prismel_attack_08.webp' | sha256sum -c -
+          echo '657b124368993834c08594f9dcf1ada905a27d7c7c61b7079dd5a6ef7c9ed6bc  prismel_attack_09.webp' | sha256sum -c -
+          echo '9eddcbbb0dd099adbbd38932abaab45024d1822529031d240dd621ef85419897  prismel_attack_10.webp' | sha256sum -c -
+          echo '740c606565afdfccf8cced0e27c9d4b77f7c1ad23b3ba8a77dddf6e3b35aaeb6  prismel_attack_11.webp' | sha256sum -c -
+          echo 'b603c213786acb23da1406226c69343ebdc88b3b74dc2590b5ee30678cf5e7c4  prismel_attack_12.webp' | sha256sum -c -
 
-      - name: Build pixel-exact 12-frame WebP atlas
+      - name: Build pixel-exact lossless 12-frame atlas
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --quiet pillow pillow-avif-plugin
+          python -m pip install --quiet pillow
           python - <<'PY'
           from pathlib import Path
-          import hashlib
-          import pillow_avif
           from PIL import Image, ImageChops
-          srcp=Path('/tmp/prismel_atlas.avif')
-          assert hashlib.sha256(srcp.read_bytes()).hexdigest()=='742a3518915a83ffcb320f74ee7fd57a38dd7a2c7fa44efc7d2772e45fe42935'
-          src=Image.open(srcp).convert('RGBA')
-          assert src.size==(2880,1740),src.size
+          src=Path('/tmp/prismel_frames')
+          frames=[]
+          for i in range(1,13):
+              im=Image.open(src/f'prismel_attack_{i:02d}.webp').convert('RGBA')
+              assert im.size==(720,580), (i,im.size)
+              frames.append(im)
+          atlas=Image.new('RGBA',(2880,1740),(0,0,0,0))
+          for n,im in enumerate(frames):
+              x=(n%4)*720; y=(n//4)*580
+              atlas.paste(im,(x,y))
           out=Path('assets/characters/prismel/animations/prismel_basic_attack_v1.webp')
           out.parent.mkdir(parents=True,exist_ok=True)
-          src.save(out,'WEBP',lossless=True,quality=100,method=6,exact=True)
+          atlas.save(out,'WEBP',lossless=True,quality=100,method=6,exact=True)
           check=Image.open(out).convert('RGBA')
           assert check.size==(2880,1740)
-          assert ImageChops.difference(src,check).getbbox() is None
-          print('pixel-exact atlas',out.stat().st_size)
+          for n,srcim in enumerate(frames):
+              x=(n%4)*720; y=(n//4)*580
+              cell=check.crop((x,y,x+720,y+580))
+              assert ImageChops.difference(srcim,cell).getbbox() is None, n+1
+          print('verified pixel-exact atlas',out.stat().st_size)
           PY
 
       - name: Wire Prism Projectile Punch into party battle
@@ -83,17 +106,20 @@ jobs:
           cfgp.write_text(cfg)
 
           fp=Path('src/PartyFormationView.js')
-          f=fp.read_text().replace("./PartyBattleConfig.js?v=4","./PartyBattleConfig.js?v=prismel-main-1")
+          f=fp.read_text().replace("./PartyBattleConfig.js?v=4","./PartyBattleConfig.js?v=prismel-live-1")
           fp.write_text(f)
 
           sp=Path('src/PartyBattleScene.js')
-          s=sp.read_text().replace("./PartyFormationView.js?v=8","./PartyFormationView.js?v=prismel-main-1").replace("./PartyBattleConfig.js?v=4","./PartyBattleConfig.js?v=prismel-main-1")
+          s=sp.read_text().replace("./PartyFormationView.js?v=8","./PartyFormationView.js?v=prismel-live-1").replace("./PartyBattleConfig.js?v=4","./PartyBattleConfig.js?v=prismel-live-1")
           sp.write_text(s)
 
           hp=Path('hybrid-battle-live.html')
           h=hp.read_text()
-          h=h.replace("dr={title:'ATTACK',description:'A basic strike. Free and always available.',canUse:alive","dr={title:h.id==='prismel'?\"PRISM’S PROJECTILE PUNCH\":'ATTACK',description:h.id==='prismel'?'A compact prismatic projectile punch. Free, focused, and always available.':'A basic strike. Free and always available.',canUse:alive")
-          h=h.replace("./src/PartyBattleScene.js?v=h27-5","./src/PartyBattleScene.js?v=prismel-main-1").replace("./src/PartyBattleConfig.js?v=h27-5","./src/PartyBattleConfig.js?v=prismel-main-1")
+          old="dr={title:'ATTACK',description:'A basic strike. Free and always available.',canUse:alive"
+          new="dr={title:h.id==='prismel'?\"PRISM’S PROJECTILE PUNCH\":'ATTACK',description:h.id==='prismel'?'A compact prismatic projectile punch. Free, focused, and always available.':'A basic strike. Free and always available.',canUse:alive"
+          if old in h: h=h.replace(old,new)
+          h=h.replace("./src/PartyBattleScene.js?v=h27-5","./src/PartyBattleScene.js?v=prismel-live-1")
+          h=h.replace("./src/PartyBattleConfig.js?v=h27-5","./src/PartyBattleConfig.js?v=prismel-live-1")
           hp.write_text(h)
           PY
 
@@ -103,12 +129,14 @@ jobs:
           cat > assets/characters/prismel/animations/prismel_basic_attack_v1.AUTHORITY.txt <<'EOF'
           PRISMEL BASIC ATTACK: PRISM’S PROJECTILE PUNCH
           Resonart remains REFRACTIVE BURST.
-          Authority: full-resolution lossless 12-frame PZ-cleared sequence.
+          Authority: exact full-resolution 12-frame PZ-cleared lossless WebP sources.
           Atlas: 2880x1740, 4x3 row-major, 720x580 per frame.
           Timing ms: 167,167,167,167,167,167,167,133,133,133,167,167
-          Carrier SHA256: 742a3518915a83ffcb320f74ee7fd57a38dd7a2c7fa44efc7d2772e45fe42935
+          ZIP SHA256: f8a6b511f20b9c17ddc80e19bb564dc866be038770f0e9c2e50751d20769f5cb
           EOF
+          rm -rf prizim-staging/prismel-zip
           rm -rf prizim-staging/prismel-main
+          rm -rf prizim-staging/prismel-avif
 
       - name: Commit live integration to main
         shell: bash
