@@ -1,0 +1,125 @@
+name: Xbox UI Polish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'prizim-staging/xbox-ui-polish/TRIGGER.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply Xbox and large-screen polish
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          # --- Clean title splash with title-only music and console-style gate ---
+          index = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#070817"><title>The Prismatic Veil</title><link rel="apple-touch-icon" sizes="180x180" href="./assets/ui/apple_touch_icon_180.png"><link rel="icon" type="image/png" sizes="192x192" href="./assets/ui/android_chrome_192.png"><link rel="icon" type="image/png" sizes="512x512" href="./assets/ui/android_chrome_512.png"><link rel="manifest" href="./tactical.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="The Prismatic Veil"><style>
+          *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:#070817;color:#f7e8c3;font-family:Georgia,serif}body{background:linear-gradient(#05071622,#0507169c),url("./title_screen.jpg") center/cover no-repeat;touch-action:manipulation;-webkit-user-select:none;user-select:none}.wrap{height:100%;height:100dvh;display:grid;place-items:center;padding:max(20px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}.card{text-align:center;width:min(760px,90vw);padding:clamp(22px,5vh,46px);background:radial-gradient(ellipse at center,#07081778 0,#07081731 52%,transparent 78%);text-shadow:0 3px 18px #000}.eye{font:11px system-ui;letter-spacing:.28em;color:#d7b86d}h1{margin:12px 0 10px;font-size:clamp(38px,7vw,78px);line-height:.9;letter-spacing:.07em;font-weight:500;text-shadow:0 0 28px #9c5eff66,0 4px 20px #000}.tag{color:#e4d7ee;font-style:italic;font-size:clamp(13px,2vw,19px);margin:0 0 28px}.go,.gate{display:inline-block;min-width:min(320px,78vw);padding:14px 22px;border:1px solid #d5b768;border-radius:9px;font-weight:bold;letter-spacing:.12em}.go{background:linear-gradient(#fff0c8,#d7b86e);color:#261a10;text-decoration:none;box-shadow:0 0 24px #8d4dff44,inset 0 1px #fff9}.go:focus,.go.navfocus{outline:none;box-shadow:0 0 0 2px #8ee9ff,0 0 24px #8d4dff99,inset 0 1px #fff9}.gate{color:#f4e3bb;background:#090b22a8;box-shadow:0 0 28px #0008;animation:pulse 1.45s ease-in-out infinite}.go[hidden],.gate[hidden]{display:none}@keyframes pulse{50%{opacity:.58}}@media(orientation:portrait){.card{width:min(94vw,620px)}h1{font-size:clamp(40px,11vw,66px)}}
+          </style></head><body><main class="wrap"><section class="card"><div class="eye">THE VEIL IS OPEN</div><h1>THE<br>PRISMATIC VEIL</h1><p class="tag">Beyond the spectrum lies the unknown.</p><div id="gate" class="gate">PRESS ANY BUTTON</div><a id="enter" class="go" href="./story-scroll.html" hidden>ENTER THE VEIL</a></section></main><audio id="titleMusic" src="./assets/music/veil_clockwork_drift.mp3" preload="auto" loop></audio><script>
+          const gate=document.getElementById('gate'),enter=document.getElementById('enter'),music=document.getElementById('titleMusic');let unlocked=false,lastPad=false;music.volume=.62;
+          async function unlockTitle(){if(unlocked)return;unlocked=true;try{await music.play()}catch(e){}gate.hidden=true;enter.hidden=false;enter.focus({preventScroll:true});enter.classList.add('navfocus')}
+          addEventListener('pointerdown',unlockTitle,{once:true});addEventListener('keydown',e=>{if(!unlocked){e.preventDefault();unlockTitle();return}if((e.key==='Enter'||e.key===' ')&&document.activeElement===enter){e.preventDefault();location.href=enter.href}});
+          function pads(){const p=navigator.getGamepads?.()[0];const any=!!p&&p.buttons.some(b=>b.pressed);if(any&&!lastPad)unlockTitle();lastPad=any;requestAnimationFrame(pads)}pads();
+          </script></body></html>'''
+          Path('index.html').write_text(index)
+
+          # --- Hybrid HUD safe-zone + keyboard/controller navigation ---
+          hp = Path('hybrid-battle-live.html')
+          h = hp.read_text()
+          old = "#drawer{position:absolute;right:max(12px,1.3vw);bottom:max(12px,3.8vh);width:clamp(330px,34vw,570px);min-height:clamp(126px,31vh,205px);padding:12px 14px;display:none}"
+          new = "#drawer{position:absolute;left:max(12px,1.3vw);right:auto;bottom:max(12px,4.5vh);width:clamp(220px,21vw,300px);min-height:clamp(118px,27vh,178px);padding:11px 12px;display:none;overflow:hidden}"
+          assert old in h, 'drawer CSS authority changed'
+          h = h.replace(old, new, 1)
+          h = h.replace(".dgrid{display:grid;grid-template-columns:1fr 42%;gap:12px;margin-top:7px}", ".dgrid{display:grid;grid-template-columns:1fr;gap:7px;margin-top:6px}", 1)
+          focus_css = ".navfocus,.cmd:focus-visible,.actions button:focus-visible,.result-actions button:focus-visible,.result-actions a:focus-visible,#home:focus-visible{outline:none!important;box-shadow:inset 5px 0 0 #8d4dff,inset 0 0 0 2px #d7b66c,0 0 18px #76ddff99!important;transform:translateX(3px)}.cmd.navfocus{background:#f7e8c8}.actions button,.result-actions button,.result-actions a,#home{transition:box-shadow .12s ease,transform .12s ease}@media(min-width:1000px) and (orientation:landscape){#party{left:27%;width:38%}#drawer{width:clamp(230px,19vw,300px)}#enemy{width:clamp(250px,21vw,350px)}}\n"
+          marker = "@media(max-height:370px)"
+          assert marker in h
+          h = h.replace(marker, focus_css + marker, 1)
+          paint_old = "if(!s.drawer){drawer.style.display='none';use.disabled=false}else{drawer.style.display='block';dtitle.textContent=s.drawer.title;ddesc.textContent=s.drawer.description;dstats.innerHTML=s.drawer.stats.map(x=>'<div><dt>'+x[0]+'</dt><dd>'+x[1]+'</dd></div>').join('');use.disabled=s.drawer.canUse===false}"
+          paint_new = "if(!s.drawer){drawer.style.display='none';commands.style.visibility='visible';use.disabled=false}else{drawer.style.display='block';commands.style.visibility='hidden';dtitle.textContent=s.drawer.title;ddesc.textContent=s.drawer.description;dstats.innerHTML=s.drawer.stats.map(x=>'<div><dt>'+x[0]+'</dt><dd>'+x[1]+'</dd></div>').join('');use.disabled=s.drawer.canUse===false}"
+          assert paint_old in h, 'paint drawer block changed'
+          h = h.replace(paint_old, paint_new, 1)
+          nav_marker = "const orient=()=>rotate.hidden=innerWidth>=innerHeight;"
+          assert nav_marker in h
+          nav_js = r'''let navIndex=0,navStamp=0,lastPadButtons=[];
+          function navTargets(){if(!result.hidden)return[...result.querySelectorAll('button,a')].filter(x=>!x.disabled);if(drawer.style.display==='block')return[use,back].filter(x=>!x.disabled);return[...commands.querySelectorAll('.cmd')].filter(x=>!x.disabled&&commands.style.visibility!=='hidden'&&!commands.classList.contains('off'))}
+          function navFocus(index=navIndex){const t=navTargets();document.querySelectorAll('.navfocus').forEach(x=>x.classList.remove('navfocus'));if(!t.length)return;navIndex=(index+t.length)%t.length;const el=t[navIndex];el.classList.add('navfocus');try{el.focus({preventScroll:true})}catch(e){el.focus()}}
+          function navMove(delta){navFocus(navIndex+delta)}
+          function navConfirm(){const t=navTargets();if(!t.length)return;navFocus(navIndex);t[navIndex]?.click()}
+          function navBack(){if(drawer.style.display==='block'&&!back.disabled)back.click();else if(!result.hidden){const menu=result.querySelector('a');if(menu)menu.click()}}
+          addEventListener('keydown',e=>{if(['ArrowUp','ArrowLeft','ArrowDown','ArrowRight','Enter',' ','Escape','Backspace'].includes(e.key))e.preventDefault();if(e.key==='ArrowUp'||e.key==='ArrowLeft')navMove(-1);else if(e.key==='ArrowDown'||e.key==='ArrowRight')navMove(1);else if(e.key==='Enter'||e.key===' ')navConfirm();else if(e.key==='Escape'||e.key==='Backspace')navBack()});
+          function gamepadNav(){const gp=navigator.getGamepads?.()[0];if(gp){const now=performance.now(),pressed=i=>!!gp.buttons[i]?.pressed,edge=i=>pressed(i)&&!lastPadButtons[i];const up=edge(12)||(gp.axes[1]||0)<-.62,down=edge(13)||(gp.axes[1]||0)>.62,left=edge(14)||(gp.axes[0]||0)<-.62,right=edge(15)||(gp.axes[0]||0)>.62;if(now-navStamp>175){if(up||left){navMove(-1);navStamp=now}else if(down||right){navMove(1);navStamp=now}else if(edge(0)){navConfirm();navStamp=now}else if(edge(1)){navBack();navStamp=now}}lastPadButtons=gp.buttons.map(b=>b.pressed)}requestAnimationFrame(gamepadNav)}gamepadNav();
+          addEventListener('gamepadconnected',()=>navFocus(0));'''
+          h = h.replace(nav_marker, nav_js + "\n" + nav_marker, 1)
+          h = h.replace("./src/PartyBattleScene.js?v=kineza-sprintA-1", "./src/PartyBattleScene.js?v=xbox-ui-1")
+          h = h.replace("./src/PartyBattleConfig.js?v=kineza-sprintA-1", "./src/PartyBattleConfig.js?v=xbox-ui-1")
+          hp.write_text(h)
+
+          # --- Wraith: scale responsively for large landscape without bloating phone portrait ---
+          wp = Path('src/EnemyWraithView.js')
+          w = wp.read_text()
+          old_layout = """    const landscape = width > height;\n    const compact = width < 560 || height < 520;\n\n    if (landscape) {\n      this.baseX = Math.round(width * 0.73);\n      this.baseY = Math.round(height * 0.88);\n    } else {\n      this.baseX = Math.round(width * (compact ? 0.78 : 0.79));\n      this.baseY = Math.round(height - (compact ? 310 : 286));\n    }\n    const targetHeight = landscape\n      ? Math.min(220, height * 0.58)\n      : Math.min(compact ? 250 : 310, height * (compact ? 0.31 : 0.39));"""
+          new_layout = """    const landscape = width > height;\n    const compact = width < 560 || height < 520;\n    const largeLandscape = landscape && width >= 1100 && height >= 600;\n\n    if (landscape) {\n      this.baseX = Math.round(width * (largeLandscape ? 0.76 : 0.74));\n      this.baseY = Math.round(height * 0.88);\n    } else {\n      this.baseX = Math.round(width * (compact ? 0.78 : 0.79));\n      this.baseY = Math.round(height - (compact ? 310 : 286));\n    }\n    const targetHeight = landscape\n      ? (largeLandscape ? Math.min(285, height * 0.66) : Math.min(250, height * 0.62))\n      : Math.min(compact ? 250 : 310, height * (compact ? 0.31 : 0.39));"""
+          assert old_layout in w, 'Wraith layout authority changed'
+          w = w.replace(old_layout, new_layout, 1)
+          wp.write_text(w)
+
+          # --- Battle mix: stronger SFX bus and brief music duck under release/impact ---
+          ap = Path('src/PartyBattleAudioController.js')
+          a = ap.read_text()
+          a = a.replace("const DEFAULT_PREFS = Object.freeze({ master: 0.9, music: 0.6, sfx: 0.85, ui: 0.7, muted: false });", "const DEFAULT_PREFS = Object.freeze({ master: 0.9, music: 0.6, sfx: 0.95, ui: 0.72, muted: false });\nconst SFX_MIX_GAIN = 1.28;", 1)
+          old_eff = """    const busVol = this.prefs[bus] != null ? this.prefs[bus] : 1;\n    return Phaser.Math.Clamp(this.prefs.master * busVol * base, 0, 1);"""
+          new_eff = """    const busVol = this.prefs[bus] != null ? this.prefs[bus] : 1;\n    const mixGain = bus === 'sfx' ? SFX_MIX_GAIN : 1;\n    return Phaser.Math.Clamp(this.prefs.master * busVol * base * mixGain, 0, 1);"""
+          assert old_eff in a
+          a = a.replace(old_eff, new_eff, 1)
+          apply_marker = """  _applyMusicVolume() {\n    if (this.music) this.music.setVolume(this._effectiveVolume('music'));\n  }"""
+          duck_block = apply_marker + """\n\n  _duckMusic(mult = 0.82, holdMs = 240) {\n    if (!this.music || !this.music.isPlaying) return;\n    this._duckToken = (this._duckToken || 0) + 1;\n    const token = this._duckToken;\n    const target = this._effectiveVolume('music');\n    this.scene.tweens.killTweensOf(this.music);\n    this.scene.tweens.add({ targets: this.music, volume: target * mult, duration: 55, ease: 'Sine.easeOut' });\n    this.scene.time.delayedCall(holdMs, () => {\n      if (token !== this._duckToken || !this.music) return;\n      this.scene.tweens.add({ targets: this.music, volume: target, duration: 180, ease: 'Sine.easeIn' });\n    });\n  }"""
+          assert apply_marker in a
+          a = a.replace(apply_marker, duck_block, 1)
+          a = a.replace("attackRelease(characterId) { this._play(`attackRelease:${characterId}`); }", "attackRelease(characterId) { this._duckMusic(0.82, 210); this._play(`attackRelease:${characterId}`); }", 1)
+          a = a.replace("attackImpact(characterId) { this._play(`attackImpact:${characterId}`); }", "attackImpact(characterId) { this._duckMusic(0.68, 320); this._play(`attackImpact:${characterId}`); }", 1)
+          ap.write_text(a)
+
+          # Cache-bust the two runtime modules the scene imports directly.
+          sp = Path('src/PartyBattleScene.js')
+          s = sp.read_text().replace("./EnemyWraithView.js?v=40", "./EnemyWraithView.js?v=xbox-ui-1").replace("./EnemyViewFactory.js?v=40", "./EnemyViewFactory.js?v=xbox-ui-1").replace("./PartyBattleAudioController.js?v=3", "./PartyBattleAudioController.js?v=xbox-ui-1")
+          sp.write_text(s)
+          PY
+
+      - name: Syntax and contract checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/EnemyWraithView.js
+          node --check src/PartyBattleAudioController.js
+          node --check src/PartyBattleScene.js
+          grep -q 'PRESS ANY BUTTON' index.html
+          grep -q 'gamepadconnected' hybrid-battle-live.html
+          grep -q "commands.style.visibility='hidden'" hybrid-battle-live.html
+          grep -q 'largeLandscape' src/EnemyWraithView.js
+          grep -q 'SFX_MIX_GAIN = 1.28' src/PartyBattleAudioController.js
+
+      - name: Commit Xbox UI polish
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf prizim-staging/xbox-ui-polish
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Polish Xbox HUD navigation and audio mix'
+          git push origin HEAD:main
