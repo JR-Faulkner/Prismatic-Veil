@@ -1,0 +1,107 @@
+name: Finalize Prismel Live
+
+on:
+  push:
+    branches: [prismel-live-repair]
+    paths:
+      - 'assets/characters/prismel/live_hc/attack/prismel_attack_12.webp'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor == 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build exact lossless 4x3 atlas
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageChops
+
+          root = Path('assets/characters/prismel/live_hc/attack')
+          src = [root / f'prismel_attack_{i:02d}.webp' for i in range(1, 13)]
+          images = [Image.open(p).convert('RGBA') for p in src]
+          assert all(im.size == (720,580) for im in images)
+
+          atlas = Image.new('RGBA', (2880,1740), (0,0,0,0))
+          for i, im in enumerate(images):
+              x = (i % 4) * 720
+              y = (i // 4) * 580
+              atlas.alpha_composite(im, (x,y))
+          out = root / 'prismel_basic_attack_v1.webp'
+          atlas.save(out, 'WEBP', lossless=True, quality=100, method=6)
+
+          check = Image.open(out).convert('RGBA')
+          assert check.size == (2880,1740)
+          for i, src_im in enumerate(images):
+              x = (i % 4) * 720
+              y = (i // 4) * 580
+              cell = check.crop((x,y,x+720,y+580))
+              assert ImageChops.difference(cell, src_im).getbbox() is None, i+1
+          print('Atlas verified pixel-exact for all 12 frames.')
+          PY
+
+      - name: Wire Prismel into existing sheet runtime and live UI
+        shell: python
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          cfgp = Path('src/PartyBattleConfig.js')
+          cfg = cfgp.read_text()
+          marker = "export const HERO_ATTACK_SHEETS = Object.freeze({ kineza: KINEZA_ATTACK_SHEET });"
+          prismel = """export const PRISMEL_ATTACK_SHEET = Object.freeze({
+            key: 'prismel_basic_attack_v1',
+            path: './assets/characters/prismel/live_hc/attack/prismel_basic_attack_v1.webp',
+            frameWidth: 720,
+            frameHeight: 580,
+            frameCount: 12,
+            baselinePx: 520,
+            frameDurations: Object.freeze([167,167,167,167,167,167,167,133,133,133,167,167]),
+            markerFrames: Object.freeze({ gather: [1,2,3,4,5], release: [6,7], impact: [8], recover: [9,10,11] })
+          });
+
+          export const HERO_ATTACK_SHEETS = Object.freeze({
+            kineza: KINEZA_ATTACK_SHEET,
+            prismel: PRISMEL_ATTACK_SHEET
+          });"""
+          if "PRISMEL_ATTACK_SHEET" not in cfg:
+              assert marker in cfg
+              cfg = cfg.replace(marker, prismel)
+              cfgp.write_text(cfg)
+
+          htmlp = Path('hybrid-battle-live.html')
+          html = htmlp.read_text()
+          old = "dr={title:'ATTACK',description:'A basic strike. Free and always available.',canUse:alive,stats:"
+          new = "dr={title:(h.id==='prismel'?\"PRISM’S PROJECTILE PUNCH\":'ATTACK'),description:(h.id==='prismel'?'A compact prismatic projectile punch. Free, focused, and always available.':'A basic strike. Free and always available.'),canUse:alive,stats:"
+          if old in html:
+              html = html.replace(old, new)
+          html = html.replace("PartyBattleScene.js?v=h27-5", "PartyBattleScene.js?v=prismel-live-1")
+          html = html.replace("PartyBattleConfig.js?v=h27-5", "PartyBattleConfig.js?v=prismel-live-1")
+          htmlp.write_text(html)
+
+          scene = Path('src/PartyBattleScene.js')
+          s = scene.read_text()
+          s = s.replace("PartyFormationView.js?v=8", "PartyFormationView.js?v=prismel-live-1")
+          s = s.replace("PartyBattleConfig.js?v=4", "PartyBattleConfig.js?v=prismel-live-1")
+          scene.write_text(s)
+
+          form = Path('src/PartyFormationView.js')
+          f = form.read_text().replace("PartyBattleConfig.js?v=4", "PartyBattleConfig.js?v=prismel-live-1")
+          form.write_text(f)
+          PY
+
+      - name: Commit final live-ready Prismel integration
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/characters/prismel/live_hc/attack/prismel_basic_attack_v1.webp src/PartyBattleConfig.js src/PartyBattleScene.js src/PartyFormationView.js hybrid-battle-live.html
+          git commit -m 'Wire Prismel Projectile Punch into party battle' || exit 0
+          git push origin HEAD:prismel-live-repair
