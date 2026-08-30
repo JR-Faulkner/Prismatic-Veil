@@ -15,11 +15,11 @@
 import { HEROES } from './BattleConfig.js?v=44';
 import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=40';
 import { createEnemyView } from './EnemyViewFactory.js?v=40';
-import PartyFormationView from './PartyFormationView.js?v=8';
+import PartyFormationView from './PartyFormationView.js?v=prismel-live-1';
 import {
   partyRoster, BASE_COMMANDS, RESONART_RP_COST, ITEM_DEFS,
   PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, projectedDamage, hitChanceFor
-} from './PartyBattleConfig.js?v=4';
+} from './PartyBattleConfig.js?v=prismel-live-1';
 import { GUI_TEXTURES, NINESLICE_INSETS, preloadGuiKit } from './PartyBattleGuiKit.js';
 import PartyBattleAudioController from './PartyBattleAudioController.js?v=3';
 

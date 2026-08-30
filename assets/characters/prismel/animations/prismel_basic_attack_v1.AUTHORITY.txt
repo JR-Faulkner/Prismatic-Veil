@@ -1,0 +1,6 @@
+PRISMEL BASIC ATTACK: PRISM’S PROJECTILE PUNCH
+Resonart remains REFRACTIVE BURST.
+Authority: exact full-resolution 12-frame PZ-cleared lossless WebP sources.
+Atlas: 2880x1740, 4x3 row-major, 720x580 per frame.
+Timing ms: 167,167,167,167,167,167,167,133,133,133,167,167
+ZIP SHA256: f8a6b511f20b9c17ddc80e19bb564dc866be038770f0e9c2e50751d20769f5cb

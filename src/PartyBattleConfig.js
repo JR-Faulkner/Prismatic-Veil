@@ -138,7 +138,21 @@ export const KINEZA_ATTACK_SHEET = Object.freeze({
 // Keyed lookup so PartyFormationView's sheet-attack support stays generic
 // (checks this map, never a hardcoded hero id) — adding a second hero's
 // current-authority sheet later is a data entry here, not a code branch.
-export const HERO_ATTACK_SHEETS = Object.freeze({ kineza: KINEZA_ATTACK_SHEET });
+export const PRISMEL_ATTACK_SHEET = Object.freeze({
+  key: 'prismel_basic_attack_v1',
+  path: './assets/characters/prismel/animations/prismel_basic_attack_v1.webp',
+  frameWidth: 720,
+  frameHeight: 580,
+  frameCount: 12,
+  baselinePx: 520,
+  frameDurations: Object.freeze([167,167,167,167,167,167,167,133,133,133,167,167]),
+  markerFrames: Object.freeze({ gather: [1,2,3,4,5], release: [6,7], impact: [8], recover: [9,10,11] })
+});
+
+export const HERO_ATTACK_SHEETS = Object.freeze({
+  kineza: KINEZA_ATTACK_SHEET,
+  prismel: PRISMEL_ATTACK_SHEET
+});
 
 export const BASE_COMMANDS = Object.freeze(['Attack', 'Resonart', 'Guard', 'Item']);
 
