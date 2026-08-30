@@ -1,0 +1,18 @@
+name: Inspect PriZim Pack
+on:
+  push:
+    branches: [prismel-live-repair]
+    paths: ['.github/workflows/inspect-prizim-pack.yml']
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: List Prismel candidates in existing ingest pack
+        run: |
+          echo '=== ZIP INFO ==='
+          ls -lh prizim-inbox/PriZim_Ingest_Pack_v0_1.zip
+          echo '=== PRISMEL / ATTACK CANDIDATES ==='
+          unzip -l prizim-inbox/PriZim_Ingest_Pack_v0_1.zip | grep -Ei 'prismel|attack|sprite|frame|basic' | head -n 500 || true
+          echo '=== FULL TOP-LEVEL LIST ==='
+          unzip -l prizim-inbox/PriZim_Ingest_Pack_v0_1.zip | head -n 300
