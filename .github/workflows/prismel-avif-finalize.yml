@@ -1,0 +1,140 @@
+name: Finalize Prismel lossless atlas transport
+
+on:
+  push:
+    branches: [prismel-live-repair]
+    paths:
+      - 'prizim-staging/prismel-avif/READY.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: prismel-live-repair
+          fetch-depth: 0
+
+      - name: Rebuild and verify canonical lossless AVIF carrier
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f prizim-staging/prismel-avif/READY.txt
+          count=$(find prizim-staging/prismel-avif -maxdepth 1 -name 'chunk_*.b64' | wc -l)
+          test "$count" -eq 108
+          cat prizim-staging/prismel-avif/chunk_*.b64 > /tmp/prismel_atlas.b64
+          chars=$(wc -c < /tmp/prismel_atlas.b64)
+          test "$chars" -eq 2153140
+          base64 -d /tmp/prismel_atlas.b64 > /tmp/prismel_atlas.avif
+          bytes=$(wc -c < /tmp/prismel_atlas.avif)
+          test "$bytes" -eq 1614854
+          echo '742a3518915a83ffcb320f74ee7fd57a38dd7a2c7fa44efc7d2772e45fe42935  /tmp/prismel_atlas.avif' | sha256sum -c -
+
+      - name: Decode carrier and build pixel-exact lossless WebP atlas
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet pillow pillow-avif-plugin
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import pillow_avif
+          from PIL import Image, ImageChops
+
+          avif = Path('/tmp/prismel_atlas.avif')
+          expected = '742a3518915a83ffcb320f74ee7fd57a38dd7a2c7fa44efc7d2772e45fe42935'
+          assert hashlib.sha256(avif.read_bytes()).hexdigest() == expected
+          src = Image.open(avif).convert('RGBA')
+          assert src.size == (2880, 1740), src.size
+
+          out = Path('assets/characters/prismel/animations/prismel_basic_attack_v1.webp')
+          out.parent.mkdir(parents=True, exist_ok=True)
+          src.save(out, format='WEBP', lossless=True, quality=100, method=6, exact=True)
+          check = Image.open(out).convert('RGBA')
+          assert check.size == src.size
+          assert ImageChops.difference(src, check).getbbox() is None, 'WebP output was not pixel exact'
+          print(f'verified pixel-exact atlas: {out} ({out.stat().st_size} bytes)')
+          PY
+
+      - name: Wire Prismel attack authority and cache bust modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          cfg_path = Path('src/PartyBattleConfig.js')
+          cfg = cfg_path.read_text()
+          if 'export const PRISMEL_ATTACK_SHEET' not in cfg:
+              needle = "export const HERO_ATTACK_SHEETS = Object.freeze({ kineza: KINEZA_ATTACK_SHEET });"
+              assert needle in cfg
+              block = """export const PRISMEL_ATTACK_SHEET = Object.freeze({
+            key: 'prismel_basic_attack_v1',
+            path: './assets/characters/prismel/animations/prismel_basic_attack_v1.webp',
+            frameWidth: 720,
+            frameHeight: 580,
+            frameCount: 12,
+            baselinePx: 520,
+            frameDurations: Object.freeze([167,167,167,167,167,167,167,133,133,133,167,167]),
+            markerFrames: Object.freeze({ gather: [1,2,3,4,5], release: [6,7], impact: [8], recover: [9,10,11] })
+          });
+
+          export const HERO_ATTACK_SHEETS = Object.freeze({
+            kineza: KINEZA_ATTACK_SHEET,
+            prismel: PRISMEL_ATTACK_SHEET
+          });"""
+              cfg = cfg.replace(needle, block)
+          cfg_path.write_text(cfg)
+
+          form_path = Path('src/PartyFormationView.js')
+          form = form_path.read_text().replace("./PartyBattleConfig.js?v=4", "./PartyBattleConfig.js?v=prismel1")
+          form_path.write_text(form)
+
+          scene_path = Path('src/PartyBattleScene.js')
+          scene = scene_path.read_text()
+          scene = scene.replace("./PartyFormationView.js?v=8", "./PartyFormationView.js?v=prismel1")
+          scene = scene.replace("./PartyBattleConfig.js?v=4", "./PartyBattleConfig.js?v=prismel1")
+          scene_path.write_text(scene)
+
+          html_path = Path('hybrid-battle-live.html')
+          html = html_path.read_text()
+          old = "dr={title:'ATTACK',description:'A basic strike. Free and always available.',canUse:alive"
+          new = "dr={title:h.id==='prismel'?'PRISM’S PROJECTILE PUNCH':'ATTACK',description:h.id==='prismel'?'Prismel drives a charged prismatic projectile through the target. Free and always available.':'A basic strike. Free and always available.',canUse:alive"
+          assert old in html or "PRISM’S PROJECTILE PUNCH" in html
+          html = html.replace(old, new)
+          html = html.replace("./src/PartyBattleScene.js?v=h27-5", "./src/PartyBattleScene.js?v=h27-prismel1")
+          html = html.replace("./src/PartyBattleConfig.js?v=h27-5", "./src/PartyBattleConfig.js?v=h27-prismel1")
+          html_path.write_text(html)
+          PY
+
+      - name: Record authority and clean transport staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/characters/prismel/animations
+          cat > assets/characters/prismel/animations/prismel_basic_attack_v1.AUTHORITY.txt <<'EOF'
+          Prismel Basic Attack authority: PRISM’S PROJECTILE PUNCH
+          Source transport: pixel-exact lossless AVIF carrier
+          Carrier SHA256: 742a3518915a83ffcb320f74ee7fd57a38dd7a2c7fa44efc7d2772e45fe42935
+          Canonical atlas geometry: 2880x1740, 4x3 row-major, 720x580 per frame
+          Frame count: 12
+          Timing ms: 167,167,167,167,167,167,167,133,133,133,167,167
+          Markers: gather 1-5; release 6-7; impact 8; recover 9-11 (0-based)
+          Resonart remains REFRACTIVE BURST.
+          EOF
+          rm -rf prizim-staging/prismel-avif
+
+      - name: Commit verified live integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m 'Finalize Prismel full-resolution lossless basic attack'
+          git push origin HEAD:prismel-live-repair
