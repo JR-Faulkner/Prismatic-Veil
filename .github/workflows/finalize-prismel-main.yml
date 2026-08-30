@@ -77,7 +77,7 @@ jobs:
           PY
 
       - name: Wire Prism Projectile Punch into party battle
-        shell: python
+        shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
