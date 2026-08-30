@@ -1,0 +1,52 @@
+name: Prismel Live Repair
+
+on:
+  push:
+    branches: [prismel-live-repair]
+    paths:
+      - 'prizim-staging/prismel-live-final/**'
+      - '.github/workflows/prismel-live-repair.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild verified lossless Prismel frames when transfer is complete
+        shell: python
+        run: |
+          from pathlib import Path
+          import base64, hashlib, json, sys
+          root = Path('prizim-staging/prismel-live-final')
+          manifest = json.loads((root/'manifest.json').read_text())
+          missing = []
+          for f in manifest['frames']:
+              for i in range(f['chunks']):
+                  p = root / f"f{f['frame']:02d}_{i:03d}.b64"
+                  if not p.exists(): missing.append(str(p))
+          if missing:
+              print(f'Transfer incomplete: {len(missing)} chunks remain.')
+              sys.exit(0)
+          out = Path('assets/characters/prismel/live_hc/attack')
+          out.mkdir(parents=True, exist_ok=True)
+          for f in manifest['frames']:
+              text = ''.join((root/f"f{f['frame']:02d}_{i:03d}.b64").read_text().strip() for i in range(f['chunks']))
+              raw = base64.b64decode(text, validate=True)
+              assert len(raw) == f['bytes'], (f['frame'], len(raw), f['bytes'])
+              digest = hashlib.sha256(raw).hexdigest()
+              assert digest == f['sha256'], (f['frame'], digest, f['sha256'])
+              (out/f['filename']).write_bytes(raw)
+              print(f"verified {f['filename']} {len(raw)} bytes {digest}")
+      - name: Commit verified binary frames
+        run: |
+          if [ ! -f assets/characters/prismel/live_hc/attack/prismel_attack_12.webp ]; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/characters/prismel/live_hc/attack
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Add verified Prismel lossless attack frames'
+          git push origin HEAD:prismel-live-repair
