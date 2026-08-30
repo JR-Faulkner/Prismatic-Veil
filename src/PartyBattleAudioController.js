@@ -17,7 +17,8 @@ import { AUDIO_EVENT_MAP, AUDIO_LAYER_MAP, MUSIC_ASSET } from './PartyBattleAudi
 import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=42';
 
 const PREFS_KEY = 'pv_party_battle_audio_prefs_v1';
-const DEFAULT_PREFS = Object.freeze({ master: 0.9, music: 0.6, sfx: 0.85, ui: 0.7, muted: false });
+const DEFAULT_PREFS = Object.freeze({ master: 0.9, music: 0.6, sfx: 0.95, ui: 0.72, muted: false });
+const SFX_MIX_GAIN = 1.28;
 
 function loadPrefs() {
   try {
@@ -112,11 +113,25 @@ export default class PartyBattleAudioController {
   _effectiveVolume(bus, base = 1) {
     if (this.prefs.muted) return 0;
     const busVol = this.prefs[bus] != null ? this.prefs[bus] : 1;
-    return Phaser.Math.Clamp(this.prefs.master * busVol * base, 0, 1);
+    const mixGain = bus === 'sfx' ? SFX_MIX_GAIN : 1;
+    return Phaser.Math.Clamp(this.prefs.master * busVol * base * mixGain, 0, 1);
   }
 
   _applyMusicVolume() {
     if (this.music) this.music.setVolume(this._effectiveVolume('music'));
+  }
+
+  _duckMusic(mult = 0.82, holdMs = 240) {
+    if (!this.music || !this.music.isPlaying) return;
+    this._duckToken = (this._duckToken || 0) + 1;
+    const token = this._duckToken;
+    const target = this._effectiveVolume('music');
+    this.scene.tweens.killTweensOf(this.music);
+    this.scene.tweens.add({ targets: this.music, volume: target * mult, duration: 55, ease: 'Sine.easeOut' });
+    this.scene.time.delayedCall(holdMs, () => {
+      if (token !== this._duckToken || !this.music) return;
+      this.scene.tweens.add({ targets: this.music, volume: target, duration: 180, ease: 'Sine.easeIn' });
+    });
   }
 
   // --- SFX playback (shared by every UI/character event below) -----------
@@ -209,8 +224,8 @@ export default class PartyBattleAudioController {
   turnStart(characterId) { this._play(`turnStart:${characterId}`); }
   targetAcquire() { this._play('targetAcquire'); }
   attackGather(characterId) { this._play(`attackGather:${characterId}`); }
-  attackRelease(characterId) { this._play(`attackRelease:${characterId}`); }
-  attackImpact(characterId) { this._play(`attackImpact:${characterId}`); }
+  attackRelease(characterId) { this._duckMusic(0.82, 210); this._play(`attackRelease:${characterId}`); }
+  attackImpact(characterId) { this._duckMusic(0.68, 320); this._play(`attackImpact:${characterId}`); }
   // No dedicated Guard/Item SFX exist anywhere in this repo — see
   // PartyBattleAudioConfig.js's own header for why these stay silent
   // rather than borrowing a hero's attack cue or a legacy bleep.

@@ -13,15 +13,15 @@
 // every HUD element goes through uiAdd(), or it renders on both cameras
 // doubled/unzoomed.
 import { HEROES } from './BattleConfig.js?v=44';
-import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=40';
-import { createEnemyView } from './EnemyViewFactory.js?v=40';
+import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=xbox-ui-1';
+import { createEnemyView } from './EnemyViewFactory.js?v=xbox-ui-1';
 import PartyFormationView from './PartyFormationView.js?v=kineza-sprintA-1';
 import {
   partyRoster, BASE_COMMANDS, RESONART_RP_COST, ITEM_DEFS,
   PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, HERO_STATE_SHEETS, projectedDamage, hitChanceFor
 } from './PartyBattleConfig.js?v=kineza-sprintA-1';
 import { GUI_TEXTURES, NINESLICE_INSETS, preloadGuiKit } from './PartyBattleGuiKit.js';
-import PartyBattleAudioController from './PartyBattleAudioController.js?v=3';
+import PartyBattleAudioController from './PartyBattleAudioController.js?v=xbox-ui-1';
 
 const ENEMY_DEFAULT = Object.freeze({
   id: 'wraith', viewId: 'wraith', name: 'Veil Wraith',

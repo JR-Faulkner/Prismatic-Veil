@@ -52,16 +52,17 @@ export default class EnemyWraithView {
     const height = this.scene.scale.height;
     const landscape = width > height;
     const compact = width < 560 || height < 520;
+    const largeLandscape = landscape && width >= 1100 && height >= 600;
 
     if (landscape) {
-      this.baseX = Math.round(width * 0.73);
+      this.baseX = Math.round(width * (largeLandscape ? 0.76 : 0.74));
       this.baseY = Math.round(height * 0.88);
     } else {
       this.baseX = Math.round(width * (compact ? 0.78 : 0.79));
       this.baseY = Math.round(height - (compact ? 310 : 286));
     }
     const targetHeight = landscape
-      ? Math.min(220, height * 0.58)
+      ? (largeLandscape ? Math.min(285, height * 0.66) : Math.min(250, height * 0.62))
       : Math.min(compact ? 250 : 310, height * (compact ? 0.31 : 0.39));
 
     // The v34 art is tall and narrow, not square like the old locked
