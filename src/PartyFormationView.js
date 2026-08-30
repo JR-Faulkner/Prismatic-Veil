@@ -6,7 +6,7 @@
 // hits the "fading both layers at once" trap documented in CLAUDE.md) and
 // registers through scene.worldAdd() — never scene.uiLayer — so the
 // battle camera can push in without dragging the party off their marks.
-import { PARTY_SLOTS, PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, heightScaleFor } from './PartyBattleConfig.js?v=prismel-live-1';
+import { PARTY_SLOTS, PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, HERO_STATE_SHEETS, heightScaleFor } from './PartyBattleConfig.js?v=kineza-sprintA-1';
 
 // Formation x-fractions (of screen width) and relative depth-in-frame —
 // back is furthest from the enemy/camera, front is nearest. Landscape and
@@ -59,8 +59,8 @@ export default class PartyFormationView {
       // a blind canvas-bottom anchor, so all three appear to stand on
       // the same ground line despite differently-padded source canvases.
       const originY = tex.contentBottomFrac;
-      const sprite = this.scene.add.image(0, 0, texKey).setOrigin(0.5, originY);
-      const ghost = this.scene.add.image(0, 0, texKey).setOrigin(0.5, originY).setAlpha(0);
+      const sprite = this.scene.add.sprite(0, 0, texKey).setOrigin(0.5, originY);
+      const ghost = this.scene.add.sprite(0, 0, texKey).setOrigin(0.5, originY).setAlpha(0);
       // Active-turn ring: hollow, drawn behind the actor's feet, never a
       // filled disc over the art (same "reticle goes behind, never
       // covers" lesson CLAUDE.md documents for the enemy target reticle).
@@ -117,11 +117,30 @@ export default class PartyFormationView {
         attackSheetConfig = sheetCfg;
       }
 
+      let stateSheetConfig = null;
+      let stateAnimKey = null;
+      const stateCfg = HERO_STATE_SHEETS[heroId];
+      if (stateCfg && this.scene.textures.exists(stateCfg.key)) {
+        stateSheetConfig = stateCfg;
+        const stateOriginY = stateCfg.baselinePx / stateCfg.frameHeight;
+        sprite.setTexture(stateCfg.key, stateCfg.passiveFrame).setOrigin(0.5, stateOriginY);
+        ghost.setTexture(stateCfg.key, stateCfg.passiveFrame).setOrigin(0.5, stateOriginY);
+        stateAnimKey = `${stateCfg.key}_turn_entry`;
+        if (!this.scene.anims.exists(stateAnimKey)) {
+          const frames = stateCfg.turnFrames.map((frame, i) => ({
+            key: stateCfg.key, frame, duration: stateCfg.turnDurations[i] || 110
+          }));
+          this.scene.anims.create({ key: stateAnimKey, frames, repeat: 0 });
+        }
+      }
+
       this.actors.set(heroId, {
         sprite, ghost, ring, slot, hero, poseTex,
-        standbyTex: texKey, standbyOriginY: originY,
+        standbyTex: stateSheetConfig ? stateSheetConfig.key : texKey,
+        standbyOriginY: stateSheetConfig ? stateSheetConfig.baselinePx / stateSheetConfig.frameHeight : originY,
         _snapshot: null, _poseScale: null,
-        attackSprite, attackSheetConfig
+        attackSprite, attackSheetConfig,
+        stateSheetConfig, stateAnimKey
       });
     });
 
@@ -160,7 +179,9 @@ export default class PartyFormationView {
       if (actor._snapshot) return;
       const { sprite, ghost, ring, slot } = actor;
       const pos = SLOT_LAYOUT[slot];
-      const scale = heightScaleFor(heroId, commonScale);
+      const scale = actor.stateSheetConfig
+        ? (PARTY_ASSET_LOCK.normalizedHeightPx[heroId] * commonScale) / actor.stateSheetConfig.contentHeightPx
+        : heightScaleFor(heroId, commonScale);
       sprite.setScale(scale);
       ghost.setScale(scale);
 
@@ -185,10 +206,40 @@ export default class PartyFormationView {
         duration: 180,
         ease: 'Sine.easeOut'
       });
-      // Manually drive strokeAlpha via a plain tween target object, since
-      // Graphics/Shape stroke alpha isn't itself tweenable as `alpha` on
-      // an Ellipse's stroke — setStrokeStyle again each tick is cheapest.
-      actor.ring.setStrokeStyle(2.2, 0xffe8a0, on ? 0.85 : 0);
+      actor.ring.setStrokeStyle(on ? 3.2 : 2.2, on ? 0x9fefff : 0xffe8a0, on ? 0.95 : 0);
+      if (actor.stateSheetConfig && actor.sprite.visible && !actor.sprite.anims?.isPlaying) {
+        actor.sprite.setFrame(on ? actor.stateSheetConfig.activeFrame : actor.stateSheetConfig.passiveFrame);
+      }
+    });
+  }
+
+  hasTurnEntry(heroId) {
+    const actor = this.actors.get(heroId);
+    return !!(actor && actor.stateSheetConfig && actor.stateAnimKey);
+  }
+
+  playTurnEntry(heroId) {
+    const actor = this.actors.get(heroId);
+    if (!actor || !actor.stateSheetConfig || !actor.stateAnimKey) return Promise.resolve();
+    const { sprite, stateSheetConfig } = actor;
+    sprite.setVisible(true).setAlpha(1).setFrame(stateSheetConfig.turnFrames[0]);
+    return new Promise(resolve => {
+      const done = () => {
+        sprite.off('animationcomplete', done);
+        sprite.setFrame(stateSheetConfig.activeFrame);
+        resolve();
+      };
+      sprite.once('animationcomplete', done);
+      sprite.play(actor.stateAnimKey);
+    });
+  }
+
+  setPovFocus(heroId, on) {
+    this.actors.forEach((actor, id) => {
+      if (id === heroId) return;
+      const target = on ? 0.72 : 1;
+      this.scene.tweens.killTweensOf(actor.sprite);
+      this.scene.tweens.add({ targets: actor.sprite, alpha: target, duration: on ? 110 : 160, ease: 'Sine.easeOut' });
     });
   }
 
@@ -280,7 +331,9 @@ export default class PartyFormationView {
     const { sprite, attackSprite, hero } = actor;
     const cfg = actor.attackSheetConfig;
     const originY = cfg.baselinePx / cfg.frameHeight;
-    const scale = (sprite.displayHeight / cfg.frameHeight) * (hero.scaleMul || 1);
+    const scale = (actor.stateSheetConfig && cfg.contentHeightPx)
+      ? (sprite.scaleY * actor.stateSheetConfig.contentHeightPx) / cfg.contentHeightPx
+      : (sprite.displayHeight / cfg.frameHeight) * (hero.scaleMul || 1);
 
     this.scene.tweens.killTweensOf(attackSprite);
     attackSprite

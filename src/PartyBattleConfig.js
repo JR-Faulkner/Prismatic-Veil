@@ -123,17 +123,34 @@ export function heightScaleFor(heroId, commonScale) {
 // energy burst (the impact beat), 5-6 are the retract/settle back toward
 // the frame-1 guard stance.
 export const KINEZA_ATTACK_SHEET = Object.freeze({
-  key: 'kineza_basic_attack_v1',
-  path: './assets/characters/kineza/animations/kineza_basic_attack_v1.png',
-  frameWidth: 520,
-  frameHeight: 660,
-  frameCount: 6,
-  baselinePx: 620,
-  // Per-frame hold time (ms) — not a flat frameRate, so the coil/impact
-  // beats can hold a little longer than the fast punch-commit frame.
-  frameDurations: Object.freeze([140, 220, 90, 160, 120, 200]),
-  markerFrames: Object.freeze({ gather: [0, 1], release: [2], impact: [3], recover: [4, 5] })
+  key: 'kineza_basic_attack_v2',
+  path: './assets/characters/kineza/animations/kineza_basic_attack_v2.png',
+  frameWidth: 720,
+  frameHeight: 580,
+  frameCount: 12,
+  baselinePx: 525,
+  contentHeightPx: 350,
+  frameDurations: Object.freeze([150,150,150,150,150,150,120,110,125,125,145,160]),
+  markerFrames: Object.freeze({ gather: [1,2,3,4,5], release: [6,7], impact: [8], recover: [9,10,11] }),
+  povFrames: Object.freeze([6,7,8,9])
 });
+
+
+export const KINEZA_STATE_SHEET = Object.freeze({
+  key: 'kineza_battle_states_v1',
+  path: './assets/characters/kineza/battle/kineza_battle_states_v1.png',
+  frameWidth: 640,
+  frameHeight: 520,
+  frameCount: 8,
+  baselinePx: 474,
+  contentHeightPx: 335,
+  passiveFrame: 0,
+  activeFrame: 1,
+  turnFrames: Object.freeze([2,3,4,5,6,7]),
+  turnDurations: Object.freeze([90,95,110,120,120,155])
+});
+
+export const HERO_STATE_SHEETS = Object.freeze({ kineza: KINEZA_STATE_SHEET });
 
 // Keyed lookup so PartyFormationView's sheet-attack support stays generic
 // (checks this map, never a hardcoded hero id) — adding a second hero's

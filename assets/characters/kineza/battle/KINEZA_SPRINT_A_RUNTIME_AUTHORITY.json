@@ -1,0 +1,89 @@
+{
+  "attack": {
+    "file": "kineza_basic_attack_v2.png",
+    "size": 2297582,
+    "sha256": "bacf816ecfd936c37931ed7ba6c0d0b135d1fbb7f1688ad91a3900ab92a39e14",
+    "geometry": {
+      "frameWidth": 720,
+      "frameHeight": 580,
+      "frameCount": 12,
+      "cols": 4,
+      "rows": 3,
+      "baselinePx": 525
+    },
+    "frameDurationsMs": [
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      120,
+      110,
+      125,
+      125,
+      145,
+      160
+    ],
+    "markers": {
+      "gather": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "release": [
+        6,
+        7
+      ],
+      "impact": [
+        8
+      ],
+      "recover": [
+        9,
+        10,
+        11
+      ]
+    },
+    "povFrames": [
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  "states": {
+    "file": "kineza_battle_states_v1.png",
+    "size": 815800,
+    "sha256": "426e87770bc8d51135a44b291ca68d380a1118f69e0d092ca85bfbf7ced02975",
+    "geometry": {
+      "frameWidth": 640,
+      "frameHeight": 520,
+      "frameCount": 8,
+      "cols": 4,
+      "rows": 2,
+      "baselinePx": 474
+    },
+    "frameMap": {
+      "passive": 0,
+      "active": 1,
+      "turn": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    "turnDurationsMs": [
+      90,
+      95,
+      110,
+      120,
+      120,
+      155
+    ]
+  }
+}

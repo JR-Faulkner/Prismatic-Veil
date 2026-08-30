@@ -15,11 +15,11 @@
 import { HEROES } from './BattleConfig.js?v=44';
 import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=40';
 import { createEnemyView } from './EnemyViewFactory.js?v=40';
-import PartyFormationView from './PartyFormationView.js?v=prismel-live-1';
+import PartyFormationView from './PartyFormationView.js?v=kineza-sprintA-1';
 import {
   partyRoster, BASE_COMMANDS, RESONART_RP_COST, ITEM_DEFS,
-  PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, projectedDamage, hitChanceFor
-} from './PartyBattleConfig.js?v=prismel-live-1';
+  PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, HERO_STATE_SHEETS, projectedDamage, hitChanceFor
+} from './PartyBattleConfig.js?v=kineza-sprintA-1';
 import { GUI_TEXTURES, NINESLICE_INSETS, preloadGuiKit } from './PartyBattleGuiKit.js';
 import PartyBattleAudioController from './PartyBattleAudioController.js?v=3';
 
@@ -85,6 +85,11 @@ export default class PartyBattleScene extends Phaser.Scene {
     // (not instead of) the legacy pose set above, since Auryi/Prismel
     // still fall back to it per ANIMATION_AUTHORITY_CORRECTION.md.
     Object.values(HERO_ATTACK_SHEETS).forEach(sheet => {
+      this.load.spritesheet(sheet.key, sheet.path, {
+        frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight
+      });
+    });
+    Object.values(HERO_STATE_SHEETS).forEach(sheet => {
       this.load.spritesheet(sheet.key, sheet.path, {
         frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight
       });
@@ -175,6 +180,15 @@ export default class PartyBattleScene extends Phaser.Scene {
 
   _wait(ms) {
     return new Promise(resolve => this.time.delayedCall(ms, resolve));
+  }
+
+  _setAttackPov(heroId, on) {
+    if (heroId !== 'kineza') return;
+    if (on && this._attackPovActive) return;
+    if (!on && !this._attackPovActive) return;
+    this._attackPovActive = on;
+    this.cameras.main.zoomTo(on ? 1.045 : 1, on ? 120 : 170, 'Sine.easeOut');
+    this.formation?.setPovFocus(heroId, on);
   }
 
   uiAdd(obj) {
@@ -770,8 +784,18 @@ export default class PartyBattleScene extends Phaser.Scene {
     this._highlightHeroCard(actor);
     this.formation.setActive(actor);
     this._setBanner(`${hero.name}'s Turn`);
-    this._showCommandRail();
     this.audio.turnStart(actor);
+    if (this.formation.hasTurnEntry(actor)) {
+      this._turnLock = true;
+      this._hideCommandRail();
+      this.formation.playTurnEntry(actor).then(() => {
+        if (this.activeHeroId !== actor) return;
+        this._turnLock = false;
+        this._showCommandRail();
+      });
+    } else {
+      this._showCommandRail();
+    }
   }
 
   _showCommandRail() { this._commandRailContainer.setVisible(true); }
@@ -913,12 +937,17 @@ export default class PartyBattleScene extends Phaser.Scene {
     // (formation.playAttackSheet's onFrame callback), not a fixed-timing
     // guess — this is what "synchronize attack event markers to actual
     // current frames" means concretely.
-    if (this.formation.hasAttackSheet(hero.id)) {
+    if (command === 'Attack' && this.formation.hasAttackSheet(hero.id)) {
       const cfg = this.formation.actors.get(hero.id).attackSheetConfig;
       const isMarkerFrame = (frameIndex, marker) => cfg.markerFrames[marker].includes(frameIndex);
       let dmg = 0;
       const seen = new Set();
       await this.formation.playAttackSheet(hero.id, frameIndex => {
+        const povFrames = cfg.povFrames || [];
+        if (povFrames.length) {
+          if (frameIndex === povFrames[0]) this._setAttackPov(hero.id, true);
+          if (frameIndex > povFrames[povFrames.length - 1]) this._setAttackPov(hero.id, false);
+        }
         if (isMarkerFrame(frameIndex, 'gather') && !seen.has('gather')) {
           seen.add('gather');
           this.audio.attackGather(hero.id);
@@ -947,6 +976,7 @@ export default class PartyBattleScene extends Phaser.Scene {
           seen.add('recover');
         }
       });
+      this._setAttackPov(hero.id, false);
 
       this._turnLock = false;
       this._endHeroTurn();
