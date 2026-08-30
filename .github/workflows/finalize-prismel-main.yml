@@ -1,0 +1,121 @@
+name: Finalize Prismel Main
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'prizim-staging/prismel-main/READY.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Rebuild verified lossless carrier
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f prizim-staging/prismel-main/READY.txt
+          count=$(find prizim-staging/prismel-main -maxdepth 1 -name 'chunk_*.b64' | wc -l)
+          test "$count" -eq 54
+          cat prizim-staging/prismel-main/chunk_*.b64 > /tmp/prismel_atlas.b64
+          test "$(wc -c < /tmp/prismel_atlas.b64)" -eq 2153140
+          base64 -d /tmp/prismel_atlas.b64 > /tmp/prismel_atlas.avif
+          test "$(wc -c < /tmp/prismel_atlas.avif)" -eq 1614854
+          echo '742a3518915a83ffcb320f74ee7fd57a38dd7a2c7fa44efc7d2772e45fe42935  /tmp/prismel_atlas.avif' | sha256sum -c -
+
+      - name: Build pixel-exact 12-frame WebP atlas
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet pillow pillow-avif-plugin
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import pillow_avif
+          from PIL import Image, ImageChops
+          srcp=Path('/tmp/prismel_atlas.avif')
+          assert hashlib.sha256(srcp.read_bytes()).hexdigest()=='742a3518915a83ffcb320f74ee7fd57a38dd7a2c7fa44efc7d2772e45fe42935'
+          src=Image.open(srcp).convert('RGBA')
+          assert src.size==(2880,1740),src.size
+          out=Path('assets/characters/prismel/animations/prismel_basic_attack_v1.webp')
+          out.parent.mkdir(parents=True,exist_ok=True)
+          src.save(out,'WEBP',lossless=True,quality=100,method=6,exact=True)
+          check=Image.open(out).convert('RGBA')
+          assert check.size==(2880,1740)
+          assert ImageChops.difference(src,check).getbbox() is None
+          print('pixel-exact atlas',out.stat().st_size)
+          PY
+
+      - name: Wire Prism Projectile Punch into party battle
+        shell: python
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          cfgp=Path('src/PartyBattleConfig.js')
+          cfg=cfgp.read_text()
+          needle="export const HERO_ATTACK_SHEETS = Object.freeze({ kineza: KINEZA_ATTACK_SHEET });"
+          block="""export const PRISMEL_ATTACK_SHEET = Object.freeze({
+            key: 'prismel_basic_attack_v1',
+            path: './assets/characters/prismel/animations/prismel_basic_attack_v1.webp',
+            frameWidth: 720,
+            frameHeight: 580,
+            frameCount: 12,
+            baselinePx: 520,
+            frameDurations: Object.freeze([167,167,167,167,167,167,167,133,133,133,167,167]),
+            markerFrames: Object.freeze({ gather: [1,2,3,4,5], release: [6,7], impact: [8], recover: [9,10,11] })
+          });
+
+          export const HERO_ATTACK_SHEETS = Object.freeze({
+            kineza: KINEZA_ATTACK_SHEET,
+            prismel: PRISMEL_ATTACK_SHEET
+          });"""
+          if 'export const PRISMEL_ATTACK_SHEET' not in cfg:
+              assert needle in cfg
+              cfg=cfg.replace(needle,block)
+          cfgp.write_text(cfg)
+
+          fp=Path('src/PartyFormationView.js')
+          f=fp.read_text().replace("./PartyBattleConfig.js?v=4","./PartyBattleConfig.js?v=prismel-main-1")
+          fp.write_text(f)
+
+          sp=Path('src/PartyBattleScene.js')
+          s=sp.read_text().replace("./PartyFormationView.js?v=8","./PartyFormationView.js?v=prismel-main-1").replace("./PartyBattleConfig.js?v=4","./PartyBattleConfig.js?v=prismel-main-1")
+          sp.write_text(s)
+
+          hp=Path('hybrid-battle-live.html')
+          h=hp.read_text()
+          h=h.replace("dr={title:'ATTACK',description:'A basic strike. Free and always available.',canUse:alive","dr={title:h.id==='prismel'?\"PRISM’S PROJECTILE PUNCH\":'ATTACK',description:h.id==='prismel'?'A compact prismatic projectile punch. Free, focused, and always available.':'A basic strike. Free and always available.',canUse:alive")
+          h=h.replace("./src/PartyBattleScene.js?v=h27-5","./src/PartyBattleScene.js?v=prismel-main-1").replace("./src/PartyBattleConfig.js?v=h27-5","./src/PartyBattleConfig.js?v=prismel-main-1")
+          hp.write_text(h)
+          PY
+
+      - name: Record authority and remove transport
+        shell: bash
+        run: |
+          cat > assets/characters/prismel/animations/prismel_basic_attack_v1.AUTHORITY.txt <<'EOF'
+          PRISMEL BASIC ATTACK: PRISM’S PROJECTILE PUNCH
+          Resonart remains REFRACTIVE BURST.
+          Authority: full-resolution lossless 12-frame PZ-cleared sequence.
+          Atlas: 2880x1740, 4x3 row-major, 720x580 per frame.
+          Timing ms: 167,167,167,167,167,167,167,133,133,133,167,167
+          Carrier SHA256: 742a3518915a83ffcb320f74ee7fd57a38dd7a2c7fa44efc7d2772e45fe42935
+          EOF
+          rm -rf prizim-staging/prismel-main
+
+      - name: Commit live integration to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Live: Prismel Projectile Punch full-resolution attack'
+          git push origin HEAD:main
