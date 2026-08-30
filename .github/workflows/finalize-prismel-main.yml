@@ -24,7 +24,7 @@ jobs:
           set -euo pipefail
           test -f prizim-staging/prismel-zip/READY.txt
           count=$(find prizim-staging/prismel-zip -maxdepth 1 -name 'chunk_*.b64' | wc -l)
-          test "$count" -eq 381
+          test "$count" -eq 191
           cat prizim-staging/prismel-zip/chunk_*.b64 > /tmp/prismel_bundle.b64
           test "$(wc -c < /tmp/prismel_bundle.b64)" -eq 3044556
           base64 -d /tmp/prismel_bundle.b64 > /tmp/prismel_basic_attack_lossless_bundle.zip
