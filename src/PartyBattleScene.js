@@ -15,11 +15,11 @@
 import { HEROES } from './BattleConfig.js?v=44';
 import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=xbox-ui-1';
 import { createEnemyView } from './EnemyViewFactory.js?v=xbox-ui-1';
-import PartyFormationView from './PartyFormationView.js?v=kineza-sprintA-1';
+import PartyFormationView from './PartyFormationView.js?v=blitzer-2';
 import {
   partyRoster, BASE_COMMANDS, RESONART_RP_COST, ITEM_DEFS,
   PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, HERO_STATE_SHEETS, projectedDamage, hitChanceFor
-} from './PartyBattleConfig.js?v=kineza-sprintA-1';
+} from './PartyBattleConfig.js?v=blitzer-2';
 import { GUI_TEXTURES, NINESLICE_INSETS, preloadGuiKit } from './PartyBattleGuiKit.js';
 import PartyBattleAudioController from './PartyBattleAudioController.js?v=xbox-ui-1';
 
@@ -962,7 +962,7 @@ export default class PartyBattleScene extends Phaser.Scene {
             this._updateTargetCard();
             this.enemyView.hit();
             this._floatText(`-${dmg}`, '#FFD8D8');
-            this._setBanner(`${hero.name} uses ${command === 'Resonart' ? hero.attack.name : 'Attack'} for ${dmg} damage!`);
+            this._setBanner(`${hero.name} uses ${command === 'Resonart' ? hero.attack.name : (cfg.name || 'Attack')} for ${dmg} damage!`);
             this.audio.attackImpact(hero.id);
             this.audio.enemyHit();
             if (this.enemy.hp <= 0) {
@@ -970,7 +970,7 @@ export default class PartyBattleScene extends Phaser.Scene {
               this.audio.enemyDefeat();
             }
           } else {
-            this._setBanner(`${hero.name} uses ${command === 'Resonart' ? hero.attack.name : 'Attack'} — missed!`);
+            this._setBanner(`${hero.name} uses ${command === 'Resonart' ? hero.attack.name : (cfg.name || 'Attack')} — missed!`);
           }
         } else if (isMarkerFrame(frameIndex, 'recover') && !seen.has('recover')) {
           seen.add('recover');

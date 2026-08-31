@@ -1,6 +1,6 @@
 // FAI-HUD-01 Phase A — renders the 3 active party members as independent
 // layered actors in a fixed formation, per NEW_PARTY_DATA_CONTRACT.json.
-import { PARTY_SLOTS, PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, HERO_STATE_SHEETS, heightScaleFor } from './PartyBattleConfig.js?v=blitzer-1';
+import { PARTY_SLOTS, PARTY_ASSET_LOCK, HERO_ATTACK_SHEETS, HERO_STATE_SHEETS, heightScaleFor } from './PartyBattleConfig.js?v=blitzer-2';
 
 const SLOT_LAYOUT = Object.freeze({
   back: { xFrac: 0.30, yFrac: 0.60, depth: 10 },
