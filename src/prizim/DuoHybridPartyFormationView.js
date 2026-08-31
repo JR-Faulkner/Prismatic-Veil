@@ -1,26 +1,26 @@
-// PriZim Duo-Hybrid Formation Adapter v0.5
+// PriZim Duo-Hybrid Formation Adapter v0.6
 // Keeps PartyBattleScene's proven attack-resolution contract while replacing
 // Kineza's fragile Phaser spritesheet playback with PriZim Sequence Mode.
 // The neutral JSON manifest is canonical; marker values below are a small
 // renderer adapter mirror so the existing battle scene can consume its
-// current synchronous attack-sheet interface without owning presentation data.
+// synchronous attack-sheet interface without owning presentation data.
 
 import PartyFormationView from '../PartyFormationView.js?v=duo-base-1';
-import DuoHybridSequenceDriver from './DuoHybridSequenceDriver.js?v=duo-5';
+import DuoHybridSequenceDriver from './DuoHybridSequenceDriver.js?v=duo-6';
 
 const KINEZA_BLITZER_DUO = Object.freeze({
   id: 'kineza_blitzer_basic_v1',
   name: 'Blitzer',
   manifest: './pv-data/sequences/kineza_blitzer.duo.sequence.json',
-  version: '5',
+  version: '6',
   markerFrames: Object.freeze({
     gather: Object.freeze([1, 2, 3]),
     release: Object.freeze([4, 5, 6]),
     impact: Object.freeze([11]),
     recover: Object.freeze([14, 15, 16, 17])
   }),
-  // Duo-Hybrid v0.5 owns its own camera track so PartyBattleScene's older
-  // tiny Phaser POV tween must not run in parallel and fight the PriZim camera.
+  // PriZim owns Blitzer's presentation camera. Keep the legacy scene POV
+  // hook disabled so two camera systems never fight each other.
   povFrames: Object.freeze([])
 });
 
@@ -61,12 +61,14 @@ export default class DuoHybridPartyFormationView extends PartyFormationView {
     }
 
     const enemyX = this.scene.enemyView?.container?.x ?? (this.scene.scale.width * 0.74);
+    const enemyY = this.scene.enemyView?.container?.y ?? actor.sprite.y;
     try {
       return await this.duoHybrid.playSequence({
         config: actor.duoSequenceConfig,
         actor,
         enemyX,
-        onFrame: frameIndex => onFrame?.(frameIndex)
+        enemyY,
+        onFrame: (frameIndex, markerData, manifest) => onFrame?.(frameIndex, markerData, manifest)
       });
     } catch (error) {
       const detail = error?.message || String(error);
