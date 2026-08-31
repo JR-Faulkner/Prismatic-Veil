@@ -1,6 +1,5 @@
-// A-LAB v1 — reusable animation/ability test registry.
-// Production tool only: lets us validate character animation, world movement,
-// camera beats, enemy reaction, FX and audio without entering a full battle.
+// PZ-A LAB registry — BLITZER 18F current authority.
+import { BLITZER_SHEET_DATA_URI } from './BlitzerRuntime.js?v=1';
 
 export const A_LAB_HEROES = Object.freeze({
   kineza: Object.freeze({
@@ -9,23 +8,23 @@ export const A_LAB_HEROES = Object.freeze({
     attacks: Object.freeze({
       basic: Object.freeze({
         id: 'basic',
-        name: 'Basic Attack v2 (12f authority)',
-        sheet: './assets/characters/kineza/animations/kineza_basic_attack_v2.png',
-        frameWidth: 720,
-        frameHeight: 580,
-        frameCount: 12,
-        durations: Object.freeze([150,150,150,150,150,150,120,110,125,125,145,160]),
-        baselinePx: 525,
-        contentHeightPx: 350,
+        name: 'Blitzer',
+        sheet: BLITZER_SHEET_DATA_URI,
+        frameWidth: 128,
+        frameHeight: 128,
+        frameCount: 18,
+        durations: Object.freeze([180,110,110,110,110,95,85,180,110,110,110,180,110,110,95,85,180,180]),
+        baselinePx: 118,
+        contentHeightPx: 93,
         formationX: 0.26,
-        enemyX: 0.72,
+        enemyX: 0.74,
         baselineY: 0.79,
         movement: Object.freeze({
           type: 'blinkMelee',
-          launchFrames: Object.freeze([4,5]),
-          enemyFrames: Object.freeze([6,7,8,9]),
-          impactFrame: 8,
-          returnFrames: Object.freeze([10,11])
+          launchFrames: Object.freeze([3,4,5,6]),
+          enemyFrames: Object.freeze([7,8,9,10,11,12,13]),
+          impactFrame: 11,
+          returnFrames: Object.freeze([14,15,16])
         }),
         audio: Object.freeze({
           launch: './assets/sfx/kineza/kineza_strike.mp3',
@@ -52,10 +51,7 @@ export const A_LAB_HEROES = Object.freeze({
         enemyX: 0.72,
         baselineY: 0.79,
         movement: Object.freeze({ type: 'stationary', impactFrame: 8 }),
-        audio: Object.freeze({
-          launch: './assets/sfx/sfx_release.mp3',
-          impact: './assets/sfx/sfx_impact.mp3'
-        })
+        audio: Object.freeze({ launch: './assets/sfx/sfx_release.mp3', impact: './assets/sfx/sfx_impact.mp3' })
       })
     })
   })
