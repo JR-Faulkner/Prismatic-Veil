@@ -36,13 +36,13 @@ export function heightScaleFor(heroId, commonScale) {
 }
 
 // Current Kineza Basic Attack authority: BLITZER 18F.
-// The Phaser texture key is deliberately constant across module instances.
-// Only the asset URL is build-versioned. This prevents Scene and Formation
-// from disagreeing about whether the already-loaded Blitzer texture exists.
+// Keep one constant Phaser texture identity. Blitzer intentionally loads
+// from the clean static asset URL so Phaser sees an ordinary WebP source;
+// module freshness is handled by the live Hybrid build generation instead.
 export const KINEZA_ATTACK_SHEET = Object.freeze({
   key: 'kineza_blitzer_basic_v1_live',
   name: 'Blitzer',
-  path: liveAsset('./assets/characters/kineza/animations/kineza_blitzer_basic_v1.webp'),
+  path: './assets/characters/kineza/animations/kineza_blitzer_basic_v1.webp',
   frameWidth: 128,
   frameHeight: 128,
   frameCount: 18,
