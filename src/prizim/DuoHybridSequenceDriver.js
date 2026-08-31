@@ -1,4 +1,4 @@
-// PriZim Duo-Hybrid Sequence Driver v0.2
+// PriZim Duo-Hybrid Sequence Driver v0.3
 // Renderer bridge for two presentation lanes:
 // 1) Sequence Mode: logical frame sequences rendered by a PriZim-owned
 //    high-DPI canvas layer. Phaser does not register attack textures.
@@ -37,9 +37,21 @@ export default class DuoHybridSequenceDriver {
     const promise = new Promise((resolve, reject) => {
       const img = new Image();
       img.decoding = 'async';
-      img.onload = () => resolve(img);
+      img.onload = async () => {
+        try {
+          if (typeof img.decode === 'function') await img.decode();
+          if (!img.naturalWidth || !img.naturalHeight) {
+            throw new Error(`decoded image has invalid dimensions ${img.naturalWidth}x${img.naturalHeight}`);
+          }
+          resolve(img);
+        } catch (error) {
+          reject(new Error(`[PriZim Duo-Hybrid] Image decode failed: ${asset} · ${error?.message || error}`));
+        }
+      };
       img.onerror = () => reject(new Error(`[PriZim Duo-Hybrid] Image load failed: ${asset}`));
-      img.src = `${asset}${asset.includes('?') ? '&' : '?'}pvduo=${encodeURIComponent(version)}`;
+      // Keep the actual media URL plain. Build freshness belongs to modules
+      // and manifests, not binary image decoding on iOS Safari.
+      img.src = asset;
     });
     this.imageCache.set(key, promise);
     return promise;
@@ -145,7 +157,7 @@ export default class DuoHybridSequenceDriver {
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'high';
     return { overlay, ctx, dpr, w, h };
   }
 
@@ -225,7 +237,8 @@ export default class DuoHybridSequenceDriver {
         await wait(scene, Number(frame.duration || 100));
       }
     } finally {
-      layer.ctx.clearRect(0, 0, layer.w, layer.h);
+      layer.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      layer.ctx.clearRect(0, 0, layer.overlay.width, layer.overlay.height);
       layer.overlay.remove();
       sprite.setVisible(true);
     }
