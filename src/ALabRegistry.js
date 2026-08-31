@@ -1,5 +1,8 @@
 // PZ-A LAB registry — BLITZER 18F current authority.
 
+const LIVE_MODULE_VERSION = new URL(import.meta.url).searchParams.get('v') || 'main';
+const liveAsset = path => `${path}${path.includes('?') ? '&' : '?'}pvasset=${encodeURIComponent(LIVE_MODULE_VERSION)}`;
+
 export const A_LAB_HEROES = Object.freeze({
   kineza: Object.freeze({
     id: 'kineza',
@@ -8,7 +11,7 @@ export const A_LAB_HEROES = Object.freeze({
       basic: Object.freeze({
         id: 'basic',
         name: 'Blitzer',
-        sheet: './assets/characters/kineza/animations/kineza_blitzer_basic_v1.webp',
+        sheet: liveAsset('./assets/characters/kineza/animations/kineza_blitzer_basic_v1.webp'),
         frameWidth: 128,
         frameHeight: 128,
         frameCount: 18,
@@ -39,7 +42,7 @@ export const A_LAB_HEROES = Object.freeze({
       basic: Object.freeze({
         id: 'basic',
         name: "Prism's Projectile Punch",
-        sheet: './assets/characters/prismel/animations/prismel_basic_attack_v1.webp',
+        sheet: liveAsset('./assets/characters/prismel/animations/prismel_basic_attack_v1.webp'),
         frameWidth: 720,
         frameHeight: 580,
         frameCount: 12,
