@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#070817">
+<title>The Prismatic Veil · Hybrid</title>
+</head>
+<body style="margin:0;background:#070817;color:#f6e6ba;font-family:Georgia,serif">
+<div id="boot" style="min-height:100dvh;display:grid;place-items:center">OPENING THE VEIL…</div>
+<script>
+(async()=>{
+  const stamp=Date.now();
+  const read=async url=>{
+    const response=await fetch(url,{cache:'no-store'});
+    if(!response.ok) throw new Error(`${url} · ${response.status}`);
+    return response;
+  };
+  const build=await (await read(`./live-build.json?ts=${stamp}`)).json();
+  const id=String(build.id||'main');
+  const abs=path=>new URL(path,location.href).href;
+  const imports={
+    [abs('./src/PartyBattleScene.js?v=blitzer-2')]:abs(`./src/PartyBattleScene.js?v=${encodeURIComponent(id)}`),
+    [abs('./src/PartyFormationView.js?v=blitzer-2')]:abs(`./src/PartyFormationView.js?v=${encodeURIComponent(id)}`),
+    [abs('./src/PartyBattleConfig.js?v=blitzer-2')]:abs(`./src/PartyBattleConfig.js?v=${encodeURIComponent(id)}`)
+  };
+  let html=await (await read(`./hybrid-battle-live.html?template=${encodeURIComponent(id)}&ts=${stamp}`)).text();
+  const importMap=JSON.stringify({imports}).replace(/</g,'\\u003c');
+  html=html.replace('</head>',`<script type="importmap">${importMap}<\/script></head>`);
+  document.open();
+  document.write(html);
+  document.close();
+})().catch(err=>{
+  document.body.innerHTML=`<pre style="white-space:pre-wrap;padding:24px">LIVE BOOT ERROR\n${String(err?.stack||err)}</pre>`;
+});
+</script>
+</body>
+</html>
