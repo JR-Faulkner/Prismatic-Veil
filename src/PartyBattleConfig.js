@@ -8,6 +8,10 @@
 // shape (formation slots, the 4-command rail, RP-gated Resonart) on top.
 import { HEROES } from './BattleConfig.js?v=44';
 
+const LIVE_MODULE_VERSION = new URL(import.meta.url).searchParams.get('v') || 'main';
+const LIVE_TEXTURE_VERSION = LIVE_MODULE_VERSION.replace(/[^a-zA-Z0-9_]/g, '_');
+const liveAsset = path => `${path}${path.includes('?') ? '&' : '?'}pvasset=${encodeURIComponent(LIVE_MODULE_VERSION)}`;
+
 export const PARTY_SLOTS = Object.freeze([
   Object.freeze({ slot: 'back', heroId: 'prismel' }),
   Object.freeze({ slot: 'middle', heroId: 'auryi' }),
@@ -34,9 +38,9 @@ export function heightScaleFor(heroId, commonScale) {
 
 // Current Kineza Basic Attack authority: BLITZER 18F.
 export const KINEZA_ATTACK_SHEET = Object.freeze({
-  key: 'kineza_blitzer_basic_v1_b4',
+  key: `kineza_blitzer_basic_v1_${LIVE_TEXTURE_VERSION}`,
   name: 'Blitzer',
-  path: './assets/characters/kineza/animations/kineza_blitzer_basic_v1.webp?v=blitzer18f-b4',
+  path: liveAsset('./assets/characters/kineza/animations/kineza_blitzer_basic_v1.webp'),
   frameWidth: 128,
   frameHeight: 128,
   frameCount: 18,
@@ -62,7 +66,7 @@ export const KINEZA_ATTACK_SHEET = Object.freeze({
 
 export const KINEZA_STATE_SHEET = Object.freeze({
   key: 'kineza_battle_states_v1',
-  path: './assets/characters/kineza/battle/kineza_battle_states_v1.png',
+  path: liveAsset('./assets/characters/kineza/battle/kineza_battle_states_v1.png'),
   frameWidth: 640,
   frameHeight: 520,
   frameCount: 8,
@@ -78,7 +82,7 @@ export const HERO_STATE_SHEETS = Object.freeze({ kineza: KINEZA_STATE_SHEET });
 
 export const PRISMEL_ATTACK_SHEET = Object.freeze({
   key: 'prismel_basic_attack_v1',
-  path: './assets/characters/prismel/animations/prismel_basic_attack_v1.webp',
+  path: liveAsset('./assets/characters/prismel/animations/prismel_basic_attack_v1.webp'),
   frameWidth: 720,
   frameHeight: 580,
   frameCount: 12,
