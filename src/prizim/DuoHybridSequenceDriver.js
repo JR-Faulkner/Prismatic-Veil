@@ -1,4 +1,4 @@
-// PriZim Duo-Hybrid Sequence Driver v0.3
+// PriZim Duo-Hybrid Sequence Driver v0.4
 // Renderer bridge for two presentation lanes:
 // 1) Sequence Mode: logical frame sequences rendered by a PriZim-owned
 //    high-DPI canvas layer. Phaser does not register attack textures.
@@ -50,7 +50,7 @@ export default class DuoHybridSequenceDriver {
       };
       img.onerror = () => reject(new Error(`[PriZim Duo-Hybrid] Image load failed: ${asset}`));
       // Keep the actual media URL plain. Build freshness belongs to modules
-      // and manifests, not binary image decoding on iOS Safari.
+      // and manifests, not binary image decoding on mobile browsers.
       img.src = asset;
     });
     this.imageCache.set(key, promise);
@@ -168,8 +168,10 @@ export default class DuoHybridSequenceDriver {
 
     const dw = sourceFrame.sw * placement.scale;
     const dh = sourceFrame.sh * placement.scale;
-    const dx = placement.x - dw * 0.5;
-    const dy = placement.y - dh * placement.originY;
+    const originX = Number.isFinite(placement.originX) ? Number(placement.originX) : 0.5;
+    const originY = Number.isFinite(placement.originY) ? Number(placement.originY) : 1;
+    const dx = placement.x - dw * originX;
+    const dy = placement.y - dh * originY;
 
     ctx.save();
     if (placement.flipX) {
@@ -210,7 +212,7 @@ export default class DuoHybridSequenceDriver {
     const stateContentHeight = actor.stateSheetConfig?.contentHeightPx || actor.sprite.height || contentHeight;
     const baseScale = (sprite.scaleY * stateContentHeight) / contentHeight;
     const baselinePx = Number(content.baselinePx || firstSource.sh || 1);
-    const originY = baselinePx / Math.max(1, firstSource.sh);
+    const fallbackOriginY = baselinePx / Math.max(1, firstSource.sh);
     const layer = this.createSequenceCanvas();
 
     sprite.setVisible(false);
@@ -224,12 +226,19 @@ export default class DuoHybridSequenceDriver {
         const scaleMul = Number(frame.scale ?? refBaseScale) / Math.max(0.0001, refBaseScale);
         const x = lerp(homeX, contactX, progress);
         const y = homeY + (yDelta / refHeight) * scene.scale.height;
+        const originX = Number.isFinite(frame.originX)
+          ? Number(frame.originX)
+          : (Number.isFinite(frame.anchor_x) ? Number(frame.anchor_x) / Math.max(1, sourceFrame.sw) : 0.5);
+        const originY = Number.isFinite(frame.originY)
+          ? Number(frame.originY)
+          : (Number.isFinite(frame.anchor_y) ? Number(frame.anchor_y) / Math.max(1, sourceFrame.sh) : fallbackOriginY);
 
         this.drawSequenceFrame(layer, sourceFrame, {
           x,
           y,
           scale: baseScale * scaleMul,
-          originY: Number.isFinite(frame.originY) ? Number(frame.originY) : originY,
+          originX,
+          originY,
           flipX: !!sprite.flipX
         });
 
