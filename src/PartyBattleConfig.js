@@ -7,7 +7,7 @@
 // HEROES — no duplicated roster — this file only adds the party-specific
 // shape (formation slots, the 4-command rail, RP-gated Resonart) on top.
 import { HEROES } from './BattleConfig.js?v=44';
-import { BLITZER_SHEET_DATA_URI } from './BlitzerRuntime.js?v=1';
+import { BLITZER_SHEET_DATA_URI } from './BlitzerRuntime.js?v=2';
 
 export const PARTY_SLOTS = Object.freeze([
   Object.freeze({ slot: 'back', heroId: 'prismel' }),
