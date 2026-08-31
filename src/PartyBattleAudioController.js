@@ -1,17 +1,16 @@
-// FAI-AUDIO-01 — battle-audio controller for PartyBattleScene.
-//
-// One centralized event layer rather than sound calls scattered through the
-// HUD-building code. Every event is safe to call even when its asset never
-// loaded, so presentation tuning never risks the battle itself.
+// Party Battle audio controller.
+// Centralized event/mix layer: missing assets fail silently, hero cues remain
+// character-specific, and cinematic attacks can shape the music without
+// changing the user's persistent volume preferences.
 import { AUDIO_EVENT_MAP, AUDIO_LAYER_MAP, MUSIC_ASSET } from './PartyBattleAudioConfig.js?v=4';
 import EnemyAudioDirector, { preloadEnemyAudio } from './EnemyAudioDirector.js?v=42';
 
 const PREFS_KEY = 'pv_party_battle_audio_prefs_v1';
 const DEFAULT_PREFS = Object.freeze({ master: 0.9, music: 0.6, sfx: 0.95, ui: 0.72, muted: false });
-// Keep real headroom for layered hero + enemy impact cues. The old 1.28 gain
-// pushed normal default SFX above unity before any layers were added.
 const SFX_MIX_GAIN = 1.05;
-const CINEMATIC_MUSIC_MULT = 0.42;
+// Cinematic weight now comes from contrast, not louder SFX. Give Blitzer a
+// deeper temporary music pocket while preserving the normal battle mix.
+const CINEMATIC_MUSIC_MULT = 0.36;
 
 function loadPrefs() {
   try {
@@ -102,7 +101,7 @@ export default class PartyBattleAudioController {
     this.scene.tweens.add({
       targets: this.music,
       volume: this._musicTargetVolume(),
-      duration: 90,
+      duration: 80,
       ease: 'Sine.easeOut'
     });
   }
@@ -115,7 +114,7 @@ export default class PartyBattleAudioController {
     this.scene.tweens.add({
       targets: this.music,
       volume: this._musicTargetVolume(),
-      duration: 240,
+      duration: 260,
       ease: 'Sine.easeIn'
     });
   }
@@ -126,7 +125,7 @@ export default class PartyBattleAudioController {
     const token = this._duckToken;
     const target = this._musicTargetVolume();
     this.scene.tweens.killTweensOf(this.music);
-    this.scene.tweens.add({ targets: this.music, volume: target * mult, duration: 45, ease: 'Sine.easeOut' });
+    this.scene.tweens.add({ targets: this.music, volume: target * mult, duration: 40, ease: 'Sine.easeOut' });
     this.scene.time.delayedCall(holdMs, () => {
       if (token !== this._duckToken || !this.music) return;
       this.scene.tweens.add({ targets: this.music, volume: this._musicTargetVolume(), duration: 150, ease: 'Sine.easeIn' });
@@ -204,8 +203,8 @@ export default class PartyBattleAudioController {
   turnStart(characterId) { this._play(`turnStart:${characterId}`); }
   targetAcquire() { this._play('targetAcquire'); }
   attackGather(characterId) { this._play(`attackGather:${characterId}`); }
-  attackRelease(characterId) { this._duckMusic(0.78, 190); this._play(`attackRelease:${characterId}`); }
-  attackImpact(characterId) { this._duckMusic(0.58, 300); this._play(`attackImpact:${characterId}`); }
+  attackRelease(characterId) { this._duckMusic(0.72, 200); this._play(`attackRelease:${characterId}`); }
+  attackImpact(characterId) { this._duckMusic(0.48, 330); this._play(`attackImpact:${characterId}`); }
   guard(characterId) { this._play('guard'); }
   itemUse(itemId) { this._play('itemUse'); }
   enemyHit() { if (this.enemyDirector) this.enemyDirector.play('hurt'); }
