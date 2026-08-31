@@ -35,10 +35,10 @@ export function heightScaleFor(heroId, commonScale) {
   return commonScale;
 }
 
-// Current Kineza Basic Attack authority: BLITZER 18F.
-// Keep one constant Phaser texture identity. Blitzer intentionally loads
-// from the clean static asset URL so Phaser sees an ordinary WebP source;
-// module freshness is handled by the live Hybrid build generation instead.
+// Legacy compatibility sheet only. Live Hybrid Kineza Blitzer is owned by
+// PriZim Duo-Hybrid Sequence Mode and its neutral per-frame PNG manifest.
+// Keep this constant available for older/non-Hybrid harnesses, but do not
+// expose it through HERO_ATTACK_SHEETS or preload it on the live party route.
 export const KINEZA_ATTACK_SHEET = Object.freeze({
   key: 'kineza_blitzer_basic_v1_live',
   name: 'Blitzer',
@@ -84,6 +84,7 @@ export const HERO_STATE_SHEETS = Object.freeze({ kineza: KINEZA_STATE_SHEET });
 
 export const PRISMEL_ATTACK_SHEET = Object.freeze({
   key: 'prismel_basic_attack_v1',
+  name: 'Prismel Basic',
   path: liveAsset('./assets/characters/prismel/animations/prismel_basic_attack_v1.webp'),
   frameWidth: 720,
   frameHeight: 580,
@@ -94,7 +95,6 @@ export const PRISMEL_ATTACK_SHEET = Object.freeze({
 });
 
 export const HERO_ATTACK_SHEETS = Object.freeze({
-  kineza: KINEZA_ATTACK_SHEET,
   prismel: PRISMEL_ATTACK_SHEET
 });
 
