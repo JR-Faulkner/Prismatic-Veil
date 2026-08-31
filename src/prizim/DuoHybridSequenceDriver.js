@@ -1,4 +1,4 @@
-// PriZim Duo-Hybrid Sequence Driver v0.4
+// PriZim Duo-Hybrid Sequence Driver v0.5
 // Renderer bridge for two presentation lanes:
 // 1) Sequence Mode: logical frame sequences rendered by a PriZim-owned
 //    high-DPI canvas layer. Phaser does not register attack textures.
@@ -9,7 +9,26 @@
 
 const wait = (scene, ms) => new Promise(resolve => scene.time.delayedCall(Math.max(0, ms || 0), resolve));
 const clamp01 = value => Math.max(0, Math.min(1, Number(value) || 0));
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const lerp = (a, b, t) => a + (b - a) * t;
+
+const trackValue = (track, frameIndex, key, fallback) => {
+  if (!Array.isArray(track) || !track.length) return fallback;
+  const first = track[0];
+  if (frameIndex <= Number(first.frame || 0)) return Number(first[key] ?? fallback);
+  for (let i = 1; i < track.length; i += 1) {
+    const left = track[i - 1];
+    const right = track[i];
+    const lf = Number(left.frame || 0);
+    const rf = Number(right.frame || lf);
+    if (frameIndex <= rf) {
+      const span = Math.max(1, rf - lf);
+      const t = clamp01((frameIndex - lf) / span);
+      return lerp(Number(left[key] ?? fallback), Number(right[key] ?? fallback), t);
+    }
+  }
+  return Number(track[track.length - 1][key] ?? fallback);
+};
 
 export default class DuoHybridSequenceDriver {
   constructor(scene) {
@@ -49,8 +68,6 @@ export default class DuoHybridSequenceDriver {
         }
       };
       img.onerror = () => reject(new Error(`[PriZim Duo-Hybrid] Image load failed: ${asset}`));
-      // Keep the actual media URL plain. Build freshness belongs to modules
-      // and manifests, not binary image decoding on mobile browsers.
       img.src = asset;
     });
     this.imageCache.set(key, promise);
@@ -148,6 +165,7 @@ export default class DuoHybridSequenceDriver {
     overlay.style.height = '100%';
     overlay.style.pointerEvents = 'none';
     overlay.style.zIndex = '7';
+    overlay.style.transformOrigin = '50% 50%';
     overlay.setAttribute('aria-hidden', 'true');
     host.appendChild(overlay);
     const ctx = overlay.getContext('2d');
@@ -185,6 +203,86 @@ export default class DuoHybridSequenceDriver {
       dx, dy, dw, dh
     );
     ctx.restore();
+
+    if (placement.flashAlpha > 0) {
+      ctx.save();
+      ctx.fillStyle = `rgba(218,255,228,${clamp01(placement.flashAlpha)})`;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+    }
+  }
+
+  sequenceUiState() {
+    const scene = this.scene;
+    const targets = [
+      scene._targetCardContainer,
+      scene._turnOrderContainer,
+      scene._partyStripContainer,
+      scene._commandRailContainer,
+      scene._banner,
+      scene._targetCursor
+    ].filter(Boolean);
+    return targets.map(target => ({ target, alpha: Number.isFinite(target.alpha) ? target.alpha : 1 }));
+  }
+
+  fadeUi(state, alpha, duration) {
+    state.forEach(({ target }) => {
+      this.scene.tweens.killTweensOf(target);
+      if (duration > 0) {
+        this.scene.tweens.add({ targets: target, alpha, duration, ease: 'Sine.easeOut' });
+      } else {
+        target.setAlpha(alpha);
+      }
+    });
+  }
+
+  restoreUi(state, duration = 0) {
+    state.forEach(({ target, alpha }) => {
+      this.scene.tweens.killTweensOf(target);
+      if (duration > 0) {
+        this.scene.tweens.add({ targets: target, alpha, duration, ease: 'Sine.easeIn' });
+      } else {
+        target.setAlpha(alpha);
+      }
+    });
+  }
+
+  cameraPose(presentation, frameIndex, homeX, homeY, targetX) {
+    const scene = this.scene;
+    const cameraCfg = presentation?.camera || {};
+    const track = cameraCfg.track || [];
+    const zoom = Math.max(1, trackValue(track, frameIndex, 'zoom', 1));
+    const focus = clamp01(trackValue(track, frameIndex, 'focus', 0));
+    const w = scene.scale.width;
+    const h = scene.scale.height;
+    const focusX = lerp(homeX, targetX, focus);
+    const focusY = homeY + h * Number(cameraCfg.focusYOffsetFrac || 0);
+    const viewW = w / zoom;
+    const viewH = h / zoom;
+    const scrollX = clamp(focusX - viewW * 0.5, 0, Math.max(0, w - viewW));
+    const scrollY = clamp(focusY - viewH * 0.5, 0, Math.max(0, h - viewH));
+    return { zoom, scrollX, scrollY };
+  }
+
+  applyCameraPose(pose) {
+    const camera = this.scene.cameras.main;
+    camera.setZoom(pose.zoom);
+    camera.setScroll(pose.scrollX, pose.scrollY);
+  }
+
+  impactKick(layer, impact) {
+    const ms = Number(impact?.shakeMs || 0);
+    const intensity = Number(impact?.shakeIntensity || 0);
+    if (ms > 0 && intensity > 0) this.scene.cameras.main.shake(ms, intensity, true);
+    if (ms > 0 && typeof layer.overlay.animate === 'function') {
+      layer.overlay.animate([
+        { transform: 'translate3d(0,0,0)' },
+        { transform: 'translate3d(-6px,2px,0)' },
+        { transform: 'translate3d(7px,-3px,0)' },
+        { transform: 'translate3d(-3px,1px,0)' },
+        { transform: 'translate3d(0,0,0)' }
+      ], { duration: ms, easing: 'steps(4, end)' });
+    }
   }
 
   async playSequence({ config, actor, enemyX, onFrame }) {
@@ -199,6 +297,9 @@ export default class DuoHybridSequenceDriver {
     const sprite = actor.sprite;
     const reference = manifest.reference || {};
     const content = manifest.content || {};
+    const presentation = manifest.presentation || {};
+    const uiCfg = presentation.ui || {};
+    const impactCfg = presentation.impact || {};
     const homeX = sprite.x;
     const homeY = sprite.y;
     const targetX = Number.isFinite(enemyX) ? enemyX : scene.scale.width * 0.74;
@@ -214,40 +315,75 @@ export default class DuoHybridSequenceDriver {
     const baselinePx = Number(content.baselinePx || firstSource.sh || 1);
     const fallbackOriginY = baselinePx / Math.max(1, firstSource.sh);
     const layer = this.createSequenceCanvas();
+    const uiState = this.sequenceUiState();
+    const camera = scene.cameras.main;
+    const cameraState = { zoom: camera.zoom, scrollX: camera.scrollX, scrollY: camera.scrollY };
+    let uiRestored = false;
 
+    scene.audio?.beginCinematicAttack?.();
     sprite.setVisible(false);
     try {
       for (let i = 0; i < frames.length; i += 1) {
         const frame = frames[i];
         const sourceFrame = this.frameSource(prepared, frame, i);
+
+        if (i === Number(uiCfg.hideFrame ?? -1)) {
+          this.fadeUi(uiState, Number(uiCfg.hiddenAlpha ?? 0.02), Number(uiCfg.fadeOutMs || 0));
+          scene.formation?.setPovFocus?.(actor.hero?.id, true);
+        }
+        if (i === Number(uiCfg.restoreFrame ?? -1)) {
+          this.restoreUi(uiState, Number(uiCfg.fadeInMs || 0));
+          scene.formation?.setPovFocus?.(actor.hero?.id, false);
+          uiRestored = true;
+        }
+
         const refX = Number(frame.x ?? reference.homeX ?? 0);
         const progress = clamp01((refX - Number(reference.homeX || 0)) / refSpan);
         const yDelta = Number(frame.y ?? refHomeY) - refHomeY;
         const scaleMul = Number(frame.scale ?? refBaseScale) / Math.max(0.0001, refBaseScale);
-        const x = lerp(homeX, contactX, progress);
-        const y = homeY + (yDelta / refHeight) * scene.scale.height;
+        const worldX = lerp(homeX, contactX, progress);
+        const worldY = homeY + (yDelta / refHeight) * scene.scale.height;
         const originX = Number.isFinite(frame.originX)
           ? Number(frame.originX)
           : (Number.isFinite(frame.anchor_x) ? Number(frame.anchor_x) / Math.max(1, sourceFrame.sw) : 0.5);
         const originY = Number.isFinite(frame.originY)
           ? Number(frame.originY)
           : (Number.isFinite(frame.anchor_y) ? Number(frame.anchor_y) / Math.max(1, sourceFrame.sh) : fallbackOriginY);
+        const pose = this.cameraPose(presentation, i, homeX, homeY, targetX);
+        const actorBoost = Math.max(0.1, trackValue(presentation.actorScaleTrack || [], i, 'scale', 1));
+        this.applyCameraPose(pose);
+
+        const screenX = (worldX - pose.scrollX) * pose.zoom;
+        const screenY = (worldY - pose.scrollY) * pose.zoom;
+        const isImpact = i === Number(impactCfg.frame ?? -1);
 
         this.drawSequenceFrame(layer, sourceFrame, {
-          x,
-          y,
-          scale: baseScale * scaleMul,
+          x: screenX,
+          y: screenY,
+          scale: baseScale * scaleMul * actorBoost * pose.zoom,
           originX,
           originY,
-          flipX: !!sprite.flipX
+          flipX: !!sprite.flipX,
+          flashAlpha: isImpact ? Number(impactCfg.flashAlpha || 0) : 0
         });
 
+        if (isImpact) this.impactKick(layer, impactCfg);
         if (onFrame) onFrame(i, this.markersFor(manifest, i), manifest);
+        if (isImpact && Number(impactCfg.hitStopMs || 0) > 0) {
+          await wait(scene, Number(impactCfg.hitStopMs));
+        }
         await wait(scene, Number(frame.duration || 100));
       }
     } finally {
+      if (!uiRestored) this.restoreUi(uiState, 0);
+      else this.restoreUi(uiState, 0);
+      scene.formation?.setPovFocus?.(actor.hero?.id, false);
+      camera.setZoom(cameraState.zoom);
+      camera.setScroll(cameraState.scrollX, cameraState.scrollY);
+      scene.audio?.endCinematicAttack?.();
       layer.ctx.setTransform(1, 0, 0, 1, 0, 0);
       layer.ctx.clearRect(0, 0, layer.overlay.width, layer.overlay.height);
+      layer.overlay.style.transform = 'none';
       layer.overlay.remove();
       sprite.setVisible(true);
     }
