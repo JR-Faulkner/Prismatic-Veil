@@ -8,6 +8,16 @@ const SLOT_LAYOUT = Object.freeze({
   front: { xFrac: 0.54, yFrac: 0.79, depth: 14 }
 });
 
+const BLITZER_CINEMATIC = Object.freeze({
+  referenceHomeX: 190,
+  referenceContactX: 765,
+  x: Object.freeze([190,195,220,275,350,455,575,615,650,700,745,765,735,690,585,430,265,190]),
+  y: Object.freeze([365,365,365,360,355,350,345,365,360,355,350,350,355,350,348,350,365,365]),
+  scale: Object.freeze([0.44,0.44,0.45,0.46,0.47,0.48,0.49,0.48,0.50,0.52,0.53,0.54,0.51,0.49,0.48,0.47,0.45,0.44]),
+  referenceY: 365,
+  referenceScale: 0.44
+});
+
 export default class PartyFormationView {
   constructor(scene) {
     this.scene = scene;
@@ -75,7 +85,7 @@ export default class PartyFormationView {
       this.actors.set(heroId, {
         sprite, ghost, ring, slot, hero, poseTex,
         standbyTex: stateSheetConfig ? stateSheetConfig.key : texKey,
-        standbyOriginY: stateSheetConfig ? stateSheetConfig.baselinePx / stateSheetConfig.frameHeight : originY,
+        standbyOriginY: stateSheetConfig ? stateSheetConfig.baselinePx / stateCfg.frameHeight : originY,
         _snapshot: null, _poseScale: null,
         attackSprite, attackSheetConfig,
         stateSheetConfig, stateAnimKey
@@ -163,28 +173,28 @@ export default class PartyFormationView {
 
   hasAttackSheet(heroId) {
     const actor = this.actors.get(heroId);
+    if (heroId === 'kineza' && (!actor || !actor.attackSprite || !actor.attackSheetConfig)) {
+      throw new Error('[PV BLITZER] Kineza Blitzer 18F failed to bind. Old fallback intentionally blocked.');
+    }
     return !!(actor && actor.attackSprite);
   }
 
-  // Blitzer-aware sheet playback. Fixed party formation stays authoritative,
-  // while the attack sprite travels from Kineza's frontline slot to the
-  // actual enemy world-space contact point and returns home by Frame 18.
   playAttackSheet(heroId, onFrame) {
     const actor = this.actors.get(heroId);
     if (!actor || !actor.attackSprite) return Promise.resolve();
     const { sprite, attackSprite, hero } = actor;
     const cfg = actor.attackSheetConfig;
     const originY = cfg.baselinePx / cfg.frameHeight;
-    const scale = (actor.stateSheetConfig && cfg.contentHeightPx)
+    const baseScale = (actor.stateSheetConfig && cfg.contentHeightPx)
       ? (sprite.scaleY * actor.stateSheetConfig.contentHeightPx) / cfg.contentHeightPx
       : (sprite.displayHeight / cfg.frameHeight) * (hero.scaleMul || 1);
     const homeX = sprite.x;
-    const travel = cfg.travel || null;
+    const homeY = sprite.y;
     const enemyX = this.scene.enemyView?.container?.x ?? (this.scene.scale.width * 0.74);
-    const contactX = enemyX - (this.scene.scale.width * (travel?.contactXOffsetFrac ?? 0.10));
+    const contactX = enemyX - (this.scene.scale.width * (cfg.travel?.contactXOffsetFrac ?? 0.10));
 
     this.scene.tweens.killTweensOf(attackSprite);
-    attackSprite.setOrigin(0.5, originY).setScale(scale).setPosition(homeX, sprite.y)
+    attackSprite.setOrigin(0.5, originY).setScale(baseScale).setPosition(homeX, homeY)
       .setFlipX(sprite.flipX).setAlpha(1).setVisible(true);
     sprite.setVisible(false);
 
@@ -192,8 +202,17 @@ export default class PartyFormationView {
       const animKey = `${cfg.key}_play`;
       const onUpdate = (_anim, frame) => {
         const i = frame.index - 1;
-        if (travel?.frameProgress) {
-          const p = Phaser.Math.Clamp(travel.frameProgress[i] ?? 0, 0, 1);
+        if (heroId === 'kineza' && cfg.frameCount === 18) {
+          const refSpan = BLITZER_CINEMATIC.referenceContactX - BLITZER_CINEMATIC.referenceHomeX;
+          const refX = BLITZER_CINEMATIC.x[i] ?? BLITZER_CINEMATIC.referenceHomeX;
+          const xProgress = Phaser.Math.Clamp((refX - BLITZER_CINEMATIC.referenceHomeX) / refSpan, 0, 1);
+          attackSprite.x = Phaser.Math.Linear(homeX, contactX, xProgress);
+          const yDelta = (BLITZER_CINEMATIC.y[i] ?? BLITZER_CINEMATIC.referenceY) - BLITZER_CINEMATIC.referenceY;
+          attackSprite.y = homeY + (yDelta / 540) * this.scene.scale.height;
+          const scaleMul = (BLITZER_CINEMATIC.scale[i] ?? BLITZER_CINEMATIC.referenceScale) / BLITZER_CINEMATIC.referenceScale;
+          attackSprite.setScale(baseScale * scaleMul);
+        } else if (cfg.travel?.frameProgress) {
+          const p = Phaser.Math.Clamp(cfg.travel.frameProgress[i] ?? 0, 0, 1);
           attackSprite.x = Phaser.Math.Linear(homeX, contactX, p);
         }
         if (onFrame) onFrame(i);
@@ -201,7 +220,7 @@ export default class PartyFormationView {
       attackSprite.on('animationupdate', onUpdate);
       attackSprite.once('animationcomplete', () => {
         attackSprite.off('animationupdate', onUpdate);
-        attackSprite.setX(homeX).setVisible(false);
+        attackSprite.setPosition(homeX, homeY).setScale(baseScale).setVisible(false);
         sprite.setVisible(true);
         resolve();
       });
