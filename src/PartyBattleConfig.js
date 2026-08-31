@@ -9,7 +9,6 @@
 import { HEROES } from './BattleConfig.js?v=44';
 
 const LIVE_MODULE_VERSION = new URL(import.meta.url).searchParams.get('v') || 'main';
-const LIVE_TEXTURE_VERSION = LIVE_MODULE_VERSION.replace(/[^a-zA-Z0-9_]/g, '_');
 const liveAsset = path => `${path}${path.includes('?') ? '&' : '?'}pvasset=${encodeURIComponent(LIVE_MODULE_VERSION)}`;
 
 export const PARTY_SLOTS = Object.freeze([
@@ -37,8 +36,11 @@ export function heightScaleFor(heroId, commonScale) {
 }
 
 // Current Kineza Basic Attack authority: BLITZER 18F.
+// The Phaser texture key is deliberately constant across module instances.
+// Only the asset URL is build-versioned. This prevents Scene and Formation
+// from disagreeing about whether the already-loaded Blitzer texture exists.
 export const KINEZA_ATTACK_SHEET = Object.freeze({
-  key: `kineza_blitzer_basic_v1_${LIVE_TEXTURE_VERSION}`,
+  key: 'kineza_blitzer_basic_v1_live',
   name: 'Blitzer',
   path: liveAsset('./assets/characters/kineza/animations/kineza_blitzer_basic_v1.webp'),
   frameWidth: 128,
