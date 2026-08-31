@@ -1,5 +1,5 @@
 // PZ-A LAB registry — BLITZER 18F current authority.
-import { BLITZER_SHEET_DATA_URI } from './BlitzerRuntime.js?v=1';
+import { BLITZER_SHEET_DATA_URI } from './BlitzerRuntime.js?v=2';
 
 export const A_LAB_HEROES = Object.freeze({
   kineza: Object.freeze({
