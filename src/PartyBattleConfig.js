@@ -7,7 +7,6 @@
 // HEROES — no duplicated roster — this file only adds the party-specific
 // shape (formation slots, the 4-command rail, RP-gated Resonart) on top.
 import { HEROES } from './BattleConfig.js?v=44';
-import { BLITZER_SHEET_DATA_URI } from './BlitzerRuntime.js?v=2';
 
 export const PARTY_SLOTS = Object.freeze([
   Object.freeze({ slot: 'back', heroId: 'prismel' }),
@@ -37,7 +36,7 @@ export function heightScaleFor(heroId, commonScale) {
 export const KINEZA_ATTACK_SHEET = Object.freeze({
   key: 'kineza_blitzer_basic_v1',
   name: 'Blitzer',
-  path: BLITZER_SHEET_DATA_URI,
+  path: './assets/characters/kineza/animations/kineza_blitzer_basic_v1.webp',
   frameWidth: 128,
   frameHeight: 128,
   frameCount: 18,
