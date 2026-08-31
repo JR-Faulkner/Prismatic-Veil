@@ -84,7 +84,6 @@ export const HERO_STATE_SHEETS = Object.freeze({ kineza: KINEZA_STATE_SHEET });
 
 export const PRISMEL_ATTACK_SHEET = Object.freeze({
   key: 'prismel_basic_attack_v1',
-  name: 'Prismel Basic',
   path: liveAsset('./assets/characters/prismel/animations/prismel_basic_attack_v1.webp'),
   frameWidth: 720,
   frameHeight: 580,
