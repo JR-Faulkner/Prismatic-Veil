@@ -23,43 +23,46 @@
   },
   "presentation": {
     "ui": {
-      "hideFrame": 1,
-      "restoreFrame": 15,
-      "hiddenAlpha": 0.02,
-      "fadeOutMs": 90,
-      "fadeInMs": 180
+      "hideFrame": 0,
+      "restoreFrame": 16,
+      "hiddenAlpha": 0.0,
+      "fadeOutMs": 65,
+      "fadeInMs": 155
     },
     "camera": {
-      "focusYOffsetFrac": -0.08,
+      "focusYOffsetFrac": -0.065,
       "track": [
-        {"frame":0,"zoom":1.00,"focus":0.00},
-        {"frame":2,"zoom":1.06,"focus":0.05},
-        {"frame":5,"zoom":1.14,"focus":0.34},
-        {"frame":7,"zoom":1.22,"focus":0.58},
-        {"frame":10,"zoom":1.29,"focus":0.86},
-        {"frame":11,"zoom":1.33,"focus":0.94},
-        {"frame":12,"zoom":1.28,"focus":0.88},
-        {"frame":14,"zoom":1.18,"focus":0.62},
-        {"frame":16,"zoom":1.06,"focus":0.20},
-        {"frame":17,"zoom":1.00,"focus":0.00}
+        {"frame":0,"zoom":1.00,"targetMix":0.00},
+        {"frame":2,"zoom":1.08,"targetMix":0.00},
+        {"frame":5,"zoom":1.18,"targetMix":0.08},
+        {"frame":7,"zoom":1.28,"targetMix":0.18},
+        {"frame":9,"zoom":1.36,"targetMix":0.30},
+        {"frame":10,"zoom":1.40,"targetMix":0.42},
+        {"frame":11,"zoom":1.42,"targetMix":0.55},
+        {"frame":12,"zoom":1.34,"targetMix":0.48},
+        {"frame":13,"zoom":1.26,"targetMix":0.34},
+        {"frame":14,"zoom":1.17,"targetMix":0.18},
+        {"frame":16,"zoom":1.06,"targetMix":0.00},
+        {"frame":17,"zoom":1.00,"targetMix":0.00}
       ]
     },
     "actorScaleTrack": [
       {"frame":0,"scale":1.00},
-      {"frame":4,"scale":1.03},
-      {"frame":7,"scale":1.10},
-      {"frame":10,"scale":1.17},
-      {"frame":11,"scale":1.22},
-      {"frame":12,"scale":1.15},
-      {"frame":14,"scale":1.08},
+      {"frame":4,"scale":1.04},
+      {"frame":7,"scale":1.12},
+      {"frame":9,"scale":1.19},
+      {"frame":10,"scale":1.23},
+      {"frame":11,"scale":1.26},
+      {"frame":12,"scale":1.18},
+      {"frame":14,"scale":1.09},
       {"frame":17,"scale":1.00}
     ],
     "impact": {
       "frame": 11,
-      "hitStopMs": 65,
-      "flashAlpha": 0.17,
-      "shakeMs": 115,
-      "shakeIntensity": 0.008
+      "hitStopMs": 95,
+      "flashAlpha": 0.21,
+      "shakeMs": 130,
+      "shakeIntensity": 0.009
     }
   },
   "markers": {
@@ -81,7 +84,7 @@
     {"index":8,"asset":"./assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_09.png","duration":85,"x":650,"y":360,"scale":0.50,"anchor_x":370,"anchor_y":705},
     {"index":9,"asset":"./assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_10.png","duration":85,"x":700,"y":355,"scale":0.52,"anchor_x":380,"anchor_y":705},
     {"index":10,"asset":"./assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_11.png","duration":80,"x":745,"y":350,"scale":0.53,"anchor_x":390,"anchor_y":700},
-    {"index":11,"asset":"./assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_12.png","duration":115,"x":765,"y":350,"scale":0.54,"anchor_x":355,"anchor_y":705},
+    {"index":11,"asset":"./assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_12.png","duration":105,"x":765,"y":350,"scale":0.54,"anchor_x":355,"anchor_y":705},
     {"index":12,"asset":"./assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_13.png","duration":90,"x":735,"y":355,"scale":0.51,"anchor_x":375,"anchor_y":710},
     {"index":13,"asset":"./assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_14.png","duration":80,"x":690,"y":350,"scale":0.49,"anchor_x":370,"anchor_y":599},
     {"index":14,"asset":"./assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_15.png","duration":70,"x":585,"y":348,"scale":0.48,"anchor_x":365,"anchor_y":566},
