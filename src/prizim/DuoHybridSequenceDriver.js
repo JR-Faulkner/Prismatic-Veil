@@ -1,20 +1,22 @@
-// PriZim Duo-Hybrid Sequence Driver v0.1
+// PriZim Duo-Hybrid Sequence Driver v0.2
 // Renderer bridge for two presentation lanes:
-// 1) Sequence Mode: logical frame sequences from individual images or packed strips.
+// 1) Sequence Mode: logical frame sequences rendered by a PriZim-owned
+//    high-DPI canvas layer. Phaser does not register attack textures.
 // 2) Cinematic Mode: full-screen video sequences for future Resonarts/supers.
 //
 // Neutral timing/presentation authority lives in pv-data JSON manifests. This
-// driver is a replaceable Phaser/browser adapter, not canonical game data.
+// driver is a replaceable browser/Phaser adapter, not canonical game data.
 
 const wait = (scene, ms) => new Promise(resolve => scene.time.delayedCall(Math.max(0, ms || 0), resolve));
 const clamp01 = value => Math.max(0, Math.min(1, Number(value) || 0));
+const lerp = (a, b, t) => a + (b - a) * t;
 
 export default class DuoHybridSequenceDriver {
   constructor(scene) {
     this.scene = scene;
     this.manifestCache = new Map();
     this.imageCache = new Map();
-    this.textureCache = new Map();
+    this.sourceCache = new Map();
   }
 
   async manifest(config) {
@@ -46,65 +48,64 @@ export default class DuoHybridSequenceDriver {
   async prepare(config) {
     const manifest = await this.manifest(config);
     if (manifest.mode !== 'sequence') return manifest;
-    await this.prepareSequenceTextures(manifest, config.version || '1');
+    await this.prepareSequenceSource(manifest, config.version || '1');
     return manifest;
   }
 
-  async prepareSequenceTextures(manifest, version = '1') {
+  async prepareSequenceSource(manifest, version = '1') {
     const source = manifest.source || {};
     const cacheKey = `${manifest.id}#${version}`;
-    if (this.textureCache.has(cacheKey)) return this.textureCache.get(cacheKey);
+    if (this.sourceCache.has(cacheKey)) return this.sourceCache.get(cacheKey);
 
     const promise = (async () => {
       if (source.type === 'frames') {
-        const keys = [];
+        const frames = [];
         for (const frame of manifest.frames || []) {
           if (!frame.asset) throw new Error(`[PriZim Duo-Hybrid] Frame ${frame.index} has no asset.`);
-          const textureKey = `pvduo_${manifest.id}_${String(frame.index).padStart(2, '0')}_${version}`;
-          if (!this.scene.textures.exists(textureKey)) {
-            const img = await this.loadImage(frame.asset, version);
-            this.scene.textures.addImage(textureKey, img);
-          }
-          keys.push(textureKey);
+          const image = await this.loadImage(frame.asset, version);
+          frames.push({ image, sx: 0, sy: 0, sw: image.naturalWidth, sh: image.naturalHeight });
         }
-        return keys;
+        return { type: 'frames', frames };
       }
 
       if (source.type === 'strip') {
-        const img = await this.loadImage(source.asset, version);
+        const image = await this.loadImage(source.asset, version);
         const frameWidth = Number(source.frameWidth);
         const frameHeight = Number(source.frameHeight);
         const count = Number(source.count || manifest.frames?.length || 0);
         if (!frameWidth || !frameHeight || !count) {
           throw new Error(`[PriZim Duo-Hybrid] Invalid strip geometry for ${manifest.id}.`);
         }
-        if (img.naturalWidth < frameWidth * count || img.naturalHeight < frameHeight) {
-          throw new Error(`[PriZim Duo-Hybrid] Strip dimensions do not contain ${count} frames (${img.naturalWidth}x${img.naturalHeight}).`);
+        if (image.naturalWidth < frameWidth * count || image.naturalHeight < frameHeight) {
+          throw new Error(`[PriZim Duo-Hybrid] Strip dimensions do not contain ${count} frames (${image.naturalWidth}x${image.naturalHeight}).`);
         }
-        const keys = [];
-        for (let i = 0; i < count; i += 1) {
-          const textureKey = `pvduo_${manifest.id}_${String(i).padStart(2, '0')}_${version}`;
-          if (!this.scene.textures.exists(textureKey)) {
-            const canvas = document.createElement('canvas');
-            canvas.width = frameWidth;
-            canvas.height = frameHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            ctx.clearRect(0, 0, frameWidth, frameHeight);
-            ctx.drawImage(img, i * frameWidth, 0, frameWidth, frameHeight, 0, 0, frameWidth, frameHeight);
-            this.scene.textures.addCanvas(textureKey, canvas);
-          }
-          keys.push(textureKey);
-        }
-        return keys;
+        return { type: 'strip', image, frameWidth, frameHeight, count };
       }
 
       throw new Error(`[PriZim Duo-Hybrid] Unsupported sequence source type: ${source.type || 'missing'}.`);
     })();
 
-    this.textureCache.set(cacheKey, promise);
+    this.sourceCache.set(cacheKey, promise);
     return promise;
+  }
+
+  frameSource(source, frame, index) {
+    if (source.type === 'frames') {
+      const item = source.frames[index];
+      if (!item) throw new Error(`[PriZim Duo-Hybrid] Missing prepared frame ${index}.`);
+      return item;
+    }
+    if (source.type === 'strip') {
+      if (index < 0 || index >= source.count) throw new Error(`[PriZim Duo-Hybrid] Strip frame ${index} out of range.`);
+      return {
+        image: source.image,
+        sx: index * source.frameWidth,
+        sy: 0,
+        sw: source.frameWidth,
+        sh: source.frameHeight
+      };
+    }
+    throw new Error('[PriZim Duo-Hybrid] Sequence source is not prepared.');
   }
 
   markersFor(manifest, frameIndex) {
@@ -120,13 +121,65 @@ export default class DuoHybridSequenceDriver {
     };
   }
 
+  createSequenceCanvas() {
+    const gameCanvas = this.scene.game.canvas;
+    const host = gameCanvas.parentElement || document.body;
+    const overlay = document.createElement('canvas');
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const w = Math.max(1, Math.round(this.scene.scale.width));
+    const h = Math.max(1, Math.round(this.scene.scale.height));
+    overlay.width = Math.round(w * dpr);
+    overlay.height = Math.round(h * dpr);
+    overlay.style.position = 'absolute';
+    overlay.style.inset = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.pointerEvents = 'none';
+    overlay.style.zIndex = '7';
+    overlay.setAttribute('aria-hidden', 'true');
+    host.appendChild(overlay);
+    const ctx = overlay.getContext('2d');
+    if (!ctx) {
+      overlay.remove();
+      throw new Error('[PriZim Duo-Hybrid] 2D sequence canvas unavailable.');
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    return { overlay, ctx, dpr, w, h };
+  }
+
+  drawSequenceFrame(layer, sourceFrame, placement) {
+    const { ctx, dpr, w, h } = layer;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    const dw = sourceFrame.sw * placement.scale;
+    const dh = sourceFrame.sh * placement.scale;
+    const dx = placement.x - dw * 0.5;
+    const dy = placement.y - dh * placement.originY;
+
+    ctx.save();
+    if (placement.flipX) {
+      ctx.translate(placement.x, 0);
+      ctx.scale(-1, 1);
+      ctx.translate(-placement.x, 0);
+    }
+    ctx.drawImage(
+      sourceFrame.image,
+      sourceFrame.sx, sourceFrame.sy, sourceFrame.sw, sourceFrame.sh,
+      dx, dy, dw, dh
+    );
+    ctx.restore();
+  }
+
   async playSequence({ config, actor, enemyX, onFrame }) {
     if (!actor?.sprite) throw new Error('[PriZim Duo-Hybrid] Missing actor sprite.');
     const manifest = await this.manifest(config);
     if (manifest.mode !== 'sequence') throw new Error(`[PriZim Duo-Hybrid] ${manifest.id} is not Sequence Mode.`);
-    const textureKeys = await this.prepareSequenceTextures(manifest, config.version || '1');
+    const prepared = await this.prepareSequenceSource(manifest, config.version || '1');
     const frames = manifest.frames || [];
-    if (!frames.length || textureKeys.length < frames.length) throw new Error(`[PriZim Duo-Hybrid] No playable frames for ${manifest.id}.`);
+    if (!frames.length) throw new Error(`[PriZim Duo-Hybrid] No playable frames for ${manifest.id}.`);
 
     const scene = this.scene;
     const sprite = actor.sprite;
@@ -140,40 +193,40 @@ export default class DuoHybridSequenceDriver {
     const refHomeY = Number(reference.homeY || 0);
     const refHeight = Math.max(1, Number(reference.height || 540));
     const refBaseScale = Number(reference.baseScale || 1);
-    const contentHeight = Math.max(1, Number(content.contentHeightPx || manifest.source?.frameHeight || 1));
+    const firstSource = this.frameSource(prepared, frames[0], 0);
+    const contentHeight = Math.max(1, Number(content.contentHeightPx || firstSource.sh || 1));
     const stateContentHeight = actor.stateSheetConfig?.contentHeightPx || actor.sprite.height || contentHeight;
     const baseScale = (sprite.scaleY * stateContentHeight) / contentHeight;
-    const originY = Number(content.baselinePx || manifest.source?.frameHeight || 1) / Math.max(1, Number(manifest.source?.frameHeight || sprite.height || 1));
-
-    const display = scene.add.image(homeX, homeY, textureKeys[0])
-      .setOrigin(0.5, originY)
-      .setFlipX(sprite.flipX)
-      .setDepth(sprite.depth)
-      .setVisible(false);
-    scene.worldAdd(display);
+    const baselinePx = Number(content.baselinePx || firstSource.sh || 1);
+    const originY = baselinePx / Math.max(1, firstSource.sh);
+    const layer = this.createSequenceCanvas();
 
     sprite.setVisible(false);
     try {
-      display.setVisible(true).setAlpha(1);
       for (let i = 0; i < frames.length; i += 1) {
         const frame = frames[i];
+        const sourceFrame = this.frameSource(prepared, frame, i);
         const refX = Number(frame.x ?? reference.homeX ?? 0);
         const progress = clamp01((refX - Number(reference.homeX || 0)) / refSpan);
         const yDelta = Number(frame.y ?? refHomeY) - refHomeY;
         const scaleMul = Number(frame.scale ?? refBaseScale) / Math.max(0.0001, refBaseScale);
+        const x = lerp(homeX, contactX, progress);
+        const y = homeY + (yDelta / refHeight) * scene.scale.height;
 
-        display.setTexture(textureKeys[i]);
-        display.setPosition(
-          Phaser.Math.Linear(homeX, contactX, progress),
-          homeY + (yDelta / refHeight) * scene.scale.height
-        );
-        display.setScale(baseScale * scaleMul);
+        this.drawSequenceFrame(layer, sourceFrame, {
+          x,
+          y,
+          scale: baseScale * scaleMul,
+          originY: Number.isFinite(frame.originY) ? Number(frame.originY) : originY,
+          flipX: !!sprite.flipX
+        });
 
         if (onFrame) onFrame(i, this.markersFor(manifest, i), manifest);
         await wait(scene, Number(frame.duration || 100));
       }
     } finally {
-      display.destroy();
+      layer.ctx.clearRect(0, 0, layer.w, layer.h);
+      layer.overlay.remove();
       sprite.setVisible(true);
     }
     return manifest;
