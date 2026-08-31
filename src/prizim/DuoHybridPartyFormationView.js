@@ -1,4 +1,4 @@
-// PriZim Duo-Hybrid Formation Adapter v0.2
+// PriZim Duo-Hybrid Formation Adapter v0.3
 // Keeps PartyBattleScene's proven attack-resolution contract while replacing
 // Kineza's fragile Phaser spritesheet playback with PriZim Sequence Mode.
 // The neutral JSON manifest is canonical; marker values below are a small
@@ -6,13 +6,13 @@
 // current synchronous attack-sheet interface without owning presentation data.
 
 import PartyFormationView from '../PartyFormationView.js?v=duo-base-1';
-import DuoHybridSequenceDriver from './DuoHybridSequenceDriver.js?v=duo-2';
+import DuoHybridSequenceDriver from './DuoHybridSequenceDriver.js?v=duo-3';
 
 const KINEZA_BLITZER_DUO = Object.freeze({
   id: 'kineza_blitzer_basic_v1',
   name: 'Blitzer',
   manifest: './pv-data/sequences/kineza_blitzer.duo.sequence.json',
-  version: '2',
+  version: '3',
   markerFrames: Object.freeze({
     gather: Object.freeze([1, 2, 3]),
     release: Object.freeze([4, 5, 6]),
@@ -34,13 +34,8 @@ export default class DuoHybridPartyFormationView extends PartyFormationView {
     if (!actor) return;
 
     actor.duoSequenceConfig = KINEZA_BLITZER_DUO;
-    // PartyBattleScene reads this existing interface for marker timing/name.
-    // Playback itself is redirected below to the PriZim driver.
     actor.attackSheetConfig = KINEZA_BLITZER_DUO;
 
-    // Warm the sequence in the background so Kineza's turn normally has no
-    // first-use load pause. A failed prewarm is not hidden; playAttackSheet()
-    // will retry and surface the concrete PriZim error if needed.
     this.duoHybrid.prepare(KINEZA_BLITZER_DUO).catch(error => {
       actor.duoPrewarmError = error;
       console.warn('[PriZim Duo-Hybrid] Blitzer prewarm deferred:', error);
@@ -73,8 +68,11 @@ export default class DuoHybridPartyFormationView extends PartyFormationView {
       });
     } catch (error) {
       const detail = error?.message || String(error);
+      const rootStack = error?.stack || detail;
+      const wrapped = new Error(`[PriZim Duo-Hybrid · Blitzer] ${detail}`);
+      wrapped.stack = `${wrapped.message}\nROOT CAUSE:\n${rootStack}`;
       console.error('[PriZim Duo-Hybrid · Blitzer]', error);
-      throw new Error(`[PriZim Duo-Hybrid · Blitzer] ${detail}`);
+      throw wrapped;
     }
   }
 }
