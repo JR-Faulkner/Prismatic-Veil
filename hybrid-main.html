@@ -20,7 +20,7 @@
   const id=String(build.id||'main');
   const abs=path=>new URL(path,location.href).href;
   const imports={
-    [abs('./src/PartyBattleScene.js?v=blitzer-2')]:abs(`./src/PartyBattleScene.js?v=${encodeURIComponent(id)}`),
+    [abs('./src/PartyBattleScene.js?v=blitzer-2')]:abs(`./src/LivePartyBattleScene.js?v=${encodeURIComponent(id)}`),
     [abs('./src/PartyFormationView.js?v=blitzer-2')]:abs(`./src/PartyFormationView.js?v=${encodeURIComponent(id)}`),
     [abs('./src/PartyBattleConfig.js?v=blitzer-2')]:abs(`./src/PartyBattleConfig.js?v=${encodeURIComponent(id)}`)
   };
