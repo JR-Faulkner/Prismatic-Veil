@@ -1,5 +1,4 @@
 // PZ-A LAB registry — BLITZER 18F current authority.
-import { BLITZER_SHEET_DATA_URI } from './BlitzerRuntime.js?v=2';
 
 export const A_LAB_HEROES = Object.freeze({
   kineza: Object.freeze({
@@ -9,7 +8,7 @@ export const A_LAB_HEROES = Object.freeze({
       basic: Object.freeze({
         id: 'basic',
         name: 'Blitzer',
-        sheet: BLITZER_SHEET_DATA_URI,
+        sheet: './assets/characters/kineza/animations/kineza_blitzer_basic_v1.webp',
         frameWidth: 128,
         frameHeight: 128,
         frameCount: 18,
