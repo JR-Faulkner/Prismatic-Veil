@@ -34,9 +34,9 @@ export function heightScaleFor(heroId, commonScale) {
 
 // Current Kineza Basic Attack authority: BLITZER 18F.
 export const KINEZA_ATTACK_SHEET = Object.freeze({
-  key: 'kineza_blitzer_basic_v1',
+  key: 'kineza_blitzer_basic_v1_b4',
   name: 'Blitzer',
-  path: './assets/characters/kineza/animations/kineza_blitzer_basic_v1.webp',
+  path: './assets/characters/kineza/animations/kineza_blitzer_basic_v1.webp?v=blitzer18f-b4',
   frameWidth: 128,
   frameHeight: 128,
   frameCount: 18,
