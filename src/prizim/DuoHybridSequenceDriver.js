@@ -1,4 +1,4 @@
-// PriZim Duo-Hybrid Sequence Driver v0.5
+// PriZim Duo-Hybrid Sequence Driver v0.6
 // Renderer bridge for two presentation lanes:
 // 1) Sequence Mode: logical frame sequences rendered by a PriZim-owned
 //    high-DPI canvas layer. Phaser does not register attack textures.
@@ -214,14 +214,10 @@ export default class DuoHybridSequenceDriver {
 
   sequenceUiState() {
     const scene = this.scene;
-    const targets = [
-      scene._targetCardContainer,
-      scene._turnOrderContainer,
-      scene._partyStripContainer,
-      scene._commandRailContainer,
-      scene._banner,
-      scene._targetCursor
-    ].filter(Boolean);
+    // uiLayer is the single UI authority in PartyBattleScene, so fading it
+    // evacuates the complete battle HUD together instead of chasing individual
+    // cards/buttons and accidentally leaving the Menu control behind.
+    const targets = [scene.uiLayer, scene._targetCursor].filter(Boolean);
     return targets.map(target => ({ target, alpha: Number.isFinite(target.alpha) ? target.alpha : 1 }));
   }
 
@@ -247,16 +243,21 @@ export default class DuoHybridSequenceDriver {
     });
   }
 
-  cameraPose(presentation, frameIndex, homeX, homeY, targetX) {
+  cameraPose(presentation, frameIndex, actorX, actorY, targetX, targetY) {
     const scene = this.scene;
     const cameraCfg = presentation?.camera || {};
     const track = cameraCfg.track || [];
     const zoom = Math.max(1, trackValue(track, frameIndex, 'zoom', 1));
-    const focus = clamp01(trackValue(track, frameIndex, 'focus', 0));
+    const targetMix = clamp01(trackValue(track, frameIndex, 'targetMix', 0));
     const w = scene.scale.width;
     const h = scene.scale.height;
-    const focusX = lerp(homeX, targetX, focus);
-    const focusY = homeY + h * Number(cameraCfg.focusYOffsetFrac || 0);
+    const safeTargetY = Number.isFinite(targetY) ? targetY : actorY;
+
+    // Follow Kineza first. As he approaches contact, blend toward the Wraith
+    // so the shot naturally becomes a two-shot/contact composition instead of
+    // simply zooming the static battlefield toward the right edge.
+    const focusX = lerp(actorX, targetX, targetMix);
+    const focusY = lerp(actorY, safeTargetY, targetMix) + h * Number(cameraCfg.focusYOffsetFrac || 0);
     const viewW = w / zoom;
     const viewH = h / zoom;
     const scrollX = clamp(focusX - viewW * 0.5, 0, Math.max(0, w - viewW));
@@ -277,15 +278,15 @@ export default class DuoHybridSequenceDriver {
     if (ms > 0 && typeof layer.overlay.animate === 'function') {
       layer.overlay.animate([
         { transform: 'translate3d(0,0,0)' },
-        { transform: 'translate3d(-6px,2px,0)' },
-        { transform: 'translate3d(7px,-3px,0)' },
-        { transform: 'translate3d(-3px,1px,0)' },
+        { transform: 'translate3d(-7px,3px,0)' },
+        { transform: 'translate3d(8px,-4px,0)' },
+        { transform: 'translate3d(-4px,2px,0)' },
         { transform: 'translate3d(0,0,0)' }
       ], { duration: ms, easing: 'steps(4, end)' });
     }
   }
 
-  async playSequence({ config, actor, enemyX, onFrame }) {
+  async playSequence({ config, actor, enemyX, enemyY, onFrame }) {
     if (!actor?.sprite) throw new Error('[PriZim Duo-Hybrid] Missing actor sprite.');
     const manifest = await this.manifest(config);
     if (manifest.mode !== 'sequence') throw new Error(`[PriZim Duo-Hybrid] ${manifest.id} is not Sequence Mode.`);
@@ -303,6 +304,7 @@ export default class DuoHybridSequenceDriver {
     const homeX = sprite.x;
     const homeY = sprite.y;
     const targetX = Number.isFinite(enemyX) ? enemyX : scene.scale.width * 0.74;
+    const targetY = Number.isFinite(enemyY) ? enemyY : homeY;
     const contactX = targetX - scene.scale.width * Number(reference.contactXOffsetFrac ?? 0.10);
     const refSpan = Math.max(1, Number(reference.contactX || 1) - Number(reference.homeX || 0));
     const refHomeY = Number(reference.homeY || 0);
@@ -328,7 +330,7 @@ export default class DuoHybridSequenceDriver {
         const sourceFrame = this.frameSource(prepared, frame, i);
 
         if (i === Number(uiCfg.hideFrame ?? -1)) {
-          this.fadeUi(uiState, Number(uiCfg.hiddenAlpha ?? 0.02), Number(uiCfg.fadeOutMs || 0));
+          this.fadeUi(uiState, Number(uiCfg.hiddenAlpha ?? 0), Number(uiCfg.fadeOutMs || 0));
           scene.formation?.setPovFocus?.(actor.hero?.id, true);
         }
         if (i === Number(uiCfg.restoreFrame ?? -1)) {
@@ -349,7 +351,7 @@ export default class DuoHybridSequenceDriver {
         const originY = Number.isFinite(frame.originY)
           ? Number(frame.originY)
           : (Number.isFinite(frame.anchor_y) ? Number(frame.anchor_y) / Math.max(1, sourceFrame.sh) : fallbackOriginY);
-        const pose = this.cameraPose(presentation, i, homeX, homeY, targetX);
+        const pose = this.cameraPose(presentation, i, worldX, worldY, targetX, targetY);
         const actorBoost = Math.max(0.1, trackValue(presentation.actorScaleTrack || [], i, 'scale', 1));
         this.applyCameraPose(pose);
 
@@ -375,8 +377,7 @@ export default class DuoHybridSequenceDriver {
         await wait(scene, Number(frame.duration || 100));
       }
     } finally {
-      if (!uiRestored) this.restoreUi(uiState, 0);
-      else this.restoreUi(uiState, 0);
+      this.restoreUi(uiState, 0);
       scene.formation?.setPovFocus?.(actor.hero?.id, false);
       camera.setZoom(cameraState.zoom);
       camera.setScroll(cameraState.scrollX, cameraState.scrollY);
