@@ -1,4 +1,4 @@
-// PriZim Duo-Hybrid Formation Adapter v0.3
+// PriZim Duo-Hybrid Formation Adapter v0.4
 // Keeps PartyBattleScene's proven attack-resolution contract while replacing
 // Kineza's fragile Phaser spritesheet playback with PriZim Sequence Mode.
 // The neutral JSON manifest is canonical; marker values below are a small
@@ -6,13 +6,13 @@
 // current synchronous attack-sheet interface without owning presentation data.
 
 import PartyFormationView from '../PartyFormationView.js?v=duo-base-1';
-import DuoHybridSequenceDriver from './DuoHybridSequenceDriver.js?v=duo-3';
+import DuoHybridSequenceDriver from './DuoHybridSequenceDriver.js?v=duo-4';
 
 const KINEZA_BLITZER_DUO = Object.freeze({
   id: 'kineza_blitzer_basic_v1',
   name: 'Blitzer',
   manifest: './pv-data/sequences/kineza_blitzer.duo.sequence.json',
-  version: '3',
+  version: '4',
   markerFrames: Object.freeze({
     gather: Object.freeze([1, 2, 3]),
     release: Object.freeze([4, 5, 6]),
