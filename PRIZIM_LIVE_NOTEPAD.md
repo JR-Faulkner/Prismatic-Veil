@@ -1,7 +1,7 @@
 # PriZim Live Notepad
 
 Last refreshed: 2026-09-01
-Current live build: `main-20260901-live26`
+Current live build: `main-20260901-live26c`
 
 This is the fast-moving operational notepad for current PriZim production state. It is intentionally concise and should be refreshed whenever a meaningful runtime decision, deployment, QA result, or new production direction lands.
 
@@ -11,6 +11,7 @@ This is the fast-moving operational notepad for current PriZim production state.
 - PZ-A Sound Lab includes procedural prototype pads for whoosh, whisk, blink, step snap, charge, release, impact, recover, and UI micro-cues, plus current production MP3 references.
 - Final SFX must be uniquely authored for The Prismatic Veil. Reference titles can inform feel only.
 - LIVE26 establishes the reusable high-resolution FX integration pattern: harmonized atlas -> one runtime player/adapter -> stable source/target anchors -> mobile runtime QA.
+- LIVE26C records a mobile-runtime lesson: the active battle scene/formation must not depend solely on the document-write import-map bridge. The root scene now loads directly and hard-enforces the live26 formation if a browser falls back to the legacy class.
 
 ### Auryi
 - Battle-start crownless/Auorb-free lifecycle remains authoritative.
@@ -46,15 +47,16 @@ This is the fast-moving operational notepad for current PriZim production state.
 
 ## Immediate runtime QA lane
 
-1. Verify Auryi turn entry has zero camera motion.
-2. Verify Crown Manifest aligns with her visible head center without reading as attached headgear.
-3. Verify Auorb Charge stays local to the shared hand anchor.
-4. Verify Projectile launches from that exact anchor and travels cleanly to the Wraith body anchor.
-5. Verify Impact centers on the Wraith body rather than the floor/baseline.
-6. Verify Recompose returns cleanly to Auryi's hand/persistent Auorb state without duplicate FX layers.
-7. Verify the new Veil floor/backdrop grounds the party and Wraith without competing with silhouettes/HUD.
-8. Re-check LIVE25 Wraith stability and Kineza Blitzer safe-frame behavior for regression.
-9. After Auryi passes, apply the same production-FX architecture to Kineza, then Prismel.
+1. Confirm the battle shell displays build witness `main-20260901-live26c`.
+2. Verify the new Veil floor/backdrop is visibly active. If not, the wrong runtime is still executing.
+3. Verify Auryi turn entry has zero camera motion.
+4. Verify Crown Manifest aligns with her visible head center without reading as attached headgear.
+5. Verify Auorb Charge stays local to the shared hand anchor.
+6. Verify Projectile launches from that exact anchor and travels cleanly to the Wraith body anchor.
+7. Verify Impact centers on the Wraith body rather than the floor/baseline.
+8. Verify Recompose returns cleanly to Auryi's hand/persistent Auorb state without duplicate FX layers.
+9. Re-check LIVE25 Wraith stability and Kineza Blitzer safe-frame behavior for regression.
+10. After Auryi passes, apply the same production-FX architecture to Kineza, then Prismel.
 
 ## Production efficiency rules
 
@@ -64,6 +66,7 @@ This is the fast-moving operational notepad for current PriZim production state.
 - Prefer narrow adapters over broad rewrites.
 - Preserve passed runtime work unless evidence shows regression.
 - Runtime/mobile evidence outranks static assumptions.
+- Do not rely on a browser-sensitive indirection layer when a direct runtime authority can be enforced safely.
 - No baked enemies in attack/FX sheets.
 - No baked camera movement in attack/FX sheets.
 - Persistent-state FX and cinematic/attack FX must remain separate layers.
