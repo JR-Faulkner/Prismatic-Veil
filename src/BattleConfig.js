@@ -36,7 +36,6 @@ export const HEROES = Object.freeze({
     attunement: 0,
     attunementMax: 3,
     portrait: 'portrait_prismel',
-    // HUD identity: bar fill, frame accents, damage-number styling.
     accent: 0x67c8ff,
     accentAlt: 0xc477ff,
     frameStyle: 'diamond',
@@ -50,38 +49,15 @@ export const HEROES = Object.freeze({
     }),
     posePath: './assets/poses/',
     scaleMul: 1,
-    // Prismel's v1 set is mixed-orientation: Release already fires right,
-    // the rest look left.
-    flip: Object.freeze({
-      idle: true, step: true, gather: true, release: false, recover: true
-    }),
+    flip: Object.freeze({ idle: true, step: true, gather: true, release: false, recover: true }),
     attack: Object.freeze({
-      // Player-facing name locked to Refractive Burst (v0.3 Battle
-      // Presentation Base handoff). The internal pose/state name stays
-      // `release` throughout the codebase — only the string the player
-      // reads changes.
       name: 'Refractive Burst',
       damage: 14,
       flavor: 'Crystal energy gathers...',
       critChance: 0.25,
       critMultiplier: 2
     }),
-    // Overrides BattleController's default POSE_TIMING beats for this
-    // hero only. Prismel's step and gather poses read as a blur back to
-    // back at the default pace, so both get more room before the next
-    // pose cuts in. Extending step/hold alone wasn't enough — reported
-    // directly as still blurring together — since gather/release stayed
-    // at the shared defaults, too fast for BattleFXDirector's own
-    // layered charge/projectile FX (mist + aura + staged particle
-    // bursts) to actually resolve before the next pose cut in. Kineza,
-    // on the older single-effect BattleFX path (no fxVersion), reads
-    // fine at the defaults — this is specifically a v2/FXDirector-path
-    // issue, not a general pose-timing one.
     attackTiming: Object.freeze({ step: 340, gather: 560, hold: 220, release: 220 }),
-    // v38A Battle Presence Pass: routes this hero's charge/projectile/
-    // impact FX through BattleFXDirector instead of BattleFX's own
-    // gather()/beam()/impact(). Kineza has no fxVersion and keeps his
-    // existing BattleFX-driven identity untouched.
     fxVersion: 'v2',
     frameColourway: 'blue',
     commands: Object.freeze([
@@ -114,13 +90,8 @@ export const HEROES = Object.freeze({
       recover: 'Kineza05_Recover_LOCKED'
     }),
     posePath: './assets/poses/kineza/',
-    // His masters are framed wider and taller than Prismel's, and the
-    // strike carries a long dust trail, so he needs pulling back.
     scaleMul: 0.78,
-    // Authored facing right, per the animation standard. No flipping.
-    flip: Object.freeze({
-      idle: false, step: false, gather: false, release: false, recover: false
-    }),
+    flip: Object.freeze({ idle: false, step: false, gather: false, release: false, recover: false }),
     attack: Object.freeze({
       name: 'Momentum Fist',
       damage: 17,
@@ -159,49 +130,24 @@ export const HEROES = Object.freeze({
       recover: 'Pose05_Recompose_LOCKED'
     }),
     posePath: './assets/poses/auryi/',
-    // v0.3 Battle Presentation Base's trio scale calibration reference
-    // measures Auryi at ~1.29x Prismel's head-to-foot height (897px vs
-    // 693px in the locked lineup art). Her pose canvases carry almost
-    // exactly the same content-to-canvas ratio as Prismel's idle pose
-    // (~0.827 either way), so that ratio carries straight through to
-    // scaleMul without a separate padding correction the way Kineza's
-    // needed one.
     scaleMul: 1.29,
-    // Reported directly from real-device testing: her first couple of
-    // poses read as facing the wrong way. Traced to this flip block —
-    // it was set by which hand holds the orb (screen-left in poses
-    // 1/2/3/5, so flip:true was assumed to fix it), but the signal that
-    // actually reads as "facing" is gaze/head direction, not prop hand.
-    // Checked all five source images directly: her face looks
-    // screen-right, toward where the enemy stands, in every single one
-    // of them, including pose 4 — she was already fully correct as
-    // authored, unlike Prismel's genuinely mixed-orientation v1 set.
-    // Flipping idle/step/gather/recover mirrored her gaze to screen-left
-    // (away from the enemy) while leaving the orb hand "fixed" — visibly
-    // wrong despite the hand ending up on the expected side. No flips
-    // needed anywhere in this set.
-    flip: Object.freeze({
-      idle: false, step: false, gather: false, release: false, recover: false
-    }),
+    flip: Object.freeze({ idle: false, step: false, gather: false, release: false, recover: false }),
+    // Basic attack and Resonart are intentionally separate authorities.
     attack: Object.freeze({
-      // Veil Pulse is a working player-facing name (pose is locked;
-      // naming may still evolve per AURYI_BATTLE_MANIFEST.json).
-      name: 'Veil Pulse',
+      name: 'Aurorb Slice',
       damage: 13,
-      flavor: 'Veil light gathers, then surges outward...',
+      flavor: 'A compressed Aurorb cuts through the Veil toward the target.',
       critChance: 0.2,
       critMultiplier: 2
     }),
-    // v0.4: opts into BattleFXDirector's layered path with her own
-    // explicit profile (BattleFXDirector.js PALETTES.auryi) — never
-    // Prismel's fallback. See AURYI_BATTLE_FX_PROFILE.md.
+    resonart: Object.freeze({
+      name: 'Aurora Pulse',
+      damage: 22,
+      flavor: 'Auryi grows her aura into a vast Aurora, then crushes it between her hands to release a Resonance pulse.',
+      presentation: 'hybrid-video',
+      prototype: './pz-a-aurora-pulse-lab.html'
+    }),
     fxVersion: 'v2',
-    // Auryi had no override at all and ran on bare POSE_TIMING defaults —
-    // reported as her attack phases blurring together, same underlying
-    // cause as Prismel's (see his attackTiming comment): the default
-    // pace doesn't give BattleFXDirector's layered charge/projectile FX
-    // room to resolve. Same profile as Prismel's since both are on the
-    // v2 path for the same reason.
     attackTiming: Object.freeze({ step: 340, gather: 560, hold: 220, release: 220 }),
     frameColourway: 'violet',
     commands: Object.freeze([
