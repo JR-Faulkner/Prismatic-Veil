@@ -1,4 +1,4 @@
-// PriZim Duo-Hybrid Formation Adapter v0.8
+// PriZim Duo-Hybrid Formation Adapter v0.9
 // Keeps PartyBattleScene's proven attack-resolution contract while routing
 // Kineza and Auryi through PriZim Sequence Mode.
 // Neutral JSON manifests remain canonical presentation authority.
@@ -28,17 +28,17 @@ const AURYI_ENTRY_DUO = Object.freeze({
 });
 
 const AURYI_AUORB_DUO = Object.freeze({
-  id: 'auryi_auorb_invocation_v2',
+  id: 'auryi_auorb_invocation_v3',
   name: 'Auorb Invocation',
   manifest: './pv-data/sequences/auryi_auorb_invocation.duo.sequence.json',
-  version: '8',
+  version: '9',
   markerFrames: Object.freeze({
     gather: Object.freeze([1, 2, 3, 4, 5]),
     release: Object.freeze([9, 10]),
     impact: Object.freeze([11]),
     recover: Object.freeze([15, 16, 17])
   }),
-  // PriZim owns Auryi's camera/HUD takeover from the manifest.
+  // PriZim owns Auryi's ranged camera/HUD takeover from the manifest.
   povFrames: Object.freeze([])
 });
 
