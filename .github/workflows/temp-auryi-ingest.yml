@@ -1,0 +1,56 @@
+name: Temporary Auryi binary ingest
+
+on:
+  push:
+    paths:
+      - 'pv-data/triggers/auryi-ingest.trigger'
+
+permissions:
+  contents: write
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and verify Auryi handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL 'https://uc2eb836141628887da9ef441a81.dl.dropboxusercontent.com/cd/0/get/DHTqdo2vKHNK-nCTLZJ8WjqrWZ7EuyuiO3AyWPH5vgSpPUqEZrGhQVAWE0uE5M6Fz9wiqBpqIDlc0iZJPXUjZSfARu7UDBXjZwh4qDXtO73SsPLo2Z7gt0Vce-Y4jhnsBlQ4wIdv59l-CKSca5HtsZM9I4arfA5XXNT7hnKPS8fgwQ/file?c_luid=9bd25e73' -o /tmp/auryi.zip
+          rm -rf /tmp/auryi_unpack
+          mkdir -p /tmp/auryi_unpack
+          unzip -q /tmp/auryi.zip -d /tmp/auryi_unpack
+          python - <<'PY'
+          from pathlib import Path
+          import struct
+          root=Path('/tmp/auryi_unpack/Auryi_DuoHybrid_Complete_Handoff')
+          attack=sorted((root/'attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames').glob('*.png'))
+          entry=sorted((root/'entry/Auryi_Entry_PZ_Final/02_runtime_frames').glob('*.png'))
+          assert len(attack)==18, f'expected 18 attack PNGs, got {len(attack)}'
+          assert len(entry)==6, f'expected 6 entry PNGs, got {len(entry)}'
+          for p in attack+entry:
+              b=p.read_bytes()[:24]
+              assert b[:8]==b'\x89PNG\r\n\x1a\n', f'not PNG: {p}'
+              w,h=struct.unpack('>II',b[16:24])
+              assert (w,h)==(768,768), f'bad size {w}x{h}: {p}'
+          print('verified',len(attack),'attack +',len(entry),'entry PNGs')
+          PY
+      - name: Install canonical runtime assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC='/tmp/auryi_unpack/Auryi_DuoHybrid_Complete_Handoff'
+          mkdir -p assets/characters/auryi/animations/auorb/frames
+          mkdir -p assets/characters/auryi/animations/entry/frames
+          cp "$SRC"/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/*.png assets/characters/auryi/animations/auorb/frames/
+          cp "$SRC"/entry/Auryi_Entry_PZ_Final/02_runtime_frames/*.png assets/characters/auryi/animations/entry/frames/
+      - name: Commit Auryi runtime assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'JR-Faulkner'
+          git config user.email '53619182+JR-Faulkner@users.noreply.github.com'
+          git add assets/characters/auryi/animations/auorb/frames assets/characters/auryi/animations/entry/frames
+          git commit -m 'Add Auryi Duo-Hybrid high-res entry and attack frames'
+          git push
