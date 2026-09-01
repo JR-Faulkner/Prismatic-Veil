@@ -1,10 +1,35 @@
 // LIVE26 party-battle scene.
-// Adds the first reusable Veil-corrupted battle stage floor/backdrop while
-// preserving all battle logic from live23. This is procedural runtime art,
-// not a generated background asset.
+// Adds the reusable Veil-corrupted battle stage and hard-enforces the
+// live26 formation so mobile browsers cannot silently fall back to the
+// legacy PartyFormationView if an import-map bridge is ignored.
 import Live23PartyBattleScene from './Live23PartyBattleScene.js?v=live23';
+import Live26PartyFormationView from './Live26PartyFormationView.js?v=live26c';
 
 export default class Live26PartyBattleScene extends Live23PartyBattleScene {
+  create() {
+    super.create();
+
+    // Safari-safe live26 enforcement. If the import-map bridge already
+    // supplied the correct formation, leave it alone. Otherwise replace
+    // the legacy formation after base scene creation and before Auryi's turn.
+    if (this.formation?.constructor?.name !== 'Live26PartyFormationView') {
+      const old = this.formation;
+      if (old) {
+        this.scale.off('resize', old.layout, old);
+        old.actors?.forEach(actor => {
+          [actor.sprite, actor.ghost, actor.ring, actor.attackSprite, actor.duoCrown, actor.duoAuorb]
+            .filter(Boolean)
+            .forEach(obj => obj.destroy?.());
+        });
+      }
+      this.formation = new Live26PartyFormationView(this);
+      this.formation.create(this.party);
+      if (this.activeHeroId) this.formation.setActive(this.activeHeroId);
+    }
+
+    globalThis.__PV_LIVE26_RUNTIME__ = true;
+  }
+
   _buildBackdrop() {
     const g = this.add.graphics().setDepth(-40);
     const redraw = () => {
@@ -55,7 +80,7 @@ export default class Live26PartyBattleScene extends Live23PartyBattleScene {
       g.lineStyle(Math.max(1, h * 0.0017), 0xd6b46c, 0.075);
       g.strokeEllipse(w * 0.52, ringY, ringW * 0.72, ringH * 0.64);
 
-      // Fixed prismatic fracture marks, no animation and no visual noise lottery.
+      // Fixed prismatic fracture marks.
       const cracks = [
         [0.33,0.73, 0.36,0.77, 0.35,0.82],
         [0.62,0.70, 0.59,0.76, 0.61,0.81],
@@ -71,7 +96,7 @@ export default class Live26PartyBattleScene extends Live23PartyBattleScene {
         g.strokePath();
       });
 
-      // Low contact pads help hovering/standing units read as intentionally grounded.
+      // Contact pads keep standing/hovering units visually grounded.
       [0.25, 0.43, 0.61, 0.80].forEach((xFrac, i) => {
         const width = w * (i === 3 ? 0.11 : 0.085);
         g.fillStyle(i === 3 ? 0xa469d5 : 0x705e96, i === 3 ? 0.075 : 0.055);
