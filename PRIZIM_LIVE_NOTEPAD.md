@@ -1,7 +1,7 @@
 # PriZim Live Notepad
 
 Last refreshed: 2026-09-01
-Current live build: `main-20260901-live26e`
+Current live build: `main-20260901-live26f`
 
 This is the fast-moving operational notepad for current PriZim production state. It is intentionally concise and should be refreshed whenever a meaningful runtime decision, deployment, QA result, or new production direction lands.
 
@@ -13,8 +13,8 @@ This is the fast-moving operational notepad for current PriZim production state.
 - LIVE26 establishes the reusable high-resolution FX integration pattern: harmonized sheet -> one runtime player/adapter -> stable source/target anchors -> mobile runtime QA.
 - LIVE26C records a mobile-runtime lesson: the active battle scene/formation must not depend solely on the document-write import-map bridge. The root scene loads directly and hard-enforces the live26 formation if a browser falls back to the legacy class.
 - LIVE26D records a second runtime lesson: production FX readiness must be a hard gate. A production attack may not silently fall back to provisional FX when its production sheets are unavailable.
-- LIVE26E confirmed the remaining blocker is the inline WebP asset path on iPhone/Safari. That path is retired for battle-critical attack art.
-- PNG-only Auryi runtime adapters are now staged on main but are NOT promoted live until the five approved PNG sheets are present at their repo asset paths.
+- LIVE26E confirmed the inline WebP path is unsuitable for battle-critical iPhone/Safari combat art and retired it.
+- LIVE26F is the first production Auryi attack build using five normal repo-served PNG sprite strips. The Dropbox pack was imported into GitHub, dimension-verified by the importer, and the runtime now loads each PNG directly.
 
 ## Platform constraints / do-not-repeat rules
 
@@ -23,6 +23,7 @@ This is the fast-moving operational notepad for current PriZim production state.
 - Do not require `img.decode()` as the readiness gate for battle-critical mobile image assets.
 - A previously observed iPhone/Safari asset-format failure is a standing platform constraint, not a fresh experiment opportunity.
 - Production combat art must fail visibly if unavailable. Never silently substitute deprecated/provisional FX.
+- For binary production assets that cannot pass directly through the connector, a one-shot verified GitHub Actions importer from an approved user-supplied Dropbox package is an acceptable transfer pattern. Remove the importer after successful asset commit.
 
 ### Auryi
 - Battle-start crownless/Auorb-free lifecycle remains authoritative.
@@ -35,14 +36,13 @@ This is the fast-moving operational notepad for current PriZim production state.
 - The Wraith supplied body anchor remains the authority for projectile destination and impact center.
 - Crown Manifest uses the production crown sheet during first-turn manifestation; persistent crown remains a combat-state layer afterward.
 - Approved v3 PNG runtime set is five normal sprite strips: crown 8x256, charge 8x256, projectile 8x256, impact 8x384, recompose 6x256.
-- Staged PNG runtime paths:
+- Live PNG runtime paths:
   - `assets/fx/auryi/v3/01_crown_manifest_sheet.png`
   - `assets/fx/auryi/v3/02_auorb_charge_sheet.png`
   - `assets/fx/auryi/v3/03_auorb_projectile_sheet.png`
   - `assets/fx/auryi/v3/04_auorb_impact_sheet.png`
   - `assets/fx/auryi/v3/05_recompose_settle_sheet.png`
-- Staged code authority: `Live26PngDuoHybridSequenceDriver.js` + `Live26PngPartyFormationView.js`.
-- Promotion gate: do not route Live Battle to the PNG driver until all five PNG assets are committed and dimension-verified.
+- Runtime authority is `Live26DuoHybridSequenceDriver.js` with repo-served PNG loading and strict geometry checks.
 
 ### Battle stage
 - LIVE26 adds the first reusable Veil-corrupted battle backdrop/floor layer using runtime graphics only.
@@ -67,18 +67,23 @@ This is the fast-moving operational notepad for current PriZim production state.
 
 ## Immediate runtime QA lane
 
-1. Keep current live26e as the visible diagnostic build until PNG assets are committed.
-2. Commit all five approved Auryi v3 PNG sheets to the staged repo paths.
-3. Verify exact PNG strip dimensions before promotion.
-4. Route the live formation to `Live26PngPartyFormationView.js` and bump build ID only after step 3 passes.
-5. Verify Auryi turn entry has zero camera motion.
-6. Verify Crown Manifest aligns with her visible head center without reading as attached headgear.
-7. Verify Auorb Charge stays local to the shared hand anchor.
-8. Verify Projectile launches from that exact anchor and travels cleanly to the Wraith body anchor.
-9. Verify Impact centers on the Wraith body rather than the floor/baseline.
-10. Verify Recompose returns cleanly to Auryi's hand/persistent Auorb state without duplicate FX layers.
-11. Re-check LIVE25 Wraith stability and Kineza Blitzer safe-frame behavior for regression.
-12. After Auryi passes, apply the same PNG production-FX architecture to Kineza, then Prismel.
+1. Confirm live witness reads `main-20260901-live26f`.
+2. Verify Auryi turn entry has zero camera motion.
+3. Verify Crown Manifest aligns with her visible head center without reading as attached headgear.
+4. Verify Auorb Charge stays local to the shared hand anchor.
+5. Verify Projectile launches from that exact anchor and travels cleanly to the Wraith body anchor.
+6. Verify Impact centers on the Wraith body rather than the floor/baseline.
+7. Verify Recompose returns cleanly to Auryi's hand/persistent Auorb state without duplicate FX layers.
+8. Re-check LIVE25 Wraith stability and Kineza Blitzer safe-frame behavior for regression.
+9. After Auryi passes, apply the same PNG production-FX architecture to Kineza, then Prismel.
+
+## Resonart / Hybrid-Duo direction
+
+- Resonarts use the cinematic/video-rendered side of the Hybrid-Duo system, not the normal runtime attack-sheet lane.
+- Runtime remains authority for combat logic: targets, damage, buffs/debuffs, state, timing markers, and battle return.
+- Video owns cinematic presentation: authored shots, camera cuts, escalation, close-ups, and climax.
+- Preferred PV pattern is battlefield continuity -> rendered Resonart cinematic -> final hit reconnects to live enemy/game state -> clean return to battle.
+- Reference-game videos may inform shot language, pacing, transition structure, and escalation only. Do not copy their authored assets or exact sequences.
 
 ## Production efficiency rules
 
