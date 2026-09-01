@@ -34,6 +34,11 @@
   let html=await (await read(`./hybrid-battle-live.html?template=${encodeURIComponent(id)}&ts=${stamp}`)).text();
   const importMap=JSON.stringify({imports}).replace(/</g,'\\u003c');
   html=html.replace('</head>',`<script type="importmap">${importMap}<\/script></head>`);
+  html=html.replace(
+    "import('./src/PartyBattleScene.js?v=blitzer-2')",
+    `import('./src/prizim/Live26PartyBattleScene.js?v=${encodeURIComponent(id)}')`
+  );
+  html=html.replace('</body>',`<div id="pvBuildWitness" style="position:fixed;left:6px;bottom:5px;z-index:9999;padding:3px 6px;border:1px solid #8d6cac88;border-radius:5px;background:#070817cc;color:#bfa8dc;font:8px ui-monospace,monospace;pointer-events:none">${id}</div></body>`);
   document.open();
   document.write(html);
   document.close();
