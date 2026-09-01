@@ -1,13 +1,12 @@
 {
   "schemaVersion": 1,
-  "id": "auryi_turn_entry_v1",
+  "id": "auryi_turn_entry_v2",
   "driver": "prizim-duo-hybrid",
   "mode": "sequence",
   "displayName": "Auryi",
   "sequenceName": "Turn Entry",
   "source": {
-    "type": "frames",
-    "whiteKey": true
+    "type": "frames"
   },
   "content": {
     "baselinePx": 756,
@@ -23,30 +22,38 @@
     "contactXOffsetFrac": 0
   },
   "presentation": {
+    "actorRangedFx": {
+      "enabled": true,
+      "gold": "rgba(255,216,112,0.95)",
+      "lavender": "rgba(198,132,255,0.90)",
+      "crownRadius": 28,
+      "orbRadius": 14,
+      "beamWidth": 0
+    },
     "ui": {
       "hideFrame": 0,
       "restoreFrame": 5,
       "hiddenAlpha": 0.0,
-      "fadeOutMs": 70,
-      "fadeInMs": 140
+      "fadeOutMs": 60,
+      "fadeInMs": 120
     },
     "camera": {
-      "focusYOffsetFrac": -0.055,
+      "focusYOffsetFrac": -0.045,
       "track": [
         {"frame": 0, "zoom": 1.00, "targetMix": 0.0},
-        {"frame": 1, "zoom": 1.06, "targetMix": 0.0},
-        {"frame": 2, "zoom": 1.12, "targetMix": 0.0},
-        {"frame": 3, "zoom": 1.17, "targetMix": 0.0},
-        {"frame": 4, "zoom": 1.11, "targetMix": 0.0},
+        {"frame": 1, "zoom": 1.03, "targetMix": 0.0},
+        {"frame": 2, "zoom": 1.06, "targetMix": 0.0},
+        {"frame": 3, "zoom": 1.09, "targetMix": 0.0},
+        {"frame": 4, "zoom": 1.05, "targetMix": 0.0},
         {"frame": 5, "zoom": 1.00, "targetMix": 0.0}
       ]
     },
     "actorScaleTrack": [
       {"frame": 0, "scale": 1.00},
-      {"frame": 1, "scale": 1.03},
-      {"frame": 2, "scale": 1.07},
-      {"frame": 3, "scale": 1.11},
-      {"frame": 4, "scale": 1.06},
+      {"frame": 1, "scale": 1.02},
+      {"frame": 2, "scale": 1.05},
+      {"frame": 3, "scale": 1.08},
+      {"frame": 4, "scale": 1.04},
       {"frame": 5, "scale": 1.00}
     ]
   },
@@ -58,11 +65,11 @@
   },
   "povFrames": [2, 3, 4],
   "frames": [
-    {"index":0,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_01.png","duration":140,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
-    {"index":1,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_02.png","duration":130,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
-    {"index":2,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_03.png","duration":135,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
-    {"index":3,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_04.png","duration":145,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
-    {"index":4,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_05.png","duration":155,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
-    {"index":5,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_06.png","duration":180,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756}
+    {"index":0,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_01.png","duration":120,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
+    {"index":1,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_02.png","duration":115,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
+    {"index":2,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_03.png","duration":120,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
+    {"index":3,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_04.png","duration":135,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
+    {"index":4,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_05.png","duration":135,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
+    {"index":5,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_06.png","duration":155,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756}
   ]
 }
