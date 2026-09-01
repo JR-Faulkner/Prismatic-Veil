@@ -1,7 +1,7 @@
 # PriZim Live Notepad
 
 Last refreshed: 2026-09-01
-Current live build: `main-20260901-live26c`
+Current live build: `main-20260901-live26d`
 
 This is the fast-moving operational notepad for current PriZim production state. It is intentionally concise and should be refreshed whenever a meaningful runtime decision, deployment, QA result, or new production direction lands.
 
@@ -11,7 +11,8 @@ This is the fast-moving operational notepad for current PriZim production state.
 - PZ-A Sound Lab includes procedural prototype pads for whoosh, whisk, blink, step snap, charge, release, impact, recover, and UI micro-cues, plus current production MP3 references.
 - Final SFX must be uniquely authored for The Prismatic Veil. Reference titles can inform feel only.
 - LIVE26 establishes the reusable high-resolution FX integration pattern: harmonized atlas -> one runtime player/adapter -> stable source/target anchors -> mobile runtime QA.
-- LIVE26C records a mobile-runtime lesson: the active battle scene/formation must not depend solely on the document-write import-map bridge. The root scene now loads directly and hard-enforces the live26 formation if a browser falls back to the legacy class.
+- LIVE26C records a mobile-runtime lesson: the active battle scene/formation must not depend solely on the document-write import-map bridge. The root scene loads directly and hard-enforces the live26 formation if a browser falls back to the legacy class.
+- LIVE26D records a second runtime lesson: production FX readiness must be a hard gate. A production attack may not silently fall back to provisional FX when its atlas has not finished decoding.
 
 ### Auryi
 - Battle-start crownless/Auorb-free lifecycle remains authoritative.
@@ -19,8 +20,8 @@ This is the fast-moving operational notepad for current PriZim production state.
 - Persistent Auorb state remains retained from live24.
 - LIVE25 crown centering/width correction remains inherited.
 - LIVE26 removes cinematic camera travel from Auryi turn-entry/turn-start. Entry is locked to the normal battle camera.
-- LIVE26 replaces provisional canvas-drawn Auryi attack magic with the harmonized production FX atlas.
 - LIVE26 basic Auorb runtime choreography is: Charge -> Projectile -> body-centered Impact -> Recompose/Settle.
+- LIVE26D forces the harmonized production atlas to decode before Auryi entry/attack playback and removes the silent procedural-beam fallback for production Auryi FX.
 - One body-relative Auryi hand anchor remains the authority for charge origin, projectile origin, and recompose endpoint.
 - The Wraith supplied body anchor remains the authority for projectile destination and impact center.
 - Crown Manifest uses the production crown row during first-turn manifestation; persistent crown remains a combat-state layer afterward.
@@ -47,16 +48,17 @@ This is the fast-moving operational notepad for current PriZim production state.
 
 ## Immediate runtime QA lane
 
-1. Confirm the battle shell displays build witness `main-20260901-live26c`.
-2. Verify the new Veil floor/backdrop is visibly active. If not, the wrong runtime is still executing.
+1. Confirm the battle shell displays build witness `main-20260901-live26d`.
+2. Verify the new Veil floor/backdrop remains visibly active.
 3. Verify Auryi turn entry has zero camera motion.
-4. Verify Crown Manifest aligns with her visible head center without reading as attached headgear.
+4. Verify the old procedural beam is gone from Auryi's basic attack.
 5. Verify Auorb Charge stays local to the shared hand anchor.
 6. Verify Projectile launches from that exact anchor and travels cleanly to the Wraith body anchor.
 7. Verify Impact centers on the Wraith body rather than the floor/baseline.
 8. Verify Recompose returns cleanly to Auryi's hand/persistent Auorb state without duplicate FX layers.
-9. Re-check LIVE25 Wraith stability and Kineza Blitzer safe-frame behavior for regression.
-10. After Auryi passes, apply the same production-FX architecture to Kineza, then Prismel.
+9. If the atlas cannot decode on Safari, surface the explicit LIVE26D atlas error instead of rendering old FX.
+10. Re-check LIVE25 Wraith stability and Kineza Blitzer safe-frame behavior for regression.
+11. After Auryi passes, apply the same production-FX architecture to Kineza, then Prismel.
 
 ## Production efficiency rules
 
@@ -67,6 +69,7 @@ This is the fast-moving operational notepad for current PriZim production state.
 - Preserve passed runtime work unless evidence shows regression.
 - Runtime/mobile evidence outranks static assumptions.
 - Do not rely on a browser-sensitive indirection layer when a direct runtime authority can be enforced safely.
+- Production assets must be ready before playback; no silent fallback to deprecated/provisional visuals.
 - No baked enemies in attack/FX sheets.
 - No baked camera movement in attack/FX sheets.
 - Persistent-state FX and cinematic/attack FX must remain separate layers.
