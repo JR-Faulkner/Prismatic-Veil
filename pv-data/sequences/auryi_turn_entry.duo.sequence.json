@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "auryi_turn_entry_v1",
+  "driver": "prizim-duo-hybrid",
+  "mode": "sequence",
+  "displayName": "Auryi",
+  "sequenceName": "Turn Entry",
+  "source": {
+    "type": "frames",
+    "whiteKey": true
+  },
+  "content": {
+    "baselinePx": 756,
+    "contentHeightPx": 744
+  },
+  "reference": {
+    "width": 960,
+    "height": 540,
+    "homeX": 0,
+    "homeY": 0,
+    "contactX": 1,
+    "baseScale": 1.0,
+    "contactXOffsetFrac": 0
+  },
+  "presentation": {
+    "ui": {
+      "hideFrame": 0,
+      "restoreFrame": 5,
+      "hiddenAlpha": 0.0,
+      "fadeOutMs": 70,
+      "fadeInMs": 140
+    },
+    "camera": {
+      "focusYOffsetFrac": -0.055,
+      "track": [
+        {"frame": 0, "zoom": 1.00, "targetMix": 0.0},
+        {"frame": 1, "zoom": 1.06, "targetMix": 0.0},
+        {"frame": 2, "zoom": 1.12, "targetMix": 0.0},
+        {"frame": 3, "zoom": 1.17, "targetMix": 0.0},
+        {"frame": 4, "zoom": 1.11, "targetMix": 0.0},
+        {"frame": 5, "zoom": 1.00, "targetMix": 0.0}
+      ]
+    },
+    "actorScaleTrack": [
+      {"frame": 0, "scale": 1.00},
+      {"frame": 1, "scale": 1.03},
+      {"frame": 2, "scale": 1.07},
+      {"frame": 3, "scale": 1.11},
+      {"frame": 4, "scale": 1.06},
+      {"frame": 5, "scale": 1.00}
+    ]
+  },
+  "markers": {
+    "entryStart": [0],
+    "crownIgnite": [1, 2],
+    "auorbOrbit": [2, 3, 4],
+    "entrySettle": [5]
+  },
+  "povFrames": [2, 3, 4],
+  "frames": [
+    {"index":0,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_01.png","duration":140,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
+    {"index":1,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_02.png","duration":130,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
+    {"index":2,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_03.png","duration":135,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
+    {"index":3,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_04.png","duration":145,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
+    {"index":4,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_05.png","duration":155,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756},
+    {"index":5,"asset":"./assets/characters/auryi/animations/entry/frames/Auryi_Entry_06.png","duration":180,"x":0,"y":0,"scale":1.0,"anchor_x":384,"anchor_y":756}
+  ]
+}
