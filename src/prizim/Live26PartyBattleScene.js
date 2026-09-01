@@ -3,7 +3,7 @@
 // live26 formation so mobile browsers cannot silently fall back to the
 // legacy PartyFormationView if an import-map bridge is ignored.
 import Live23PartyBattleScene from './Live23PartyBattleScene.js?v=live23';
-import Live26PartyFormationView from './Live26PartyFormationView.js?v=live26c';
+import Live26PartyFormationView from './Live26PartyFormationView.js?v=live26f';
 
 export default class Live26PartyBattleScene extends Live23PartyBattleScene {
   create() {
@@ -40,22 +40,18 @@ export default class Live26PartyBattleScene extends Live23PartyBattleScene {
 
       g.clear();
 
-      // Veil atmosphere.
       g.fillGradientStyle(0x080b1f, 0x0d1230, 0x1a0f38, 0x10091f, 1);
       g.fillRect(0, 0, w, h);
 
-      // Distant haze band keeps silhouettes readable without becoming scenery-heavy.
       g.fillStyle(0x6f52a8, 0.055);
       g.fillEllipse(w * 0.52, horizonY * 0.76, w * 0.72, h * 0.26);
       g.fillStyle(0xb98cff, 0.028);
       g.fillEllipse(w * 0.70, horizonY * 0.68, w * 0.46, h * 0.18);
 
-      // Ground plane.
       g.fillGradientStyle(0x17142b, 0x18132d, 0x090b18, 0x090b18, 1);
       g.fillTriangle(0, floorBottom, w, floorBottom, w * 0.78, horizonY);
       g.fillTriangle(0, floorBottom, w * 0.78, horizonY, w * 0.22, horizonY);
 
-      // Horizon seam and faint perspective rails.
       g.lineStyle(Math.max(1, h * 0.0024), 0x9b78d0, 0.16);
       g.beginPath();
       g.moveTo(w * 0.18, horizonY);
@@ -71,7 +67,6 @@ export default class Live26PartyBattleScene extends Live23PartyBattleScene {
         g.strokePath();
       });
 
-      // Arcane floor rings, intentionally subdued so combat FX own the brightest values.
       const ringY = h * 0.79;
       const ringW = w * 0.58;
       const ringH = h * 0.18;
@@ -80,7 +75,6 @@ export default class Live26PartyBattleScene extends Live23PartyBattleScene {
       g.lineStyle(Math.max(1, h * 0.0017), 0xd6b46c, 0.075);
       g.strokeEllipse(w * 0.52, ringY, ringW * 0.72, ringH * 0.64);
 
-      // Fixed prismatic fracture marks.
       const cracks = [
         [0.33,0.73, 0.36,0.77, 0.35,0.82],
         [0.62,0.70, 0.59,0.76, 0.61,0.81],
@@ -96,7 +90,6 @@ export default class Live26PartyBattleScene extends Live23PartyBattleScene {
         g.strokePath();
       });
 
-      // Contact pads keep standing/hovering units visually grounded.
       [0.25, 0.43, 0.61, 0.80].forEach((xFrac, i) => {
         const width = w * (i === 3 ? 0.11 : 0.085);
         g.fillStyle(i === 3 ? 0xa469d5 : 0x705e96, i === 3 ? 0.075 : 0.055);
