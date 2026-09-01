@@ -1,7 +1,7 @@
 # PriZim Live Notepad
 
 Last refreshed: 2026-09-01
-Current live build: `main-20260901-live26f`
+Current live build: `main-20260901-live26g`
 
 This is the fast-moving operational notepad for current PriZim production state. It is intentionally concise and should be refreshed whenever a meaningful runtime decision, deployment, QA result, or new production direction lands.
 
@@ -9,13 +9,15 @@ This is the fast-moving operational notepad for current PriZim production state.
 
 - PZ-A is a production hub with Animation Lab, Sound Lab, Resonart Lab, and Live Battle access.
 - PZ-A Sound Lab includes procedural prototype pads for whoosh, whisk, blink, step snap, charge, release, impact, recover, and UI micro-cues, plus current production MP3 references.
-- PZ-A Resonart Lab now includes the playable Auryi `Aurora Pulse` timing/composition prototype at `pz-a-aurora-pulse-lab.html`.
+- PZ-A Resonart Lab includes the playable Auryi `Aurora Pulse` timing/composition prototype at `pz-a-aurora-pulse-lab.html`.
 - Final SFX must be uniquely authored for The Prismatic Veil. Reference titles can inform feel only.
 - LIVE26 establishes the reusable high-resolution FX integration pattern: harmonized sheet -> one runtime player/adapter -> stable source/target anchors -> mobile runtime QA.
 - LIVE26C records a mobile-runtime lesson: the active battle scene/formation must not depend solely on the document-write import-map bridge. The root scene loads directly and hard-enforces the live26 formation if a browser falls back to the legacy class.
 - LIVE26D records a second runtime lesson: production FX readiness must be a hard gate. A production attack may not silently fall back to provisional FX when its production sheets are unavailable.
 - LIVE26E confirmed the inline WebP path is unsuitable for battle-critical iPhone/Safari combat art and retired it.
-- LIVE26F is the first production Auryi attack build using five normal repo-served PNG sprite strips. The Dropbox pack was imported into GitHub, dimension-verified by the importer, and the runtime now loads each PNG directly.
+- LIVE26F is the first production Auryi attack build using five normal repo-served PNG sprite strips.
+- LIVE26G adds an explicit Auryi FX runtime selector. `auryiFx=png` uses the production PNG sheets; `auryiFx=phaser` uses the inherited proven Phaser/procedural Auryi presentation and skips PNG readiness/loading for Auryi.
+- PZ-A exposes both `LIVE BATTLE · PNG FX` and `LIVE BATTLE · PHASER SAFE` so family/demo use does not depend on the still-under-QA PNG persistence behavior.
 
 ## Platform constraints / do-not-repeat rules
 
@@ -23,7 +25,8 @@ This is the fast-moving operational notepad for current PriZim production state.
 - Do not use inline/base64 WebP for production combat FX.
 - Do not require `img.decode()` as the readiness gate for battle-critical mobile image assets.
 - A previously observed iPhone/Safari asset-format failure is a standing platform constraint, not a fresh experiment opportunity.
-- Production combat art must fail visibly if unavailable. Never silently substitute deprecated/provisional FX.
+- Production combat art must fail visibly if unavailable. Never silently substitute deprecated/provisional FX in the production lane.
+- A user-selectable safe/demo mode is allowed when explicitly labeled and intentionally routed. It must not masquerade as a successful production-FX pass.
 - For binary production assets that cannot pass directly through the connector, a one-shot verified GitHub Actions importer from an approved user-supplied Dropbox package is an acceptable transfer pattern. Remove the importer after successful asset commit.
 
 ### Auryi
@@ -32,11 +35,12 @@ This is the fast-moving operational notepad for current PriZim production state.
 - Persistent Auorb state remains retained from live24.
 - LIVE25 crown centering/width correction remains inherited.
 - LIVE26 removes cinematic camera travel from Auryi turn-entry/turn-start. Entry is locked to the normal battle camera.
-- Auryi's player-facing basic attack name is now **Aurorb Slice**.
+- Auryi's player-facing basic attack name is **Aurorb Slice**.
+- Auryi's Resonart name is **Aurora Pulse**.
+- `Aurora Pulse` and `Aurorb Slice` are separate metadata and presentation authorities. Do not reuse the basic attack object as Resonart data.
 - Basic Aurorb Slice choreography remains: Charge -> Projectile -> body-centered Impact -> Recompose/Settle.
 - One body-relative Auryi hand anchor remains the authority for charge origin, projectile origin, and recompose endpoint.
 - The Wraith supplied body anchor remains the authority for projectile destination and impact center.
-- Crown Manifest uses the production crown sheet during first-turn manifestation; persistent crown remains a combat-state layer afterward.
 - Approved v3 PNG runtime set is five normal sprite strips: crown 8x256, charge 8x256, projectile 8x256, impact 8x384, recompose 6x256.
 - Live PNG runtime paths:
   - `assets/fx/auryi/v3/01_crown_manifest_sheet.png`
@@ -44,11 +48,14 @@ This is the fast-moving operational notepad for current PriZim production state.
   - `assets/fx/auryi/v3/03_auorb_projectile_sheet.png`
   - `assets/fx/auryi/v3/04_auorb_impact_sheet.png`
   - `assets/fx/auryi/v3/05_recompose_settle_sheet.png`
-- Runtime authority is `Live26DuoHybridSequenceDriver.js` with repo-served PNG loading and strict geometry checks.
-- Auryi's current Resonart is **Aurora Pulse**.
-- `Aurora Pulse` and `Aurorb Slice` are separate metadata and presentation authorities. Do not reuse the basic attack object as Resonart data.
+- Runtime authority is `Live26DuoHybridSequenceDriver.js`.
+- Production mode: `auryiFx=png`. Normal repo-served PNGs remain the intended production presentation.
+- Safe/demo mode: `auryiFx=phaser`. Auryi entry/basic attack intentionally route through the inherited procedural/Phaser implementation, while persistent crown/Auorb remain formation-owned Phaser graphics.
+- **Open QA issue:** user real-device testing reports that the new PNG crown/attack presentation does not remain/read on screen reliably enough, while the older Phaser-drawn presentation does. LIVE26G provides the safe fallback but does NOT mark PNG persistence as solved.
+- The newly supplied approved JRPG Auryi master is the visual identity/costume authority for battlefield and Resonart work. Do not substitute older alternate interpretations.
+- Aurora Pulse key-pose production uses the approved JRPG master plus each previously approved key pose as continuity authority. Pose changes only; zero redesign.
 - Aurora Pulse semantic ladder: Aura = Auryi's magic system; Auorb = condensed orb manifestation; Aurora = Resonart-scale expanded aura phenomenon.
-- Aurora Pulse cinematic grammar is locked for prototype iteration: battlefield continuity -> Auryi rises -> Aurora expands well beyond body scale -> Auryi smashes/crushes the Aurora inward with both hands -> brief compression/silence beat -> enormous circular Aurora Pulse -> reconnect to live battlefield impact/state.
+- Aurora Pulse cinematic grammar: battlefield continuity -> Auryi rises -> Aurora expands well beyond body scale -> Auryi smashes/crushes the Aurora inward with both hands -> brief compression/silence beat -> enormous circular Aurora Pulse -> reconnect to live battlefield impact/state.
 - Aurora Pulse presentation target is `hybrid-video`, not the runtime attack-sheet lane.
 
 ### Battle stage
@@ -66,24 +73,23 @@ This is the fast-moving operational notepad for current PriZim production state.
 - LIVE25 caps Blitzer camera zoom at 1.28 and target blend at 0.45.
 - Future locked state: gauntlets remain visibly glowing after ignition.
 - Kineza's prior iPhone/WebP attack issue is precedent for the global PNG battle-asset rule above.
-- Auryi's PNG production-FX integration becomes the reference architecture for Kineza FX hookup after Auryi mobile QA.
+- Auryi's PNG production-FX integration becomes the reference architecture for Kineza FX hookup only after Auryi mobile QA passes.
 
 ### Prismel
 - Future locked state: battle starts staffless; active turn draws/materializes staff; staff persists during active-turn state.
-- Auryi's PNG production-FX integration becomes the reference architecture for Prismel FX hookup after Auryi mobile QA.
+- Auryi's PNG production-FX integration becomes the reference architecture for Prismel FX hookup only after Auryi mobile QA passes.
 
 ## Immediate runtime QA lane
 
-1. Confirm live witness reads `main-20260901-live26f`.
-2. Verify Auryi turn entry has zero camera motion.
-3. Verify Crown Manifest aligns with her visible head center without reading as attached headgear.
-4. Verify Aurorb Slice Charge stays local to the shared hand anchor.
-5. Verify Projectile launches from that exact anchor and travels cleanly to the Wraith body anchor.
-6. Verify Impact centers on the Wraith body rather than the floor/baseline.
-7. Verify Recompose returns cleanly to Auryi's hand/persistent Auorb state without duplicate FX layers.
-8. Re-check LIVE25 Wraith stability and Kineza Blitzer safe-frame behavior for regression.
-9. Keep Aurora Pulse prototype iteration isolated in PZ-A until its timing/composition is approved.
-10. After Auryi basic-attack mobile QA passes, apply the same PNG production-FX architecture to Kineza, then Prismel.
+1. Confirm live witness reads `main-20260901-live26g`.
+2. For family/demo use, enter through PZ-A `LIVE BATTLE · PHASER SAFE` and verify Auryi crown/Auorb and basic attack remain clearly readable.
+3. Separately test PZ-A `LIVE BATTLE · PNG FX` and capture exact persistence/readability behavior without changing the safe mode.
+4. Verify Auryi turn entry has zero camera motion in both modes.
+5. In PNG mode, verify Crown Manifest alignment, Aurorb Slice Charge, Projectile, body-centered Impact, and Recompose.
+6. Verify persistent crown/Auorb return after Auryi attack.
+7. Re-check LIVE25 Wraith stability and Kineza Blitzer safe-frame behavior for regression.
+8. Keep Aurora Pulse prototype iteration isolated in PZ-A until its timing/composition is approved.
+9. After Auryi basic-attack production QA passes, apply the proven production-FX architecture to Kineza, then Prismel.
 
 ## Resonart / Hybrid-Duo direction
 
@@ -92,10 +98,9 @@ This is the fast-moving operational notepad for current PriZim production state.
 - Video owns cinematic presentation: authored shots, camera cuts, escalation, close-ups, and climax.
 - Preferred PV pattern is battlefield continuity -> rendered Resonart cinematic -> final hit reconnects to live enemy/game state -> clean return to battle.
 - Reference-game videos may inform shot language, pacing, transition structure, and escalation only. Do not copy their authored assets or exact sequences.
-- PZ-A `RESONART LAB · AURORA PULSE` is the current playable composition/timing proof. It reuses approved Auryi pose art plus temporary CSS/JS compositing so shot rhythm can be judged before final layered animation/video rendering.
-- The PZ-A prototype is not final footage and is not yet wired into live combat damage execution.
-- Once the prototype timing is approved, formalize a reusable Hybrid-Duo Resonart video player/adapter and route Auryi's Resonart through `hero.resonart`, not `hero.attack`.
-- Final Aurora Pulse production should use approved Auryi art as identity/costume authority, separated into animation-friendly layers where practical, with independent hair/robe/body/energy motion, authored camera movement, final FX, audio markers, and a rendered cinematic asset.
+- PZ-A `RESONART LAB · AURORA PULSE` is the current playable composition/timing proof. It is an animatic, not final footage.
+- Once prototype timing is approved, formalize a reusable Hybrid-Duo Resonart video player/adapter and route Auryi's Resonart through `hero.resonart`, not `hero.attack`.
+- Final Aurora Pulse production uses approved JRPG Auryi as identity/costume authority, animation-friendly character layers, independent hair/robe/body motion, authored camera movement, final Aurora FX, audio markers, and a rendered cinematic asset.
 
 ## Production efficiency rules
 
