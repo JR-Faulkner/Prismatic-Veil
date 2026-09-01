@@ -1,4 +1,4 @@
-// PriZim Duo-Hybrid Formation Adapter v0.11
+// PriZim Duo-Hybrid Formation Adapter v0.12
 // Keeps PartyBattleScene's proven attack-resolution contract while routing
 // Kineza and Auryi through PriZim Sequence Mode.
 // Neutral JSON manifests remain canonical presentation authority.
@@ -28,17 +28,16 @@ const AURYI_ENTRY_DUO = Object.freeze({
 });
 
 const AURYI_AUORB_DUO = Object.freeze({
-  id: 'auryi_auorb_invocation_v4',
+  id: 'auryi_auorb_invocation_v5',
   name: 'Auorb Invocation',
   manifest: './pv-data/sequences/auryi_auorb_invocation.duo.sequence.json',
-  version: '10',
+  version: '11',
   markerFrames: Object.freeze({
     gather: Object.freeze([1, 2, 3, 4, 5]),
     release: Object.freeze([9, 10]),
     impact: Object.freeze([11]),
     recover: Object.freeze([15, 16, 17])
   }),
-  // PriZim owns Auryi's ranged camera/HUD takeover from the manifest.
   povFrames: Object.freeze([])
 });
 
@@ -115,7 +114,11 @@ export default class DuoHybridPartyFormationView extends PartyFormationView {
     const config = heroId === 'kineza' ? actor?.duoSequenceConfig : actor?.duoAttackConfig;
     if (!config) throw new Error(`[PriZim Duo-Hybrid] ${heroId} attack sequence was not registered.`);
     const enemyX = this.scene.enemyView?.container?.x ?? (this.scene.scale.width * 0.74);
-    const enemyY = this.scene.enemyView?.container?.y ?? actor.sprite.y;
+    const baseEnemyY = this.scene.enemyView?.container?.y ?? actor.sprite.y;
+    // Auryi's procedural ranged renderer currently targets y-28 internally.
+    // Offset only her target authority so the Auorb/beam crosses the enemy's
+    // visual center instead of flying high. Kineza remains untouched.
+    const enemyY = heroId === 'auryi' ? baseEnemyY + 28 : baseEnemyY;
     try {
       return await this.duoHybrid.playSequence({
         config,
