@@ -1,0 +1,60 @@
+name: Import Auryi FX PNGs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/import-auryi-fx-png.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  import-pngs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Download approved Auryi runtime PNG pack
+        run: |
+          set -euo pipefail
+          curl -fL 'https://www.dropbox.com/scl/fi/jqniblwsincdmwwzwmoht/AURYI_FX_RUNTIME_PNGS_ONLY.zip?rlkey=0xh7p66svvrsbgpsjeon2xqzx&st=qpj8kfr6&dl=1' -o /tmp/auryi_fx.zip
+          rm -rf /tmp/auryi_fx
+          mkdir -p /tmp/auryi_fx
+          unzip -q /tmp/auryi_fx.zip -d /tmp/auryi_fx
+
+      - name: Verify approved file set
+        run: |
+          set -euo pipefail
+          test -s /tmp/auryi_fx/01_crown_manifest_sheet.png
+          test -s /tmp/auryi_fx/02_auorb_charge_sheet.png
+          test -s /tmp/auryi_fx/03_auorb_projectile_sheet.png
+          test -s /tmp/auryi_fx/04_auorb_impact_sheet.png
+          test -s /tmp/auryi_fx/05_recompose_settle_sheet.png
+          file /tmp/auryi_fx/*.png
+
+      - name: Install PNG runtime sheets
+        run: |
+          set -euo pipefail
+          mkdir -p assets/fx/auryi/v3
+          cp /tmp/auryi_fx/01_crown_manifest_sheet.png assets/fx/auryi/v3/01_crown_manifest_sheet.png
+          cp /tmp/auryi_fx/02_auorb_charge_sheet.png assets/fx/auryi/v3/02_auorb_charge_sheet.png
+          cp /tmp/auryi_fx/03_auorb_projectile_sheet.png assets/fx/auryi/v3/03_auorb_projectile_sheet.png
+          cp /tmp/auryi_fx/04_auorb_impact_sheet.png assets/fx/auryi/v3/04_auorb_impact_sheet.png
+          cp /tmp/auryi_fx/05_recompose_settle_sheet.png assets/fx/auryi/v3/05_recompose_settle_sheet.png
+
+      - name: Commit imported PNG assets
+        run: |
+          set -euo pipefail
+          git config user.name 'PriZim Runtime Importer'
+          git config user.email 'actions@users.noreply.github.com'
+          git add assets/fx/auryi/v3/*.png
+          if git diff --cached --quiet; then
+            echo 'Auryi PNG assets already match; nothing to commit.'
+            exit 0
+          fi
+          git commit -m 'Assets: import approved Auryi v3 runtime PNG sheets'
+          git push origin HEAD:main
