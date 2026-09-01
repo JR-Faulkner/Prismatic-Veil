@@ -21,7 +21,8 @@
   const abs=path=>new URL(path,location.href).href;
   const imports={
     [abs('./src/PartyBattleScene.js?v=blitzer-2')]:abs(`./src/prizim/Live23PartyBattleScene.js?v=${encodeURIComponent(id)}`),
-    [abs('./src/PartyFormationView.js?v=blitzer-2')]:abs(`./src/prizim/Live24PartyFormationView.js?v=${encodeURIComponent(id)}`),
+    [abs('./src/PartyFormationView.js?v=blitzer-2')]:abs(`./src/prizim/Live25PartyFormationView.js?v=${encodeURIComponent(id)}`),
+    [abs('./src/EnemyViewFactory.js?v=xbox-ui-1')]:abs(`./src/prizim/Live25EnemyViewFactory.js?v=${encodeURIComponent(id)}`),
     [abs('./src/PartyBattleConfig.js?v=blitzer-2')]:abs(`./src/PartyBattleConfig.js?v=${encodeURIComponent(id)}`),
     [abs('./src/PartyBattleAudioController.js?v=xbox-ui-1')]:abs(`./src/PartyBattleAudioController.js?v=${encodeURIComponent(id)}`),
     [abs('./src/PartyBattleAudioConfig.js?v=4')]:abs(`./src/PartyBattleAudioConfig.js?v=${encodeURIComponent(id)}`)
