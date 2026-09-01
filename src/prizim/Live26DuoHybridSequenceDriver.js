@@ -1,11 +1,17 @@
-// LIVE26F Auryi production-FX adapter.
-// Battle-critical FX use normal repo-served PNG sheets only. No WebP, no
-// data-URI atlas, and no silent procedural fallback.
+// LIVE26G Auryi production-FX adapter.
+// Default path uses normal repo-served PNG sheets. A selectable Phaser-safe
+// fallback is retained for real-device demos/QA while PNG persistence is tuned.
 import Live25DuoHybridSequenceDriver from './Live25DuoHybridSequenceDriver.js?v=live25';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const clamp01 = value => clamp(Number(value) || 0, 0, 1);
 const lerp = (a, b, t) => a + (b - a) * t;
+
+const runtimeParams = (() => {
+  try { return new URLSearchParams(globalThis.location?.search || ''); }
+  catch { return new URLSearchParams(); }
+})();
+const AURYI_FX_RUNTIME_MODE = runtimeParams.get('auryiFx') === 'phaser' ? 'phaser' : 'png';
 
 const AURYI_FX = Object.freeze({
   crown: {
@@ -35,6 +41,13 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     super(scene);
     this._live26Images = Object.create(null);
     this._live26ImagesPromise = null;
+    this.auryiFxRuntimeMode = AURYI_FX_RUNTIME_MODE;
+    globalThis.__PV_AURYI_FX_MODE__ = this.auryiFxRuntimeMode;
+    console.info(`[LIVE26G] Auryi FX runtime mode: ${this.auryiFxRuntimeMode}`);
+  }
+
+  _isPhaserFallback() {
+    return this.auryiFxRuntimeMode === 'phaser';
   }
 
   _isAuryiConfig(config) {
@@ -50,20 +63,20 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
       const image = new Image();
       image.onload = () => {
         if (!image.naturalWidth || !image.naturalHeight) {
-          reject(new Error(`[LIVE26F] ${name} PNG loaded without valid dimensions.`));
+          reject(new Error(`[LIVE26G] ${name} PNG loaded without valid dimensions.`));
           return;
         }
         const expectedW = spec.cellW * spec.count;
         if (image.naturalWidth !== expectedW || image.naturalHeight !== spec.cellH) {
           reject(new Error(
-            `[LIVE26F] ${name} PNG geometry mismatch: got ${image.naturalWidth}x${image.naturalHeight}, expected ${expectedW}x${spec.cellH}.`
+            `[LIVE26G] ${name} PNG geometry mismatch: got ${image.naturalWidth}x${image.naturalHeight}, expected ${expectedW}x${spec.cellH}.`
           ));
           return;
         }
         this._live26Images[name] = image;
         resolve(image);
       };
-      image.onerror = () => reject(new Error(`[LIVE26F] ${name} PNG failed to load.`));
+      image.onerror = () => reject(new Error(`[LIVE26G] ${name} PNG failed to load.`));
       image.src = spec.url;
     });
   }
@@ -80,7 +93,7 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
         Object.entries(AURYI_FX).map(([name, spec]) => this._loadPng(name, spec))
       ).then(() => this._live26Images).catch(error => {
         this._live26ImagesPromise = null;
-        throw new Error(`[LIVE26F] Auryi production PNG set failed: ${error?.message || error}`);
+        throw new Error(`[LIVE26G] Auryi production PNG set failed: ${error?.message || error}`);
       });
     }
     return this._live26ImagesPromise;
@@ -88,7 +101,9 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
 
   async prepare(config) {
     const manifest = await super.prepare(config);
-    if (this._isAuryiConfig(config)) await this._ensureLive26Images();
+    if (this._isAuryiConfig(config) && !this._isPhaserFallback()) {
+      await this._ensureLive26Images();
+    }
     return manifest;
   }
 
@@ -98,6 +113,18 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     const presentation = manifest?.presentation || {};
     const fx = presentation.actorRangedFx;
     if (!fx) return manifest;
+
+    // Safe-mode deliberately does not set live26Mode. That routes entry and
+    // attack presentation through the inherited proven Phaser/canvas path,
+    // while persistent crown/Auorb remain the formation-owned Phaser graphics.
+    if (this._isPhaserFallback()) {
+      delete fx.live26Mode;
+      if (id.startsWith('auryi_turn_entry')) {
+        fx.startFrame = 1;
+        presentation.camera = { ...(presentation.camera || {}), live26StaticEntry: true };
+      }
+      return manifest;
+    }
 
     if (id.startsWith('auryi_turn_entry')) {
       fx.live26Mode = 'entry';
@@ -112,7 +139,9 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
   }
 
   async playActorRangedSequence(args) {
-    if (this._isAuryiManifest(args?.manifest)) await this._ensureLive26Images();
+    if (this._isAuryiManifest(args?.manifest) && !this._isPhaserFallback()) {
+      await this._ensureLive26Images();
+    }
     return super.playActorRangedSequence(args);
   }
 
@@ -127,7 +156,7 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     const image = this._live26Images[name];
     const spec = AURYI_FX[name];
     if (!image || !spec) {
-      throw new Error(`[LIVE26F] ${name} PNG requested before readiness.`);
+      throw new Error(`[LIVE26G] ${name} PNG requested before readiness.`);
     }
     const index = clamp(Math.round(frameIndex), 0, spec.count - 1);
     const sx = index * spec.cellW;
@@ -143,7 +172,9 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
 
   drawActorRangedFx(layer, frameIndex, actorX, actorY, targetX, targetY, presentation) {
     const mode = presentation?.actorRangedFx?.live26Mode;
-    if (!mode) return super.drawActorRangedFx(layer, frameIndex, actorX, actorY, targetX, targetY, presentation);
+    if (!mode || this._isPhaserFallback()) {
+      return super.drawActorRangedFx(layer, frameIndex, actorX, actorY, targetX, targetY, presentation);
+    }
 
     const { ctx, dpr, w, h } = layer;
     const sprite = this._live24Actor?.sprite;
@@ -151,8 +182,6 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     const bodyW = Math.max(1, Number(sprite?.displayWidth || w * 0.16)) * zoom;
     const bodyH = Math.max(1, Number(sprite?.displayHeight || h * 0.40)) * zoom;
 
-    // Shared single-source anchors. These remain the authority for persistent
-    // Auorb placement and every basic-attack FX beat.
     const handX = actorX + bodyW * 0.41;
     const handY = actorY - bodyH * 0.80;
     const crownX = actorX + bodyW * 0.09;
@@ -176,8 +205,6 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
       return;
     }
 
-    // Basic Auorb production choreography:
-    // Charge -> projectile travel -> Wraith body impact -> recompose.
     if (frameIndex <= 8) {
       const chargeFrame = Math.round((clamp(frameIndex, 0, 8) / 8) * 7);
       this._drawSheetFrame(
