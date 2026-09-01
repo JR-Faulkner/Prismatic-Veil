@@ -34,6 +34,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 -m pip install --quiet pillow
           python3 - <<'PY'
           from pathlib import Path
           from PIL import Image
