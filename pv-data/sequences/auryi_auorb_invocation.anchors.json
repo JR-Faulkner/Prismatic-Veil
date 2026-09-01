@@ -1,0 +1,328 @@
+{
+  "frames": [
+    {
+      "frame": 1,
+      "file": "Auryi_Auorb_Attack_01.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        4,
+        478,
+        538
+      ],
+      "anchor_x": 241,
+      "anchor_y": 538,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 2,
+      "file": "Auryi_Auorb_Attack_02.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        0,
+        482,
+        542
+      ],
+      "anchor_x": 243,
+      "anchor_y": 542,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 3,
+      "file": "Auryi_Auorb_Attack_03.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        4,
+        478,
+        542
+      ],
+      "anchor_x": 241,
+      "anchor_y": 542,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 4,
+      "file": "Auryi_Auorb_Attack_04.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        4,
+        478,
+        538
+      ],
+      "anchor_x": 241,
+      "anchor_y": 538,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 5,
+      "file": "Auryi_Auorb_Attack_05.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        0,
+        482,
+        542
+      ],
+      "anchor_x": 243,
+      "anchor_y": 542,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 6,
+      "file": "Auryi_Auorb_Attack_06.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        0,
+        478,
+        538
+      ],
+      "anchor_x": 241,
+      "anchor_y": 538,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 7,
+      "file": "Auryi_Auorb_Attack_07.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        4,
+        478,
+        542
+      ],
+      "anchor_x": 241,
+      "anchor_y": 542,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 8,
+      "file": "Auryi_Auorb_Attack_08.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        0,
+        482,
+        542
+      ],
+      "anchor_x": 243,
+      "anchor_y": 542,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 9,
+      "file": "Auryi_Auorb_Attack_09.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        0,
+        4,
+        478,
+        542
+      ],
+      "anchor_x": 239,
+      "anchor_y": 542,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 10,
+      "file": "Auryi_Auorb_Attack_10.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        0,
+        482,
+        538
+      ],
+      "anchor_x": 243,
+      "anchor_y": 538,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 11,
+      "file": "Auryi_Auorb_Attack_11.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        0,
+        0,
+        482,
+        542
+      ],
+      "anchor_x": 241,
+      "anchor_y": 542,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 12,
+      "file": "Auryi_Auorb_Attack_12.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        0,
+        0,
+        478,
+        538
+      ],
+      "anchor_x": 239,
+      "anchor_y": 538,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 13,
+      "file": "Auryi_Auorb_Attack_13.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        4,
+        482,
+        542
+      ],
+      "anchor_x": 243,
+      "anchor_y": 542,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 14,
+      "file": "Auryi_Auorb_Attack_14.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        0,
+        0,
+        482,
+        542
+      ],
+      "anchor_x": 241,
+      "anchor_y": 542,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 15,
+      "file": "Auryi_Auorb_Attack_15.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        4,
+        478,
+        542
+      ],
+      "anchor_x": 241,
+      "anchor_y": 542,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 16,
+      "file": "Auryi_Auorb_Attack_16.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        0,
+        478,
+        538
+      ],
+      "anchor_x": 241,
+      "anchor_y": 538,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 17,
+      "file": "Auryi_Auorb_Attack_17.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        0,
+        482,
+        542
+      ],
+      "anchor_x": 243,
+      "anchor_y": 542,
+      "alpha_min": 0,
+      "alpha_max": 255
+    },
+    {
+      "frame": 18,
+      "file": "Auryi_Auorb_Attack_18.png",
+      "canvas": [
+        483,
+        543
+      ],
+      "bbox_alpha20": [
+        4,
+        0,
+        478,
+        538
+      ],
+      "anchor_x": 241,
+      "anchor_y": 538,
+      "alpha_min": 0,
+      "alpha_max": 255
+    }
+  ]
+}
