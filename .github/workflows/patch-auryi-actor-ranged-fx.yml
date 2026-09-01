@@ -1,5 +1,8 @@
 name: Temporary Auryi actor ranged FX patch
 on:
+  push:
+    paths:
+      - '.github/workflows/patch-auryi-actor-ranged-fx.yml'
   workflow_dispatch:
 jobs:
   patch:
