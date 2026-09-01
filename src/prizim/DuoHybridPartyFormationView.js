@@ -1,10 +1,10 @@
-// PriZim Duo-Hybrid Formation Adapter v0.9
+// PriZim Duo-Hybrid Formation Adapter v0.10
 // Keeps PartyBattleScene's proven attack-resolution contract while routing
 // Kineza and Auryi through PriZim Sequence Mode.
 // Neutral JSON manifests remain canonical presentation authority.
 
 import PartyFormationView from '../PartyFormationView.js?v=duo-base-1';
-import DuoHybridSequenceDriver from './DuoHybridSequenceDriver.js?v=duo-7';
+import DuoHybridSequenceDriver from './DuoHybridSequenceDriver.js?v=duo-8';
 
 const KINEZA_BLITZER_DUO = Object.freeze({
   id: 'kineza_blitzer_basic_v1',
@@ -28,17 +28,16 @@ const AURYI_ENTRY_DUO = Object.freeze({
 });
 
 const AURYI_AUORB_DUO = Object.freeze({
-  id: 'auryi_auorb_invocation_v3',
+  id: 'auryi_auorb_invocation_v4',
   name: 'Auorb Invocation',
   manifest: './pv-data/sequences/auryi_auorb_invocation.duo.sequence.json',
-  version: '9',
+  version: '10',
   markerFrames: Object.freeze({
     gather: Object.freeze([1, 2, 3, 4, 5]),
     release: Object.freeze([9, 10]),
     impact: Object.freeze([11]),
     recover: Object.freeze([15, 16, 17])
   }),
-  // PriZim owns Auryi's ranged camera/HUD takeover from the manifest.
   povFrames: Object.freeze([])
 });
 
@@ -50,7 +49,6 @@ export default class DuoHybridPartyFormationView extends PartyFormationView {
 
   create(roster) {
     super.create(roster);
-
     const kineza = this.actors.get('kineza');
     if (kineza) {
       kineza.duoSequenceConfig = KINEZA_BLITZER_DUO;
@@ -60,7 +58,6 @@ export default class DuoHybridPartyFormationView extends PartyFormationView {
         console.warn('[PriZim Duo-Hybrid] Blitzer prewarm deferred:', error);
       });
     }
-
     const auryi = this.actors.get('auryi');
     if (auryi) {
       auryi.duoEntryConfig = AURYI_ENTRY_DUO;
@@ -112,16 +109,10 @@ export default class DuoHybridPartyFormationView extends PartyFormationView {
   }
 
   async playAttackSheet(heroId, onFrame) {
-    if (heroId !== 'kineza' && heroId !== 'auryi') {
-      return super.playAttackSheet(heroId, onFrame);
-    }
-
+    if (heroId !== 'kineza' && heroId !== 'auryi') return super.playAttackSheet(heroId, onFrame);
     const actor = this.actors.get(heroId);
     const config = heroId === 'kineza' ? actor?.duoSequenceConfig : actor?.duoAttackConfig;
-    if (!config) {
-      throw new Error(`[PriZim Duo-Hybrid] ${heroId} attack sequence was not registered.`);
-    }
-
+    if (!config) throw new Error(`[PriZim Duo-Hybrid] ${heroId} attack sequence was not registered.`);
     const enemyX = this.scene.enemyView?.container?.x ?? (this.scene.scale.width * 0.74);
     const enemyY = this.scene.enemyView?.container?.y ?? actor.sprite.y;
     try {
