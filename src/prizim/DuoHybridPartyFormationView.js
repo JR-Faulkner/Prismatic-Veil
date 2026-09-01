@@ -1,4 +1,4 @@
-// PriZim Duo-Hybrid Formation Adapter v0.13
+// PriZim Duo-Hybrid Formation Adapter v0.14
 // Keeps PartyBattleScene's proven attack-resolution contract while routing
 // Kineza and Auryi through PriZim Sequence Mode.
 // Neutral JSON manifests remain canonical presentation authority.
@@ -34,7 +34,7 @@ const AURYI_AUORB_DUO = Object.freeze({
   id: 'auryi_auorb_invocation_v4',
   name: 'Auorb Invocation',
   manifest: './pv-data/sequences/auryi_auorb_invocation.duo.sequence.json',
-  version: '12',
+  version: '13',
   markerFrames: Object.freeze({
     gather: Object.freeze([1, 2, 3, 4, 5]),
     release: Object.freeze([9, 10]),
@@ -93,12 +93,12 @@ export default class DuoHybridPartyFormationView extends PartyFormationView {
     actor.duoCrown = crown;
     actor.duoAuorb = orb;
     actor.duoMagicVisible = false;
-    this._drawAuryiCrown(actor, 0.78, 1);
-    this._drawAuryiAuorb(actor, 1, 0.82);
+    this._drawAuryiCrown(actor, 0.38, 0.68);
+    this._drawAuryiAuorb(actor, 0.62, 0.56);
     this._layoutAuryiBattleMagic(actor);
   }
 
-  _drawAuryiCrown(actor, alpha = 0.78, scale = 1) {
+  _drawAuryiCrown(actor, alpha = 0.38, scale = 0.68) {
     const g = actor?.duoCrown;
     if (!g) return;
     const h = this.scene.scale.height;
@@ -120,7 +120,7 @@ export default class DuoHybridPartyFormationView extends PartyFormationView {
     g.strokePath();
   }
 
-  _drawAuryiAuorb(actor, scale = 1, alpha = 0.82) {
+  _drawAuryiAuorb(actor, scale = 0.62, alpha = 0.56) {
     const g = actor?.duoAuorb;
     if (!g) return;
     const h = this.scene.scale.height;
@@ -151,8 +151,8 @@ export default class DuoHybridPartyFormationView extends PartyFormationView {
     actor.duoCrown.setAlpha(visible ? 1 : 0);
     actor.duoAuorb.setAlpha(visible ? 1 : 0);
     if (visible) {
-      this._drawAuryiCrown(actor, 0.78, 1);
-      this._drawAuryiAuorb(actor, 1, 0.82);
+      this._drawAuryiCrown(actor, 0.38, 0.68);
+      this._drawAuryiAuorb(actor, 0.62, 0.56);
       this._layoutAuryiBattleMagic(actor);
     }
   }
@@ -162,8 +162,9 @@ export default class DuoHybridPartyFormationView extends PartyFormationView {
     const h = this.scene.scale.height;
     const charge = clamp01(frameIndex / 8);
     const recover = clamp01((frameIndex - 12) / 5);
-    const crownPower = 1 + charge * 0.15 - recover * 0.10;
-    this._drawAuryiCrown(actor, 0.78 + charge * 0.22 - recover * 0.12, crownPower);
+    const crownPower = 0.68 + charge * 0.32 - recover * 0.32;
+    const crownAlpha = 0.38 + charge * 0.48 - recover * 0.48;
+    this._drawAuryiCrown(actor, crownAlpha, crownPower);
     actor.duoCrown.setPosition(actor.sprite.x, actor.sprite.y - h * 0.17);
 
     const handX = actor.sprite.x + h * 0.063;
@@ -188,11 +189,12 @@ export default class DuoHybridPartyFormationView extends PartyFormationView {
       orbY = lerp(visualTargetY, handY, t);
     }
 
-    // Starts at normal idle size, swells through charge/release, then returns.
-    let orbScale = 1 + charge * 0.70;
+    // True state ladder: small idle -> charged growth -> impact peak -> small idle.
+    let orbScale = 0.62 + charge * 1.08;
     if (frameIndex >= 9 && frameIndex <= 11) orbScale = 1.72 + ((frameIndex - 9) / 2) * 0.28;
-    if (frameIndex >= 12) orbScale = lerp(1.82, 1.0, clamp01((frameIndex - 12) / 5));
-    this._drawAuryiAuorb(actor, orbScale, 0.86 + charge * 0.14);
+    if (frameIndex >= 12) orbScale = lerp(1.82, 0.62, clamp01((frameIndex - 12) / 5));
+    const orbAlpha = 0.56 + charge * 0.38 - recover * 0.38;
+    this._drawAuryiAuorb(actor, orbScale, orbAlpha);
     actor.duoAuorb.setPosition(orbX, orbY).setAlpha(1);
   }
 
@@ -272,8 +274,8 @@ export default class DuoHybridPartyFormationView extends PartyFormationView {
       throw wrapped;
     } finally {
       if (heroId === 'auryi' && actor?.duoMagicVisible) {
-        this._drawAuryiCrown(actor, 0.78, 1);
-        this._drawAuryiAuorb(actor, 1, 0.82);
+        this._drawAuryiCrown(actor, 0.38, 0.68);
+        this._drawAuryiAuorb(actor, 0.62, 0.56);
         this._layoutAuryiBattleMagic(actor);
         actor.duoCrown.setAlpha(1);
         actor.duoAuorb.setAlpha(1);
