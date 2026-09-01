@@ -3,7 +3,7 @@
 // live26 formation so mobile browsers cannot silently fall back to the
 // legacy PartyFormationView if an import-map bridge is ignored.
 import Live23PartyBattleScene from './Live23PartyBattleScene.js?v=live23';
-import Live26PartyFormationView from './Live26PartyFormationView.js?v=live26f';
+import Live26PartyFormationView from './Live26PartyFormationView.js?v=live26g';
 
 export default class Live26PartyBattleScene extends Live23PartyBattleScene {
   create() {
