@@ -1,4 +1,4 @@
-// PriZim Duo-Hybrid Sequence Driver v0.6
+// PriZim Duo-Hybrid Sequence Driver v0.7
 // Renderer bridge for two presentation lanes:
 // 1) Sequence Mode: logical frame sequences rendered by a PriZim-owned
 //    high-DPI canvas layer. Phaser does not register attack textures.
@@ -81,6 +81,29 @@ export default class DuoHybridSequenceDriver {
     return manifest;
   }
 
+  whiteKeyImage(image) {
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) throw new Error('[PriZim Duo-Hybrid] White-key canvas unavailable.');
+    ctx.drawImage(image, 0, 0);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const px = data.data;
+    for (let i = 0; i < px.length; i += 4) {
+      const dr = 255 - px[i], dg = 255 - px[i + 1], db = 255 - px[i + 2];
+      const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+      const max = Math.max(px[i], px[i + 1], px[i + 2]);
+      const min = Math.min(px[i], px[i + 1], px[i + 2]);
+      const sat = max - min;
+      const base = clamp01((dist - 10) / 42);
+      const glow = clamp01((sat - 14) / 70) * clamp01((max - 145) / 95) * 0.86;
+      px[i + 3] = Math.round(255 * Math.max(base, glow));
+    }
+    ctx.putImageData(data, 0, 0);
+    return canvas;
+  }
+
   async prepareSequenceSource(manifest, version = '1') {
     const source = manifest.source || {};
     const cacheKey = `${manifest.id}#${version}`;
@@ -91,8 +114,11 @@ export default class DuoHybridSequenceDriver {
         const frames = [];
         for (const frame of manifest.frames || []) {
           if (!frame.asset) throw new Error(`[PriZim Duo-Hybrid] Frame ${frame.index} has no asset.`);
-          const image = await this.loadImage(frame.asset, version);
-          frames.push({ image, sx: 0, sy: 0, sw: image.naturalWidth, sh: image.naturalHeight });
+          let image = await this.loadImage(frame.asset, version);
+          if (source.whiteKey === true) image = this.whiteKeyImage(image);
+          const iw = image.naturalWidth || image.width;
+          const ih = image.naturalHeight || image.height;
+          frames.push({ image, sx: 0, sy: 0, sw: iw, sh: ih });
         }
         return { type: 'frames', frames };
       }
