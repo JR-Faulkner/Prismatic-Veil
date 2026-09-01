@@ -3,7 +3,7 @@
 // production atlas while preserving live25 Kineza camera safety and all
 // existing sequence timing/ownership rules.
 import Live25DuoHybridSequenceDriver from './Live25DuoHybridSequenceDriver.js?v=live25';
-import AURYI_FX_ATLAS, { AURYI_FX_CELL_W, AURYI_FX_ROWS } from './live26/AuryiFxAtlasData.js?v=live26d';
+import AURYI_FX_ATLAS, { AURYI_FX_CELL_W, AURYI_FX_ROWS } from './live26/AuryiFxAtlasData.js?v=live26e';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const clamp01 = value => clamp(Number(value) || 0, 0, 1);
@@ -29,18 +29,26 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
       return this._live26AtlasImage;
     }
     if (!this._live26AtlasPromise) {
-      this._live26AtlasPromise = this.loadImage(AURYI_FX_ATLAS, 'live26d-atlas-1')
-        .then(image => {
-          if (!image?.naturalWidth || !image?.naturalHeight) {
-            throw new Error('[LIVE26D] Auryi production FX atlas decoded without valid dimensions.');
+      // iOS Safari can reject HTMLImageElement.decode() even after a data-URI
+      // WebP has fired onload. For this production atlas, onload + natural
+      // dimensions are the compatibility authority. Do not route through the
+      // shared decode()-based loader.
+      this._live26AtlasPromise = new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => {
+          if (!image.naturalWidth || !image.naturalHeight) {
+            reject(new Error('[LIVE26E] Auryi production FX atlas loaded without valid dimensions.'));
+            return;
           }
           this._live26AtlasImage = image;
-          return image;
-        })
-        .catch(error => {
-          this._live26AtlasPromise = null;
-          throw new Error(`[LIVE26D] Auryi production FX atlas failed to load: ${error?.message || error}`);
-        });
+          resolve(image);
+        };
+        image.onerror = () => reject(new Error('[LIVE26E] Auryi production FX atlas image load failed.'));
+        image.src = AURYI_FX_ATLAS;
+      }).catch(error => {
+        this._live26AtlasPromise = null;
+        throw new Error(`[LIVE26E] Auryi production FX atlas failed to load: ${error?.message || error}`);
+      });
     }
     return this._live26AtlasPromise;
   }
@@ -70,10 +78,9 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     return manifest;
   }
 
-  // Critical mobile-runtime gate: the production atlas must be decoded before
+  // Critical mobile-runtime gate: the production atlas must be loaded before
   // any Auryi ranged sequence starts. Older live26 silently fell back to the
-  // procedural beam when prewarm had not completed; that made a broken atlas
-  // path look like a successful deployment on Safari.
+  // procedural beam when prewarm had not completed.
   async playActorRangedSequence(args) {
     if (this._isAuryiManifest(args?.manifest)) await this._ensureLive26Atlas();
     return super.playActorRangedSequence(args);
@@ -108,7 +115,7 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     const mode = presentation?.actorRangedFx?.live26Mode;
     if (!mode) return super.drawActorRangedFx(layer, frameIndex, actorX, actorY, targetX, targetY, presentation);
     if (!this._live26AtlasImage) {
-      throw new Error('[LIVE26D] Auryi production FX requested before atlas readiness.');
+      throw new Error('[LIVE26E] Auryi production FX requested before atlas readiness.');
     }
 
     const { ctx, dpr, w, h } = layer;
