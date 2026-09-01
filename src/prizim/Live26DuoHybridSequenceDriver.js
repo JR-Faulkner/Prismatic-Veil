@@ -3,7 +3,7 @@
 // production atlas while preserving live25 Kineza camera safety and all
 // existing sequence timing/ownership rules.
 import Live25DuoHybridSequenceDriver from './Live25DuoHybridSequenceDriver.js?v=live25';
-import AURYI_FX_ATLAS, { AURYI_FX_CELL_W, AURYI_FX_ROWS } from './live26/AuryiFxAtlasData.js?v=live26';
+import AURYI_FX_ATLAS, { AURYI_FX_CELL_W, AURYI_FX_ROWS } from './live26/AuryiFxAtlasData.js?v=live26d';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const clamp01 = value => clamp(Number(value) || 0, 0, 1);
@@ -13,13 +13,41 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
   constructor(scene) {
     super(scene);
     this._live26AtlasImage = null;
+    this._live26AtlasPromise = null;
+  }
+
+  _isAuryiConfig(config) {
+    return String(config?.id || '').startsWith('auryi_');
+  }
+
+  _isAuryiManifest(manifest) {
+    return String(manifest?.id || '').startsWith('auryi_');
+  }
+
+  async _ensureLive26Atlas() {
+    if (this._live26AtlasImage?.naturalWidth && this._live26AtlasImage?.naturalHeight) {
+      return this._live26AtlasImage;
+    }
+    if (!this._live26AtlasPromise) {
+      this._live26AtlasPromise = this.loadImage(AURYI_FX_ATLAS, 'live26d-atlas-1')
+        .then(image => {
+          if (!image?.naturalWidth || !image?.naturalHeight) {
+            throw new Error('[LIVE26D] Auryi production FX atlas decoded without valid dimensions.');
+          }
+          this._live26AtlasImage = image;
+          return image;
+        })
+        .catch(error => {
+          this._live26AtlasPromise = null;
+          throw new Error(`[LIVE26D] Auryi production FX atlas failed to load: ${error?.message || error}`);
+        });
+    }
+    return this._live26AtlasPromise;
   }
 
   async prepare(config) {
     const manifest = await super.prepare(config);
-    if (String(config?.id || '').startsWith('auryi_')) {
-      this._live26AtlasImage = await this.loadImage(AURYI_FX_ATLAS, 'live26-atlas-1');
-    }
+    if (this._isAuryiConfig(config)) await this._ensureLive26Atlas();
     return manifest;
   }
 
@@ -33,7 +61,6 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     if (id.startsWith('auryi_turn_entry')) {
       fx.live26Mode = 'entry';
       fx.startFrame = 1;
-      // Turn entry is a presentation beat, not a cinematic camera beat.
       presentation.camera = { ...(presentation.camera || {}), live26StaticEntry: true };
     } else if (id.startsWith('auryi_auorb_invocation')) {
       fx.live26Mode = 'attack';
@@ -41,6 +68,15 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
       fx.orbStartFrame = 0;
     }
     return manifest;
+  }
+
+  // Critical mobile-runtime gate: the production atlas must be decoded before
+  // any Auryi ranged sequence starts. Older live26 silently fell back to the
+  // procedural beam when prewarm had not completed; that made a broken atlas
+  // path look like a successful deployment on Safari.
+  async playActorRangedSequence(args) {
+    if (this._isAuryiManifest(args?.manifest)) await this._ensureLive26Atlas();
+    return super.playActorRangedSequence(args);
   }
 
   cameraPose(presentation, frameIndex, actorX, actorY, targetX, targetY) {
@@ -70,19 +106,20 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
 
   drawActorRangedFx(layer, frameIndex, actorX, actorY, targetX, targetY, presentation) {
     const mode = presentation?.actorRangedFx?.live26Mode;
-    if (!mode || !this._live26AtlasImage) {
-      return super.drawActorRangedFx(layer, frameIndex, actorX, actorY, targetX, targetY, presentation);
+    if (!mode) return super.drawActorRangedFx(layer, frameIndex, actorX, actorY, targetX, targetY, presentation);
+    if (!this._live26AtlasImage) {
+      throw new Error('[LIVE26D] Auryi production FX requested before atlas readiness.');
     }
 
     const { ctx, dpr, w, h } = layer;
-    const geom = this._auryiGeometry || {};
     const sprite = this._live24Actor?.sprite;
-    const bodyW = Math.max(1, Number(sprite?.displayWidth || w * 0.16));
-    const bodyH = Math.max(1, Number(sprite?.displayHeight || h * 0.40));
-    const handX = actorX + Number(geom.orbDx ?? bodyW * 0.41);
-    const handY = actorY + Number(geom.orbDy ?? -bodyH * 0.80);
+    const zoom = Number(this.scene.cameras?.main?.zoom || 1);
+    const bodyW = Math.max(1, Number(sprite?.displayWidth || w * 0.16)) * zoom;
+    const bodyH = Math.max(1, Number(sprite?.displayHeight || h * 0.40)) * zoom;
+    const handX = actorX + bodyW * 0.41;
+    const handY = actorY - bodyH * 0.80;
     const crownX = actorX + bodyW * 0.09;
-    const crownY = actorY + Number(geom.crownDy ?? -bodyH * 1.08);
+    const crownY = actorY - bodyH * 1.08;
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
@@ -102,7 +139,7 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
       return;
     }
 
-    // Basic Auorb attack production choreography:
+    // Basic Auorb production choreography:
     // Charge -> projectile travel -> body impact -> recompose at the same hand anchor.
     if (frameIndex <= 8) {
       const chargeFrame = Math.round((clamp(frameIndex, 0, 8) / 8) * 7);
