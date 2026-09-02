@@ -2,8 +2,9 @@
 // MAIN production authority:
 // - Prefer the locked HC Kineza right-facing battle idle when present.
 // - Keep Blitzer frame 01 only as a safety fallback until the binary asset is present.
+// - Use the enlarged Auryi + re-locked Prismel JRPG formation pass.
 import Live26PartyBattleScene from './Live26PartyBattleScene.js?v=live26g';
-import Live28PartyFormationView from './Live28PartyFormationView.js?v=live28b';
+import Live28PartyFormationView from './Live28PartyFormationView.js?v=live28c';
 
 const KINEZA_MAIN_IDLE_KEY = 'kineza_main_battle_idle_hc';
 const KINEZA_FALLBACK_KEY = 'kineza_live28_blitzer_frame01';
@@ -12,16 +13,14 @@ export default class Live28PartyBattleScene extends Live26PartyBattleScene {
   preload() {
     super.preload();
 
-    // Locked MAIN battle-idle authority. If this file is unavailable, Phaser will
-    // report the failed load and formation code will safely use Frame 01 instead.
     this.load.image(
       KINEZA_MAIN_IDLE_KEY,
-      './assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png?pvasset=live28b'
+      './assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png?pvasset=live28c'
     );
 
     this.load.image(
       KINEZA_FALLBACK_KEY,
-      './assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_01.png?pvasset=live28b'
+      './assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_01.png?pvasset=live28c'
     );
   }
 
