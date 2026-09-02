@@ -1,6 +1,6 @@
-// LIVE26G Auryi production-FX adapter.
-// Default path uses normal repo-served PNG sheets. A selectable Phaser-safe
-// fallback is retained for real-device demos/QA while PNG persistence is tuned.
+// LIVE27 Auryi production-FX adapter.
+// Default path is the proven Phaser/canvas crown + Auorb + attack presentation.
+// PNG production FX remain available explicitly with ?auryiFx=png for QA.
 import Live25DuoHybridSequenceDriver from './Live25DuoHybridSequenceDriver.js?v=live25';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -11,7 +11,7 @@ const runtimeParams = (() => {
   try { return new URLSearchParams(globalThis.location?.search || ''); }
   catch { return new URLSearchParams(); }
 })();
-const AURYI_FX_RUNTIME_MODE = runtimeParams.get('auryiFx') === 'phaser' ? 'phaser' : 'png';
+const AURYI_FX_RUNTIME_MODE = runtimeParams.get('auryiFx') === 'png' ? 'png' : 'phaser';
 
 const AURYI_FX = Object.freeze({
   crown: {
@@ -43,7 +43,7 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     this._live26ImagesPromise = null;
     this.auryiFxRuntimeMode = AURYI_FX_RUNTIME_MODE;
     globalThis.__PV_AURYI_FX_MODE__ = this.auryiFxRuntimeMode;
-    console.info(`[LIVE26G] Auryi FX runtime mode: ${this.auryiFxRuntimeMode}`);
+    console.info(`[LIVE27] Auryi FX runtime mode: ${this.auryiFxRuntimeMode}`);
   }
 
   _isPhaserFallback() {
@@ -63,20 +63,20 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
       const image = new Image();
       image.onload = () => {
         if (!image.naturalWidth || !image.naturalHeight) {
-          reject(new Error(`[LIVE26G] ${name} PNG loaded without valid dimensions.`));
+          reject(new Error(`[LIVE27] ${name} PNG loaded without valid dimensions.`));
           return;
         }
         const expectedW = spec.cellW * spec.count;
         if (image.naturalWidth !== expectedW || image.naturalHeight !== spec.cellH) {
           reject(new Error(
-            `[LIVE26G] ${name} PNG geometry mismatch: got ${image.naturalWidth}x${image.naturalHeight}, expected ${expectedW}x${spec.cellH}.`
+            `[LIVE27] ${name} PNG geometry mismatch: got ${image.naturalWidth}x${image.naturalHeight}, expected ${expectedW}x${spec.cellH}.`
           ));
           return;
         }
         this._live26Images[name] = image;
         resolve(image);
       };
-      image.onerror = () => reject(new Error(`[LIVE26G] ${name} PNG failed to load.`));
+      image.onerror = () => reject(new Error(`[LIVE27] ${name} PNG failed to load.`));
       image.src = spec.url;
     });
   }
@@ -93,7 +93,7 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
         Object.entries(AURYI_FX).map(([name, spec]) => this._loadPng(name, spec))
       ).then(() => this._live26Images).catch(error => {
         this._live26ImagesPromise = null;
-        throw new Error(`[LIVE26G] Auryi production PNG set failed: ${error?.message || error}`);
+        throw new Error(`[LIVE27] Auryi production PNG set failed: ${error?.message || error}`);
       });
     }
     return this._live26ImagesPromise;
@@ -114,9 +114,9 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     const fx = presentation.actorRangedFx;
     if (!fx) return manifest;
 
-    // Safe-mode deliberately does not set live26Mode. That routes entry and
-    // attack presentation through the inherited proven Phaser/canvas path,
-    // while persistent crown/Auorb remain the formation-owned Phaser graphics.
+    // Default Phaser path deliberately does not set live26Mode. Entry and
+    // attack render through the inherited proven canvas presentation while
+    // persistent crown/Auorb remain formation-owned Phaser graphics.
     if (this._isPhaserFallback()) {
       delete fx.live26Mode;
       if (id.startsWith('auryi_turn_entry')) {
@@ -156,7 +156,7 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     const image = this._live26Images[name];
     const spec = AURYI_FX[name];
     if (!image || !spec) {
-      throw new Error(`[LIVE26G] ${name} PNG requested before readiness.`);
+      throw new Error(`[LIVE27] ${name} PNG requested before readiness.`);
     }
     const index = clamp(Math.round(frameIndex), 0, spec.count - 1);
     const sx = index * spec.cellW;
