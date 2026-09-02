@@ -1,10 +1,10 @@
-// LIVE28 party-battle scene.
+// LIVE28E party-battle scene.
 // MAIN production authority:
 // - Preload Prismel HC passive/active idle pair for correct turn-state swap.
-// - Prefer the locked HC Kineza right-facing battle idle when present.
-// - Keep Blitzer frame 01 only as a safety fallback until the binary asset is present.
+// - Kineza HC right-facing idle now physically exists and is the production authority.
+// - Blitzer frame 01 remains preload-only emergency recovery, not normal standby.
 import Live26PartyBattleScene from './Live26PartyBattleScene.js?v=live26g';
-import Live28PartyFormationView from './Live28PartyFormationView.js?v=live28d';
+import Live28PartyFormationView from './Live28PartyFormationView.js?v=live28e';
 
 const PRISMEL_PASSIVE_KEY = 'prismel_idle_passive_hc';
 const PRISMEL_ACTIVE_KEY = 'prismel_idle_active_hc';
@@ -17,21 +17,21 @@ export default class Live28PartyBattleScene extends Live26PartyBattleScene {
 
     this.load.image(
       PRISMEL_PASSIVE_KEY,
-      './assets/characters/prismel/live_hc/prismel_idle_passive_hc.svg?pvasset=live28d'
+      './assets/characters/prismel/live_hc/prismel_idle_passive_hc.svg?pvasset=live28e'
     );
     this.load.image(
       PRISMEL_ACTIVE_KEY,
-      './assets/characters/prismel/live_hc/prismel_idle_active_hc.svg?pvasset=live28d'
+      './assets/characters/prismel/live_hc/prismel_idle_active_hc.svg?pvasset=live28e'
     );
 
     this.load.image(
       KINEZA_MAIN_IDLE_KEY,
-      './assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png?pvasset=live28d'
+      './assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png?pvasset=live28e'
     );
 
     this.load.image(
       KINEZA_FALLBACK_KEY,
-      './assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_01.png?pvasset=live28d'
+      './assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_01.png?pvasset=live28e'
     );
   }
 
