@@ -37,4 +37,19 @@ export default class Live27PartyBattleScene extends Live26PartyBattleScene {
 
     globalThis.__PV_LIVE27_RUNTIME__ = true;
   }
+
+  _onCommand(label) {
+    const result = super._onCommand(label);
+    const hero = this._activeHero?.();
+    if (hero?.id !== 'auryi' || !this._drawer) return result;
+
+    if (label === 'Attack' && hero.attack) {
+      this._drawer.title?.setText?.(String(hero.attack.name || 'Aurorb Slice').toUpperCase());
+      this._drawer.detail?.setText?.(hero.attack.flavor || 'A compressed Aurorb cuts through the Veil toward the target.');
+    } else if (label === 'Resonart' && hero.resonart) {
+      this._drawer.title?.setText?.(String(hero.resonart.name || 'Aurora Pulse').toUpperCase());
+      this._drawer.detail?.setText?.(hero.resonart.flavor || 'Auryi compresses a vast Aurora and releases it as a Resonance pulse.');
+    }
+    return result;
+  }
 }
