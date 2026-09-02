@@ -24,19 +24,12 @@ jobs:
           set -euo pipefail
           mkdir -p assets/party_formation
           curl -L --fail --retry 3 \
-            'https://www.dropbox.com/scl/fi/ppi2b4mzziuk3qw8pjg0e/Photo-Sep-01-2026-22-16-31.png?rlkey=ewkiuv4dcwv6zec9o13q189rh&st=vt8v6feu&dl=1' \
+            'https://www.dropbox.com/scl/fi/ppi2b4mzziuk3qw8pjg0e/Photo-Sep-01-2026-22-16-31.png?rlkey=ewkiuv4dcwv6zec9o13q189rh&st=vt8v6feu&raw=1' \
             -o assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png
           file assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png
-          python - <<'PY'
-          from PIL import Image
-          p='assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png'
-          im=Image.open(p)
-          if im.format != 'PNG':
-              raise SystemExit(f'Expected PNG, got {im.format}')
-          if im.width < 500 or im.height < 500:
-              raise SystemExit(f'Image unexpectedly small: {im.size}')
-          print('Kineza HC asset verified:', im.size, im.mode)
-          PY
+          test "$(xxd -p -l 8 assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png)" = "89504e470d0a1a0a"
+          test "$(stat -c%s assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png)" -gt 500000
+          echo 'Kineza HC PNG signature and size verified.'
 
       - name: Commit production Kineza idle to MAIN
         shell: bash
