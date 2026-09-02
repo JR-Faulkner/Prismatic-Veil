@@ -18,18 +18,18 @@ jobs:
         with:
           ref: main
 
-      - name: Download approved Kineza HC idle from Dropbox
+      - name: Download exact approved Kineza HC idle
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p assets/party_formation
-          curl -L --fail --retry 3 \
-            'https://www.dropbox.com/scl/fi/ppi2b4mzziuk3qw8pjg0e/Photo-Sep-01-2026-22-16-31.png?rlkey=ewkiuv4dcwv6zec9o13q189rh&st=vt8v6feu&raw=1' \
+          curl -L --fail --retry 2 \
+            'https://ucee7d837e64b5a3b924bc42d925.dl.dropboxusercontent.com/cd/0/get/DHV2ALavdgwWg1ybPHrK2kAgOqALDkKEkee7u93onD83M88N53k_4pvDxp4-qMTXGm6ydFMWzOi4xrEJeFNW4M6F_ly5CtZwM9wam4QpeIRfn0ypCBpeceVENdCz2UGH3WqrLVIfG-FyleCviRwL3WHqSan8YtUkoegwofm_YmeMtA/file?c_luid=9bd25e73' \
             -o assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png
           file assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png
           test "$(xxd -p -l 8 assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png)" = "89504e470d0a1a0a"
-          test "$(stat -c%s assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png)" -gt 500000
-          echo 'Kineza HC PNG signature and size verified.'
+          test "$(stat -c%s assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png)" -eq 678330
+          echo 'Exact Kineza HC PNG verified.'
 
       - name: Commit production Kineza idle to MAIN
         shell: bash
