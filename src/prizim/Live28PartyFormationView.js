@@ -1,20 +1,16 @@
 // LIVE28 formation correction.
-// - Uses the approved JRPG Auryi master intact. No destructive runtime crown removal.
-// - Suppresses duplicate persistent Phaser crown/Auorb layers while retaining the
-//   preferred Phaser attack presentation from the Duo-Hybrid driver.
-// - MAIN explicitly re-locks Prismel to his approved JRPG idle authority.
-// - MAIN prefers the locked HC Kineza right-facing battle-idle authority.
-// - Blitzer frame 01 is safety fallback only.
-// - Keeps Auryi's visible rise -> attack -> settle choreography.
+// MAIN production authority:
+// - Prismel uses his approved HC passive idle when off-turn and HC active idle when on-turn.
+// - Auryi uses the approved JRPG body at 45% viewport height with no stacked persistent Phaser crown/Auorb.
+// - Kineza prefers the locked HC right-facing battle idle when present; Blitzer frame 01 remains fallback only.
 import Live26PartyFormationView from './Live26PartyFormationView.js?v=live26g';
 
-const PRISMEL_MASTER_KEY = 'party_prismel';
+const PRISMEL_PASSIVE_KEY = 'prismel_idle_passive_hc';
+const PRISMEL_ACTIVE_KEY = 'prismel_idle_active_hc';
 const AURYI_MASTER_KEY = 'party_auryi';
 const KINEZA_MAIN_IDLE_KEY = 'kineza_main_battle_idle_hc';
 const KINEZA_FALLBACK_KEY = 'kineza_live28_blitzer_frame01';
 
-// MAIN formation scale authority. Auryi was reading too small at 40%; 45%
-// restores her tallest-party-member presence while preserving the canonical ratios.
 const AURYI_TARGET_H_FRAC = 0.45;
 const PRISMEL_HEIGHT_RATIO = 570 / 650;
 const KINEZA_HEIGHT_RATIO = 475 / 650;
@@ -27,16 +23,14 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     super.create(roster);
 
     const prismel = this.actors.get('prismel');
-    if (prismel && this.scene.textures.exists(PRISMEL_MASTER_KEY)) {
-      // Production placeholder authority until his turn-start staff materialization
-      // sequence is promoted. Never inherit an unrelated action/state frame as idle.
+    if (prismel && this.scene.textures.exists(PRISMEL_PASSIVE_KEY)) {
       prismel.stateSheetConfig = null;
       prismel.stateAnimKey = null;
-      prismel.live28ApprovedMaster = true;
-      prismel.standbyTex = PRISMEL_MASTER_KEY;
-      prismel.standbyOriginY = 0.906;
-      prismel.sprite.setTexture(PRISMEL_MASTER_KEY).setOrigin(0.5, prismel.standbyOriginY);
-      prismel.ghost.setTexture(PRISMEL_MASTER_KEY).setOrigin(0.5, prismel.standbyOriginY);
+      prismel.live28PrismelIdleSwap = true;
+      prismel.standbyTex = PRISMEL_PASSIVE_KEY;
+      prismel.standbyOriginY = 1;
+      prismel.sprite.setTexture(PRISMEL_PASSIVE_KEY).setOrigin(0.5, 1);
+      prismel.ghost.setTexture(PRISMEL_PASSIVE_KEY).setOrigin(0.5, 1);
     }
 
     const auryi = this.actors.get('auryi');
@@ -47,7 +41,7 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
       auryi.sprite.setTexture(AURYI_MASTER_KEY).setOrigin(0.5, 1);
       auryi.ghost.setTexture(AURYI_MASTER_KEY).setOrigin(0.5, 1);
       auryi.duoEntryPlayed = true;
-      this._hideDuplicateAuryiMagic(auryi);
+      this._disablePersistentAuryiMagic(auryi);
     }
 
     const kineza = this.actors.get('kineza');
@@ -69,19 +63,36 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     this.layout();
   }
 
-  _hideDuplicateAuryiMagic(actor) {
+  _disablePersistentAuryiMagic(actor) {
     if (!actor) return;
     actor.duoMagicVisible = false;
-    actor.duoCrown?.setAlpha(0);
-    actor.duoAuorb?.setAlpha(0);
+    [actor.duoCrown, actor.duoAuorb].filter(Boolean).forEach(obj => {
+      obj.setAlpha?.(0);
+      obj.setVisible?.(false);
+    });
   }
 
-  _showAuryiBattleMagic(actor) {
-    this._hideDuplicateAuryiMagic(actor);
-  }
+  _hideDuplicateAuryiMagic(actor) { this._disablePersistentAuryiMagic(actor); }
+  _showAuryiBattleMagic(actor) { this._disablePersistentAuryiMagic(actor); }
+  _updateAuryiAttackMagic(actor) { this._disablePersistentAuryiMagic(actor); }
+  _drawAuryiCrown(actor) { this._disablePersistentAuryiMagic(actor); }
+  _layoutAuryiBattleMagic(actor) { this._disablePersistentAuryiMagic(actor); }
 
-  _updateAuryiAttackMagic(actor) {
-    this._hideDuplicateAuryiMagic(actor);
+  setActive(heroId) {
+    super.setActive(heroId);
+    const prismel = this.actors.get('prismel');
+    if (prismel?.live28PrismelIdleSwap) {
+      const wanted = heroId === 'prismel' && this.scene.textures.exists(PRISMEL_ACTIVE_KEY)
+        ? PRISMEL_ACTIVE_KEY
+        : PRISMEL_PASSIVE_KEY;
+      if (!prismel._snapshot && this.scene.textures.exists(wanted)) {
+        prismel.standbyTex = wanted;
+        prismel.sprite.setTexture(wanted).setOrigin(0.5, 1);
+        prismel.ghost.setTexture(wanted).setOrigin(0.5, 1);
+      }
+    }
+    this._disablePersistentAuryiMagic(this.actors.get('auryi'));
+    this.layout();
   }
 
   layout() {
@@ -89,12 +100,12 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     const h = this.scene.scale.height;
 
     const prismel = this.actors?.get('prismel');
-    if (prismel && !prismel._snapshot && prismel.live28ApprovedMaster) {
-      const image = this.scene.textures.get(PRISMEL_MASTER_KEY)?.getSourceImage?.();
-      const aspect = image?.height ? image.width / image.height : 1;
+    if (prismel && !prismel._snapshot && prismel.live28PrismelIdleSwap) {
+      const image = this.scene.textures.get(prismel.standbyTex)?.getSourceImage?.();
+      const aspect = image?.height ? image.width / image.height : 1.2;
       const targetH = h * AURYI_TARGET_H_FRAC * PRISMEL_HEIGHT_RATIO;
-      prismel.sprite.setOrigin(0.5, prismel.standbyOriginY).setDisplaySize(targetH * aspect, targetH);
-      prismel.ghost.setOrigin(0.5, prismel.standbyOriginY).setDisplaySize(targetH * aspect, targetH);
+      prismel.sprite.setOrigin(0.5, 1).setDisplaySize(targetH * aspect, targetH);
+      prismel.ghost.setOrigin(0.5, 1).setDisplaySize(targetH * aspect, targetH);
       prismel.ring.setSize(prismel.sprite.displayWidth * 0.5, prismel.sprite.displayWidth * 0.18);
     }
 
@@ -106,7 +117,7 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
       auryi.sprite.setOrigin(0.5, 1).setDisplaySize(targetH * aspect, targetH);
       auryi.ghost.setOrigin(0.5, 1).setDisplaySize(targetH * aspect, targetH);
       auryi.ring.setSize(auryi.sprite.displayWidth * 0.5, auryi.sprite.displayWidth * 0.18);
-      this._hideDuplicateAuryiMagic(auryi);
+      this._disablePersistentAuryiMagic(auryi);
     }
 
     const kineza = this.actors?.get('kineza');
@@ -134,9 +145,7 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
         y: targetY,
         duration,
         ease: 'Sine.easeInOut',
-        onUpdate: () => {
-          if (actor.ghost) actor.ghost.y = actor.sprite.y;
-        },
+        onUpdate: () => { if (actor.ghost) actor.ghost.y = actor.sprite.y; },
         onComplete: () => {
           actor.sprite.y = targetY;
           if (actor.ghost) actor.ghost.y = targetY;
@@ -150,7 +159,6 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     if (heroId !== 'auryi') return super.playAttackSheet(heroId, onFrame);
     const actor = this.actors.get('auryi');
     if (!actor) return super.playAttackSheet(heroId, onFrame);
-
     const homeY = actor.sprite.y;
     const attackY = homeY - Math.max(44, this.scene.scale.height * AURYI_ATTACK_LIFT_FRAC);
     await this._tweenAuryiY(actor, attackY, 260);
@@ -158,7 +166,7 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
       return await super.playAttackSheet(heroId, onFrame);
     } finally {
       await this._tweenAuryiY(actor, homeY, 310);
-      this._hideDuplicateAuryiMagic(actor);
+      this._disablePersistentAuryiMagic(actor);
     }
   }
 }
