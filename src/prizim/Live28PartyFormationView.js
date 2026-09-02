@@ -2,16 +2,19 @@
 // - Uses the approved JRPG Auryi master intact. No destructive runtime crown removal.
 // - Suppresses duplicate persistent Phaser crown/Auorb layers while retaining the
 //   preferred Phaser attack presentation from the Duo-Hybrid driver.
-// - Uses Kineza Blitzer frame 01 as the temporary right-facing battlefield standby.
+// - MAIN prefers the locked HC Kineza right-facing battle-idle authority.
+// - Blitzer frame 01 is safety fallback only.
 // - Keeps Auryi's visible rise -> attack -> settle choreography.
 import Live26PartyFormationView from './Live26PartyFormationView.js?v=live26g';
 
 const AURYI_MASTER_KEY = 'party_auryi';
-const KINEZA_STANDBY_KEY = 'kineza_live28_blitzer_frame01';
+const KINEZA_MAIN_IDLE_KEY = 'kineza_main_battle_idle_hc';
+const KINEZA_FALLBACK_KEY = 'kineza_live28_blitzer_frame01';
 const AURYI_TARGET_H_FRAC = 0.40;
 const KINEZA_HEIGHT_RATIO = 475 / 650;
-const KINEZA_CONTENT_H = 673;
-const KINEZA_ORIGIN_Y = 710 / 768;
+const KINEZA_MAIN_CONTENT_H = 900;
+const KINEZA_FALLBACK_CONTENT_H = 673;
+const KINEZA_FALLBACK_ORIGIN_Y = 710 / 768;
 const AURYI_ATTACK_LIFT_FRAC = 0.10;
 
 export default class Live28PartyFormationView extends Live26PartyFormationView {
@@ -30,14 +33,19 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     }
 
     const kineza = this.actors.get('kineza');
-    if (kineza && this.scene.textures.exists(KINEZA_STANDBY_KEY)) {
-      kineza.stateSheetConfig = null;
-      kineza.stateAnimKey = null;
-      kineza.live28BlitzerStandby = true;
-      kineza.standbyTex = KINEZA_STANDBY_KEY;
-      kineza.standbyOriginY = KINEZA_ORIGIN_Y;
-      kineza.sprite.setTexture(KINEZA_STANDBY_KEY).setOrigin(0.5, KINEZA_ORIGIN_Y);
-      kineza.ghost.setTexture(KINEZA_STANDBY_KEY).setOrigin(0.5, KINEZA_ORIGIN_Y);
+    if (kineza) {
+      const hasMainIdle = this.scene.textures.exists(KINEZA_MAIN_IDLE_KEY);
+      const key = hasMainIdle ? KINEZA_MAIN_IDLE_KEY : KINEZA_FALLBACK_KEY;
+      if (this.scene.textures.exists(key)) {
+        kineza.stateSheetConfig = null;
+        kineza.stateAnimKey = null;
+        kineza.live28KinezaStandby = true;
+        kineza.live28KinezaMainIdle = hasMainIdle;
+        kineza.standbyTex = key;
+        kineza.standbyOriginY = hasMainIdle ? 1 : KINEZA_FALLBACK_ORIGIN_Y;
+        kineza.sprite.setTexture(key).setOrigin(0.5, kineza.standbyOriginY);
+        kineza.ghost.setTexture(key).setOrigin(0.5, kineza.standbyOriginY);
+      }
     }
 
     this.layout();
@@ -51,14 +59,10 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
   }
 
   _showAuryiBattleMagic(actor) {
-    // LIVE28 body art already contains the approved crown/Auorb presentation.
-    // Never stack a second persistent Phaser crown/orb over it.
     this._hideDuplicateAuryiMagic(actor);
   }
 
   _updateAuryiAttackMagic(actor) {
-    // The preferred Phaser attack is rendered by the sequence driver's attack FX.
-    // Do not also mutate a second persistent crown/Auorb graphics pair.
     this._hideDuplicateAuryiMagic(actor);
   }
 
@@ -78,11 +82,18 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     }
 
     const kineza = this.actors?.get('kineza');
-    if (kineza && !kineza._snapshot && kineza.live28BlitzerStandby) {
+    if (kineza && !kineza._snapshot && kineza.live28KinezaStandby) {
       const targetH = h * AURYI_TARGET_H_FRAC * KINEZA_HEIGHT_RATIO;
-      const scale = targetH / KINEZA_CONTENT_H;
-      kineza.sprite.setOrigin(0.5, KINEZA_ORIGIN_Y).setScale(scale);
-      kineza.ghost.setOrigin(0.5, KINEZA_ORIGIN_Y).setScale(scale);
+      if (kineza.live28KinezaMainIdle) {
+        const image = this.scene.textures.get(KINEZA_MAIN_IDLE_KEY)?.getSourceImage?.();
+        const aspect = image?.height ? image.width / image.height : 0.8;
+        kineza.sprite.setOrigin(0.5, 1).setDisplaySize(targetH * aspect, targetH);
+        kineza.ghost.setOrigin(0.5, 1).setDisplaySize(targetH * aspect, targetH);
+      } else {
+        const scale = targetH / KINEZA_FALLBACK_CONTENT_H;
+        kineza.sprite.setOrigin(0.5, KINEZA_FALLBACK_ORIGIN_Y).setScale(scale);
+        kineza.ghost.setOrigin(0.5, KINEZA_FALLBACK_ORIGIN_Y).setScale(scale);
+      }
       kineza.ring.setSize(kineza.sprite.displayWidth * 0.5, kineza.sprite.displayWidth * 0.18);
     }
   }
