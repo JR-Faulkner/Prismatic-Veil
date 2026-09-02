@@ -1,40 +1,133 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#070817"><title>The Prismatic Veil · A-Lab</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#070817">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>The Prismatic Veil · A-Lab</title>
 <style>
-:root{--night:#070817;--paper:#efe1bd;--paper2:#fff3d3;--ink:#241a11;--gold:#c7a45a;--cyan:#82e9ff;--violet:#8d4dff}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--night);font-family:Georgia,serif;color:#f7e8c3}#app{position:fixed;inset:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,340px);background:radial-gradient(circle at 65% 42%,#33205866,transparent 34%),linear-gradient(#081128,#130d27)}#stage{position:relative;min-width:0;overflow:hidden}#stage canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important}.panel{padding:18px 16px;background:linear-gradient(180deg,#0b1028f8,#151126f8);border-left:1px solid #c39d5855;overflow:auto}.brand{letter-spacing:.18em;font:11px system-ui;color:#d7b86d}.panel h1{margin:7px 0 2px;font-size:28px;font-weight:500}.sub{font:11px system-ui;color:#bdb0cd;margin-bottom:16px}.group{margin:12px 0;padding:11px;border:1px solid #b992525c;border-radius:10px;background:#0a0d20cc}.group label{display:block;font:10px system-ui;letter-spacing:.08em;color:#d7c59a;margin:0 0 6px}.row{display:flex;gap:7px;flex-wrap:wrap}.ctrl,select,input[type=range]{width:100%}select,.ctrl{border:1px solid #ad8749;border-radius:7px;background:linear-gradient(#f8e8bd,#d8bd7d);color:#281d12;padding:9px 10px;font:bold 12px Georgia}.ctrl{cursor:pointer;position:relative}.ctrl.focus,.ctrl:focus,select.focus,select:focus{outline:none;box-shadow:0 0 0 2px var(--cyan),0 0 18px #8d4dff99;transform:translateX(3px)}.row .ctrl{flex:1;min-width:82px}.toggle{display:flex;justify-content:space-between;align-items:center;font:11px system-ui;padding:5px 0}.toggle input{accent-color:#8d4dff}.readout{font:11px ui-monospace,monospace;color:#d9cce7;line-height:1.6}.badge{display:inline-block;padding:3px 6px;border:1px solid #8ee9ff55;border-radius:20px;color:#bdefff;background:#11233b;margin-right:4px}.footer{margin-top:13px;font:10px system-ui;color:#9287a6;line-height:1.5}.back{display:inline-block;margin-top:12px;color:#e4c983;text-decoration:none;font:bold 11px Georgia}.focusbar:before{content:'◆';position:absolute;left:-16px;color:#9ef2ff;filter:drop-shadow(0 0 7px #8d4dff)}@media(max-width:780px){#app{grid-template-columns:1fr}.panel{position:absolute;z-index:20;right:8px;top:8px;width:min(310px,45vw);max-height:calc(100% - 16px);border:1px solid #c39d5855;border-radius:12px;padding:12px}.panel h1{font-size:20px}.sub,.footer{display:none}}@media(orientation:portrait){#app{grid-template-columns:1fr;grid-template-rows:56% 44%}.panel{position:relative;right:auto;top:auto;width:auto;max-height:none;border-radius:0;border-width:1px 0 0;overflow:auto}.sub,.footer{display:block}}
-</style><script src="./phaser.min.js"></script></head>
-<body><main id="app"><section id="stage"></section><aside class="panel"><div class="brand">PRIZIM // PZ-A LAB</div><h1>Animation Lab</h1><div class="sub">Animation · movement · camera · impact · FX · audio</div>
-<div class="group"><label>HERO</label><select id="hero" data-nav><option value="kineza">KINEZA</option><option value="prismel">PRISMEL</option></select><label style="margin-top:9px">ATTACK / ABILITY</label><select id="attack" data-nav><option value="basic">BASIC ATTACK</option></select></div>
-<div class="group"><div class="row"><button class="ctrl" id="play" data-nav>▶ PLAY</button><button class="ctrl" id="loop" data-nav>↻ LOOP: ON</button></div><div class="row" style="margin-top:7px"><button class="ctrl" id="prev" data-nav>◀ FRAME</button><button class="ctrl" id="next" data-nav>FRAME ▶</button></div></div>
-<div class="group"><label>PLAYBACK SPEED <span id="speedLabel">1.00×</span></label><input id="speed" type="range" min="0.35" max="1.75" step="0.05" value="1" data-nav><div class="toggle"><span>CAMERA PUNCH</span><input id="camera" type="checkbox" checked data-nav></div><div class="toggle"><span>IMPACT FX</span><input id="fx" type="checkbox" checked data-nav></div><div class="toggle"><span>HIT-STOP</span><input id="hitstop" type="checkbox" checked data-nav></div><div class="toggle"><span>ENEMY REACTION</span><input id="reaction" type="checkbox" checked data-nav></div><div class="toggle"><span>AUDIO</span><input id="audio" type="checkbox" checked data-nav></div></div>
-<div class="group readout"><div><span class="badge" id="phase">READY</span><span id="frameRead">FRAME 01 / 18</span></div><div id="detail">Kineza · Blitzer</div><div id="timing">150 ms</div></div>
-<a class="back" href="./index.html" data-nav>← MAIN MENU</a><div class="footer">Keyboard / Xbox: arrows or D-pad move focus · A / Enter selects · B / Escape returns. A-Lab is a reusable production viewer, not a player-facing battle mode.</div></aside></main>
+:root{--night:#070817;--gold:#c7a45a;--cyan:#82e9ff;--violet:#8d4dff}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--night);font-family:Georgia,serif;color:#f7e8c3}#app{position:fixed;inset:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,340px);background:radial-gradient(circle at 65% 42%,#33205866,transparent 34%),linear-gradient(#081128,#130d27)}#stage{position:relative;min-width:0;overflow:hidden}#stage canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important}.panel{padding:18px 16px;background:linear-gradient(180deg,#0b1028f8,#151126f8);border-left:1px solid #c39d5855;overflow:auto}.brand{letter-spacing:.18em;font:11px system-ui;color:#d7b86d}.panel h1{margin:7px 0 2px;font-size:28px;font-weight:500}.sub{font:11px system-ui;color:#bdb0cd;margin-bottom:16px}.group{margin:12px 0;padding:11px;border:1px solid #b992525c;border-radius:10px;background:#0a0d20cc}.group label{display:block;font:10px system-ui;letter-spacing:.08em;color:#d7c59a;margin:0 0 6px}.row{display:flex;gap:7px;flex-wrap:wrap}.ctrl,select,input[type=range]{width:100%}select,.ctrl{border:1px solid #ad8749;border-radius:7px;background:linear-gradient(#f8e8bd,#d8bd7d);color:#281d12;padding:9px 10px;font:bold 12px Georgia}.ctrl{cursor:pointer;position:relative}.ctrl.focus,.ctrl:focus,select.focus,select:focus{outline:none;box-shadow:0 0 0 2px var(--cyan),0 0 18px #8d4dff99;transform:translateX(3px)}.row .ctrl{flex:1;min-width:82px}.toggle{display:flex;justify-content:space-between;align-items:center;font:11px system-ui;padding:5px 0}.toggle input{accent-color:#8d4dff}.readout{font:11px ui-monospace,monospace;color:#d9cce7;line-height:1.6}.badge{display:inline-block;padding:3px 6px;border:1px solid #8ee9ff55;border-radius:20px;color:#bdefff;background:#11233b;margin-right:4px}.footer{margin-top:13px;font:10px system-ui;color:#9287a6;line-height:1.5}.back{display:inline-block;margin-top:12px;color:#e4c983;text-decoration:none;font:bold 11px Georgia}.focusbar:before{content:'◆';position:absolute;left:-16px;color:#9ef2ff;filter:drop-shadow(0 0 7px #8d4dff)}@media(max-width:780px){#app{grid-template-columns:1fr}.panel{position:absolute;z-index:20;right:8px;top:8px;width:min(310px,45vw);max-height:calc(100% - 16px);border:1px solid #c39d5855;border-radius:12px;padding:12px}.panel h1{font-size:20px}.sub,.footer{display:none}}@media(orientation:portrait){#app{grid-template-columns:1fr;grid-template-rows:56% 44%}.panel{position:relative;right:auto;top:auto;width:auto;max-height:none;border-radius:0;border-width:1px 0 0;overflow:auto}.sub,.footer{display:block}}
+</style>
+<script src="./phaser.min.js"></script>
+</head>
+<body>
+<main id="app">
+<section id="stage"></section>
+<aside class="panel">
+  <div class="brand">PRIZIM // PZ-A LAB</div>
+  <h1>Animation Lab</h1>
+  <div class="sub">Animation · movement · camera · impact · FX · audio</div>
+  <div class="group"><label>HERO</label><select id="hero" data-nav><option value="kineza">KINEZA</option><option value="auryi">AURYI</option><option value="prismel">PRISMEL</option></select><label style="margin-top:9px">ATTACK / ABILITY</label><select id="attack" data-nav><option value="basic">BASIC ATTACK</option></select></div>
+  <div class="group"><div class="row"><button class="ctrl" id="play" data-nav>▶ PLAY</button><button class="ctrl" id="loop" data-nav>↻ LOOP: ON</button></div><div class="row" style="margin-top:7px"><button class="ctrl" id="prev" data-nav>◀ FRAME</button><button class="ctrl" id="next" data-nav>FRAME ▶</button></div></div>
+  <div class="group"><label>PLAYBACK SPEED <span id="speedLabel">1.00×</span></label><input id="speed" type="range" min="0.35" max="1.75" step="0.05" value="1" data-nav><div class="toggle"><span>CAMERA PUNCH</span><input id="camera" type="checkbox" checked data-nav></div><div class="toggle"><span>IMPACT FX</span><input id="fx" type="checkbox" checked data-nav></div><div class="toggle"><span>HIT-STOP</span><input id="hitstop" type="checkbox" checked data-nav></div><div class="toggle"><span>ENEMY REACTION</span><input id="reaction" type="checkbox" checked data-nav></div><div class="toggle"><span>AUDIO</span><input id="audio" type="checkbox" checked data-nav></div></div>
+  <div class="group readout"><div><span class="badge" id="phase">READY</span><span id="frameRead">FRAME</span></div><div id="detail">Loading…</div><div id="timing">—</div></div>
+  <a class="back" href="./pza-main.html" data-nav>← PZ-A</a>
+  <div class="footer">All three production heroes are registered here. The Lab preserves the selected hero through reloads instead of resetting to Kineza.</div>
+</aside>
+</main>
 <script type="module">
-import { A_LAB_HEROES, A_LAB_ENEMIES, getLabAttack } from './src/ALabRegistry.js?v=blitzer-2';
-const $=s=>document.querySelector(s), heroSel=$('#hero'),attackSel=$('#attack'),playBtn=$('#play'),loopBtn=$('#loop'),prevBtn=$('#prev'),nextBtn=$('#next'),speed=$('#speed'),speedLabel=$('#speedLabel'),cameraToggle=$('#camera'),fxToggle=$('#fx'),hitstopToggle=$('#hitstop'),reactionToggle=$('#reaction'),audioToggle=$('#audio'),phaseEl=$('#phase'),frameRead=$('#frameRead'),detail=$('#detail'),timing=$('#timing');
+import { A_LAB_HEROES, A_LAB_ENEMIES, getLabAttack } from './src/ALabRegistry.js?v=live27';
+const $=s=>document.querySelector(s);
+const heroSel=$('#hero'),attackSel=$('#attack'),playBtn=$('#play'),loopBtn=$('#loop'),prevBtn=$('#prev'),nextBtn=$('#next'),speed=$('#speed'),speedLabel=$('#speedLabel'),cameraToggle=$('#camera'),fxToggle=$('#fx'),hitstopToggle=$('#hitstop'),reactionToggle=$('#reaction'),audioToggle=$('#audio'),phaseEl=$('#phase'),frameRead=$('#frameRead'),detail=$('#detail'),timing=$('#timing');
+const query=new URLSearchParams(location.search);
+const requestedHero=query.get('hero');
+if(requestedHero&&A_LAB_HEROES[requestedHero]) heroSel.value=requestedHero;
+else heroSel.value='kineza';
 let scene,looping=true,focusIndex=0,lastPad={up:false,down:false,left:false,right:false,a:false,b:false};
+const frameKey=i=>`labHeroFrame${String(i).padStart(2,'0')}`;
+
 class LabScene extends Phaser.Scene{
- constructor(){super('ALab');this.frame=0;this.playing=false;this.timer=null;this.attack=null;this.hero=null;this.enemy=null;}
- preload(){this._loadSelectionAssets();}
- _loadSelectionAssets(){const atk=getLabAttack(heroSel.value,attackSel.value);if(!atk)return;this.load.spritesheet('labHero',atk.sheet,{frameWidth:atk.frameWidth,frameHeight:atk.frameHeight});const en=A_LAB_ENEMIES.wraith;this.load.image('labEnemyIdle',en.idle);this.load.image('labEnemyHit',en.hit);if(atk.audio?.launch)this.load.audio('labLaunch',atk.audio.launch);if(atk.audio?.impact)this.load.audio('labImpact',atk.audio.impact);}
- create(){scene=this;this.cameras.main.setBackgroundColor('#080b1d');this.bg=this.add.graphics();this.bg.fillGradientStyle(0x09142c,0x09142c,0x1f1137,0x1f1137,1);this.bg.fillRect(0,0,this.scale.width,this.scale.height);this.floor=this.add.ellipse(this.scale.width*.5,this.scale.height*.82,this.scale.width*.76,70,0x05060d,.55);this.enemy=this.add.image(0,0,'labEnemyIdle').setOrigin(.5,1);this.hero=this.add.sprite(0,0,'labHero',0).setOrigin(.5,1);this.after=this.add.sprite(0,0,'labHero',0).setOrigin(.5,1).setAlpha(0);this.impact=this.add.circle(0,0,22,0xeaffff,.95).setVisible(false).setBlendMode('ADD');this.ring=this.add.circle(0,0,34,0x50ff80,0).setStrokeStyle(8,0x50ff80,.9).setVisible(false).setBlendMode('ADD');this.scale.on('resize',this.layout,this);this.events.once('shutdown',()=>this.scale.off('resize',this.layout,this));this._applySelection();this.layout();updateReadout();}
- _applySelection(){this.attack=getLabAttack(heroSel.value,attackSel.value);this.frame=0;this.playing=false;clearTimeout(this.timer);if(this.hero?.texture?.key==='labHero')this.hero.setFrame(0);this.layout();}
- layout(){if(!this.attack||!this.hero)return;const w=this.scale.width,h=this.scale.height,baseY=h*this.attack.baselineY;const targetHeroH=Math.min(h*.52,390);const hs=targetHeroH/this.attack.contentHeightPx;this.hero.setScale(hs);this.after.setScale(hs);this._setHeroPositionForFrame(this.frame,true);const en=A_LAB_ENEMIES.wraith;const eh=Math.min(h*.49,350),ratio=this.enemy.width/this.enemy.height;this.enemy.setDisplaySize(eh*ratio,eh).setPosition(w*en.x,h*en.baselineY);this.floor.setPosition(w*.5,h*.82).setSize(w*.76,70);}
- _phaseForFrame(f){const m=this.attack.movement||{};if(m.type==='blinkMelee'){if(m.launchFrames?.includes(f))return'WHOOSH';if(m.enemyFrames?.includes(f))return f===m.impactFrame?'BOOM':'ENEMY-SIDE';if(m.returnFrames?.includes(f))return'RETURN';return f<m.launchFrames?.[0]?'BUILD':'RECOVER';}return f===m.impactFrame?'IMPACT':'CAST';}
- _setHeroPositionForFrame(f,instant=false){const m=this.attack.movement||{},w=this.scale.width,h=this.scale.height,y=h*this.attack.baselineY,formation=w*this.attack.formationX,enemy=w*(this.attack.enemyX-.095);let x=formation;if(m.type==='blinkMelee'){if(m.enemyFrames?.includes(f))x=enemy;else if(m.launchFrames?.includes(f)){const idx=m.launchFrames.indexOf(f);x=Phaser.Math.Linear(formation,enemy,(idx+1)/(m.launchFrames.length+1));}else if(m.returnFrames?.includes(f)){const idx=m.returnFrames.indexOf(f);x=Phaser.Math.Linear(enemy,formation,(idx+1)/(m.returnFrames.length+1));}}if(instant){this.hero.setPosition(x,y);this.after.setPosition(x,y);return;}if(m.type==='blinkMelee'&&(m.launchFrames?.includes(f)||m.returnFrames?.includes(f))){this.after.setFrame(Math.max(0,f-1)).setPosition(this.hero.x,this.hero.y).setAlpha(.42);this.tweens.add({targets:this.after,alpha:0,duration:120});this.tweens.add({targets:this.hero,x,y,duration:Math.max(45,(this.attack.durations[f]||100)*.72),ease:'Expo.easeOut'});}else this.hero.setPosition(x,y);}
- _fxAtImpact(){if(!fxToggle.checked)return;const x=this.enemy.x-this.enemy.displayWidth*.32,y=this.enemy.y-this.enemy.displayHeight*.55;this.impact.setPosition(x,y).setScale(.5).setAlpha(1).setVisible(true);this.ring.setPosition(x,y).setScale(.35).setAlpha(1).setVisible(true);this.tweens.add({targets:this.impact,scale:2.2,alpha:0,duration:180,onComplete:()=>this.impact.setVisible(false)});this.tweens.add({targets:this.ring,scale:2.7,alpha:0,duration:250,onComplete:()=>this.ring.setVisible(false)});}
- _enemyHit(){if(!reactionToggle.checked)return;this.enemy.setTexture('labEnemyHit');const bx=this.enemy.x;this.tweens.add({targets:this.enemy,x:bx+26,angle:3,duration:55,yoyo:true,hold:35,onComplete:()=>{this.enemy.setTexture('labEnemyIdle').setAngle(0).setX(bx)}});}
- _cameraImpact(){if(!cameraToggle.checked)return;this.cameras.main.zoomTo(1.06,65,'Quad.easeOut');this.cameras.main.shake(115,.007);this.time.delayedCall(135,()=>this.cameras.main.zoomTo(1,150,'Sine.easeOut'));}
- _sound(kind){if(!audioToggle.checked||this.sound.locked)return;const key=kind==='impact'?'labImpact':'labLaunch';if(this.cache.audio.exists(key))this.sound.play(key,{volume:1});}
- async play(){if(!this.attack)return;clearTimeout(this.timer);this.frame=0;this.playing=true;this.enemy.setTexture('labEnemyIdle').setAngle(0);this.cameras.main.setZoom(1);this._step();}
- _step(){if(!this.playing)return;const f=this.frame;this.hero.setFrame(f);this._setHeroPositionForFrame(f);const m=this.attack.movement||{};if(m.launchFrames?.[0]===f)this._sound('launch');if(m.impactFrame===f){this._fxAtImpact();this._enemyHit();this._cameraImpact();this._sound('impact');}
- updateReadout();let delay=(this.attack.durations[f]||120)/Number(speed.value);if(m.impactFrame===f&&hitstopToggle.checked)delay+=75;this.frame++;if(this.frame>=this.attack.frameCount){if(looping){this.frame=0;delay+=140}else{this.playing=false;this.frame=this.attack.frameCount-1;updateReadout();return;}}this.timer=setTimeout(()=>this._step(),delay);}
- step(dir){clearTimeout(this.timer);this.playing=false;this.frame=(this.frame+dir+this.attack.frameCount)%this.attack.frameCount;this.hero.setFrame(this.frame);this._setHeroPositionForFrame(this.frame,true);updateReadout();}
+  constructor(){super('ALab');this.frame=0;this.playing=false;this.timer=null;this.attack=null;this.hero=null;this.after=null;this.enemy=null;}
+  preload(){this._loadSelectionAssets();}
+  _loadSelectionAssets(){
+    const atk=getLabAttack(heroSel.value,attackSel.value);if(!atk)return;
+    if(atk.sourceType==='frames') atk.frames.forEach((url,i)=>this.load.image(frameKey(i),url));
+    else this.load.spritesheet('labHero',atk.sheet,{frameWidth:atk.frameWidth,frameHeight:atk.frameHeight});
+    const en=A_LAB_ENEMIES.wraith;this.load.image('labEnemyIdle',en.idle);this.load.image('labEnemyHit',en.hit);
+    if(atk.audio?.launch)this.load.audio('labLaunch',atk.audio.launch);if(atk.audio?.impact)this.load.audio('labImpact',atk.audio.impact);
+  }
+  create(){
+    scene=this;this.attack=getLabAttack(heroSel.value,attackSel.value);
+    this.cameras.main.setBackgroundColor('#080b1d');
+    this.bg=this.add.graphics();this.bg.fillGradientStyle(0x09142c,0x09142c,0x1f1137,0x1f1137,1);this.bg.fillRect(0,0,this.scale.width,this.scale.height);
+    this.floor=this.add.ellipse(this.scale.width*.5,this.scale.height*.82,this.scale.width*.76,70,0x05060d,.55);
+    this.enemy=this.add.image(0,0,'labEnemyIdle').setOrigin(.5,1);
+    const first=this.attack?.sourceType==='frames'?frameKey(0):'labHero';
+    this.hero=this.add.sprite(0,0,first,0).setOrigin(.5,1);
+    this.after=this.add.sprite(0,0,first,0).setOrigin(.5,1).setAlpha(0);
+    this.impact=this.add.circle(0,0,22,0xeaffff,.95).setVisible(false).setBlendMode('ADD');
+    this.ring=this.add.circle(0,0,34,0x50ff80,0).setStrokeStyle(8,0x50ff80,.9).setVisible(false).setBlendMode('ADD');
+    this.scale.on('resize',this.layout,this);this.events.once('shutdown',()=>this.scale.off('resize',this.layout,this));
+    this._setHeroFrame(this.hero,0);this._setHeroFrame(this.after,0);this.layout();updateReadout();
+  }
+  _setHeroFrame(target,f){
+    const i=Phaser.Math.Clamp(f,0,this.attack.frameCount-1);
+    if(this.attack.sourceType==='frames') target.setTexture(frameKey(i));
+    else target.setTexture('labHero').setFrame(i);
+  }
+  layout(){
+    if(!this.attack||!this.hero)return;
+    const w=this.scale.width,h=this.scale.height;
+    const targetHeroH=Math.min(h*(heroSel.value==='auryi'?.57:.52),heroSel.value==='auryi'?430:390);
+    const hs=targetHeroH/this.attack.contentHeightPx;
+    this.hero.setScale(hs);this.after.setScale(hs);this._setHeroPositionForFrame(this.frame,true);
+    const en=A_LAB_ENEMIES.wraith,eh=Math.min(h*.49,350),ratio=this.enemy.width/this.enemy.height;
+    this.enemy.setDisplaySize(eh*ratio,eh).setPosition(w*en.x,h*en.baselineY);this.floor.setPosition(w*.5,h*.82).setSize(w*.76,70);
+  }
+  _phaseForFrame(f){
+    const m=this.attack.movement||{};
+    if(m.type==='blinkMelee'){if(m.launchFrames?.includes(f))return'WHOOSH';if(m.enemyFrames?.includes(f))return f===m.impactFrame?'BOOM':'ENEMY-SIDE';if(m.returnFrames?.includes(f))return'RETURN';return f<m.launchFrames?.[0]?'BUILD':'RECOVER';}
+    if(m.type==='stationaryRanged'){if(m.riseFrames?.includes(f))return'RISE';if(m.releaseFrames?.includes(f))return'RELEASE';if(f===m.impactFrame)return'IMPACT';if(m.settleFrames?.includes(f))return'SETTLE';return'CAST';}
+    return f===m.impactFrame?'IMPACT':'CAST';
+  }
+  _heroXY(f){
+    const m=this.attack.movement||{},w=this.scale.width,h=this.scale.height;
+    const baseY=h*this.attack.baselineY,formation=w*this.attack.formationX,enemy=w*(this.attack.enemyX-.095);let x=formation,y=baseY;
+    if(m.type==='blinkMelee'){
+      if(m.enemyFrames?.includes(f))x=enemy;
+      else if(m.launchFrames?.includes(f)){const idx=m.launchFrames.indexOf(f);x=Phaser.Math.Linear(formation,enemy,(idx+1)/(m.launchFrames.length+1));}
+      else if(m.returnFrames?.includes(f)){const idx=m.returnFrames.indexOf(f);x=Phaser.Math.Linear(enemy,formation,(idx+1)/(m.returnFrames.length+1));}
+    } else if(m.type==='stationaryRanged'){
+      const lift=h*(m.liftFrac||.085);let t=0;
+      if(m.riseFrames?.includes(f)){const idx=m.riseFrames.indexOf(f);t=(idx+1)/m.riseFrames.length;}
+      else if(m.settleFrames?.includes(f)){const idx=m.settleFrames.indexOf(f);t=1-(idx+1)/m.settleFrames.length;}
+      else if(f>(m.riseFrames?.at(-1)??-1)&&f<(m.settleFrames?.[0]??999))t=1;
+      y=baseY-lift*t;
+    }
+    return{x,y};
+  }
+  _setHeroPositionForFrame(f,instant=false){
+    const m=this.attack.movement||{},pos=this._heroXY(f);
+    if(instant){this.hero.setPosition(pos.x,pos.y);this.after.setPosition(pos.x,pos.y);return;}
+    const moving=m.type==='blinkMelee'&&(m.launchFrames?.includes(f)||m.returnFrames?.includes(f));
+    const rising=m.type==='stationaryRanged';
+    if(moving){this._setHeroFrame(this.after,Math.max(0,f-1));this.after.setPosition(this.hero.x,this.hero.y).setAlpha(.42);this.tweens.add({targets:this.after,alpha:0,duration:120});}
+    if(moving||rising)this.tweens.add({targets:this.hero,x:pos.x,y:pos.y,duration:Math.max(55,(this.attack.durations[f]||100)*.72),ease:'Sine.easeOut'});else this.hero.setPosition(pos.x,pos.y);
+  }
+  _fxAtImpact(){if(!fxToggle.checked)return;const x=this.enemy.x-this.enemy.displayWidth*.32,y=this.enemy.y-this.enemy.displayHeight*.55;this.impact.setPosition(x,y).setScale(.5).setAlpha(1).setVisible(true);this.ring.setPosition(x,y).setScale(.35).setAlpha(1).setVisible(true);this.tweens.add({targets:this.impact,scale:2.2,alpha:0,duration:180,onComplete:()=>this.impact.setVisible(false)});this.tweens.add({targets:this.ring,scale:2.7,alpha:0,duration:250,onComplete:()=>this.ring.setVisible(false)});}
+  _enemyHit(){if(!reactionToggle.checked)return;this.enemy.setTexture('labEnemyHit');const bx=this.enemy.x;this.tweens.add({targets:this.enemy,x:bx+26,angle:3,duration:55,yoyo:true,hold:35,onComplete:()=>this.enemy.setTexture('labEnemyIdle').setAngle(0).setX(bx)});}
+  _cameraImpact(){if(!cameraToggle.checked)return;this.cameras.main.zoomTo(1.06,65,'Quad.easeOut');this.cameras.main.shake(115,.007);this.time.delayedCall(135,()=>this.cameras.main.zoomTo(1,150,'Sine.easeOut'));}
+  _sound(kind){if(!audioToggle.checked||this.sound.locked)return;const key=kind==='impact'?'labImpact':'labLaunch';if(this.cache.audio.exists(key))this.sound.play(key,{volume:1});}
+  play(){if(!this.attack)return;clearTimeout(this.timer);this.frame=0;this.playing=true;this.enemy.setTexture('labEnemyIdle').setAngle(0);this.cameras.main.setZoom(1);this._step();}
+  _step(){
+    if(!this.playing)return;const f=this.frame,m=this.attack.movement||{};this._setHeroFrame(this.hero,f);this._setHeroPositionForFrame(f);
+    if(m.launchFrames?.[0]===f||m.releaseFrames?.[0]===f)this._sound('launch');if(m.impactFrame===f){this._fxAtImpact();this._enemyHit();this._cameraImpact();this._sound('impact');}
+    updateReadout();let delay=(this.attack.durations[f]||120)/Number(speed.value);if(m.impactFrame===f&&hitstopToggle.checked)delay+=75;this.frame++;
+    if(this.frame>=this.attack.frameCount){if(looping){this.frame=0;delay+=140}else{this.playing=false;this.frame=this.attack.frameCount-1;updateReadout();return;}}
+    this.timer=setTimeout(()=>this._step(),delay);
+  }
+  step(dir){clearTimeout(this.timer);this.playing=false;this.frame=(this.frame+dir+this.attack.frameCount)%this.attack.frameCount;this._setHeroFrame(this.hero,this.frame);this._setHeroPositionForFrame(this.frame,true);updateReadout();}
 }
 function updateReadout(){if(!scene?.attack)return;const f=scene.frame;phaseEl.textContent=scene._phaseForFrame(f);frameRead.textContent=`FRAME ${String(f+1).padStart(2,'0')} / ${scene.attack.frameCount}`;detail.textContent=`${A_LAB_HEROES[heroSel.value].name} · ${scene.attack.name}`;timing.textContent=`${scene.attack.durations[f]||0} ms · ${Number(speed.value).toFixed(2)}×`;}
 new Phaser.Game({type:Phaser.AUTO,parent:'stage',backgroundColor:'#080b1d',scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[LabScene]});
-playBtn.onclick=()=>scene?.play();loopBtn.onclick=()=>{looping=!looping;loopBtn.textContent=`↻ LOOP: ${looping?'ON':'OFF'}`};prevBtn.onclick=()=>scene?.step(-1);nextBtn.onclick=()=>scene?.step(1);speed.oninput=()=>{speedLabel.textContent=Number(speed.value).toFixed(2)+'×';updateReadout()};heroSel.onchange=()=>location.reload();
+playBtn.onclick=()=>scene?.play();loopBtn.onclick=()=>{looping=!looping;loopBtn.textContent=`↻ LOOP: ${looping?'ON':'OFF'}`};prevBtn.onclick=()=>scene?.step(-1);nextBtn.onclick=()=>scene?.step(1);speed.oninput=()=>{speedLabel.textContent=Number(speed.value).toFixed(2)+'×';updateReadout()};
+heroSel.onchange=()=>{const q=new URLSearchParams(location.search);q.set('hero',heroSel.value);q.set('ts',Date.now());location.href=`./a-lab.html?${q.toString()}`;};
 const nav=()=>[...document.querySelectorAll('[data-nav]')].filter(x=>!x.disabled&&x.offsetParent!==null);function focus(i){const a=nav();if(!a.length)return;focusIndex=(i+a.length)%a.length;a.forEach(x=>x.classList.remove('focus','focusbar'));const el=a[focusIndex];el.classList.add('focus','focusbar');el.focus({preventScroll:true});}
-addEventListener('keydown',e=>{const a=nav(),cur=a.indexOf(document.activeElement);if(['ArrowDown','ArrowRight'].includes(e.key)){e.preventDefault();focus(cur>=0?cur+1:focusIndex+1)}else if(['ArrowUp','ArrowLeft'].includes(e.key)){e.preventDefault();focus(cur>=0?cur-1:focusIndex-1)}else if((e.key==='Enter'||e.key===' ')&&document.activeElement?.click){e.preventDefault();document.activeElement.click()}else if(e.key==='Escape'||e.key==='Backspace'){e.preventDefault();location.href='./index.html'}});
-function padLoop(){const p=navigator.getGamepads?.()[0];if(p){const st={up:p.buttons[12]?.pressed,down:p.buttons[13]?.pressed,left:p.buttons[14]?.pressed,right:p.buttons[15]?.pressed,a:p.buttons[0]?.pressed,b:p.buttons[1]?.pressed};if((st.down&&!lastPad.down)||(st.right&&!lastPad.right))focus(focusIndex+1);if((st.up&&!lastPad.up)||(st.left&&!lastPad.left))focus(focusIndex-1);if(st.a&&!lastPad.a)document.activeElement?.click?.();if(st.b&&!lastPad.b)location.href='./index.html';lastPad=st;}requestAnimationFrame(padLoop)}focus(0);padLoop();
-</script></body></html>
+addEventListener('keydown',e=>{const a=nav(),cur=a.indexOf(document.activeElement);if(['ArrowDown','ArrowRight'].includes(e.key)){e.preventDefault();focus(cur>=0?cur+1:focusIndex+1)}else if(['ArrowUp','ArrowLeft'].includes(e.key)){e.preventDefault();focus(cur>=0?cur-1:focusIndex-1)}else if((e.key==='Enter'||e.key===' ')&&document.activeElement?.click){e.preventDefault();document.activeElement.click()}else if(e.key==='Escape'||e.key==='Backspace'){e.preventDefault();location.href='./pza-main.html'}});
+function padLoop(){const p=navigator.getGamepads?.()[0];if(p){const st={up:p.buttons[12]?.pressed,down:p.buttons[13]?.pressed,left:p.buttons[14]?.pressed,right:p.buttons[15]?.pressed,a:p.buttons[0]?.pressed,b:p.buttons[1]?.pressed};if((st.down&&!lastPad.down)||(st.right&&!lastPad.right))focus(focusIndex+1);if((st.up&&!lastPad.up)||(st.left&&!lastPad.left))focus(focusIndex-1);if(st.a&&!lastPad.a)document.activeElement?.click?.();if(st.b&&!lastPad.b)location.href='./pza-main.html';lastPad=st;}requestAnimationFrame(padLoop)}focus(0);padLoop();
+</script>
+</body>
+</html>
