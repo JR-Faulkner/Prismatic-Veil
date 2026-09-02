@@ -1,17 +1,27 @@
 // LIVE28 party-battle scene.
-// Enforces the clean LIVE28 formation and preloads Kineza's actual Blitzer frame 01
-// as the temporary battlefield standby.
+// MAIN production authority:
+// - Prefer the locked HC Kineza right-facing battle idle when present.
+// - Keep Blitzer frame 01 only as a safety fallback until the binary asset is present.
 import Live26PartyBattleScene from './Live26PartyBattleScene.js?v=live26g';
-import Live28PartyFormationView from './Live28PartyFormationView.js?v=live28';
+import Live28PartyFormationView from './Live28PartyFormationView.js?v=live28b';
 
-const KINEZA_STANDBY_KEY = 'kineza_live28_blitzer_frame01';
+const KINEZA_MAIN_IDLE_KEY = 'kineza_main_battle_idle_hc';
+const KINEZA_FALLBACK_KEY = 'kineza_live28_blitzer_frame01';
 
 export default class Live28PartyBattleScene extends Live26PartyBattleScene {
   preload() {
     super.preload();
+
+    // Locked MAIN battle-idle authority. If this file is unavailable, Phaser will
+    // report the failed load and formation code will safely use Frame 01 instead.
     this.load.image(
-      KINEZA_STANDBY_KEY,
-      './assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_01.png?pvasset=live28'
+      KINEZA_MAIN_IDLE_KEY,
+      './assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png?pvasset=live28b'
+    );
+
+    this.load.image(
+      KINEZA_FALLBACK_KEY,
+      './assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_01.png?pvasset=live28b'
     );
   }
 
