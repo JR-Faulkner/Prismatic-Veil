@@ -1,0 +1,2 @@
+PRISMEL_URL=https://www.dropbox.com/scl/fi/68z3c7qv4f2gbh56fy4vm/Photo-Sep-04-2026-19-14-19.png?rlkey=68ncnv4pdsgyik88ppy5tiod3&dl=1
+AURYI_URL=https://www.dropbox.com/scl/fi/dxsvnt4zm23ftpwqxtiem/Photo-Sep-04-2026-19-14-19.jpg?rlkey=y5a7o2cdefde6jgvhywg8vldt&dl=1
