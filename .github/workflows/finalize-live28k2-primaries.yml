@@ -1,0 +1,74 @@
+name: Finalize LIVE28K2 Primaries
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/ingest_live28k2/PRIMARIES_READY.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download approved primary sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest='.github/ingest_live28k2/PRIMARIES_READY.txt'
+          test -f "$manifest"
+          prismel_url=$(sed -n 's/^PRISMEL_URL=//p' "$manifest")
+          auryi_url=$(sed -n 's/^AURYI_URL=//p' "$manifest")
+          test -n "$prismel_url"
+          test -n "$auryi_url"
+          curl --fail --location --silent --show-error "$prismel_url" -o /tmp/prismel_source
+          curl --fail --location --silent --show-error "$auryi_url" -o /tmp/auryi_source
+
+      - name: Build exact-resolution PNG primaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+
+          targets = [
+              ('/tmp/prismel_source', (1106, 1422), Path('assets/party_formation/PRISMEL_LIVE28K2_RIGHT_FACING.png')),
+              ('/tmp/auryi_source', (1086, 1448), Path('assets/party_formation/AURYI_LIVE28K2_PRIMARY.png')),
+          ]
+          for src, expected, out in targets:
+              with Image.open(src) as im:
+                  im.load()
+                  assert im.size == expected, (src, im.size, expected)
+                  rgba = im.convert('RGBA')
+                  out.parent.mkdir(parents=True, exist_ok=True)
+                  rgba.save(out, 'PNG')
+              with Image.open(out) as check:
+                  check.load()
+                  assert check.format == 'PNG', (out, check.format)
+                  assert check.size == expected, (out, check.size, expected)
+              print(f'VERIFIED {out} {expected[0]}x{expected[1]} PNG')
+          PY
+          sha256sum assets/party_formation/PRISMEL_LIVE28K2_RIGHT_FACING.png
+          sha256sum assets/party_formation/AURYI_LIVE28K2_PRIMARY.png
+
+      - name: Remove transport manifest and commit primaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/ingest_live28k2/PRIMARIES_READY.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/party_formation/PRISMEL_LIVE28K2_RIGHT_FACING.png \
+                  assets/party_formation/AURYI_LIVE28K2_PRIMARY.png \
+                  .github/ingest_live28k2/PRIMARIES_READY.txt
+          git commit -m 'LIVE28K2: install full-resolution Prismel and Auryi primaries'
+          git push origin HEAD:main
