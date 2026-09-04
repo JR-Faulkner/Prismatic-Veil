@@ -1,35 +1,41 @@
-// LIVE28I MAIN hybrid formation correction.
+// LIVE28J MAIN hybrid formation correction.
 // Production goals:
-// - Never upscale Prismel's tiny wrapped-raster HC idles. Use the full 900x900 JRPG master.
-// - Restore the previously proven crownless Auryi treatment from the approved JRPG master.
-// - Scale/anchor all three heroes by their VISIBLE alpha bounds, not their source-canvas size.
-// - Preserve locked trio hierarchy: Auryi tallest -> Prismel middle -> Kineza shortest.
+// - Restore Prismel to approved direct-PNG character lineage, never the wrong generic 900x900 stand-in.
+// - Passive/off-turn Prismel uses the approved high-resolution movement-master contact pose.
+// - Active/on-turn Prismel uses the approved staff-materialization ready pose.
+// - Preserve the crownless approved Auryi treatment and locked Kineza HC idle.
+// - Scale by readable BODY height, excluding thin staff/FX/robe-extreme noise from calibration.
+// - Enforce locked younger-trio hierarchy: Auryi tallest -> Prismel middle -> Kineza shortest.
 import Live26PartyFormationView from './Live26PartyFormationView.js?v=live26g';
 
-const PRISMEL_MAIN_KEY = 'prismel_main_highres';
+const PRISMEL_PASSIVE_KEY = 'prismel_live28j_passive';
+const PRISMEL_ACTIVE_KEY = 'prismel_live28j_active';
 const AURYI_MAIN_KEY = 'auryi_main_highres';
-const AURYI_CLEAN_KEY = 'auryi_live28i_jrpg_crownless';
+const AURYI_CLEAN_KEY = 'auryi_live28j_jrpg_crownless';
 const KINEZA_MAIN_IDLE_KEY = 'kineza_main_battle_idle_hc';
 const KINEZA_FALLBACK_KEY = 'kineza_live28_blitzer_frame01';
 
-// Locked visual calibration from the approved trio lineup / PriZim scale gate.
-const AURYI_VISIBLE_H_FRAC = 0.43;
-const PRISMEL_VISIBLE_RATIO = 515 / 520;
-const KINEZA_VISIBLE_RATIO = 440 / 520;
+// Locked battle-presentation scale reference:
+// Auryi ~= 1.29 x Prismel head-to-foot; Kineza ~= 0.647 x Auryi.
+// Use BODY height only. Ignore staff, FX, hair reach, robe/cape reach and stance width.
+const AURYI_BODY_H_FRAC = 0.47;
+const PRISMEL_BODY_RATIO = 1 / 1.29;
+const KINEZA_BODY_RATIO = 0.647;
 const AURYI_ATTACK_LIFT_FRAC = 0.10;
 
 export default class Live28PartyFormationView extends Live26PartyFormationView {
   create(roster) {
     super.create(roster);
-    this._live28VisibleBounds = new Map();
+    this._live28BodyBounds = new Map();
 
     const prismel = this.actors.get('prismel');
-    if (prismel && this.scene.textures.exists(PRISMEL_MAIN_KEY)) {
+    if (prismel && this.scene.textures.exists(PRISMEL_PASSIVE_KEY)) {
       prismel.stateSheetConfig = null;
       prismel.stateAnimKey = null;
-      prismel.live28HighResMaster = true;
-      prismel.standbyTex = PRISMEL_MAIN_KEY;
-      this._restorePrismelMaster(prismel);
+      prismel.live28PrismelIdentityPair = true;
+      prismel.live28DesiredPrismelTex = PRISMEL_PASSIVE_KEY;
+      prismel.standbyTex = PRISMEL_PASSIVE_KEY;
+      this._applyPrismelState(prismel, PRISMEL_PASSIVE_KEY);
     }
 
     const auryi = this.actors.get('auryi');
@@ -40,7 +46,7 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
         auryi.standbyTex = cleanKey;
         this._restoreAuryiClean(auryi);
       } else {
-        console.error('[LIVE28I] Crownless Auryi texture could not be prepared.');
+        console.error('[LIVE28J] Crownless Auryi texture could not be prepared.');
       }
       auryi.duoEntryPlayed = true;
       this._removePersistentAuryiMagic(auryi);
@@ -64,13 +70,12 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     this.layout();
   }
 
-  _restorePrismelMaster(actor) {
-    if (!actor || !this.scene.textures.exists(PRISMEL_MAIN_KEY)) return false;
-    actor.standbyTex = PRISMEL_MAIN_KEY;
-    actor._snapshot = null;
-    actor._poseScale = null;
-    actor.sprite.setTexture(PRISMEL_MAIN_KEY).setVisible(true).setAlpha(1).setAngle(0);
-    actor.ghost.setTexture(PRISMEL_MAIN_KEY).setVisible(true).setAlpha(0).setAngle(0);
+  _applyPrismelState(actor, key) {
+    if (!actor || !key || !this.scene.textures.exists(key)) return false;
+    actor.live28DesiredPrismelTex = key;
+    actor.standbyTex = key;
+    actor.sprite.setTexture(key).setVisible(true).setAlpha(1).setAngle(0);
+    actor.ghost.setTexture(key).setVisible(true).setAlpha(0).setAngle(0);
     actor.attackSprite?.setVisible(false)?.setAlpha?.(1);
     return true;
   }
@@ -94,8 +99,6 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     const source = this.scene.textures.get(AURYI_MAIN_KEY)?.getSourceImage?.();
     if (!source?.width || !source?.height) return null;
 
-    // Same approved-body cleanup principle previously used in LIVE27, but keep the
-    // native 900x900 canvas intact so no resampling/cropping lowers clarity.
     const texture = this.scene.textures.createCanvas(AURYI_CLEAN_KEY, source.width, source.height);
     if (!texture) return null;
     const ctx = texture.getContext();
@@ -118,20 +121,14 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
       const min = Math.min(r, g, b);
       const sat = max - min;
 
-      // Remove only the baked crown/Auorb apparatus. Dark curls, skin, robe,
-      // jewelry and costume pixels are preserved. Runtime magic remains separate.
       const crownRegion = nx > 0.27 && nx < 0.73 && ny < 0.205;
       const orbRegion = nx > 0.62 && nx < 0.93 && ny > 0.105 && ny < 0.355;
       const goldMagic = r > 165 && g > 110 && (r - b) > 58 && (g - b) > 22;
       const violetMagic = b > 145 && r > 92 && (b - g) > 22;
       const luminousMagic = max > 222 && sat < 44;
-      if ((crownRegion || orbRegion) && (goldMagic || violetMagic || luminousMagic)) {
-        remove[p] = 1;
-      }
+      if ((crownRegion || orbRegion) && (goldMagic || violetMagic || luminousMagic)) remove[p] = 1;
     }
 
-    // One-pixel halo cleanup around removed magic, constrained to the same magic
-    // regions, so glow fringe cannot keep reading as a crown on iPhone.
     for (let y = 1; y < source.height - 1; y++) {
       for (let x = 1; x < source.width - 1; x++) {
         const p = y * source.width + x;
@@ -154,8 +151,8 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     return AURYI_CLEAN_KEY;
   }
 
-  _measureVisibleBounds(key) {
-    if (this._live28VisibleBounds?.has(key)) return this._live28VisibleBounds.get(key);
+  _measureBodyBounds(key) {
+    if (this._live28BodyBounds?.has(key)) return this._live28BodyBounds.get(key);
     const source = this.scene.textures.get(key)?.getSourceImage?.();
     if (!source?.width || !source?.height) return null;
 
@@ -170,7 +167,7 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     const cols = new Uint32Array(canvas.width);
 
     for (let i = 0; i < data.length; i += 4) {
-      if (data[i + 3] < 40) continue;
+      if (data[i + 3] < 48) continue;
       const p = i / 4;
       const x = p % canvas.width;
       const y = Math.floor(p / canvas.width);
@@ -178,9 +175,14 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
       cols[x]++;
     }
 
-    // Ignore isolated particles/glints. We want the readable character body bounds.
-    const minRowCount = Math.max(4, Math.floor(canvas.width * 0.006));
-    const minColCount = Math.max(4, Math.floor(canvas.height * 0.006));
+    let maxRow = 0, maxCol = 0;
+    for (const n of rows) if (n > maxRow) maxRow = n;
+    for (const n of cols) if (n > maxCol) maxCol = n;
+
+    // Projection thresholds reject narrow staff shafts, floating motes and isolated FX.
+    // The remaining bounds represent the readable body/silhouette used by the scale lock.
+    const minRowCount = Math.max(8, Math.floor(maxRow * 0.055));
+    const minColCount = Math.max(8, Math.floor(maxCol * 0.045));
     let top = 0, bottom = canvas.height - 1, left = 0, right = canvas.width - 1;
     while (top < bottom && rows[top] < minRowCount) top++;
     while (bottom > top && rows[bottom] < minRowCount) bottom--;
@@ -194,15 +196,15 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
       sourceW: canvas.width,
       sourceH: canvas.height
     };
-    this._live28VisibleBounds?.set(key, bounds);
+    this._live28BodyBounds?.set(key, bounds);
     return bounds;
   }
 
-  _fitActorToVisibleHeight(actor, key, targetVisibleH) {
+  _fitActorToBodyHeight(actor, key, targetBodyH) {
     if (!actor || !this.scene.textures.exists(key)) return false;
-    const b = this._measureVisibleBounds(key);
+    const b = this._measureBodyBounds(key);
     if (!b) return false;
-    const scale = targetVisibleH / b.height;
+    const scale = targetBodyH / b.height;
     const originX = ((b.left + b.right) * 0.5) / b.sourceW;
     const originY = b.bottom / b.sourceH;
 
@@ -245,7 +247,14 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     super.setActive(heroId);
 
     const prismel = this.actors.get('prismel');
-    if (prismel?.live28HighResMaster && !prismel._snapshot) this._restorePrismelMaster(prismel);
+    if (prismel?.live28PrismelIdentityPair) {
+      const wanted = heroId === 'prismel' && this.scene.textures.exists(PRISMEL_ACTIVE_KEY)
+        ? PRISMEL_ACTIVE_KEY
+        : PRISMEL_PASSIVE_KEY;
+      prismel.live28DesiredPrismelTex = wanted;
+      prismel.standbyTex = wanted;
+      if (!prismel._snapshot) this._applyPrismelState(prismel, wanted);
+    }
 
     const auryi = this.actors.get('auryi');
     if (auryi?.live28ApprovedTextureKey && !auryi._snapshot) this._restoreAuryiClean(auryi);
@@ -261,7 +270,10 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
 
     this.scene.tweens.killTweensOf(actor.sprite);
     this.scene.tweens.killTweensOf(actor.ghost);
-    const restored = this._restorePrismelMaster(actor);
+    actor._snapshot = null;
+    actor._poseScale = null;
+    const wanted = actor.live28DesiredPrismelTex || PRISMEL_PASSIVE_KEY;
+    const restored = this._applyPrismelState(actor, wanted);
     this.layout();
     return restored;
   }
@@ -273,20 +285,21 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     const auryi = this.actors?.get('auryi');
     if (auryi && !auryi._snapshot && auryi.live28ApprovedTextureKey) {
       if (auryi.sprite.texture?.key !== auryi.live28ApprovedTextureKey) this._restoreAuryiClean(auryi);
-      this._fitActorToVisibleHeight(auryi, auryi.live28ApprovedTextureKey, h * AURYI_VISIBLE_H_FRAC);
+      this._fitActorToBodyHeight(auryi, auryi.live28ApprovedTextureKey, h * AURYI_BODY_H_FRAC);
       this._removePersistentAuryiMagic(auryi);
     }
 
     const prismel = this.actors?.get('prismel');
-    if (prismel && !prismel._snapshot && prismel.live28HighResMaster) {
-      if (prismel.sprite.texture?.key !== PRISMEL_MAIN_KEY) this._restorePrismelMaster(prismel);
-      this._fitActorToVisibleHeight(prismel, PRISMEL_MAIN_KEY, h * AURYI_VISIBLE_H_FRAC * PRISMEL_VISIBLE_RATIO);
+    if (prismel && !prismel._snapshot && prismel.live28PrismelIdentityPair) {
+      const wanted = prismel.live28DesiredPrismelTex || PRISMEL_PASSIVE_KEY;
+      if (prismel.sprite.texture?.key !== wanted) this._applyPrismelState(prismel, wanted);
+      this._fitActorToBodyHeight(prismel, wanted, h * AURYI_BODY_H_FRAC * PRISMEL_BODY_RATIO);
     }
 
     const kineza = this.actors?.get('kineza');
     if (kineza && !kineza._snapshot && kineza.live28KinezaStandby) {
       const key = kineza.live28KinezaMainIdle ? KINEZA_MAIN_IDLE_KEY : KINEZA_FALLBACK_KEY;
-      this._fitActorToVisibleHeight(kineza, key, h * AURYI_VISIBLE_H_FRAC * KINEZA_VISIBLE_RATIO);
+      this._fitActorToBodyHeight(kineza, key, h * AURYI_BODY_H_FRAC * KINEZA_BODY_RATIO);
     }
   }
 
@@ -317,7 +330,10 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
         if (actor) {
           this.scene.tweens.killTweensOf(actor.sprite);
           this.scene.tweens.killTweensOf(actor.ghost);
-          this._restorePrismelMaster(actor);
+          actor._snapshot = null;
+          actor._poseScale = null;
+          const wanted = actor.live28DesiredPrismelTex || PRISMEL_PASSIVE_KEY;
+          this._applyPrismelState(actor, wanted);
           this.layout();
         }
       }
