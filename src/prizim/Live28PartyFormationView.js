@@ -1,7 +1,7 @@
-// LIVE28G hybrid battle formation correction.
+// LIVE28H hybrid battle formation correction.
 // MAIN production authority:
-// - Prismel HC passive/active idle swap is state-safe across action-pose snapshots.
-// - Auryi uses the approved JRPG body with inherited persistent crown/Auorb objects removed.
+// - Prismel HC passive/active idle swap is state-safe across action-pose snapshots and attack-sheet recovery.
+// - Auryi uses the approved JRPG body with inherited persistent crown/Auorb objects removed and master-body restore after attacks.
 // - Kineza prefers the locked HC right-facing battle idle; Blitzer frame 01 remains emergency fallback only.
 import Live26PartyFormationView from './Live26PartyFormationView.js?v=live26g';
 
@@ -38,10 +38,9 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
       auryi.live28ApprovedMaster = true;
       auryi.standbyTex = AURYI_MASTER_KEY;
       auryi.standbyOriginY = 1;
-      auryi.sprite.setTexture(AURYI_MASTER_KEY).setOrigin(0.5, 1);
-      auryi.ghost.setTexture(AURYI_MASTER_KEY).setOrigin(0.5, 1);
+      this._restoreAuryiMaster(auryi);
       auryi.duoEntryPlayed = true;
-      // LIVE28G: persistent Phaser crown/Auorb are not part of the approved idle.
+      // Persistent Phaser crown/Auorb are not part of the approved idle.
       // Destroy the inherited graphics instead of merely hiding them so no parent
       // lifecycle callback can resurrect duplicate magic later.
       this._removePersistentAuryiMagic(auryi);
@@ -73,6 +72,19 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     actor.standbyOriginY = 1;
     actor.sprite.setTexture(wantedKey).setOrigin(0.5, 1).setVisible(true).setAlpha(1);
     actor.ghost.setTexture(wantedKey).setOrigin(0.5, 1).setAlpha(0);
+    actor.attackSprite?.setVisible(false)?.setAlpha?.(1);
+    return true;
+  }
+
+  _restoreAuryiMaster(actor) {
+    if (!actor || !this.scene.textures.exists(AURYI_MASTER_KEY)) return false;
+    actor.standbyTex = AURYI_MASTER_KEY;
+    actor.standbyOriginY = 1;
+    actor._snapshot = null;
+    actor._poseScale = null;
+    actor.sprite.setTexture(AURYI_MASTER_KEY).setOrigin(0.5, 1).setVisible(true).setAlpha(1).setAngle(0);
+    actor.ghost.setTexture(AURYI_MASTER_KEY).setOrigin(0.5, 1).setAlpha(0).setVisible(true).setAngle(0);
+    actor.attackSprite?.setVisible(false)?.setAlpha?.(1);
     return true;
   }
 
@@ -112,7 +124,10 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
       prismel.standbyTex = wanted;
       if (!prismel._snapshot) this._applyPrismelIdle(prismel, wanted);
     }
-    this._removePersistentAuryiMagic(this.actors.get('auryi'));
+
+    const auryi = this.actors.get('auryi');
+    if (auryi?.live28ApprovedMaster && !auryi._snapshot) this._restoreAuryiMaster(auryi);
+    this._removePersistentAuryiMagic(auryi);
     this.layout();
   }
 
@@ -156,6 +171,7 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
 
     const auryi = this.actors?.get('auryi');
     if (auryi && !auryi._snapshot && auryi.live28ApprovedMaster) {
+      if (auryi.sprite.texture?.key !== AURYI_MASTER_KEY) this._restoreAuryiMaster(auryi);
       const image = this.scene.textures.get(AURYI_MASTER_KEY)?.getSourceImage?.();
       const aspect = image?.height ? image.width / image.height : 1;
       const targetH = h * AURYI_TARGET_H_FRAC;
@@ -201,6 +217,23 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
   }
 
   async playAttackSheet(heroId, onFrame) {
+    if (heroId === 'prismel') {
+      const actor = this.actors.get('prismel');
+      try {
+        return await super.playAttackSheet(heroId, onFrame);
+      } finally {
+        if (actor) {
+          this.scene.tweens.killTweensOf(actor.sprite);
+          this.scene.tweens.killTweensOf(actor.ghost);
+          actor._snapshot = null;
+          actor._poseScale = null;
+          const wanted = actor.live28DesiredPrismelTex || PRISMEL_PASSIVE_KEY;
+          this._applyPrismelIdle(actor, wanted);
+          this.layout();
+        }
+      }
+    }
+
     if (heroId !== 'auryi') return super.playAttackSheet(heroId, onFrame);
     const actor = this.actors.get('auryi');
     if (!actor) return super.playAttackSheet(heroId, onFrame);
@@ -210,8 +243,13 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     try {
       return await super.playAttackSheet(heroId, onFrame);
     } finally {
-      await this._tweenAuryiY(actor, homeY, 310);
+      this.scene.tweens.killTweensOf(actor.sprite);
+      this.scene.tweens.killTweensOf(actor.ghost);
+      this._restoreAuryiMaster(actor);
+      actor.sprite.y = homeY;
+      actor.ghost.y = homeY;
       this._removePersistentAuryiMagic(actor);
+      this.layout();
     }
   }
 }
