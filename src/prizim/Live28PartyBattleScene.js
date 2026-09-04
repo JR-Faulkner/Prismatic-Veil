@@ -1,13 +1,13 @@
-// LIVE28H party-battle scene.
-// MAIN production authority:
-// - Preload Prismel HC passive/active idle pair for correct turn-state swap.
-// - Kineza HC right-facing idle physically exists and is the production authority.
-// - Live28H formation hardens Prismel post-attack restore and Auryi master-body recovery.
+// LIVE28I MAIN party-battle scene.
+// Production authority:
+// - Prismel uses the direct 900x900 PNG master. Tiny raster-in-SVG HC wrappers are retired from MAIN.
+// - Auryi uses the direct 900x900 approved JRPG master; formation derives the already-proven crownless idle without resampling.
+// - Kineza keeps the locked HC right-facing PNG authority.
 import Live26PartyBattleScene from './Live26PartyBattleScene.js?v=live26g';
-import Live28PartyFormationView from './Live28PartyFormationView.js?v=live28h';
+import Live28PartyFormationView from './Live28PartyFormationView.js?v=live28i';
 
-const PRISMEL_PASSIVE_KEY = 'prismel_idle_passive_hc';
-const PRISMEL_ACTIVE_KEY = 'prismel_idle_active_hc';
+const PRISMEL_MAIN_KEY = 'prismel_main_highres';
+const AURYI_MAIN_KEY = 'auryi_main_highres';
 const KINEZA_MAIN_IDLE_KEY = 'kineza_main_battle_idle_hc';
 const KINEZA_FALLBACK_KEY = 'kineza_live28_blitzer_frame01';
 
@@ -15,23 +15,22 @@ export default class Live28PartyBattleScene extends Live26PartyBattleScene {
   preload() {
     super.preload();
 
+    // MAIN/iPhone battle-critical character art is direct PNG only.
     this.load.image(
-      PRISMEL_PASSIVE_KEY,
-      './assets/characters/prismel/live_hc/prismel_idle_passive_hc.svg?pvasset=live28h'
+      PRISMEL_MAIN_KEY,
+      './assets/party_formation/PRISMEL_JRPG_NORMALIZED_900x900.png?pvasset=live28i'
     );
     this.load.image(
-      PRISMEL_ACTIVE_KEY,
-      './assets/characters/prismel/live_hc/prismel_idle_active_hc.svg?pvasset=live28h'
+      AURYI_MAIN_KEY,
+      './assets/party_formation/AURYI_JRPG_NORMALIZED_900x900.png?pvasset=live28i'
     );
-
     this.load.image(
       KINEZA_MAIN_IDLE_KEY,
-      './assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png?pvasset=live28h'
+      './assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png?pvasset=live28i'
     );
-
     this.load.image(
       KINEZA_FALLBACK_KEY,
-      './assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_01.png?pvasset=live28h'
+      './assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_01.png?pvasset=live28i'
     );
   }
 
@@ -50,6 +49,6 @@ export default class Live28PartyBattleScene extends Live26PartyBattleScene {
     this.formation.create(this.party);
     if (this.activeHeroId) this.formation.setActive(this.activeHeroId);
     globalThis.__PV_LIVE28_RUNTIME__ = true;
-    globalThis.__PV_LIVE28H_HYBRID_FIX__ = true;
+    globalThis.__PV_LIVE28I_MAIN_SCALE_CLARITY_FIX__ = true;
   }
 }
