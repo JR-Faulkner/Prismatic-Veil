@@ -1,10 +1,10 @@
-// LIVE28G party-battle scene.
+// LIVE28H party-battle scene.
 // MAIN production authority:
 // - Preload Prismel HC passive/active idle pair for correct turn-state swap.
 // - Kineza HC right-facing idle physically exists and is the production authority.
-// - Live28G formation hardens Prismel restore and removes inherited Auryi persistent magic.
+// - Live28H formation hardens Prismel post-attack restore and Auryi master-body recovery.
 import Live26PartyBattleScene from './Live26PartyBattleScene.js?v=live26g';
-import Live28PartyFormationView from './Live28PartyFormationView.js?v=live28g';
+import Live28PartyFormationView from './Live28PartyFormationView.js?v=live28h';
 
 const PRISMEL_PASSIVE_KEY = 'prismel_idle_passive_hc';
 const PRISMEL_ACTIVE_KEY = 'prismel_idle_active_hc';
@@ -17,21 +17,21 @@ export default class Live28PartyBattleScene extends Live26PartyBattleScene {
 
     this.load.image(
       PRISMEL_PASSIVE_KEY,
-      './assets/characters/prismel/live_hc/prismel_idle_passive_hc.svg?pvasset=live28g'
+      './assets/characters/prismel/live_hc/prismel_idle_passive_hc.svg?pvasset=live28h'
     );
     this.load.image(
       PRISMEL_ACTIVE_KEY,
-      './assets/characters/prismel/live_hc/prismel_idle_active_hc.svg?pvasset=live28g'
+      './assets/characters/prismel/live_hc/prismel_idle_active_hc.svg?pvasset=live28h'
     );
 
     this.load.image(
       KINEZA_MAIN_IDLE_KEY,
-      './assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png?pvasset=live28g'
+      './assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png?pvasset=live28h'
     );
 
     this.load.image(
       KINEZA_FALLBACK_KEY,
-      './assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_01.png?pvasset=live28g'
+      './assets/characters/kineza/animations/blitzer/frames/Kineza_BlitzRush_01.png?pvasset=live28h'
     );
   }
 
@@ -50,6 +50,6 @@ export default class Live28PartyBattleScene extends Live26PartyBattleScene {
     this.formation.create(this.party);
     if (this.activeHeroId) this.formation.setActive(this.activeHeroId);
     globalThis.__PV_LIVE28_RUNTIME__ = true;
-    globalThis.__PV_LIVE28G_HYBRID_FIX__ = true;
+    globalThis.__PV_LIVE28H_HYBRID_FIX__ = true;
   }
 }
