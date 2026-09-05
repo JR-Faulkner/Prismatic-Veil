@@ -100,6 +100,16 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
       : PRISMEL_K2_PASSIVE_KEY;
   }
 
+  _forceActiveRing(heroId) {
+    this.actors?.forEach((actor, id) => {
+      if (!actor?.ring) return;
+      const on = id === heroId;
+      this.scene.tweens.killTweensOf(actor.ring);
+      actor.ring.setVisible(true).setAlpha(on ? 1 : 0);
+      actor.ring.setStrokeStyle(on ? 3.2 : 2.2, on ? 0x9fefff : 0xffe8a0, on ? 0.95 : 0);
+    });
+  }
+
   setActive(heroId) {
     super.setActive(heroId);
 
@@ -115,6 +125,7 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
     if (auryi?.live28ApprovedTextureKey && !auryi._snapshot) this._restoreAuryiClean(auryi);
     this._removePersistentAuryiMagic(auryi);
     this.layout();
+    this._forceActiveRing(heroId);
   }
 
   setActionPose(heroId, pose) {
@@ -131,6 +142,7 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
     actor.standbyTex = wanted;
     const restored = this._applyPrismelState(actor, wanted);
     this.layout();
+    this._forceActiveRing(this.scene?.activeHeroId);
     return restored;
   }
 
@@ -154,15 +166,22 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
   layout() {
     super.layout();
     const prismel = this.actors?.get('prismel');
-    if (!prismel || prismel._snapshot || !prismel.live28K2PrismelStatePair) return;
+    if (!prismel || prismel._snapshot || !prismel.live28K2PrismelStatePair) {
+      this._forceActiveRing(this.scene?.activeHeroId);
+      return;
+    }
 
     const wanted = prismel.live28DesiredPrismelTex || this._wantedPrismelKey();
-    if (!this.scene.textures.exists(wanted)) return;
+    if (!this.scene.textures.exists(wanted)) {
+      this._forceActiveRing(this.scene?.activeHeroId);
+      return;
+    }
     if (prismel.sprite.texture?.key !== wanted) this._applyPrismelState(prismel, wanted);
     this._fitActorToBodyHeight(
       prismel,
       wanted,
       this.scene.scale.height * AURYI_BODY_H_FRAC * PRISMEL_BODY_RATIO
     );
+    this._forceActiveRing(this.scene?.activeHeroId);
   }
 }
