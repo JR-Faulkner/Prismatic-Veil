@@ -128,6 +128,23 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
     return restored;
   }
 
+  _fitActorToBodyHeight(actor, key, targetBodyH) {
+    const fitted = super._fitActorToBodyHeight(actor, key, targetBodyH);
+    if (!fitted) return false;
+
+    const b = this._measureBodyBounds(key);
+    if (!b) return true;
+
+    const scale = Math.abs(actor.sprite?.scaleX || 1);
+    const footprintW = Math.max(42, b.width * scale * 0.55);
+    const ringH = Math.max(12, footprintW * 0.20);
+    actor.ring?.setPosition(
+      Math.round(actor.sprite.x),
+      Math.round(actor.sprite.y + Math.max(5, targetBodyH * 0.015))
+    ).setSize(footprintW, ringH);
+    return true;
+  }
+
   layout() {
     super.layout();
     const prismel = this.actors?.get('prismel');
