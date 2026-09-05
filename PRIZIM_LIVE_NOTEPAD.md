@@ -12,6 +12,7 @@ This is the fast-moving operational notepad for current PriZim production state.
 - Real-device screenshots/video/evidence outrank code inspection, CI success, and desktop assumptions.
 - Current witness: `main-20260905-live28k3`.
 - LIVE28K2/K3 remains the active Hybrid adapter lineage; K3 is the cache-busted witness that carries the corrected Prismel state pair.
+- Hybrid K3 lineage-router correction commit: `29b370d986edbe517e277452e6e5f0a21f47f075`. K2 and K3 witnesses must both route through `Live28K2PartyBattleScene.js` + `Live28K2PartyFormationView.js`; the old literal `id.includes('live28k2')` check is retired because it allowed a K3 witness to fall back to LIVE28J adapters.
 
 ### Battle authorities
 
@@ -25,8 +26,9 @@ This is the fast-moving operational notepad for current PriZim production state.
 ### PZ / alpha status
 
 - Prismel and Auryi full-resolution battle primaries were PZ-cleaned to transparent alpha at native dimensions in commit `4f56a74893edc6fadbb4d9a98e858a37d58264f8`.
-- HC-approved Prismel staff-ready active authority ingest commit: `aa7b56d` (`Add HC-approved LIVE28K2 Prismel staff-ready authority`).
+- HC-approved Prismel staff-ready active authority ingest commit: `aa7b56d8771013e8fb572c676d978bc67ae7f98a` (`Add HC-approved LIVE28K2 Prismel staff-ready authority`).
 - Staff-ready source QA passed as **1402×1122 PNG**, alpha range 0–255, **883,935 fully transparent pixels**, **687,927 partial-alpha pixels**.
+- Exact-byte verification: MAIN `PRISMEL_LIVE28K2_STAFF_READY.png` Git blob SHA is `518e151f4cced1a11b2db2d6b9721adb1b9f2886`, matching the final HC-approved generated source byte-for-byte.
 - Do not reintroduce opaque white mats or haloed cutouts.
 - Full anatomy/part-count QA remains mandatory before final extraction/harmonization approval.
 
@@ -91,6 +93,7 @@ This is the fast-moving operational notepad for current PriZim production state.
 - **KEEP NATIVE SOURCE RESOLUTION** for approved battle masters.
 - **HUD PORTRAITS FOLLOW CURRENT ANIMATED MASTERS.** Stale photo/headshot portraits are not authority.
 - **TURN RINGS FOLLOW BODY FOOTPRINTS** after final origin/scale fitting.
+- **BUILD WITNESS MUST MAP TO ADAPTER LINEAGE.** A new cache-busted witness such as LIVE28K3 must remain on the intended K2/K3 high-quality adapters; never use a literal prior-build substring check that can silently fall back to an older runtime.
 - **PRISMEL STATE SPLIT IS LOCKED:** off-turn right-facing staffless idle; on-turn HC-approved staff-ready.
 - **ACTIVE PRISMEL MUST MATCH CURRENT IDENTITY.** Pose correctness does not excuse face/age/body/costume drift.
 - Never silently fall back to the old LIVE28J active Prismel.
@@ -127,6 +130,7 @@ This is the fast-moving operational notepad for current PriZim production state.
 - Body-height calibration must exclude sparse props/FX and transparent padding.
 - HUD derivatives should come from current approved animated masters.
 - Active-turn markers should be anchored after final origin/scale fitting using readable body bounds.
+- Build witnesses are cache/deployment identifiers, not automatic adapter selectors unless explicitly mapped to the intended lineage.
 - Reuse approved production art and cleanup logic before inventing a replacement.
 - Asset readiness comes before playback.
 
