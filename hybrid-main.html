@@ -21,11 +21,14 @@
   };
   const build=await (await read(`./live-build.json?ts=${stamp}`)).json();
   const id=String(build.id||'main');
+  const live28k2=id.includes('live28k2');
+  const battleAdapter=live28k2?'Live28K2PartyBattleScene.js':'Live28PartyBattleScene.js';
+  const formationAdapter=live28k2?'Live28K2PartyFormationView.js':'Live28PartyFormationView.js';
   document.documentElement.dataset.pvbuild=id;
   const abs=path=>new URL(path,location.href).href;
   const imports={
-    [abs('./src/PartyBattleScene.js?v=blitzer-2')]:abs(`./src/prizim/Live28PartyBattleScene.js?v=${encodeURIComponent(id)}`),
-    [abs('./src/PartyFormationView.js?v=blitzer-2')]:abs(`./src/prizim/Live28PartyFormationView.js?v=${encodeURIComponent(id)}`),
+    [abs('./src/PartyBattleScene.js?v=blitzer-2')]:abs(`./src/prizim/${battleAdapter}?v=${encodeURIComponent(id)}`),
+    [abs('./src/PartyFormationView.js?v=blitzer-2')]:abs(`./src/prizim/${formationAdapter}?v=${encodeURIComponent(id)}`),
     [abs('./src/EnemyViewFactory.js?v=xbox-ui-1')]:abs(`./src/prizim/Live25EnemyViewFactory.js?v=${encodeURIComponent(id)}`),
     [abs('./src/PartyBattleConfig.js?v=blitzer-2')]:abs(`./src/PartyBattleConfig.js?v=${encodeURIComponent(id)}`),
     [abs('./src/PartyBattleAudioController.js?v=xbox-ui-1')]:abs(`./src/PartyBattleAudioController.js?v=${encodeURIComponent(id)}`),
@@ -36,7 +39,7 @@
   html=html.replace('</head>',`<script type="importmap">${importMap}<\/script></head>`);
   html=html.replace(
     "import('./src/PartyBattleScene.js?v=blitzer-2')",
-    `import('./src/prizim/Live28PartyBattleScene.js?v=${encodeURIComponent(id)}')`
+    `import('./src/prizim/${battleAdapter}?v=${encodeURIComponent(id)}')`
   );
   html=html.replace('</body>',`<div id="pvBuildWitness" style="position:fixed;left:6px;bottom:5px;z-index:9999;padding:3px 6px;border:1px solid #8d6cac88;border-radius:5px;background:#070817cc;color:#bfa8dc;font:8px ui-monospace,monospace;pointer-events:none">${id}</div></body>`);
   document.open();
