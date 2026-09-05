@@ -21,8 +21,9 @@
   };
   const build=await (await read(`./live-build.json?ts=${stamp}`)).json();
   const id=String(build.id||'main');
-  // LIVE28K3+ is the cache-busted promotion of the LIVE28K2 high-quality adapter lineage.
-  const live28kLineage=/live28k(?:2|3|4)/i.test(id);
+  // Any LIVE28K numeric witness stays on the high-quality K2 production adapter lineage.
+  // This avoids cache-bust promotions (K3/K4/K5/...) silently falling back to LIVE28J.
+  const live28kLineage=/live28k\d+/i.test(id);
   const battleAdapter=live28kLineage?'Live28K2PartyBattleScene.js':'Live28PartyBattleScene.js';
   const formationAdapter=live28kLineage?'Live28K2PartyFormationView.js':'Live28PartyFormationView.js';
   document.documentElement.dataset.pvbuild=id;
