@@ -21,9 +21,8 @@
   };
   const build=await (await read(`./live-build.json?ts=${stamp}`)).json();
   const id=String(build.id||'main');
-  // LIVE28K3 is the cache-busted promotion of the LIVE28K2 high-quality adapter lineage.
-  // Keep all K2/K3 witnesses on the same corrected battle/formation stack.
-  const live28kLineage=/live28k(?:2|3)/i.test(id);
+  // LIVE28K3+ is the cache-busted promotion of the LIVE28K2 high-quality adapter lineage.
+  const live28kLineage=/live28k(?:2|3|4)/i.test(id);
   const battleAdapter=live28kLineage?'Live28K2PartyBattleScene.js':'Live28PartyBattleScene.js';
   const formationAdapter=live28kLineage?'Live28K2PartyFormationView.js':'Live28PartyFormationView.js';
   document.documentElement.dataset.pvbuild=id;
@@ -38,7 +37,13 @@
   };
   let html=await (await read(`./hybrid-battle-live.html?template=${encodeURIComponent(id)}&ts=${stamp}`)).text();
   const importMap=JSON.stringify({imports}).replace(/</g,'\\u003c');
-  html=html.replace('</head>',`<script type="importmap">${importMap}<\/script></head>`);
+  const portraitFocus=`<style id="pvPortraitFocus">
+    .portrait img{image-rendering:auto;object-fit:cover;will-change:transform}
+    [data-h="prismel"] .portrait img{transform:translateY(2px) scale(1.65);transform-origin:50% 34%}
+    [data-h="auryi"] .portrait img{transform:translateY(2px) scale(1.45);transform-origin:50% 38%}
+    [data-h="kineza"] .portrait img{transform:translateY(1px) scale(1.22);transform-origin:50% 38%}
+  </style>`;
+  html=html.replace('</head>',`<script type="importmap">${importMap}<\/script>${portraitFocus}</head>`);
   html=html.replace(
     "import('./src/PartyBattleScene.js?v=blitzer-2')",
     `import('./src/prizim/${battleAdapter}?v=${encodeURIComponent(id)}')`
