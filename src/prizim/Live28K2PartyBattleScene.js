@@ -1,7 +1,7 @@
-// LIVE28K2/K3/K4/K5/K6 production battle-scene adapter.
+// LIVE28K2/K3/K4/K5/K6/K7 production battle-scene adapter.
 // Keeps LIVE28J battle behavior intact while using the approved LIVE28K full-resolution authorities.
 import Live28PartyBattleScene from './Live28PartyBattleScene.js?v=live28j';
-import Live28K2PartyFormationView from './Live28K2PartyFormationView.js?v=live28k6-crown';
+import Live28K7PartyFormationView from './Live28K7PartyFormationView.js?v=live28k7-halo';
 
 const PRISMEL_K2_PASSIVE_KEY = 'prismel_live28k2_passive';
 const PRISMEL_K2_PASSIVE_PATH = './assets/party_formation/PRISMEL_LIVE28K2_RIGHT_FACING.png?pvasset=live28k3';
@@ -32,7 +32,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       });
     }
 
-    this.formation = new Live28K2PartyFormationView(this);
+    this.formation = new Live28K7PartyFormationView(this);
     this.formation.create(this.party);
     if (this.activeHeroId) this.formation.setActive(this.activeHeroId);
 
@@ -40,5 +40,6 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     globalThis.__PV_LIVE28K2_FULLRES_PRIMARIES__ = true;
     globalThis.__PV_LIVE28K2_PRISMEL_STATE_PAIR__ = true;
     globalThis.__PV_LIVE28K6_AURYI_CROWN_HYBRID__ = true;
+    globalThis.__PV_LIVE28K7_ATTACK_HALO_CLEAN__ = true;
   }
 }
