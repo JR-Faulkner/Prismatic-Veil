@@ -1,19 +1,21 @@
-// LIVE28K2 staging battle-scene adapter.
-// Keeps LIVE28J battle behavior intact while swapping the approved new full-resolution primaries.
-// Remains dormant until both exact PNG assets exist in the repo and LIVE28K2 is promoted.
+// LIVE28K2 production battle-scene adapter.
+// Keeps LIVE28J battle behavior intact while using the approved LIVE28K2 full-resolution authorities.
 import Live28PartyBattleScene from './Live28PartyBattleScene.js?v=live28j';
-import Live28K2PartyFormationView from './Live28K2PartyFormationView.js?v=live28k2';
+import Live28K2PartyFormationView from './Live28K2PartyFormationView.js?v=live28k3';
 
 const PRISMEL_K2_PASSIVE_KEY = 'prismel_live28k2_passive';
-const PRISMEL_K2_PASSIVE_PATH = './assets/party_formation/PRISMEL_LIVE28K2_RIGHT_FACING.png?pvasset=live28k2';
+const PRISMEL_K2_PASSIVE_PATH = './assets/party_formation/PRISMEL_LIVE28K2_RIGHT_FACING.png?pvasset=live28k3';
+const PRISMEL_K2_ACTIVE_KEY = 'prismel_live28k2_staff_ready';
+const PRISMEL_K2_ACTIVE_PATH = './assets/party_formation/PRISMEL_LIVE28K2_STAFF_READY.png?pvasset=live28k3';
 const AURYI_K2_PRIMARY_KEY = 'auryi_live28k2_primary';
-const AURYI_K2_PRIMARY_PATH = './assets/party_formation/AURYI_LIVE28K2_PRIMARY.png?pvasset=live28k2';
+const AURYI_K2_PRIMARY_PATH = './assets/party_formation/AURYI_LIVE28K2_PRIMARY.png?pvasset=live28k3';
 
 export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
   preload() {
     super.preload();
     // Battle-critical LIVE28K2 art is direct repo-served PNG only. No WebP wrappers.
     this.load.image(PRISMEL_K2_PASSIVE_KEY, PRISMEL_K2_PASSIVE_PATH);
+    this.load.image(PRISMEL_K2_ACTIVE_KEY, PRISMEL_K2_ACTIVE_PATH);
     this.load.image(AURYI_K2_PRIMARY_KEY, AURYI_K2_PRIMARY_PATH);
   }
 
@@ -36,5 +38,6 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
     globalThis.__PV_LIVE28K2_RUNTIME__ = true;
     globalThis.__PV_LIVE28K2_FULLRES_PRIMARIES__ = true;
+    globalThis.__PV_LIVE28K2_PRISMEL_STATE_PAIR__ = true;
   }
 }
