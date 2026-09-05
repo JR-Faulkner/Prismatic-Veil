@@ -21,9 +21,11 @@
   };
   const build=await (await read(`./live-build.json?ts=${stamp}`)).json();
   const id=String(build.id||'main');
-  const live28k2=id.includes('live28k2');
-  const battleAdapter=live28k2?'Live28K2PartyBattleScene.js':'Live28PartyBattleScene.js';
-  const formationAdapter=live28k2?'Live28K2PartyFormationView.js':'Live28PartyFormationView.js';
+  // LIVE28K3 is the cache-busted promotion of the LIVE28K2 high-quality adapter lineage.
+  // Keep all K2/K3 witnesses on the same corrected battle/formation stack.
+  const live28kLineage=/live28k(?:2|3)/i.test(id);
+  const battleAdapter=live28kLineage?'Live28K2PartyBattleScene.js':'Live28PartyBattleScene.js';
+  const formationAdapter=live28kLineage?'Live28K2PartyFormationView.js':'Live28PartyFormationView.js';
   document.documentElement.dataset.pvbuild=id;
   const abs=path=>new URL(path,location.href).href;
   const imports={
