@@ -102,6 +102,8 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - K6 removes the old LIVE25 `+9% body-width` crown shift and centers the crown over Auryi's actor/head line.
 - Crown hybrid commit: `338dbd8a441bac25d4d349a215cb38b42993f974`.
 - K6 promotion commit: `9dc1e1792b4a44aa28a207071bfb7fe22b48bd6b`.
+- K6 binds the fresh hybrid crown driver directly at the K formation boundary so Safari cannot reuse the old nested `live26g` driver URL. K-adapter driver binding commit: `2cf6ddd54872c70df835c2e2e4b6959b49c4cd6b`.
+- K6 battle scene cache-busts the K formation import with `?v=live28k6-crown`. Cache-guard commit: `ecb83dae62b19919e0d1759383e0e9facf7264ec`.
 
 ## Auryi Resonart / Aurora Pulse next lane
 
@@ -129,6 +131,7 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - **TURN RINGS FOLLOW BODY FOOTPRINTS** after final origin/scale fitting.
 - **ACTIVE RING VISIBILITY FOLLOWS TURN STATE** explicitly.
 - **BUILD WITNESS MUST MAP TO ADAPTER LINEAGE.** Numeric LIVE28K promotions stay on the K production adapter lineage automatically.
+- **NESTED SAFARI MODULES NEED EXPLICIT K-LINE CACHE BUSTS WHEN CHANGED.** A new top-level witness alone does not prove a deep fixed-query module URL was refreshed.
 - **PRISMEL STATE SPLIT IS LOCKED:** off-turn right-facing staffless idle; on-turn HC staff-ready.
 - **AURYI CROWN IS ASSET-DRIVEN:** do not revert to a procedural ellipse/crown drawing as production authority when approved animated crown art exists.
 - **AURYI ATTACK FX STAY PHASER BY DEFAULT:** crown correction must not silently replace proven basic/Auorb attack choreography with the full PNG QA path.
