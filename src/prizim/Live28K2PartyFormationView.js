@@ -1,8 +1,10 @@
-// LIVE28K2/K3/K4/K5 production formation adapter.
+// LIVE28K2/K3/K4/K5/K6 production formation adapter.
 // Uses approved full-resolution Prismel/Auryi authorities without downscaling source files.
 // Prismel state lock: off-turn right-facing idle; on-turn HC-approved staff-ready active.
 // Auryi K5 lock: use the already PZ-cleaned 1086x1448 primary directly; never pixel-strip it again at runtime.
+// Auryi K6 lock: animated PNG crown + proven Phaser Auorb/basic-attack FX.
 import Live28PartyFormationView from './Live28PartyFormationView.js?v=live28j';
+import Live26DuoHybridSequenceDriver from './Live26DuoHybridSequenceDriver.js?v=live28k6-crown';
 
 const PRISMEL_K2_PASSIVE_KEY = 'prismel_live28k2_passive';
 const PRISMEL_K2_ACTIVE_KEY = 'prismel_live28k2_staff_ready';
@@ -11,6 +13,13 @@ const AURYI_BODY_H_FRAC = 0.47;
 const PRISMEL_BODY_RATIO = 1 / 1.29;
 
 export default class Live28K2PartyFormationView extends Live28PartyFormationView {
+  constructor(scene) {
+    super(scene);
+    // Rebind at the K-line boundary so Safari cannot reuse the older nested
+    // live26g module URL when a new LIVE28K witness is promoted.
+    this.duoHybrid = new Live26DuoHybridSequenceDriver(scene);
+  }
+
   create(roster) {
     super.create(roster);
 
