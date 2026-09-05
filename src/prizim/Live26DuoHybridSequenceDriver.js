@@ -1,6 +1,8 @@
-// LIVE27 Auryi production-FX adapter.
-// Default path is the proven Phaser/canvas crown + Auorb + attack presentation.
-// PNG production FX remain available explicitly with ?auryiFx=png for QA.
+// LIVE28K6 Auryi production-FX adapter.
+// Production default is hybrid by design:
+// - approved animated PNG crown for Auryi turn-entry manifestation
+// - proven Phaser/canvas Auorb + basic/ranged attack FX remain authoritative
+// Full PNG attack stack remains available explicitly with ?auryiFx=png for QA.
 import Live25DuoHybridSequenceDriver from './Live25DuoHybridSequenceDriver.js?v=live25';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -41,9 +43,11 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     super(scene);
     this._live26Images = Object.create(null);
     this._live26ImagesPromise = null;
+    this._live26CrownPromise = null;
     this.auryiFxRuntimeMode = AURYI_FX_RUNTIME_MODE;
     globalThis.__PV_AURYI_FX_MODE__ = this.auryiFxRuntimeMode;
-    console.info(`[LIVE27] Auryi FX runtime mode: ${this.auryiFxRuntimeMode}`);
+    globalThis.__PV_AURYI_CROWN_MODE__ = 'png';
+    console.info(`[LIVE28K6] Auryi attack FX: ${this.auryiFxRuntimeMode}; crown: png`);
   }
 
   _isPhaserFallback() {
@@ -58,27 +62,43 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     return String(manifest?.id || '').startsWith('auryi_');
   }
 
+  _isAuryiTurnEntry(value) {
+    return String(value?.id || value || '').startsWith('auryi_turn_entry');
+  }
+
   _loadPng(name, spec) {
     return new Promise((resolve, reject) => {
       const image = new Image();
       image.onload = () => {
         if (!image.naturalWidth || !image.naturalHeight) {
-          reject(new Error(`[LIVE27] ${name} PNG loaded without valid dimensions.`));
+          reject(new Error(`[LIVE28K6] ${name} PNG loaded without valid dimensions.`));
           return;
         }
         const expectedW = spec.cellW * spec.count;
         if (image.naturalWidth !== expectedW || image.naturalHeight !== spec.cellH) {
           reject(new Error(
-            `[LIVE27] ${name} PNG geometry mismatch: got ${image.naturalWidth}x${image.naturalHeight}, expected ${expectedW}x${spec.cellH}.`
+            `[LIVE28K6] ${name} PNG geometry mismatch: got ${image.naturalWidth}x${image.naturalHeight}, expected ${expectedW}x${spec.cellH}.`
           ));
           return;
         }
         this._live26Images[name] = image;
         resolve(image);
       };
-      image.onerror = () => reject(new Error(`[LIVE27] ${name} PNG failed to load.`));
+      image.onerror = () => reject(new Error(`[LIVE28K6] ${name} PNG failed to load.`));
       image.src = spec.url;
     });
+  }
+
+  async _ensureCrownImage() {
+    const ready = this._live26Images.crown;
+    if (ready?.naturalWidth && ready?.naturalHeight) return ready;
+    if (!this._live26CrownPromise) {
+      this._live26CrownPromise = this._loadPng('crown', AURYI_FX.crown).catch(error => {
+        this._live26CrownPromise = null;
+        throw new Error(`[LIVE28K6] Auryi crown PNG failed: ${error?.message || error}`);
+      });
+    }
+    return this._live26CrownPromise;
   }
 
   async _ensureLive26Images() {
@@ -90,10 +110,13 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
 
     if (!this._live26ImagesPromise) {
       this._live26ImagesPromise = Promise.all(
-        Object.entries(AURYI_FX).map(([name, spec]) => this._loadPng(name, spec))
+        Object.entries(AURYI_FX).map(([name, spec]) => {
+          const image = this._live26Images[name];
+          return image?.naturalWidth ? image : this._loadPng(name, spec);
+        })
       ).then(() => this._live26Images).catch(error => {
         this._live26ImagesPromise = null;
-        throw new Error(`[LIVE27] Auryi production PNG set failed: ${error?.message || error}`);
+        throw new Error(`[LIVE28K6] Auryi production PNG set failed: ${error?.message || error}`);
       });
     }
     return this._live26ImagesPromise;
@@ -101,7 +124,9 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
 
   async prepare(config) {
     const manifest = await super.prepare(config);
-    if (this._isAuryiConfig(config) && !this._isPhaserFallback()) {
+    if (this._isAuryiTurnEntry(config)) {
+      await this._ensureCrownImage();
+    } else if (this._isAuryiConfig(config) && !this._isPhaserFallback()) {
       await this._ensureLive26Images();
     }
     return manifest;
@@ -114,23 +139,22 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     const fx = presentation.actorRangedFx;
     if (!fx) return manifest;
 
-    // Default Phaser path deliberately does not set live26Mode. Entry and
-    // attack render through the inherited proven canvas presentation while
-    // persistent crown/Auorb remain formation-owned Phaser graphics.
-    if (this._isPhaserFallback()) {
-      delete fx.live26Mode;
-      if (id.startsWith('auryi_turn_entry')) {
-        fx.startFrame = 1;
-        presentation.camera = { ...(presentation.camera || {}), live26StaticEntry: true };
-      }
+    // Turn-entry is always hybrid: approved PNG crown + inherited Phaser Auorb.
+    if (id.startsWith('auryi_turn_entry')) {
+      fx.live26Mode = 'entry-hybrid';
+      fx.startFrame = 1;
+      presentation.camera = { ...(presentation.camera || {}), live26StaticEntry: true };
       return manifest;
     }
 
-    if (id.startsWith('auryi_turn_entry')) {
-      fx.live26Mode = 'entry';
-      fx.startFrame = 1;
-      presentation.camera = { ...(presentation.camera || {}), live26StaticEntry: true };
-    } else if (id.startsWith('auryi_auorb_invocation')) {
+    // Normal production attacks remain on the proven Phaser/canvas path.
+    if (this._isPhaserFallback()) {
+      delete fx.live26Mode;
+      return manifest;
+    }
+
+    // Full PNG attack presentation remains opt-in QA only.
+    if (id.startsWith('auryi_auorb_invocation')) {
       fx.live26Mode = 'attack';
       fx.startFrame = 0;
       fx.orbStartFrame = 0;
@@ -139,7 +163,9 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
   }
 
   async playActorRangedSequence(args) {
-    if (this._isAuryiManifest(args?.manifest) && !this._isPhaserFallback()) {
+    if (this._isAuryiTurnEntry(args?.manifest)) {
+      await this._ensureCrownImage();
+    } else if (this._isAuryiManifest(args?.manifest) && !this._isPhaserFallback()) {
       await this._ensureLive26Images();
     }
     return super.playActorRangedSequence(args);
@@ -156,7 +182,7 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     const image = this._live26Images[name];
     const spec = AURYI_FX[name];
     if (!image || !spec) {
-      throw new Error(`[LIVE27] ${name} PNG requested before readiness.`);
+      throw new Error(`[LIVE28K6] ${name} PNG requested before readiness.`);
     }
     const index = clamp(Math.round(frameIndex), 0, spec.count - 1);
     const sx = index * spec.cellW;
@@ -170,12 +196,67 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
     ctx.restore();
   }
 
+  _drawHybridEntry(layer, frameIndex, actorX, actorY) {
+    const { ctx, dpr, w, h } = layer;
+    const sprite = this._live24Actor?.sprite;
+    const zoom = Number(this.scene.cameras?.main?.zoom || 1);
+    const bodyW = Math.max(1, Number(sprite?.displayWidth || w * 0.16)) * zoom;
+    const bodyH = Math.max(1, Number(sprite?.displayHeight || h * 0.40)) * zoom;
+    const geom = this._screenGeometry(actorX, actorY);
+
+    // Center the approved crown directly above the actor body/head line.
+    // Retires LIVE25's +9% body-width procedural crown shift.
+    const crownX = actorX;
+    const crownY = actorY - bodyH * 1.08;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    if (frameIndex >= 1) {
+      const crownFrame = clamp(frameIndex - 1, 0, 7);
+      this._drawSheetFrame(
+        ctx, 'crown', crownFrame,
+        crownX, crownY,
+        Math.max(116, bodyW * 0.80), Math.max(76, bodyW * 0.53)
+      );
+    }
+
+    // Preserve the proven Phaser/canvas entry Auorb choreography.
+    const orb = this._entryOrb(frameIndex, geom);
+    if (!orb) return;
+    const outerR = geom.idleOrbOuter * orb.scale;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const rg = ctx.createRadialGradient(orb.x, orb.y, 1, orb.x, orb.y, outerR);
+    rg.addColorStop(0, 'rgba(255,252,222,0.98)');
+    rg.addColorStop(0.24, 'rgba(255,224,128,0.92)');
+    rg.addColorStop(0.60, 'rgba(198,132,255,0.58)');
+    rg.addColorStop(1, 'rgba(198,132,255,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.arc(orb.x, orb.y, outerR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,230,154,0.82)';
+    ctx.lineWidth = Math.max(1.2, outerR * 0.10);
+    ctx.beginPath();
+    ctx.arc(orb.x, orb.y, outerR * 0.52, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   drawActorRangedFx(layer, frameIndex, actorX, actorY, targetX, targetY, presentation) {
     const mode = presentation?.actorRangedFx?.live26Mode;
+
+    if (mode === 'entry-hybrid') {
+      return this._drawHybridEntry(layer, frameIndex, actorX, actorY);
+    }
+
+    // Production attack path remains exactly the inherited Phaser/canvas behavior.
     if (!mode || this._isPhaserFallback()) {
       return super.drawActorRangedFx(layer, frameIndex, actorX, actorY, targetX, targetY, presentation);
     }
 
+    // Full-PNG attack QA path, unchanged from LIVE27.
     const { ctx, dpr, w, h } = layer;
     const sprite = this._live24Actor?.sprite;
     const zoom = Number(this.scene.cameras?.main?.zoom || 1);
@@ -184,26 +265,11 @@ export default class Live26DuoHybridSequenceDriver extends Live25DuoHybridSequen
 
     const handX = actorX + bodyW * 0.41;
     const handY = actorY - bodyH * 0.80;
-    const crownX = actorX + bodyW * 0.09;
-    const crownY = actorY - bodyH * 1.08;
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
-
-    if (mode === 'entry') {
-      if (frameIndex >= 1) {
-        const crownFrame = clamp(frameIndex - 1, 0, 7);
-        this._drawSheetFrame(
-          ctx, 'crown', crownFrame,
-          crownX, crownY,
-          Math.max(124, bodyW * 0.86), Math.max(82, bodyW * 0.57)
-        );
-      }
-      ctx.restore();
-      return;
-    }
 
     if (frameIndex <= 8) {
       const chargeFrame = Math.round((clamp(frameIndex, 0, 8) / 8) * 7);
