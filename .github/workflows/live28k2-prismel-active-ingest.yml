@@ -1,0 +1,56 @@
+name: LIVE28K2 Prismel Active Authority Ingest
+
+on:
+  push:
+    paths:
+      - '.github/workflows/live28k2-prismel-active-ingest.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download approved HC Prismel active authority
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 \
+            'https://www.dropbox.com/scl/fi/6moxksaet03zqgr5z3uo3/Photo-Sep-05-2026-10-48-42.png?rlkey=11ldbjx40fqquqzrmqgtqu37c&dl=1' \
+            -o assets/party_formation/PRISMEL_LIVE28K2_STAFF_READY.png
+
+      - name: PZ verify PNG transparency and preserve native dimensions
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+
+          p = Path('assets/party_formation/PRISMEL_LIVE28K2_STAFF_READY.png')
+          im = Image.open(p)
+          if im.format != 'PNG':
+              raise SystemExit(f'Expected PNG, got {im.format}')
+          rgba = im.convert('RGBA')
+          a = rgba.getchannel('A')
+          extrema = a.getextrema()
+          transparent = sum(1 for v in a.getdata() if v == 0)
+          partial = sum(1 for v in a.getdata() if 0 < v < 255)
+          if transparent < 1000:
+              raise SystemExit(f'Alpha QA failed: only {transparent} fully transparent pixels')
+          if im.width < 800 or im.height < 800:
+              raise SystemExit(f'Unexpectedly low source dimensions: {im.size}')
+          print('Prismel active authority:', im.size, 'alpha=', extrema,
+                'transparent=', transparent, 'partial=', partial)
+          PY
+
+      - name: Commit approved active authority and remove one-shot workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/party_formation/PRISMEL_LIVE28K2_STAFF_READY.png
+          git rm .github/workflows/live28k2-prismel-active-ingest.yml
+          git commit -m 'Add HC-approved LIVE28K2 Prismel staff-ready authority'
+          git push
