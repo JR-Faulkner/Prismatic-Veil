@@ -1,9 +1,10 @@
 // LIVE28K2 production formation adapter.
-// Uses the user's new full-resolution Prismel and Auryi authorities without downscaling source files.
-// Runtime display scaling remains body-height based; source pixels stay native in the repository.
+// Uses approved full-resolution Prismel/Auryi authorities without downscaling source files.
+// Prismel state lock: off-turn right-facing idle; on-turn HC-approved staff-ready active.
 import Live28PartyFormationView from './Live28PartyFormationView.js?v=live28j';
 
-const PRISMEL_K2_PRIMARY_KEY = 'prismel_live28k2_passive';
+const PRISMEL_K2_PASSIVE_KEY = 'prismel_live28k2_passive';
+const PRISMEL_K2_ACTIVE_KEY = 'prismel_live28k2_staff_ready';
 const AURYI_K2_PRIMARY_KEY = 'auryi_live28k2_primary';
 const AURYI_K2_CLEAN_KEY = 'auryi_live28k2_crownless';
 const AURYI_BODY_H_FRAC = 0.47;
@@ -14,11 +15,11 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
     super.create(roster);
 
     const prismel = this.actors.get('prismel');
-    if (prismel && this.scene.textures.exists(PRISMEL_K2_PRIMARY_KEY)) {
-      prismel.live28K2PrismelPrimary = true;
-      prismel.live28DesiredPrismelTex = PRISMEL_K2_PRIMARY_KEY;
-      prismel.standbyTex = PRISMEL_K2_PRIMARY_KEY;
-      this._applyPrismelState(prismel, PRISMEL_K2_PRIMARY_KEY);
+    if (prismel && this.scene.textures.exists(PRISMEL_K2_PASSIVE_KEY)) {
+      prismel.live28K2PrismelStatePair = true;
+      prismel.live28DesiredPrismelTex = PRISMEL_K2_PASSIVE_KEY;
+      prismel.standbyTex = PRISMEL_K2_PASSIVE_KEY;
+      this._applyPrismelState(prismel, PRISMEL_K2_PASSIVE_KEY);
     }
 
     const auryi = this.actors.get('auryi');
@@ -93,17 +94,21 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
     return AURYI_K2_CLEAN_KEY;
   }
 
-  _wantedPrismelKey() {
-    return PRISMEL_K2_PRIMARY_KEY;
+  _wantedPrismelKey(heroId = this.scene?.activeHeroId) {
+    return heroId === 'prismel' && this.scene.textures.exists(PRISMEL_K2_ACTIVE_KEY)
+      ? PRISMEL_K2_ACTIVE_KEY
+      : PRISMEL_K2_PASSIVE_KEY;
   }
 
   setActive(heroId) {
     super.setActive(heroId);
+
     const prismel = this.actors.get('prismel');
-    if (prismel?.live28K2PrismelPrimary) {
-      prismel.live28DesiredPrismelTex = PRISMEL_K2_PRIMARY_KEY;
-      prismel.standbyTex = PRISMEL_K2_PRIMARY_KEY;
-      if (!prismel._snapshot) this._applyPrismelState(prismel, PRISMEL_K2_PRIMARY_KEY);
+    if (prismel?.live28K2PrismelStatePair) {
+      const wanted = this._wantedPrismelKey(heroId);
+      prismel.live28DesiredPrismelTex = wanted;
+      prismel.standbyTex = wanted;
+      if (!prismel._snapshot) this._applyPrismelState(prismel, wanted);
     }
 
     const auryi = this.actors.get('auryi');
@@ -121,9 +126,10 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
     this.scene.tweens.killTweensOf(actor.ghost);
     actor._snapshot = null;
     actor._poseScale = null;
-    actor.live28DesiredPrismelTex = PRISMEL_K2_PRIMARY_KEY;
-    actor.standbyTex = PRISMEL_K2_PRIMARY_KEY;
-    const restored = this._applyPrismelState(actor, PRISMEL_K2_PRIMARY_KEY);
+    const wanted = actor.live28DesiredPrismelTex || this._wantedPrismelKey();
+    actor.live28DesiredPrismelTex = wanted;
+    actor.standbyTex = wanted;
+    const restored = this._applyPrismelState(actor, wanted);
     this.layout();
     return restored;
   }
@@ -148,15 +154,14 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
   layout() {
     super.layout();
     const prismel = this.actors?.get('prismel');
-    if (!prismel || prismel._snapshot || !prismel.live28K2PrismelPrimary) return;
+    if (!prismel || prismel._snapshot || !prismel.live28K2PrismelStatePair) return;
 
-    if (!this.scene.textures.exists(PRISMEL_K2_PRIMARY_KEY)) return;
-    if (prismel.sprite.texture?.key !== PRISMEL_K2_PRIMARY_KEY) {
-      this._applyPrismelState(prismel, PRISMEL_K2_PRIMARY_KEY);
-    }
+    const wanted = prismel.live28DesiredPrismelTex || this._wantedPrismelKey();
+    if (!this.scene.textures.exists(wanted)) return;
+    if (prismel.sprite.texture?.key !== wanted) this._applyPrismelState(prismel, wanted);
     this._fitActorToBodyHeight(
       prismel,
-      PRISMEL_K2_PRIMARY_KEY,
+      wanted,
       this.scene.scale.height * AURYI_BODY_H_FRAC * PRISMEL_BODY_RATIO
     );
   }
