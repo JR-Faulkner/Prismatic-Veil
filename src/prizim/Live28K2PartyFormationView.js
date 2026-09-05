@@ -1,12 +1,12 @@
-// LIVE28K2 production formation adapter.
+// LIVE28K2/K3/K4/K5 production formation adapter.
 // Uses approved full-resolution Prismel/Auryi authorities without downscaling source files.
 // Prismel state lock: off-turn right-facing idle; on-turn HC-approved staff-ready active.
+// Auryi K5 lock: use the already PZ-cleaned 1086x1448 primary directly; never pixel-strip it again at runtime.
 import Live28PartyFormationView from './Live28PartyFormationView.js?v=live28j';
 
 const PRISMEL_K2_PASSIVE_KEY = 'prismel_live28k2_passive';
 const PRISMEL_K2_ACTIVE_KEY = 'prismel_live28k2_staff_ready';
 const AURYI_K2_PRIMARY_KEY = 'auryi_live28k2_primary';
-const AURYI_K2_CLEAN_KEY = 'auryi_live28k2_crownless';
 const AURYI_BODY_H_FRAC = 0.47;
 const PRISMEL_BODY_RATIO = 1 / 1.29;
 
@@ -24,74 +24,27 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
 
     const auryi = this.actors.get('auryi');
     if (auryi && this.scene.textures.exists(AURYI_K2_PRIMARY_KEY)) {
-      const cleanKey = this._buildLive28K2CrownlessAuryiTexture();
-      if (cleanKey) {
-        auryi.live28ApprovedTextureKey = cleanKey;
-        auryi.standbyTex = cleanKey;
-        this._restoreAuryiClean(auryi);
-      }
+      // The repo primary was already alpha-cleaned by PZ at native 1086x1448.
+      // Do not create another canvas or remove gold/violet pixels from the character.
+      auryi.live28ApprovedTextureKey = AURYI_K2_PRIMARY_KEY;
+      auryi.standbyTex = AURYI_K2_PRIMARY_KEY;
+      this._restoreAuryiPrimary(auryi);
       this._removePersistentAuryiMagic(auryi);
     }
 
     this.layout();
   }
 
-  _buildLive28K2CrownlessAuryiTexture() {
-    if (this.scene.textures.exists(AURYI_K2_CLEAN_KEY)) return AURYI_K2_CLEAN_KEY;
-    if (!this.scene.textures.exists(AURYI_K2_PRIMARY_KEY)) return null;
-
-    const source = this.scene.textures.get(AURYI_K2_PRIMARY_KEY)?.getSourceImage?.();
-    if (!source?.width || !source?.height) return null;
-
-    const texture = this.scene.textures.createCanvas(AURYI_K2_CLEAN_KEY, source.width, source.height);
-    if (!texture) return null;
-    const ctx = texture.getContext();
-    ctx.clearRect(0, 0, source.width, source.height);
-    ctx.drawImage(source, 0, 0);
-
-    const imageData = ctx.getImageData(0, 0, source.width, source.height);
-    const px = imageData.data;
-    const remove = new Uint8Array(source.width * source.height);
-
-    for (let i = 0; i < px.length; i += 4) {
-      if (px[i + 3] < 8) continue;
-      const p = i / 4;
-      const x = p % source.width;
-      const y = Math.floor(p / source.width);
-      const nx = x / source.width;
-      const ny = y / source.height;
-      const r = px[i], g = px[i + 1], b = px[i + 2];
-      const max = Math.max(r, g, b);
-      const min = Math.min(r, g, b);
-      const sat = max - min;
-
-      const crownRegion = nx > 0.27 && nx < 0.73 && ny < 0.205;
-      const orbRegion = nx > 0.62 && nx < 0.93 && ny > 0.105 && ny < 0.355;
-      const goldMagic = r > 165 && g > 110 && (r - b) > 58 && (g - b) > 22;
-      const violetMagic = b > 145 && r > 92 && (b - g) > 22;
-      const luminousMagic = max > 222 && sat < 44;
-      if ((crownRegion || orbRegion) && (goldMagic || violetMagic || luminousMagic)) remove[p] = 1;
-    }
-
-    for (let y = 1; y < source.height - 1; y++) {
-      for (let x = 1; x < source.width - 1; x++) {
-        const p = y * source.width + x;
-        if (!remove[p]) continue;
-        for (let oy = -1; oy <= 1; oy++) {
-          for (let ox = -1; ox <= 1; ox++) {
-            const q = (y + oy) * source.width + (x + ox);
-            if (px[q * 4 + 3] < 150) remove[q] = 1;
-          }
-        }
-      }
-    }
-
-    for (let p = 0; p < remove.length; p++) {
-      if (remove[p]) px[p * 4 + 3] = 0;
-    }
-    ctx.putImageData(imageData, 0, 0);
-    texture.refresh();
-    return AURYI_K2_CLEAN_KEY;
+  _restoreAuryiPrimary(actor) {
+    if (!actor || !this.scene.textures.exists(AURYI_K2_PRIMARY_KEY)) return false;
+    actor.live28ApprovedTextureKey = AURYI_K2_PRIMARY_KEY;
+    actor.standbyTex = AURYI_K2_PRIMARY_KEY;
+    actor._snapshot = null;
+    actor._poseScale = null;
+    actor.sprite.setTexture(AURYI_K2_PRIMARY_KEY).setVisible(true).setAlpha(1).setAngle(0);
+    actor.ghost.setTexture(AURYI_K2_PRIMARY_KEY).setVisible(true).setAlpha(0).setAngle(0);
+    actor.attackSprite?.setVisible(false)?.setAlpha?.(1);
+    return true;
   }
 
   _wantedPrismelKey(heroId = this.scene?.activeHeroId) {
@@ -122,7 +75,7 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
     }
 
     const auryi = this.actors.get('auryi');
-    if (auryi?.live28ApprovedTextureKey && !auryi._snapshot) this._restoreAuryiClean(auryi);
+    if (auryi?.live28ApprovedTextureKey && !auryi._snapshot) this._restoreAuryiPrimary(auryi);
     this._removePersistentAuryiMagic(auryi);
     this.layout();
     this._forceActiveRing(heroId);
@@ -165,6 +118,14 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
 
   layout() {
     super.layout();
+
+    const auryi = this.actors?.get('auryi');
+    if (auryi && !auryi._snapshot && auryi.live28ApprovedTextureKey === AURYI_K2_PRIMARY_KEY) {
+      if (auryi.sprite.texture?.key !== AURYI_K2_PRIMARY_KEY) this._restoreAuryiPrimary(auryi);
+      this._fitActorToBodyHeight(auryi, AURYI_K2_PRIMARY_KEY, this.scene.scale.height * AURYI_BODY_H_FRAC);
+      this._removePersistentAuryiMagic(auryi);
+    }
+
     const prismel = this.actors?.get('prismel');
     if (!prismel || prismel._snapshot || !prismel.live28K2PrismelStatePair) {
       this._forceActiveRing(this.scene?.activeHeroId);
