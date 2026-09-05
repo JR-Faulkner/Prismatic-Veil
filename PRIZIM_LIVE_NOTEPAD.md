@@ -15,8 +15,16 @@ This is the fast-moving operational notepad for current PriZim production state.
 - LIVE28K2 Prismel primary: `assets/party_formation/PRISMEL_LIVE28K2_RIGHT_FACING.png`, native 1106×1422.
 - LIVE28K2 Auryi primary: `assets/party_formation/AURYI_LIVE28K2_PRIMARY.png`, native 1086×1448.
 - Both battle-critical primaries are **PNG-only and must remain at native source resolution**. Runtime display scaling is allowed; source-file downscaling is not.
-- The first LIVE28K2 iPhone witness confirmed the build loaded and the new Auryi primary appeared, but exposed two failures: opaque white source backgrounds and incorrect Prismel active-state authority.
-- The white source backgrounds are asset-alpha cleanup problems, not scale or identity problems. Remove only the background into transparency, preserve native resolution, preserve character pixels, and keep PNG.
+- The first LIVE28K2 iPhone witness confirmed the build loaded and the new Auryi primary appeared, but exposed failures: opaque white source backgrounds, incorrect Prismel active-state authority, stale HUD portraits, and turn-ring placement needing body-footprint anchoring.
+- LIVE28K2 turn-ring correction commit: `5a09151d46b12316b92e11b2552db1c547337619`. Turn rings now re-center after high-resolution body fitting using the measured readable body/footprint rather than source-canvas center.
+- LIVE28K2 HUD portrait replacement commit: `0d3de35b80a976cb56ccc75c4502877a754825fb`.
+- HUD portrait paths remain stable and were replaced **in place** so stale photo portraits cannot silently return:
+  - `assets/ui/portrait_prismel.png`
+  - `assets/ui/portrait_auryi.png`
+  - `assets/ui/portrait_kineza.png`
+- The HUD portraits are PZ-clean transparent PNG derivatives cut from the user's supplied current animated masters. Prismel is explicitly right-facing; Auryi and Kineza preserve their approved rightward presentation. No white opaque portrait mats and no WebP.
+- HUD portrait derivatives may be UI-sized; this does **not** authorize reducing the native battle-master source files.
+- The white source backgrounds on the full battle primaries are asset-alpha cleanup problems, not scale or identity problems. Remove only the background into transparency, preserve native resolution, preserve character pixels, and keep PNG.
 - Prismel has **two distinct required battle states** and they must never be collapsed into one pose:
   - **Off-turn / passive:** staffless idle, standing, facing right, using the new full-resolution LIVE28K2 Prismel identity.
   - **On-turn / active:** staff-ready Prismel, using the **same current Prismel identity, age, face, costume, proportions, and rendering authority**.
@@ -36,11 +44,13 @@ This is the fast-moving operational notepad for current PriZim production state.
 
 - **MAIN FIRST:** Current production battle fixes, tests, witnesses, and approval must target the actual MAIN route reached by the user's iPhone web-app link.
 - **CHECK NOTES BEFORE CHANGE / WRITE NOTES AFTER CHANGE:** Read this notepad and applicable production locks before modifying MAIN-live behavior. Refresh them after meaningful live work or failure discovery.
-- **NO IMAGE GENERATION DURING RUNTIME FIXES unless the user explicitly requests generation.** Asset integration, cleanup, scale, identity, transparency, and clarity problems are production tasks.
+- **NO IMAGE GENERATION DURING RUNTIME FIXES unless the user explicitly requests generation.** Asset integration, cleanup, crop/extraction, scale, identity, transparency, portrait wiring, ring placement, and clarity problems are production tasks.
 - **IDENTITY BEFORE RESOLUTION:** Never substitute a different-looking high-resolution hero merely to improve clarity. The correct locked character authority wins.
 - **NO wrapped raster sprites for battle-critical art.** Do not serve SVG files whose real payload is embedded WebP/PNG/JPEG raster data.
 - **NO WebP for battle-critical attack/state/idle art on the iPhone production path.** Default authority is direct repo-served PNG.
 - **KEEP NATIVE SOURCE RESOLUTION:** Do not reduce the source dimensions of the approved Prismel/Auryi primaries. Runtime display scaling does not count as source-file reduction.
+- **HUD PORTRAITS FOLLOW CURRENT ANIMATED MASTERS:** Character-box portraits must be cut from current approved animated/master art, transparent PNG, and oriented consistently rightward. Stale photo/headshot assets are not authority.
+- **TURN RINGS FOLLOW BODY FOOTPRINTS:** Active-turn circles must anchor to measured feet/body bounds after final sprite scale/origin fitting, never transparent/source-canvas center.
 - **PRISMEL STATE SPLIT IS LOCKED:** off-turn = right-facing staffless idle; on-turn = staff-ready. Never flatten both states into one pose.
 - **ACTIVE PRISMEL MUST MATCH CURRENT IDENTITY:** a staff-ready pose that changes his face, age, body, costume, or overall identity is invalid even if the state/action is correct.
 - If the correct active-turn Prismel asset is not yet wired, do not silently fall back to a mismatched older active texture.
@@ -61,6 +71,7 @@ This is the fast-moving operational notepad for current PriZim production state.
 - Compare foot baseline, eye line, shoulder height, body height, and native head-to-body ratio.
 - Ignore FX, staff, robe/cape reach, hair reach, stance width, and transparent padding when judging body height.
 - Prismel's head must not read larger than Auryi's because of normalization. Kineza remains the most youthful/compact without becoming a miniature adult.
+- LIVE28K2 ring placement is post-fit body-footprint anchored by commit `5a09151d46b12316b92e11b2552db1c547337619`.
 
 ## Prismel
 
@@ -72,8 +83,9 @@ This is the fast-moving operational notepad for current PriZim production state.
 - Commit `dde90ae4dbb92445d21f9f27e59b00cece8af642` is only a temporary wrong-identity guard. It is not final approval to use the passive idle during Prismel's active turn.
 - Final correction target: **off-turn new right-facing idle -> turn begins -> correct-identity staff-ready Prismel -> attack/action -> return to correct state based on whose turn it is**.
 - Active/passive state must restore atomically after attack/action cleanup.
+- HUD portrait authority is now `assets/ui/portrait_prismel.png`, cut from the supplied current Prismel animated master, transparent PNG and right-facing.
 - The 167x140 raster-in-SVG HC wrappers remain prohibited on MAIN.
-- Do not regenerate Prismel to solve runtime integration, scale, transparency, or clarity issues.
+- Do not regenerate Prismel to solve runtime integration, scale, transparency, portrait, or clarity issues.
 
 ## Auryi
 
@@ -82,28 +94,32 @@ This is the fast-moving operational notepad for current PriZim production state.
 - The new full-res primary currently needs its opaque white background removed to alpha at native resolution before approval.
 - Persistent Phaser crown/Auorb objects remain suppressed so there is no duplicate magic.
 - Auryi remains tallest and post-attack cleanup must return her to the crownless approved body at exact home Y.
+- HUD portrait authority is now `assets/ui/portrait_auryi.png`, cut from the supplied current Auryi animated master with transparent alpha.
 - Basic attack: **Aurorb Slice**. Resonart: **Aurora Pulse**. Aurora Pulse production is currently paused.
 
 ## Kineza
 
 - Locked MAIN standby authority remains `assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png`.
 - Kineza's clarity remains the current on-device presentation benchmark, but he must remain the shortest hero at the locked body-height ratio.
+- HUD portrait authority is now `assets/ui/portrait_kineza.png`, cut from the supplied current Kineza animated master with transparent alpha.
 - Generic Kineza state sheets must not overwrite the locked HC idle.
 
 ## Immediate MAIN LIVE28K2 QA lane
 
 1. Confirm witness reads `main-20260904-live28k2` on the user's normal iPhone web-app MAIN path.
-2. Remove Prismel and Auryi opaque white backgrounds into transparency while preserving exact native dimensions and PNG delivery.
-3. Confirm off-turn Prismel uses the new full-res right-facing staffless idle.
-4. Confirm Prismel switches to a **correct-identity staff-ready state** when his turn begins.
-5. Confirm the old mismatched LIVE28J active Prismel never appears again.
-6. Confirm attack/action cleanup returns Prismel to staff-ready while his turn is still active, then back to right-facing idle once his turn ends.
-7. Verify normal Auryi idle remains crownless with no duplicate crown/Auorb.
-8. Verify body hierarchy reads clearly: Auryi tallest, Prismel middle, Kineza shortest.
-9. Judge height by feet/eyes/shoulders/body, not staff/robe/FX reach.
-10. Trigger all three attacks and verify each returns to the correct authority/size.
-11. Run at least two full turn cycles to catch state leakage.
-12. Only after the real iPhone MAIN run passes should LIVE28K2 be marked approved.
+2. Verify all three character boxes show the new master-derived transparent portraits; Prismel must face right and no stale photo portrait may appear.
+3. Verify the active-turn circle sits under the actual measured feet/body footprint for Prismel, Auryi, and Kineza after scaling.
+4. Remove Prismel and Auryi opaque white **battle-sprite** backgrounds into transparency while preserving exact native dimensions and PNG delivery.
+5. Confirm off-turn Prismel uses the new full-res right-facing staffless idle.
+6. Confirm Prismel switches to a **correct-identity staff-ready state** when his turn begins.
+7. Confirm the old mismatched LIVE28J active Prismel never appears again.
+8. Confirm attack/action cleanup returns Prismel to staff-ready while his turn is still active, then back to right-facing idle once his turn ends.
+9. Verify normal Auryi idle remains crownless with no duplicate crown/Auorb.
+10. Verify body hierarchy reads clearly: Auryi tallest, Prismel middle, Kineza shortest.
+11. Judge height by feet/eyes/shoulders/body, not staff/robe/FX reach.
+12. Trigger all three attacks and verify each returns to the correct authority/size.
+13. Run at least two full turn cycles to catch state leakage.
+14. Only after the real iPhone MAIN run passes should LIVE28K2 be marked approved.
 
 ## Proven Patterns
 
@@ -112,6 +128,8 @@ This is the fast-moving operational notepad for current PriZim production state.
 - Identity authority outranks resolution convenience.
 - State semantics and identity authority are separate requirements: the pose can be correct while the character identity is wrong.
 - Body-height calibration must exclude sparse props/FX and transparent padding.
+- HUD derivatives should be created from current approved animated masters rather than unrelated legacy headshots.
+- Active-turn markers should be anchored after final origin/scale fitting using readable body bounds.
 - Reuse previously approved production art and cleanup logic before inventing a replacement.
 - Asset readiness comes before playback.
 
