@@ -16,6 +16,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install PNG QA dependency
+        run: python -m pip install --quiet pillow
+
       - name: Download approved HC Prismel active authority
         run: |
           set -euo pipefail
