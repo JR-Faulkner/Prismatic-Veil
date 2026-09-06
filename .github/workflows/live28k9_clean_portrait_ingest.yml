@@ -1,0 +1,64 @@
+name: LIVE28K9 clean portrait ingest
+on:
+  push:
+    paths:
+      - '.github/workflows/live28k9_clean_portrait_ingest.yml'
+permissions:
+  contents: write
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Write clean measured K9 portraits
+        shell: bash
+        run: |
+          cat > /tmp/prismel.b64 <<'EOF'
+<REDACTED>
+EOF
+          cat > /tmp/auryi.b64 <<'EOF'
+<REDACTED>
+EOF
+          cat > /tmp/kineza.b64 <<'EOF'
+<REDACTED>
+EOF
+          base64 -d /tmp/prismel.b64 > assets/ui/portrait_prismel_k9.png
+          base64 -d /tmp/auryi.b64 > assets/ui/portrait_auryi_k9.png
+          base64 -d /tmp/kineza.b64 > assets/ui/portrait_kineza_k9.png
+          echo "23dabfd2afc20a4fdc6489bf7c5dd4fff10ce514afab7f1bfbf7ebe815f80fe2  assets/ui/portrait_prismel_k9.png" | sha256sum -c -
+          echo "9e4e71c3e1a81647dc1f36bcd485d82d5c5947911952842b9a82ed486be7039a  assets/ui/portrait_auryi_k9.png" | sha256sum -c -
+          echo "a31f52be3123b4ca93e10c31184ce0e11a19ee4afc38600f32b653d2249bbece  assets/ui/portrait_kineza_k9.png" | sha256sum -c -
+      - name: Wire HUD to K9 portraits
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('src/BattleConfig.js')
+          s = p.read_text()
+          s = s.replace("portrait: 'portrait_prismel',", "portrait: 'portrait_prismel_k9',")
+          s = s.replace("portrait: 'portrait_auryi',", "portrait: 'portrait_auryi_k9',")
+          s = s.replace("portrait: 'portrait_kineza',", "portrait: 'portrait_kineza_k9',")
+          p.write_text(s)
+          h = Path('hybrid-main.html')
+          s = h.read_text()
+          start = s.index('  const portraitFocus=`<style id="pvPortraitFocus">')
+          end = s.index('</style>`;', start) + len('</style>`;')
+          replacement = '''  const portraitFocus=`<style id="pvPortraitFocus">
+            .portrait{background:#17182d;overflow:hidden}
+            .portrait img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:50% 50%!important;transform:none!important;background:none!important}
+          </style>`;'''
+          s = s[:start] + replacement + s[end:]
+          h.write_text(s)
+          lb = Path('live-build.json')
+          s = lb.read_text().replace('main-20260905-live28k8', 'main-20260905-live28k9')
+          lb.write_text(s)
+      - name: Commit K9 clean portrait authority
+        shell: bash
+        run: |
+          rm -f .github/workflows/live28k9_clean_portrait_ingest.yml
+          git config user.name "JR-Faulkner"
+          git config user.email "53619182+JR-Faulkner@users.noreply.github.com"
+          git add assets/ui/portrait_*_k9.png src/BattleConfig.js hybrid-main.html live-build.json .github/workflows/live28k9_clean_portrait_ingest.yml
+          git commit -m "LIVE28K9: ingest measured approved HUD portraits"
+          git push origin HEAD:main
