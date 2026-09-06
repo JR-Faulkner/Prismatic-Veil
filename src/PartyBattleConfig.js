@@ -122,7 +122,8 @@ export function partyRoster() {
 }
 
 export function projectedDamage(hero, command) {
-  const base = command === 'Resonart' ? hero.attack.damage : Math.round(hero.attack.damage * BASIC_ATTACK_DAMAGE_MULT);
+  const resonartDamage = hero.resonart?.damage ?? hero.attack.damage;
+  const base = command === 'Resonart' ? resonartDamage : Math.round(hero.attack.damage * BASIC_ATTACK_DAMAGE_MULT);
   return { low: Math.round(base * 0.85), high: Math.round(base * 1.15) };
 }
 
