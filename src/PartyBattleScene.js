@@ -12,7 +12,7 @@
 // relies on (see CLAUDE.md) — battlefield objects go through worldAdd(),
 // every HUD element goes through uiAdd(), or it renders on both cameras
 // doubled/unzoomed.
-import { HEROES } from './BattleConfig.js?v=44';
+import { HEROES } from './BattleConfig.js?v=live28k9';
 import { WRAITH_TEXTURES } from './EnemyWraithView.js?v=xbox-ui-1';
 import { createEnemyView } from './EnemyViewFactory.js?v=xbox-ui-1';
 import PartyFormationView from './PartyFormationView.js?v=blitzer-2';
