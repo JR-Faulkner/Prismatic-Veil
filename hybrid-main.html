@@ -37,8 +37,13 @@
   };
   let html=await (await read(`./hybrid-battle-live.html?template=${encodeURIComponent(id)}&ts=${stamp}`)).text();
   const importMap=JSON.stringify({imports}).replace(/</g,'\\u003c');
+  const rev=encodeURIComponent(id);
   const portraitFocus=`<style id="pvPortraitFocus">
-    .portrait img{image-rendering:auto;object-fit:cover;object-position:50% 50%;transform:none}
+    .portrait{background-color:#17182d;background-repeat:no-repeat!important;overflow:hidden}
+    .portrait img{display:none!important}
+    [data-h="prismel"] .portrait{background-image:url("${abs('./assets/ui/portrait_prismel.png')}?pv=${rev}")!important;background-size:163.636% 163.636%!important;background-position:50% 18%!important}
+    [data-h="auryi"] .portrait{background-image:url("${abs('./assets/ui/portrait_auryi.png')}?pv=${rev}")!important;background-size:180% 180%!important;background-position:59.4% 25%!important}
+    [data-h="kineza"] .portrait{background-image:url("${abs('./assets/ui/portrait_kineza.png')}?pv=${rev}")!important;background-size:163.636% 163.636%!important;background-position:78.6% 28.6%!important}
   </style>`;
   html=html.replace('</head>',`<script type="importmap">${importMap}<\/script>${portraitFocus}</head>`);
   html=html.replace(
