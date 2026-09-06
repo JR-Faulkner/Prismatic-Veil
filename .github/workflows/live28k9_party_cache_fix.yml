@@ -1,0 +1,30 @@
+name: LIVE28K9 portrait cache cleanup
+on:
+  push:
+    paths:
+      - '.github/workflows/live28k9_party_cache_fix.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Cache-bust PartyBattleScene portrait roster
+        shell: bash
+        run: |
+          sed -i "s#./BattleConfig.js?v=44#./BattleConfig.js?v=live28k9#" src/PartyBattleScene.js
+          rm -rf .github/ingest_live28k9
+          rm -f .github/workflows/live28k9_portrait_bake.yml
+          rm -f .github/workflows/live28k9_clean_portrait_ingest.yml
+          rm -f .github/workflows/live28k9_party_cache_fix.yml
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          git config user.name "JR-Faulkner"
+          git config user.email "53619182+JR-Faulkner@users.noreply.github.com"
+          git add -A
+          git commit -m "LIVE28K9: finalize measured portrait cache path"
+          git push origin HEAD:main
