@@ -42,4 +42,17 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     globalThis.__PV_LIVE28K6_AURYI_CROWN_HYBRID__ = true;
     globalThis.__PV_LIVE28K7_ATTACK_HALO_CLEAN__ = true;
   }
+
+  _onCommand(label) {
+    super._onCommand(label);
+    if (label !== 'Resonart') return;
+
+    const hero = this._activeHero();
+    if (hero?.id !== 'auryi' || !hero.resonart || !this._drawer) return;
+
+    // Auryi's Basic Attack and Resonart are separate authorities:
+    // Aurorb Slice remains Attack; Aurora Pulse owns the Resonart drawer.
+    this._drawer.title.setText(hero.resonart.name.toUpperCase());
+    this._drawer.detail.setText(hero.resonart.flavor || 'A signature technique.');
+  }
 }
