@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'AGENTS.md'
       - 'live-build.json'
       - 'hybrid-main.html'
       - 'hybrid-battle-live.html'
@@ -16,9 +17,12 @@ on:
       - 'PV_RESUME_ANCHOR.md'
       - 'PRIZIM_LIVE_NOTEPAD.md'
       - 'tools/prizim/preflight_live28k.py'
+      - 'tools/prizim/sync_live_authority.py'
+      - '.github/workflows/sync-prizim-live-authority.yml'
       - '.github/workflows/prizim-hybrid-stack-guard.yml'
   pull_request:
     paths:
+      - 'AGENTS.md'
       - 'live-build.json'
       - 'hybrid-main.html'
       - 'hybrid-battle-live.html'
@@ -31,6 +35,8 @@ on:
       - 'PV_RESUME_ANCHOR.md'
       - 'PRIZIM_LIVE_NOTEPAD.md'
       - 'tools/prizim/preflight_live28k.py'
+      - 'tools/prizim/sync_live_authority.py'
+      - '.github/workflows/sync-prizim-live-authority.yml'
 
 jobs:
   live28k-preflight:
