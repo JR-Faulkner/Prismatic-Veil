@@ -55,4 +55,12 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     this._drawer.title.setText(hero.resonart.name.toUpperCase());
     this._drawer.detail.setText(hero.resonart.flavor || 'A signature technique.');
   }
+
+  _setBanner(msg) {
+    const hero = this._activeHero();
+    if (hero?.id === 'auryi' && hero.resonart && typeof msg === 'string' && msg.includes(hero.attack.name)) {
+      msg = msg.replaceAll(hero.attack.name, hero.resonart.name);
+    }
+    super._setBanner(msg);
+  }
 }
