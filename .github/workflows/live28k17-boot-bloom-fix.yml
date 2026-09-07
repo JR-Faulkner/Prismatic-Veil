@@ -1,0 +1,72 @@
+name: LIVE28K17 Boot + Bloom Resilience
+
+on:
+  push:
+    paths:
+      - '.github/ingest_live28k17/TRIGGER.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live28k17-boot-bloom
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply guarded K17 resilience patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile tools/prizim/fix_live28k17_boot_bloom.py
+          python tools/prizim/fix_live28k17_boot_bloom.py
+          python tools/prizim/sync_live_authority.py
+          python tools/prizim/preflight_live28k.py
+          node --check src/prizim/Live28K2PartyBattleScene.js
+          node --check src/PartyBattleAudioController.js
+          python - <<'PY'
+          from pathlib import Path
+          html = Path('hybrid-main.html').read_text(encoding='utf-8')
+          script = html.split('<script>', 1)[1].split('</script>', 1)[0]
+          Path('/tmp/pv-hybrid-boot.js').write_text(script, encoding='utf-8')
+          PY
+          node --check /tmp/pv-hybrid-boot.js
+          grep -F "const read=async (url,attempts=4)=>" hybrid-main.html
+          grep -F "bloomWatchdog: 0.84" src/prizim/Live28K2PartyBattleScene.js
+          grep -F "auroraBloomEnsurePlaying()" src/PartyBattleAudioController.js
+
+      - name: Commit guarded K17 correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/ingest_live28k17/TRIGGER.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            hybrid-main.html \
+            src/PartyBattleAudioController.js \
+            src/prizim/Live28K2PartyBattleScene.js \
+            PV_LIVE_AUTHORITY.json \
+            PRIZIM_LIVE_NOTEPAD.md \
+            PV_RESUME_ANCHOR.md \
+            tools/prizim/preflight_live28k.py \
+            tools/prizim/sync_live_authority.py \
+            .github/ingest_live28k17/TRIGGER.txt
+          git commit -m 'LIVE28K17: harden Hybrid boot and guarantee Bloom playback recovery'
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'K17 push failed after 3 attempts' >&2
+          exit 1
