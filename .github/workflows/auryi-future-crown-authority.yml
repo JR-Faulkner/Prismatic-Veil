@@ -1,0 +1,32 @@
+name: Auryi Future Crown Authority
+on:
+  push:
+    paths:
+      - '.github/auryi-future-crown.trigger'
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record future crown authority
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('PV_RESUME_ANCHOR.md')
+          s = p.read_text()
+          marker = '## Approved frame/source history\n'
+          block = '''## Future Auryi crown authority\n\nThis does **not** change crownless Aurora Pulse. When Auryi's crown is brought back in a future non-Aurora presentation pass, use the **Main Screen / title-screen crown on Auryi's head** as the visual authority. The returned crown should read closer to that crown's silhouette, scale, placement, and overall design language rather than the older hovering/orbiting crown treatment. Keep it head-worn unless the user later revises this direction.\n\n'''
+          if '## Future Auryi crown authority' not in s:
+              s = s.replace(marker, block + marker)
+          p.write_text(s)
+          PY
+      - name: Commit crown authority
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add PV_RESUME_ANCHOR.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'Record future Auryi main-screen crown authority'
+          git push
