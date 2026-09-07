@@ -1,0 +1,1 @@
+hovered-splash-authority
