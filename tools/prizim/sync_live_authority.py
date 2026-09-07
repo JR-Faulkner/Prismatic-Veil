@@ -37,20 +37,25 @@ def main():
 - `.github/workflows/prizim-hybrid-stack-guard.yml` rejects Hybrid-route regressions.
 '''
 
-    current_aurora = '''## Auryi Resonart / Aurora Pulse current lane
+    aur = auth.get('auryi', {})
+    beat = aur.get('aurora_beauty_sync', {})
+    device = auth.get('device_evidence', {})
+    current_aurora = f'''## Auryi Resonart / Aurora Pulse current lane
 
 - Basic Attack authority remains **Aurorb Slice**.
 - Resonart authority is **Aurora Pulse**.
 - Aurora Pulse live production belongs in the Hybrid/K adapter stack, not standalone `PartyBattleScene.js`.
 - Approved composition/timing reference: `pz-a-aurora-pulse-lab.html`.
 - **Primary live presentation:** exact `Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4` inside the Hybrid/K adapter. Verified 1920×1080 H.264, 24 FPS, 7.375s, SHA-256 `e70fc0f987646b1c1428c8797c0d95e8a38c2327448d3607826febb1e0065b1a`.
-- Beauty V1 source master remains 7.375s, but LIVE presentation intentionally exits at **6.65s** before the baked placeholder/demo reconnect. Live Hybrid battlefield reconnect begins at 6.58s underneath the fade.
-- The Phaser Aurora mock is now fail-safe presentation only if native video playback fails. The old Aurorb Slice pose sequence is never an Aurora Pulse fallback.
-- Celestial Bloom production audio is exact and installed. K14 phone evidence showed it was inaudible once native Beauty video was introduced, so K15 schedules Bloom from the original user gesture at +0.70s and clears normal battle BGM beneath it. This remains pending iPhone validation.
-- Triumph of Light production victory audio is installed; current production behavior loops it while the victory/results screen remains open.
+- Live sync is derived from `PV_LIVE_AUTHORITY.json`: Bloom {beat.get('celestial_bloom_scheduled_from_user_gesture', 0.70):.2f}s -> silence {beat.get('compression_silence', 4.56):.2f}s -> Pulse/damage logic {beat.get('pulse_release_and_damage_logic', 5.18):.2f}s -> battlefield reveal {beat.get('battlefield_reveal_crossfade', 6.08):.2f}s -> live enemy impact {beat.get('live_enemy_visual_impact', 6.30):.2f}s -> reconnect {beat.get('live_battlefield_reconnect', 6.58):.2f}s -> Beauty hidden {beat.get('beauty_video_hidden_before_demo_tail', 6.65):.2f}s.
+- The real Hybrid battlefield owns the final handoff and enemy reaction; the Beauty master's baked demo reconnect tail is never displayed.
+- The Phaser Aurora mock is fail-safe presentation only if native video playback fails. The old Aurorb Slice pose sequence is never an Aurora Pulse fallback.
+- Celestial Bloom owns the cinematic foreground mix; normal battle BGM clears underneath it.
+- Triumph of Light loops while the victory/results screen remains open.
 - Aurora Pulse itself remains **crownless**.
-- The exact 01–08 standalone PNG lane remains an archival/editable production lane. It is **not a prerequisite for the current live cinematic**, because Beauty V1 is the already-approved composite built from those approved poses. The user supplied and previously separated that frame material; never reclassify it as missing delivery.
-- Future non-Aurora crown authority: match the Main Splash Screen crown as a **hovered/offset element above Auryi**, not head-worn; preserve its silhouette, scale, spacing, and design language.
+- LIVE28K15 phone evidence: choir audible = {device.get('live28k15_celestial_bloom_audible', False)}; demo tail absent = {device.get('live28k15_demo_tail_absent', False)}; core presentation passed = {device.get('live28k15_core_aurora_presentation_passed', False)}.
+- Current pending gate: smoother Beauty-to-live battlefield crossfade with visible enemy impact.
+- Future non-Aurora crown authority: match the Main Splash Screen crown as a **hovered/offset element above Auryi**, not head-worn.
 '''
 
     notepad = NOTEPAD_PATH.read_text(encoding='utf-8')
@@ -99,6 +104,16 @@ def main():
             resume = resume.replace(marker, '\n' + safeguard + marker, 1)
         else:
             resume += '\n\n' + safeguard
+    aurora_gate = f'''## Aurora Pulse live device gate\n\n- Current witness: `{witness}`.\n- K15 phone result: core Beauty presentation passed, Celestial Bloom audible, demo tail absent.\n- Pending K16 gate: smooth Beauty-to-live battlefield crossfade with real enemy hit/recoil visible during reconnect.\n- Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.\n'''
+    if '## Aurora Pulse live device gate' in resume:
+        resume = replace_section(resume, '## Aurora Pulse live device gate', aurora_gate)
+    else:
+        marker = '\n## Hard constraints'
+        if marker in resume:
+            resume = resume.replace(marker, '\n' + aurora_gate + marker, 1)
+        else:
+            resume += '\n\n' + aurora_gate
+
     RESUME_PATH.write_text(resume, encoding='utf-8')
 
     print(f'PriZim ledgers synchronized to {witness}')

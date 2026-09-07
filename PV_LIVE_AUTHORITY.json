@@ -56,12 +56,15 @@
       "battlefield_handoff": 0.0,
       "celestial_bloom_scheduled_from_user_gesture": 0.7,
       "compression_silence": 4.56,
-      "pulse_release_and_damage": 5.18,
+      "pulse_release_and_damage_logic": 5.18,
+      "battlefield_reveal_crossfade": 6.08,
+      "live_enemy_visual_impact": 6.3,
       "live_battlefield_reconnect": 6.58,
       "beauty_video_hidden_before_demo_tail": 6.65
     },
     "aurora_demo_tail_policy": "Never display Beauty V1 placeholder reconnect material at/after ~6.65s; live Hybrid battlefield owns reconnect.",
-    "aurora_bloom_mix_policy": "Celestial Bloom is armed/scheduled before native video play on iPhone and owns the cinematic foreground mix; normal battle BGM is cleared beneath it."
+    "aurora_bloom_mix_policy": "Celestial Bloom is armed/scheduled before native video play on iPhone and owns the cinematic foreground mix; normal battle BGM is cleared beneath it.",
+    "aurora_handoff_policy": "Keep gameplay damage locked to the 5.18s Pulse beat, but reveal the real Hybrid battlefield through a 550ms Beauty-video crossfade beginning at 6.08s and show the live enemy hit/recoil plus prismatic impact at 6.30s before full reconnect. Never use the Beauty demo reconnect tail."
   },
   "device_evidence": {
     "live28k11_celestial_bloom_played_and_sounded_good": true,
@@ -78,6 +81,11 @@
     "live28k14_celestial_bloom_inaudible": true,
     "live28k14_demo_tail_visible": true,
     "live28k14_result": "FAIL presentation gate: choir absent and baked demo reconnect tail visible on iPhone recording.",
-    "live28k15_pending_iphone_validation": true
+    "live28k15_pending_iphone_validation": true,
+    "live28k15_celestial_bloom_audible": true,
+    "live28k15_demo_tail_absent": true,
+    "live28k15_core_aurora_presentation_passed": true,
+    "live28k15_remaining_issue": "Needs smoother cinematic-to-battlefield handoff with the real enemy visibly affected during reconnect.",
+    "live28k16_pending_iphone_validation": true
   }
 }

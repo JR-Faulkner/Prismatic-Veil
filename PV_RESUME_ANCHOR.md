@@ -172,6 +172,13 @@ Do not add redundant base-file query-string surgery unless this routing actually
 - Read `PV_LIVE_AUTHORITY.json` first. Run `python tools/prizim/preflight_live28k.py` before promotion.
 - `pz-a-aurora-pulse-lab.html` is choreography/composition authority only; integrate it through the Hybrid stack rather than promoting it or rebuilding it in a disconnected standalone scene.
 
+## Aurora Pulse live device gate
+
+- Current witness: `main-20260906-live28k15`.
+- K15 phone result: core Beauty presentation passed, Celestial Bloom audible, demo tail absent.
+- Pending K16 gate: smooth Beauty-to-live battlefield crossfade with real enemy hit/recoil visible during reconnect.
+- Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.
+
 ## Hard constraints
 
 - No WebP for this production lane.

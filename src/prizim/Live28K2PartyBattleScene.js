@@ -17,7 +17,7 @@ const AURORA_BEAUTY_VIDEO_READY = true;
 const AURORA_BEAUTY_VIDEO_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4?pvasset=live28k14-beauty';
 // The Beauty master contains a placeholder/demo reconnect after ~6.65s.
 // LIVE28K never shows that tail: the real Hybrid battlefield owns reconnect.
-const AURORA_BEAUTY_TIMELINE = Object.freeze({ invocation: 0.70, silence: 4.56, pulse: 5.18, reconnect: 6.58, end: 6.65 });
+const AURORA_BEAUTY_TIMELINE = Object.freeze({ invocation: 0.70, silence: 4.56, pulse: 5.18, reveal: 6.08, impactReveal: 6.30, reconnect: 6.58, end: 6.65 });
 
 // Exact approved 01-08 production lane. Keep this false until the original
 // transparent PNG bytes are physically installed at the paths below. This
@@ -286,11 +286,58 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
   async _hideAuroraBeautyVideo(video, fadeMs = 90) {
     if (!video) return;
+    video.style.transition = `opacity ${Math.max(0, fadeMs)}ms linear`;
     video.style.opacity = '0';
     await this._wait(fadeMs);
     try { video.pause(); } catch (err) { /* ignore */ }
     video.style.display = 'none';
+    video.style.transition = 'opacity 90ms linear';
     try { video.currentTime = 0; } catch (err) { /* ignore */ }
+  }
+
+  _beginAuroraBeautyBattlefieldReveal(video) {
+    if (!video) return;
+    // Blend the approved Beauty Pulse over the real Hybrid battlefield instead
+    // of cutting from full-screen video to gameplay in one frame.
+    video.style.transition = 'opacity 550ms cubic-bezier(0.22, 1, 0.36, 1)';
+    video.style.opacity = '0';
+  }
+
+  _playAuroraEnemyReconnectImpact(dmg, lethal) {
+    const view = this.enemyView;
+    const anchor = view?.container;
+    const sprite = view?.sprite;
+    if (!anchor) return;
+
+    const x = anchor.x;
+    const y = anchor.y - (sprite?.displayHeight || 140) * 0.52;
+    const r = Math.max(42, Math.min(this.scale.width, this.scale.height) * 0.085);
+    const core = this.add.circle(x, y, r * 0.62, 0xc48cff, 0.34)
+      .setDepth(31).setBlendMode(Phaser.BlendModes.ADD);
+    const ring = this.add.circle(x, y, r, 0x000000, 0)
+      .setStrokeStyle(6, 0xf6e8ff, 0.96).setDepth(31.1).setBlendMode(Phaser.BlendModes.ADD);
+    const echo = this.add.circle(x, y, r * 0.72, 0x000000, 0)
+      .setStrokeStyle(3, 0x82ffd8, 0.88).setDepth(31.2).setBlendMode(Phaser.BlendModes.ADD);
+    this.worldAdd([core, ring, echo]);
+    this.world?.bringToTop?.(core);
+    this.world?.bringToTop?.(ring);
+    this.world?.bringToTop?.(echo);
+
+    this.tweens.add({ targets: core, scale: 2.25, alpha: 0, duration: 360, ease: 'Cubic.easeOut', onComplete: () => core.destroy() });
+    this.tweens.add({ targets: ring, scale: 2.85, alpha: 0, duration: 430, ease: 'Cubic.easeOut', onComplete: () => ring.destroy() });
+    this.tweens.add({ targets: echo, scale: 3.45, alpha: 0, duration: 510, ease: 'Cubic.easeOut', onComplete: () => echo.destroy() });
+    this.cameras.main.shake(160, 0.0048, true);
+
+    // The logical HP change already happened on the 5.18s Pulse beat. This is
+    // deliberately the visible hit/recoil beat during the battlefield crossfade.
+    view.hit();
+    this._floatText(`-${dmg}`, '#FFE8A0');
+    if (lethal) {
+      this.time.delayedCall(185, () => {
+        view.die();
+        this.audio.enemyDefeat();
+      });
+    }
   }
 
   async _playAuryiAuroraPulseBeauty(hero) {
@@ -307,6 +354,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     const hitRoll = Math.random() < AURORA_PULSE_HIT_CHANCE;
     let ownsBloom = false;
     let impactResolved = false;
+    let pendingImpact = null;
 
     this.audio.beginCinematicAttack?.();
     // iPhone/Safari: arm the exact choir cue while still inside the user-gesture
@@ -341,23 +389,22 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
         const dmg = Phaser.Math.Between(low, high);
         this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
         this._updateTargetCard();
-        this.enemyView.hit();
-        this._floatText(`-${dmg}`, '#FFE8A0');
+        pendingImpact = { dmg, lethal: this.enemy.hp <= 0 };
         this._setBanner(`${hero.name} uses ${hero.resonart.name} for ${dmg} damage!`);
         this.audio.attackImpact(hero.id);
         this.audio.enemyHit();
-        if (this.enemy.hp <= 0) {
-          this.enemyView.die();
-          this.audio.enemyDefeat();
-        }
       } else {
         this._setBanner(`${hero.name} uses ${hero.resonart.name} — missed!`);
       }
       impactResolved = true;
 
-      // The approved Beauty attack ends cleanly here. Do NOT show the baked
-      // placeholder/demo reconnect tail. The live Hybrid battlefield underneath
-      // already owns the real enemy, camera, HUD, and post-impact state.
+      // Smooth Hybrid reconnect: the real battlefield begins bleeding through
+      // the tail of the Beauty Pulse, then the live enemy visibly takes the hit
+      // inside that crossfade. Never show the baked placeholder/demo reconnect tail.
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.reveal);
+      this._beginAuroraBeautyBattlefieldReveal(video);
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.impactReveal);
+      if (pendingImpact) this._playAuroraEnemyReconnectImpact(pendingImpact.dmg, pendingImpact.lethal);
       await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.reconnect);
       await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.end, 14000);
     } catch (err) {

@@ -154,6 +154,8 @@ for token in [
     'invocation: 0.70',
     'silence: 4.56',
     'pulse: 5.18',
+    'reveal: 6.08',
+    'impactReveal: 6.30',
     'reconnect: 6.58',
     'end: 6.65'
 ]:
@@ -181,6 +183,26 @@ for token in [
         errors.append(f'K15 Aurora live reconnect/choir token missing: {token}')
 if auth['auryi'].get('aurora_beauty_sync', {}).get('beauty_video_hidden_before_demo_tail') != 6.65:
     errors.append('Aurora Beauty runtime is not locked to hide before the demo reconnect tail')
+
+# 8c. K16 handoff guard: battlefield must crossfade in before the demo tail and
+# the real live enemy reaction must be visible during that crossfade.
+for token in [
+    '_beginAuroraBeautyBattlefieldReveal',
+    "video.style.transition = 'opacity 550ms cubic-bezier(0.22, 1, 0.36, 1)'",
+    '_playAuroraEnemyReconnectImpact',
+    'pendingImpact = { dmg, lethal: this.enemy.hp <= 0 }',
+    'AURORA_BEAUTY_TIMELINE.reveal',
+    'AURORA_BEAUTY_TIMELINE.impactReveal',
+]:
+    if token not in k_scene:
+        errors.append(f'K16 Aurora battlefield handoff token missing: {token}')
+sync = auth['auryi'].get('aurora_beauty_sync', {})
+if sync.get('battlefield_reveal_crossfade') != 6.08:
+    errors.append('K16 Aurora battlefield reveal must begin at 6.08s')
+if sync.get('live_enemy_visual_impact') != 6.30:
+    errors.append('K16 Aurora live enemy visual impact must occur at 6.30s')
+if 'real Hybrid battlefield' not in auth['auryi'].get('aurora_handoff_policy', ''):
+    errors.append('K16 Aurora Hybrid handoff policy missing from machine authority')
 if 'scheduled before native video play' not in auth['auryi'].get('aurora_bloom_mix_policy', ''):
     errors.append('Aurora Bloom iPhone scheduling policy missing from machine authority')
 
