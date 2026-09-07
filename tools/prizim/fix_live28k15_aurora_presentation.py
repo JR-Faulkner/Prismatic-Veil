@@ -6,6 +6,8 @@ ROOT = Path(__file__).resolve().parents[2]
 SCENE = ROOT / 'src/prizim/Live28K2PartyBattleScene.js'
 AUDIO = ROOT / 'src/PartyBattleAudioController.js'
 AUTH = ROOT / 'PV_LIVE_AUTHORITY.json'
+PREFLIGHT = ROOT / 'tools/prizim/preflight_live28k.py'
+SYNC = ROOT / 'tools/prizim/sync_live_authority.py'
 
 
 def replace_once(text, old, new, label):
@@ -83,4 +85,32 @@ evidence['live28k14_result'] = 'FAIL presentation gate: choir absent and baked d
 evidence['live28k15_pending_iphone_validation'] = True
 AUTH.write_text(json.dumps(auth, indent=2) + '\n', encoding='utf-8')
 
-print('LIVE28K15 Aurora presentation corrections staged')
+preflight = PREFLIGHT.read_text(encoding='utf-8')
+preflight = replace_once(
+    preflight,
+    "k_scene = read('src/prizim/Live28K2PartyBattleScene.js')\nbase_scene = read('src/PartyBattleScene.js')",
+    "k_scene = read('src/prizim/Live28K2PartyBattleScene.js')\naudio_controller = read('src/PartyBattleAudioController.js')\nbase_scene = read('src/PartyBattleScene.js')",
+    'preflight audio controller read',
+)
+preflight = replace_once(preflight, "    'reconnect: 6.82',\n    'end: 7.375'", "    'reconnect: 6.58',\n    'end: 6.65'", 'preflight Beauty runtime cut tokens')
+needle = "if 'Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4' in base_scene:\n    errors.append('Aurora Beauty V1 leaked into standalone PartyBattleScene')\n"
+insert = needle + "\n# 8b. K15 presentation guard: iPhone-safe choir start and no baked demo tail.\nfor token in [\n    'auroraBloomStart(delaySeconds = 0)',\n    'this._auroraBloom.play(undefined, { delay:',\n    'targets: this.music, volume: 0',\n    \"volume: this._effectiveVolume('sfx', 1.0)\"\n]:\n    if token not in audio_controller:\n        errors.append(f'K15 Aurora Bloom presentation token missing: {token}')\nfor token in [\n    'auroraBloomStart?.(AURORA_BEAUTY_TIMELINE.invocation)',\n    'reconnect: 6.58',\n    'end: 6.65',\n    'placeholder/demo reconnect tail'\n]:\n    if token not in k_scene:\n        errors.append(f'K15 Aurora live reconnect/choir token missing: {token}')\nif auth['auryi'].get('aurora_beauty_sync', {}).get('beauty_video_hidden_before_demo_tail') != 6.65:\n    errors.append('Aurora Beauty runtime is not locked to hide before the demo reconnect tail')\nif 'scheduled before native video play' not in auth['auryi'].get('aurora_bloom_mix_policy', ''):\n    errors.append('Aurora Bloom iPhone scheduling policy missing from machine authority')\n"
+preflight = replace_once(preflight, needle, insert, 'preflight K15 presentation guard')
+PREFLIGHT.write_text(preflight, encoding='utf-8')
+
+sync = SYNC.read_text(encoding='utf-8')
+sync = replace_once(
+    sync,
+    '- Beauty V1 timing authority: handoff 0.00s -> Bloom starts 0.70s -> compression silence 4.56s -> Pulse/damage 5.18s -> reconnect 6.82s -> return 7.375s.',
+    '- Beauty V1 source master remains 7.375s, but LIVE presentation intentionally exits at **6.65s** before the baked placeholder/demo reconnect. Live Hybrid battlefield reconnect begins at 6.58s underneath the fade.',
+    'PriZim Beauty timing note',
+)
+sync = replace_once(
+    sync,
+    '- Celestial Bloom production audio is installed and has already played correctly on iPhone evidence.',
+    '- Celestial Bloom production audio is exact and installed. K14 phone evidence showed it was inaudible once native Beauty video was introduced, so K15 schedules Bloom from the original user gesture at +0.70s and clears normal battle BGM beneath it. This remains pending iPhone validation.',
+    'PriZim Bloom phone evidence note',
+)
+SYNC.write_text(sync, encoding='utf-8')
+
+print('LIVE28K15 Aurora presentation corrections + canonical guards staged')
