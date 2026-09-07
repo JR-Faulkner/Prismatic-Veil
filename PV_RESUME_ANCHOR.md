@@ -4,7 +4,7 @@ Last refreshed: 2026-09-06
 
 ## Current production witness
 
-- Promoted witness: `main-20260907-live28k19`
+- Promoted witness: `main-20260907-live28k20`
 - Witness promotion commit: `0c5a59b68d832aef44e58ac48cbabb9e3c885507`
 - Exact production audio install commit: `ac00a834471317edd98a60a7884a1896270be61f`
 - Production battle adapter: `src/prizim/Live28K2PartyBattleScene.js`
@@ -174,7 +174,7 @@ Do not add redundant base-file query-string surgery unless this routing actually
 
 ## Aurora Pulse live device gate
 
-- Current witness: `main-20260907-live28k19`.
+- Current witness: `main-20260907-live28k20`.
 - K18 baseline: core Beauty presentation, native Celestial Bloom, and live battlefield/enemy handoff passed on iPhone.
 - K19 phone review: full-screen title presentation was rejected because it interrupted cinematic continuity.
 - K20 presentation: title removed; Hybrid camera/framing and Pulse-driven battlefield re-entry are the active polish lane.
