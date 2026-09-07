@@ -1,6 +1,6 @@
 # PriZim Live Notepad
 
-Last refreshed: 2026-09-06
+Last refreshed: 2026-09-07
 Current promoted build: `main-20260906-live28k18` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
 
 This is the fast operational failure-prevention ledger for PriZim production.
@@ -124,15 +124,16 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Aurora Pulse live production belongs in the Hybrid/K adapter stack, not standalone `PartyBattleScene.js`.
 - Approved composition/timing reference: `pz-a-aurora-pulse-lab.html`.
 - **Primary live presentation:** exact `Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4` inside the Hybrid/K adapter. Verified 1920×1080 H.264, 24 FPS, 7.375s, SHA-256 `e70fc0f987646b1c1428c8797c0d95e8a38c2327448d3607826febb1e0065b1a`.
+- **Approved move-title card:** exact `Auryi_AuroraPulse_TitleCard_Approved.png`, 1672×941 PNG, SHA-256 `455276790353db64f997326e8caf9d00cc096d8179c299e2f49eb57cb8c91ccb`; show 0.08s -> fade 1.28s -> hidden 1.55s before Aurora Growth.
 - Live sync is derived from `PV_LIVE_AUTHORITY.json`: Bloom 0.70s -> silence 4.56s -> Pulse/damage logic 5.18s -> battlefield reveal 6.08s -> live enemy impact 6.30s -> reconnect 6.58s -> Beauty hidden 6.65s.
 - The real Hybrid battlefield owns the final handoff and enemy reaction; the Beauty master's baked demo reconnect tail is never displayed.
 - The Phaser Aurora mock is fail-safe presentation only if native video playback fails. The old Aurorb Slice pose sequence is never an Aurora Pulse fallback.
 - Celestial Bloom owns the cinematic foreground mix; normal battle BGM clears underneath it.
 - Triumph of Light loops while the victory/results screen remains open.
 - Aurora Pulse itself remains **crownless**.
-- LIVE28K15 core presentation remains recorded as passed: choir audible = True; demo tail absent = True.
-- Latest phone evidence (main-20260906-live28k17): FAIL boot gate: iPhone recording shows LIVE BATTLE BOOT ERROR · Decoding failed after audio enable. Aurora Pulse did not run, so this recording is not valid evidence for Bloom or handoff quality.
-- Current pending gate: LIVE28K18: boot with no decode overlay, Celestial Bloom audibly enters, and K16 battlefield/enemy handoff remains intact.
+- LIVE28K18 core presentation is recorded as passed: boot clean = True; Bloom audible = True; battlefield/enemy handoff accepted = True.
+- Latest phone evidence (main-20260906-live28k18): PASS core Aurora phone gate: user reported looks and sounds good; native M4A lane, Beauty V1, and live battlefield/enemy reconnect accepted. Next requested polish is visible move title.
+- Current pending gate: LIVE28K19: exact approved AURORA PULSE title card appears cleanly during invocation, fades before Aurora Growth, while K18 choir/audio, Beauty cinematic, Pulse timing, and live enemy handoff remain unchanged.
 - Future non-Aurora crown authority: match the Main Splash Screen crown as a **hovered/offset element above Auryi**, not head-worn.
 
 ## Kineza

@@ -14,6 +14,9 @@ const AURYI_K2_PRIMARY_PATH = './assets/party_formation/AURYI_LIVE28K2_PRIMARY.p
 // decode on iPhone Safari; the original bytes remain unchanged in assets/music/.
 const AURORA_BEAUTY_VIDEO_READY = true;
 const AURORA_BEAUTY_VIDEO_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4?pvasset=live28k14-beauty';
+const AURORA_TITLE_CARD_READY = true;
+const AURORA_TITLE_CARD_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_TitleCard_Approved.png?pvasset=live28k19-title';
+const AURORA_TITLE_CARD_TIMING = Object.freeze({ show: 0.08, fadeOut: 1.28, hide: 1.55 });
 // The Beauty master contains a placeholder/demo reconnect after ~6.65s.
 // LIVE28K never shows that tail: the real Hybrid battlefield owns reconnect.
 const AURORA_BEAUTY_TIMELINE = Object.freeze({ invocation: 0.70, bloomWatchdog: 0.84, silence: 4.56, pulse: 5.18, reveal: 6.08, impactReveal: 6.30, reconnect: 6.58, end: 6.65 });
@@ -82,9 +85,14 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     this.formation.create(this.party);
     if (this.activeHeroId) this.formation.setActive(this.activeHeroId);
 
-    // Prewarm the exact Beauty V1 cinematic inside the live Hybrid/K scene.
+    // Prewarm the exact Beauty V1 cinematic and approved move-title PNG inside
+    // the live Hybrid/K scene. K19 is presentation-only; K18 audio/handoff stay intact.
     this._prepareAuroraBeautyVideo();
-    this.events.once('shutdown', () => this._disposeAuroraBeautyVideo());
+    this._prepareAuroraTitleCard();
+    this.events.once('shutdown', () => {
+      this._disposeAuroraBeautyVideo();
+      this._disposeAuroraTitleCard();
+    });
 
     globalThis.__PV_LIVE28K2_RUNTIME__ = true;
     globalThis.__PV_LIVE28K2_FULLRES_PRIMARIES__ = true;
@@ -244,6 +252,69 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     return video;
   }
 
+  _prepareAuroraTitleCard() {
+    if (!AURORA_TITLE_CARD_READY || typeof document === 'undefined') return null;
+    if (this._auroraTitleCard) return this._auroraTitleCard;
+
+    const image = document.createElement('img');
+    image.src = new URL(AURORA_TITLE_CARD_PATH, window.location.href).href;
+    image.alt = 'Aurora Pulse';
+    image.decoding = 'async';
+    image.loading = 'eager';
+    image.setAttribute('aria-hidden', 'true');
+    Object.assign(image.style, {
+      position: 'fixed',
+      inset: '0',
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain',
+      background: '#11071f',
+      zIndex: '2147483001',
+      pointerEvents: 'none',
+      opacity: '0',
+      display: 'none',
+      transition: 'opacity 180ms cubic-bezier(0.22, 1, 0.36, 1)'
+    });
+    document.body.appendChild(image);
+    image.decode?.().catch?.(() => {});
+    this._auroraTitleCard = image;
+    return image;
+  }
+
+  _disposeAuroraTitleCard() {
+    const image = this._auroraTitleCard;
+    if (!image) return;
+    try { image.remove(); } catch (err) { /* ignore cleanup errors */ }
+    this._auroraTitleCard = null;
+  }
+
+  async _hideAuroraTitleCard(image, fadeMs = 80) {
+    if (!image) return;
+    image.style.transition = `opacity ${Math.max(0, fadeMs)}ms linear`;
+    image.style.opacity = '0';
+    if (fadeMs > 0) await this._wait(fadeMs);
+    image.style.display = 'none';
+    image.style.transition = 'opacity 180ms cubic-bezier(0.22, 1, 0.36, 1)';
+  }
+
+  async _runAuroraTitleCardSequence(video, image) {
+    if (!video || !image) return;
+    image.style.display = 'block';
+    image.style.opacity = '0';
+    image.style.transition = 'opacity 180ms cubic-bezier(0.22, 1, 0.36, 1)';
+
+    await this._waitForAuroraBeautyTime(video, AURORA_TITLE_CARD_TIMING.show);
+    requestAnimationFrame(() => { if (image) image.style.opacity = '1'; });
+
+    await this._waitForAuroraBeautyTime(video, AURORA_TITLE_CARD_TIMING.fadeOut);
+    image.style.transition = 'opacity 270ms cubic-bezier(0.4, 0, 1, 1)';
+    image.style.opacity = '0';
+
+    await this._waitForAuroraBeautyTime(video, AURORA_TITLE_CARD_TIMING.hide);
+    image.style.display = 'none';
+    image.style.transition = 'opacity 180ms cubic-bezier(0.22, 1, 0.36, 1)';
+  }
+
   _disposeAuroraBeautyVideo() {
     const video = this._auroraBeautyVideo;
     if (!video) return;
@@ -340,6 +411,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
   async _playAuryiAuroraPulseBeauty(hero) {
     const video = this._prepareAuroraBeautyVideo();
+    const titleCard = this._prepareAuroraTitleCard();
     if (!video) return false;
 
     this._turnLock = true;
@@ -369,6 +441,8 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       const playPromise = video.play();
       if (playPromise) await playPromise;
       requestAnimationFrame(() => { video.style.opacity = '1'; });
+      const titleCardTask = this._runAuroraTitleCardSequence(video, titleCard)
+        .catch(err => console.warn('[PV] Aurora Pulse title-card sequence skipped:', err));
 
       // Beauty V1 is the presentation clock. Starting Bloom at Invocation and
       // pausing it for the approved compression pocket makes its 5.48s master
@@ -418,6 +492,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       console.warn('[PV] Aurora Beauty V1 playback fell back to Hybrid mock:', err);
       if (ownsBloom) this.audio.auroraBloomStop?.(120);
       this.audio.endCinematicAttack?.();
+      await this._hideAuroraTitleCard(titleCard, 40);
       await this._hideAuroraBeautyVideo(video, 40);
       if (!impactResolved) {
         this._turnLock = false;
@@ -426,6 +501,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     }
 
     if (ownsBloom) this.audio.auroraBloomStop?.(120);
+    await this._hideAuroraTitleCard(titleCard, 0);
     await this._hideAuroraBeautyVideo(video, 90);
     this.audio.endCinematicAttack?.();
     this._turnLock = false;

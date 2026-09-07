@@ -293,13 +293,11 @@ sync = replace_once(
     "- LIVE28K18 core presentation is recorded as passed: boot clean = {device.get('live28k18_boot_clean', False)}; Bloom audible = {device.get('live28k18_celestial_bloom_audible', False)}; battlefield/enemy handoff accepted = {device.get('live28k18_battlefield_enemy_handoff_accepted', False)}.\n",
     'sync latest accepted phone baseline',
 )
-sync = replace_once(
-    sync,
-    "- K15 baseline: core Beauty presentation passed, Celestial Bloom audible, demo tail absent.\n",
-    "- K18 baseline: core Beauty presentation, native Celestial Bloom, and live battlefield/enemy handoff passed on iPhone.\n"
-    "- K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.\n",
-    'resume Aurora baseline/title line',
-)
+old_resume = r"\n- K15 baseline: core Beauty presentation passed, Celestial Bloom audible, demo tail absent.\n"
+new_resume = r"\n- K18 baseline: core Beauty presentation, native Celestial Bloom, and live battlefield/enemy handoff passed on iPhone.\n- K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.\n"
+if old_resume not in sync:
+    raise SystemExit('K19 patch refused: literal resume baseline source token missing')
+sync = sync.replace(old_resume, new_resume, 1)
 SYNC.write_text(sync, encoding='utf-8')
 
 print('LIVE28K19 exact Aurora Pulse title-card corrections staged')

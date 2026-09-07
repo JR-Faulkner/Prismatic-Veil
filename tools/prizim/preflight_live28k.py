@@ -270,6 +270,55 @@ if auth.get('hard_gates', {}).get('post_scene_media_decode_rejection_nonfatal') 
     errors.append('K18 post-scene media decode resilience hard gate missing')
 if 'native HTMLMediaElement' not in auth['auryi'].get('exact_m4a_playback_lane', ''):
     errors.append('K18 exact M4A playback lane missing from machine authority')
+
+
+# 8f. K19 exact move-title guard: the approved PNG is immutable and must live
+# above Beauty V1 only during Invocation, disappearing before Aurora Growth.
+title_card = pathlib.Path('assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_TitleCard_Approved.png')
+title_expected = (1886155, '455276790353db64f997326e8caf9d00cc096d8179c299e2f49eb57cb8c91ccb', (1672, 941))
+if not (ROOT / title_card).exists():
+    errors.append(f'missing approved Aurora Pulse title card: {title_card}')
+else:
+    p = ROOT / title_card
+    if p.stat().st_size != title_expected[0]:
+        errors.append(f'Aurora title-card size drift: {p.stat().st_size}, expected {title_expected[0]}')
+    actual = sha256(title_card)
+    if actual != title_expected[1]:
+        errors.append(f'Aurora title-card SHA drift: {actual}, expected {title_expected[1]}')
+    try:
+        dims = png_dimensions(title_card)
+        if dims != title_expected[2]:
+            errors.append(f'Aurora title-card dimensions drift: {dims}, expected {title_expected[2]}')
+    except Exception as exc:
+        errors.append(f'Aurora title-card PNG validation failed: {exc}')
+
+for token in [
+    'AURORA_TITLE_CARD_READY = true',
+    'AURORA_TITLE_CARD_PATH',
+    'AURORA_TITLE_CARD_TIMING = Object.freeze({ show: 0.08, fadeOut: 1.28, hide: 1.55 })',
+    '_prepareAuroraTitleCard()',
+    '_runAuroraTitleCardSequence(video, image)',
+    "zIndex: '2147483001'",
+    "objectFit: 'contain'",
+    'this._runAuroraTitleCardSequence(video, titleCard)',
+]:
+    if token not in k_scene:
+        errors.append(f'K19 Aurora title-card runtime token missing: {token}')
+if 'Auryi_AuroraPulse_TitleCard_Approved.png' in base_scene:
+    errors.append('K19 Aurora title card leaked into standalone PartyBattleScene')
+if auth.get('hard_gates', {}).get('aurora_title_card_exact_png_required') is not True:
+    errors.append('K19 exact title-card PNG hard gate missing')
+if auth.get('hard_gates', {}).get('aurora_title_card_must_hide_before_growth') is not True:
+    errors.append('K19 title-card-before-growth hard gate missing')
+if auth.get('hard_gates', {}).get('k19_title_card_must_not_change_k18_audio_or_handoff') is not True:
+    errors.append('K19 K18-audio/handoff preservation hard gate missing')
+title_timing = auth.get('auryi', {}).get('aurora_title_card_timing', {})
+if title_timing != {'show': 0.08, 'fade_out': 1.28, 'hide': 1.55}:
+    errors.append(f'K19 title-card timing drift: {title_timing}')
+if float(title_timing.get('hide', 99)) > 1.55:
+    errors.append('K19 title card remains visible into Aurora Growth')
+if auth.get('auryi', {}).get('aurora_title_card_sha256') != title_expected[1]:
+    errors.append('K19 title-card SHA missing/drifted in machine authority')
 bloom_policy = auth['auryi'].get('aurora_bloom_mix_policy', '')
 if 'scheduled before native video play' not in bloom_policy and 'native HTMLMediaElement' not in bloom_policy:
     errors.append('Aurora Bloom iPhone scheduling/native-media policy missing from machine authority')

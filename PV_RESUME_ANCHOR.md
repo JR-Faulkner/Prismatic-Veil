@@ -175,9 +175,10 @@ Do not add redundant base-file query-string surgery unless this routing actually
 ## Aurora Pulse live device gate
 
 - Current witness: `main-20260906-live28k18`.
-- K15 baseline: core Beauty presentation passed, Celestial Bloom audible, demo tail absent.
-- Latest phone evidence (main-20260906-live28k17): FAIL boot gate: iPhone recording shows LIVE BATTLE BOOT ERROR · Decoding failed after audio enable. Aurora Pulse did not run, so this recording is not valid evidence for Bloom or handoff quality.
-- Current pending gate: LIVE28K18: boot with no decode overlay, Celestial Bloom audibly enters, and K16 battlefield/enemy handoff remains intact.
+- K18 baseline: core Beauty presentation, native Celestial Bloom, and live battlefield/enemy handoff passed on iPhone.
+- K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.
+- Latest phone evidence (main-20260906-live28k18): PASS core Aurora phone gate: user reported looks and sounds good; native M4A lane, Beauty V1, and live battlefield/enemy reconnect accepted. Next requested polish is visible move title.
+- Current pending gate: LIVE28K19: exact approved AURORA PULSE title card appears cleanly during invocation, fades before Aurora Growth, while K18 choir/audio, Beauty cinematic, Pulse timing, and live enemy handoff remain unchanged.
 - Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.
 
 ## Hard constraints
