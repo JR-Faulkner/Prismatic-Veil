@@ -1,0 +1,55 @@
+name: LIVE28K14 Aurora Beauty V1 Hybrid Runtime
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/live28k14-aurora-beauty-runtime.yml'
+      - 'tools/prizim/wire_aurora_beauty_runtime.py'
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Wire Beauty V1 through PriZim Hybrid gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          for attempt in 1 2 3; do
+            echo "Aurora Beauty runtime attempt ${attempt}/3"
+            git fetch origin main
+            git reset --hard origin/main
+
+            python tools/prizim/wire_aurora_beauty_runtime.py
+            python tools/prizim/sync_live_authority.py
+            python tools/prizim/preflight_live28k.py
+            node --check src/prizim/Live28K2PartyBattleScene.js
+            node --check src/prizim/Live28K7PartyFormationView.js
+
+            git add src/prizim/Live28K2PartyBattleScene.js PV_LIVE_AUTHORITY.json PRIZIM_LIVE_NOTEPAD.md PV_RESUME_ANCHOR.md tools/prizim/sync_live_authority.py tools/prizim/preflight_live28k.py
+            if git diff --cached --quiet; then
+              echo 'Aurora Beauty V1 runtime already wired and validated.'
+              exit 0
+            fi
+
+            git commit -m 'LIVE28K14: wire Aurora Pulse Beauty V1 through Hybrid K adapter'
+            if git push origin HEAD:main; then
+              echo 'Aurora Beauty V1 Hybrid runtime committed with green PriZim preflight.'
+              exit 0
+            fi
+            echo 'MAIN moved; retrying from latest origin/main.'
+          done
+
+          echo 'Aurora Beauty V1 Hybrid wiring failed after 3 attempts.' >&2
+          exit 1
