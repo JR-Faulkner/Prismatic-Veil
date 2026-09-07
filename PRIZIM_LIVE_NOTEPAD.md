@@ -1,7 +1,7 @@
 # PriZim Live Notepad
 
 Last refreshed: 2026-09-06
-Current promoted build: `main-20260906-live28k13` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
+Current promoted build: `main-20260906-live28k14` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
 
 This is the fast operational failure-prevention ledger for PriZim production.
 
@@ -10,7 +10,7 @@ This is the fast operational failure-prevention ledger for PriZim production.
 - The user's normal validation path is the **iPhone web-app link into MAIN**. MAIN is the production/runtime authority.
 - A green GitHub Pages deployment proves deployment only. It does **not** prove the live iPhone runtime is correct.
 - Real-device screenshots/video/evidence outrank code inspection, CI success, and desktop assumptions.
-- Current witness: `main-20260906-live28k13`.
+- Current witness: `main-20260906-live28k14`.
 - Any numeric `LIVE28K` witness stays on the high-quality `Live28K2PartyBattleScene.js` + `Live28K2PartyFormationView.js` lineage through future-proof routing. Router commit: `781e68f94118ff4ba4272b43899dc1b6dc0a26b1`.
 
 ## HYBRID STACK HARD GATE

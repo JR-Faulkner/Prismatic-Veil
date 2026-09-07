@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "updated": "2026-09-06",
-  "witness": "main-20260906-live28k13",
+  "witness": "main-20260906-live28k14",
   "production_route": [
     "index.html",
     "story-scroll.html",
@@ -66,9 +66,9 @@
     "live28k11_triumph_of_light_played": true,
     "live28k11_visual_cinematic_missing": true,
     "live28k12_pending_iphone_validation": true,
-    "pending_witness": "main-20260906-live28k13",
+    "pending_witness": "main-20260906-live28k14",
     "pending_iphone_validation": true,
-    "promotion_reason": "Port the already-approved Aurora Pulse PZ-A mock choreography into the live Hybrid/K adapter while preserving the confirmed Celestial Bloom audio, crownless Resonart authority, Aurorb Slice separation, and looping Triumph victory music. The user already supplied and previously separated the exact 01-08 frame material; those binaries are not yet restored to durable production paths.",
+    "promotion_reason": "Promote the exact approved Aurora Pulse Beauty V1 1920x1080 cinematic as Auryi's primary Resonart presentation inside the live Hybrid/K stack. Celestial Bloom begins at 0.70s Invocation, pauses at 4.56s Compression Silence, resumes at 5.18s Pulse Release where damage resolves, reconnect begins at 6.82s, and battle control returns at 7.375s. Keep Aurora Pulse crownless, Aurorb Slice separate, looping Triumph victory music intact, and the Phaser Aurora mock as playback-failure fallback only.",
     "aurora_beauty_v1_exact_master_installed": true,
     "aurora_beauty_v1_hybrid_runtime_pending_iphone_validation": true
   }

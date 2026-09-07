@@ -4,7 +4,7 @@ Last refreshed: 2026-09-06
 
 ## Current production witness
 
-- Promoted witness: `main-20260906-live28k13`
+- Promoted witness: `main-20260906-live28k14`
 - Witness promotion commit: `0c5a59b68d832aef44e58ac48cbabb9e3c885507`
 - Exact production audio install commit: `ac00a834471317edd98a60a7884a1896270be61f`
 - Production battle adapter: `src/prizim/Live28K2PartyBattleScene.js`
