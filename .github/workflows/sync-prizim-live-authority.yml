@@ -6,6 +6,7 @@ on:
     paths:
       - 'PV_LIVE_AUTHORITY.json'
       - 'tools/prizim/sync_live_authority.py'
+      - 'tools/prizim/preflight_live28k.py'
       - '.github/workflows/sync-prizim-live-authority.yml'
 
 permissions:
@@ -20,6 +21,8 @@ jobs:
           ref: main
       - name: Sync PriZim ledgers
         run: python tools/prizim/sync_live_authority.py
+      - name: Validate synchronized working tree
+        run: python tools/prizim/preflight_live28k.py
       - name: Commit synchronized ledgers
         run: |
           git config user.name 'github-actions[bot]'
