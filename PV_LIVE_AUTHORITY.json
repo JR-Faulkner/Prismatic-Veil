@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "updated": "2026-09-06",
-  "witness": "main-20260906-live28k12",
+  "witness": "main-20260906-live28k13",
   "production_route": [
     "index.html",
     "story-scroll.html",
@@ -39,6 +39,9 @@
     "live28k11_celestial_bloom_played_and_sounded_good": true,
     "live28k11_triumph_of_light_played": true,
     "live28k11_visual_cinematic_missing": true,
-    "live28k12_pending_iphone_validation": true
+    "live28k12_pending_iphone_validation": true,
+    "pending_witness": "main-20260906-live28k13",
+    "pending_iphone_validation": true,
+    "promotion_reason": "Port the already-approved Aurora Pulse PZ-A mock choreography into the live Hybrid/K adapter while preserving the confirmed Celestial Bloom audio, crownless Resonart authority, Aurorb Slice separation, and looping Triumph victory music."
   }
 }
