@@ -42,6 +42,7 @@ build = json.loads(read('live-build.json'))
 hybrid_main = read('hybrid-main.html')
 hybrid_template = read('hybrid-battle-live.html')
 k_scene = read('src/prizim/Live28K2PartyBattleScene.js')
+audio_controller = read('src/PartyBattleAudioController.js')
 base_scene = read('src/PartyBattleScene.js')
 notepad = read('PRIZIM_LIVE_NOTEPAD.md')
 resume = read('PV_RESUME_ANCHOR.md')
@@ -153,13 +154,35 @@ for token in [
     'invocation: 0.70',
     'silence: 4.56',
     'pulse: 5.18',
-    'reconnect: 6.82',
-    'end: 7.375'
+    'reconnect: 6.58',
+    'end: 6.65'
 ]:
     if token not in k_scene:
         errors.append(f'K adapter missing Aurora Beauty V1 runtime token: {token}')
 if 'Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4' in base_scene:
     errors.append('Aurora Beauty V1 leaked into standalone PartyBattleScene')
+
+# 8b. K15 presentation guard: iPhone-safe choir start and no baked demo tail.
+for token in [
+    'auroraBloomStart(delaySeconds = 0)',
+    'this._auroraBloom.play(undefined, { delay:',
+    'targets: this.music, volume: 0',
+    "volume: this._effectiveVolume('sfx', 1.0)"
+]:
+    if token not in audio_controller:
+        errors.append(f'K15 Aurora Bloom presentation token missing: {token}')
+for token in [
+    'auroraBloomStart?.(AURORA_BEAUTY_TIMELINE.invocation)',
+    'reconnect: 6.58',
+    'end: 6.65',
+    'placeholder/demo reconnect tail'
+]:
+    if token not in k_scene:
+        errors.append(f'K15 Aurora live reconnect/choir token missing: {token}')
+if auth['auryi'].get('aurora_beauty_sync', {}).get('beauty_video_hidden_before_demo_tail') != 6.65:
+    errors.append('Aurora Beauty runtime is not locked to hide before the demo reconnect tail')
+if 'scheduled before native video play' not in auth['auryi'].get('aurora_bloom_mix_policy', ''):
+    errors.append('Aurora Bloom iPhone scheduling policy missing from machine authority')
 
 if beauty_timeline.exists():
     try:

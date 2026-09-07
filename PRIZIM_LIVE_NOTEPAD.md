@@ -124,9 +124,9 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Aurora Pulse live production belongs in the Hybrid/K adapter stack, not standalone `PartyBattleScene.js`.
 - Approved composition/timing reference: `pz-a-aurora-pulse-lab.html`.
 - **Primary live presentation:** exact `Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4` inside the Hybrid/K adapter. Verified 1920×1080 H.264, 24 FPS, 7.375s, SHA-256 `e70fc0f987646b1c1428c8797c0d95e8a38c2327448d3607826febb1e0065b1a`.
-- Beauty V1 timing authority: handoff 0.00s -> Bloom starts 0.70s -> compression silence 4.56s -> Pulse/damage 5.18s -> reconnect 6.82s -> return 7.375s.
+- Beauty V1 source master remains 7.375s, but LIVE presentation intentionally exits at **6.65s** before the baked placeholder/demo reconnect. Live Hybrid battlefield reconnect begins at 6.58s underneath the fade.
 - The Phaser Aurora mock is now fail-safe presentation only if native video playback fails. The old Aurorb Slice pose sequence is never an Aurora Pulse fallback.
-- Celestial Bloom production audio is installed and has already played correctly on iPhone evidence.
+- Celestial Bloom production audio is exact and installed. K14 phone evidence showed it was inaudible once native Beauty video was introduced, so K15 schedules Bloom from the original user gesture at +0.70s and clears normal battle BGM beneath it. This remains pending iPhone validation.
 - Triumph of Light production victory audio is installed; current production behavior loops it while the victory/results screen remains open.
 - Aurora Pulse itself remains **crownless**.
 - The exact 01–08 standalone PNG lane remains an archival/editable production lane. It is **not a prerequisite for the current live cinematic**, because Beauty V1 is the already-approved composite built from those approved poses. The user supplied and previously separated that frame material; never reclassify it as missing delivery.

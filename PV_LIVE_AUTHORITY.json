@@ -54,12 +54,14 @@
     "aurora_beauty_timeline_sha256": "fe0116a3068ffb4614188099926ac6ae68affcf22dfcda5723e1b3c7e35f2c58",
     "aurora_beauty_sync": {
       "battlefield_handoff": 0.0,
-      "celestial_bloom_start": 0.7,
+      "celestial_bloom_scheduled_from_user_gesture": 0.7,
       "compression_silence": 4.56,
       "pulse_release_and_damage": 5.18,
-      "battlefield_reconnect": 6.82,
-      "return_to_battle": 7.375
-    }
+      "live_battlefield_reconnect": 6.58,
+      "beauty_video_hidden_before_demo_tail": 6.65
+    },
+    "aurora_demo_tail_policy": "Never display Beauty V1 placeholder reconnect material at/after ~6.65s; live Hybrid battlefield owns reconnect.",
+    "aurora_bloom_mix_policy": "Celestial Bloom is armed/scheduled before native video play on iPhone and owns the cinematic foreground mix; normal battle BGM is cleared beneath it."
   },
   "device_evidence": {
     "live28k11_celestial_bloom_played_and_sounded_good": true,
@@ -70,6 +72,12 @@
     "pending_iphone_validation": true,
     "promotion_reason": "Promote the exact approved Aurora Pulse Beauty V1 1920x1080 cinematic as Auryi's primary Resonart presentation inside the live Hybrid/K stack. Celestial Bloom begins at 0.70s Invocation, pauses at 4.56s Compression Silence, resumes at 5.18s Pulse Release where damage resolves, reconnect begins at 6.82s, and battle control returns at 7.375s. Keep Aurora Pulse crownless, Aurorb Slice separate, looping Triumph victory music intact, and the Phaser Aurora mock as playback-failure fallback only.",
     "aurora_beauty_v1_exact_master_installed": true,
-    "aurora_beauty_v1_hybrid_runtime_pending_iphone_validation": true
+    "aurora_beauty_v1_hybrid_runtime_pending_iphone_validation": true,
+    "live28k14_beauty_video_played": true,
+    "live28k14_attack_sfx_played": true,
+    "live28k14_celestial_bloom_inaudible": true,
+    "live28k14_demo_tail_visible": true,
+    "live28k14_result": "FAIL presentation gate: choir absent and baked demo reconnect tail visible on iPhone recording.",
+    "live28k15_pending_iphone_validation": true
   }
 }

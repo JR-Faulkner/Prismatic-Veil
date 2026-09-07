@@ -84,7 +84,7 @@ export default class PartyBattleAudioController {
     this.prefs.muted = !!muted;
     savePrefs(this.prefs);
     this._applyMusicVolume();
-    if (this._auroraBloom) this._auroraBloom.setVolume(this._effectiveVolume('sfx', 0.86));
+    if (this._auroraBloom) this._auroraBloom.setVolume(this._effectiveVolume('sfx', 1.0));
     if (this._triumph) this._triumph.setVolume(this._effectiveVolume('music', 0.92));
   }
 
@@ -212,16 +212,25 @@ export default class PartyBattleAudioController {
   // Aurora Pulse owns a dedicated full-length cue. These methods are
   // intentionally cache-guarded so older/non-K battle routes keep working
   // until the exact masters are physically installed and preloaded.
-  auroraBloomStart() {
+  auroraBloomStart(delaySeconds = 0) {
     if (!this.scene.cache.audio.exists(AURORA_BLOOM_KEY)) return false;
     if (this._auroraBloom) {
       try { this._auroraBloom.stop(); this._auroraBloom.destroy(); } catch (err) { /* ignore */ }
     }
+    // Aurora Pulse owns the musical foreground. Fully clear the normal
+    // battle BGM so Celestial Bloom is not masked by the regular combat loop.
+    if (this.music?.isPlaying) {
+      this.scene.tweens.killTweensOf(this.music);
+      this.scene.tweens.add({ targets: this.music, volume: 0, duration: 100, ease: 'Sine.easeOut' });
+    }
     this._auroraBloom = this.scene.sound.add(AURORA_BLOOM_KEY, {
       loop: false,
-      volume: this._effectiveVolume('sfx', 0.86)
+      volume: this._effectiveVolume('sfx', 1.0)
     });
-    const fire = () => this._auroraBloom?.play();
+    const fire = () => {
+      if (!this._auroraBloom) return;
+      this._auroraBloom.play(undefined, { delay: Math.max(0, Number(delaySeconds) || 0) });
+    };
     if (this.scene.sound.locked) this.scene.sound.once('unlocked', fire);
     else fire();
     return true;

@@ -15,7 +15,9 @@ const TRIUMPH_LIGHT_KEY = 'pv_triumph_of_light';
 const TRIUMPH_LIGHT_PATH = './assets/music/Triumph of Light.m4a?pvasset=live28k11-audio';
 const AURORA_BEAUTY_VIDEO_READY = true;
 const AURORA_BEAUTY_VIDEO_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4?pvasset=live28k14-beauty';
-const AURORA_BEAUTY_TIMELINE = Object.freeze({ invocation: 0.70, silence: 4.56, pulse: 5.18, reconnect: 6.82, end: 7.375 });
+// The Beauty master contains a placeholder/demo reconnect after ~6.65s.
+// LIVE28K never shows that tail: the real Hybrid battlefield owns reconnect.
+const AURORA_BEAUTY_TIMELINE = Object.freeze({ invocation: 0.70, silence: 4.56, pulse: 5.18, reconnect: 6.58, end: 6.65 });
 
 // Exact approved 01-08 production lane. Keep this false until the original
 // transparent PNG bytes are physically installed at the paths below. This
@@ -307,6 +309,10 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     let impactResolved = false;
 
     this.audio.beginCinematicAttack?.();
+    // iPhone/Safari: arm the exact choir cue while still inside the user-gesture
+    // execution chain. Phaser/WebAudio schedules its 0.70s Invocation start,
+    // instead of attempting a fresh delayed play after native video has begun.
+    ownsBloom = this.audio.auroraBloomStart?.(AURORA_BEAUTY_TIMELINE.invocation) === true;
     this._setBanner(`${hero.name} invokes ${hero.resonart.name}!`);
 
     try {
@@ -322,7 +328,6 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       // pausing it for the approved compression pocket makes its 5.48s master
       // land almost exactly at the 6.82s battlefield-reconnect beat.
       await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.invocation);
-      ownsBloom = this.audio.auroraBloomStart?.() === true;
       if (!ownsBloom) this.audio.attackGather(hero.id);
 
       await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.silence);
@@ -350,6 +355,9 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       }
       impactResolved = true;
 
+      // The approved Beauty attack ends cleanly here. Do NOT show the baked
+      // placeholder/demo reconnect tail. The live Hybrid battlefield underneath
+      // already owns the real enemy, camera, HUD, and post-impact state.
       await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.reconnect);
       await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.end, 14000);
     } catch (err) {
