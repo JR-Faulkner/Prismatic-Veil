@@ -1,0 +1,96 @@
+name: PriZim Hybrid Stack Guard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'live-build.json'
+      - 'hybrid-main.html'
+      - 'hybrid-battle-live.html'
+      - 'src/PartyBattleScene.js'
+      - 'src/prizim/Live28K2PartyBattleScene.js'
+      - 'src/prizim/Live28K7PartyFormationView.js'
+      - 'PV_LIVE_AUTHORITY.json'
+      - '.github/workflows/prizim-hybrid-stack-guard.yml'
+  pull_request:
+    paths:
+      - 'live-build.json'
+      - 'hybrid-main.html'
+      - 'hybrid-battle-live.html'
+      - 'src/PartyBattleScene.js'
+      - 'src/prizim/Live28K2PartyBattleScene.js'
+      - 'src/prizim/Live28K7PartyFormationView.js'
+      - 'PV_LIVE_AUTHORITY.json'
+
+jobs:
+  validate-hybrid-authority:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate LIVE28K Hybrid stack
+        run: |
+          python - <<'PY'
+          import json, pathlib, re, sys
+
+          root = pathlib.Path('.')
+          auth = json.loads((root/'PV_LIVE_AUTHORITY.json').read_text())
+          build = json.loads((root/'live-build.json').read_text())
+          hybrid_main = (root/'hybrid-main.html').read_text()
+          hybrid_template = (root/'hybrid-battle-live.html').read_text()
+          base_scene = (root/'src/PartyBattleScene.js').read_text()
+          k_scene = (root/'src/prizim/Live28K2PartyBattleScene.js').read_text()
+
+          errors = []
+          witness = build.get('id','')
+
+          if auth['hard_gates']['production_battle_must_use_hybrid_stack']:
+              if build.get('hybrid') != auth['runtime']['hybrid_entry']:
+                  errors.append(f"live-build hybrid route is {build.get('hybrid')!r}, expected {auth['runtime']['hybrid_entry']!r}")
+
+          if re.search(r'live28k\d+', witness, re.I):
+              required = [
+                  "const live28kLineage=/live28k\\d+/i.test(id)",
+                  "Live28K2PartyBattleScene.js",
+                  "Live28K7PartyFormationView.js",
+                  "./src/PartyBattleScene.js?v=blitzer-2",
+                  "./src/prizim/${battleAdapter}"
+              ]
+              for token in required:
+                  if token not in hybrid_main:
+                      errors.append(f"hybrid-main missing required LIVE28K routing token: {token}")
+
+          # The visible Hybrid HUD must use Resonart authority, never Basic Attack authority.
+          if "h.resonart?.name" not in hybrid_template or "h.resonart?.flavor" not in hybrid_template:
+              errors.append("Hybrid Resonart drawer is not reading hero.resonart authority")
+          if "else if(d==='resonart')" in hybrid_template:
+              resonart_block = hybrid_template.split("else if(d==='resonart')",1)[1].split("else if(d==='guard')",1)[0]
+              if "h.attack?.name" in resonart_block or "h.attack?.flavor" in resonart_block:
+                  errors.append("Hybrid Resonart drawer regressed to hero.attack / Aurorb Slice authority")
+
+          # Aurora Pulse live behavior belongs in the K adapter, not the standalone base scene.
+          required_k = [
+              "hero?.id === 'auryi' && command === 'Resonart'",
+              "_playAuryiAuroraPulse",
+              "auroraBloomStart",
+              "AURORA_PULSE_TIMING"
+          ]
+          for token in required_k:
+              if token not in k_scene:
+                  errors.append(f"K adapter missing Aurora Pulse authority token: {token}")
+
+          if "Aurora Pulse" in base_scene or "_playAuryiAuroraPulse" in base_scene:
+              errors.append("Aurora Pulse was implemented in standalone PartyBattleScene; live production authority must remain in the K Hybrid adapter")
+
+          # The mock remains a reference lab, never the production route.
+          if build.get('hybrid') == auth['auryi']['aurora_mock']:
+              errors.append("Aurora mock lab was promoted as the live Hybrid entry")
+
+          if errors:
+              print('PRIΖIM HYBRID STACK GUARD FAILED:')
+              for e in errors:
+                  print(' -', e)
+              sys.exit(1)
+
+          print(f"PriZim Hybrid stack guard PASS · {witness}")
+          print('Live route: hybrid-main -> hybrid-battle-live -> LIVE28K K adapter')
+          PY
