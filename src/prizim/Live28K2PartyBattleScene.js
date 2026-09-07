@@ -94,6 +94,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     const usePoses = this.formation.hasActionPoses?.(hero.id);
 
     this.audio.beginCinematicAttack?.();
+    const ownsBloom = this.audio.auroraBloomStart?.() === true;
     this._setBanner(`${hero.name} invokes ${hero.resonart.name}!`);
 
     // 01-02: isolate + lift. Keep crown/halo FX out of this Resonart path.
@@ -101,9 +102,9 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.10, duration: 280, ease: 'Sine.easeOut' });
     await this._wait(AURORA_PULSE_TIMING.lift);
 
-    // 03-05: Aurora growth. Existing real Auryi action poses are used as
-    // motion authority until the already-approved numbered PNGs are reinstalled.
-    this.audio.attackGather(hero.id);
+    // 03-05: Aurora growth. Celestial Bloom owns the cinematic bed when
+    // present; generic Auryi gather remains a safe fallback for older builds.
+    if (!ownsBloom) this.audio.attackGather(hero.id);
     if (usePoses) this.formation.setActionPose(hero.id, 'gather');
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 0.96, duration: 420, ease: 'Sine.easeInOut' });
     await this._wait(AURORA_PULSE_TIMING.bloomA);
@@ -112,15 +113,19 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     // 06: max charge.
     await this._wait(AURORA_PULSE_TIMING.maxCharge);
 
-    // 07: compression / hand-smash. Tighten camera and then hold absolute
-    // silence before release, matching the approved cinematic rhythm.
+    // 07: compression / hand-smash. Tighten camera, then explicitly pause
+    // Celestial Bloom for the approved silence pocket instead of merely
+    // lowering battle BGM underneath it.
     if (usePoses) this.formation.setActionPose(hero.id, 'release');
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.13, duration: 220, ease: 'Sine.easeIn' });
     await this._wait(AURORA_PULSE_TIMING.compression);
+    if (ownsBloom) this.audio.auroraBloomSilence?.();
     await this._wait(AURORA_PULSE_TIMING.silence);
 
-    // 08: Pulse. Release audio begins after the silence pocket.
-    this.audio.attackRelease(hero.id);
+    // 08: Pulse. Resume the real cue into its release/tail; old builds use
+    // the established character release cue instead.
+    if (ownsBloom) this.audio.auroraBloomResume?.();
+    else this.audio.attackRelease(hero.id);
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 0.91, duration: 130, ease: 'Quad.easeOut' });
     await this._wait(AURORA_PULSE_TIMING.release);
 
@@ -131,6 +136,8 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       this.enemyView.hit();
       this._floatText(`-${dmg}`, '#FFE8A0');
       this._setBanner(`${hero.name} uses ${hero.resonart.name} for ${dmg} damage!`);
+      // Keep the physical Pulse transient on impact; Celestial Bloom supplies
+      // the celestial body/tail rather than replacing target feedback.
       this.audio.attackImpact(hero.id);
       this.audio.enemyHit();
 
@@ -144,7 +151,8 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
     await this._wait(AURORA_PULSE_TIMING.aftermath);
 
-    // Recompose and restore battle framing cleanly.
+    // Recompose and restore battle framing cleanly while the Bloom tail
+    // fades underneath the aftermath.
     if (usePoses) this.formation.setActionPose(hero.id, 'recover');
     this.tweens.add({
       targets: cam,
@@ -156,6 +164,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     });
     await this._wait(AURORA_PULSE_TIMING.recover);
     if (usePoses) this.formation.setActionPose(hero.id, 'idle');
+    if (ownsBloom) this.audio.auroraBloomStop?.(420);
     this.audio.endCinematicAttack?.();
 
     this._turnLock = false;
