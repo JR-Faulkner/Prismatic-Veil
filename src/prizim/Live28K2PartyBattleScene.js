@@ -180,6 +180,17 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
     const objects = [veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho, flash, title];
     this.worldAdd(objects);
+
+    // Phaser Container children render by local list order, so make the
+    // approved lab stacking explicit rather than trusting child depth.
+    // Veil/Aurora/Pulse stay behind Auryi; title and white flash stay in front.
+    if (actor?.sprite && this.world?.moveBelow) {
+      [veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho]
+        .forEach(obj => this.world.moveBelow(obj, actor.sprite));
+    }
+    this.world?.bringToTop?.(title);
+    this.world?.bringToTop?.(flash);
+
     return { x, y, veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho, flash, title, objects };
   }
 
