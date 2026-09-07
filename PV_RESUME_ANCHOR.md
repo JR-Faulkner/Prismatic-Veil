@@ -4,7 +4,7 @@ Last refreshed: 2026-09-06
 
 ## Current production witness
 
-- Promoted witness: `main-20260906-live28k18`
+- Promoted witness: `main-20260907-live28k19`
 - Witness promotion commit: `0c5a59b68d832aef44e58ac48cbabb9e3c885507`
 - Exact production audio install commit: `ac00a834471317edd98a60a7884a1896270be61f`
 - Production battle adapter: `src/prizim/Live28K2PartyBattleScene.js`
@@ -174,7 +174,7 @@ Do not add redundant base-file query-string surgery unless this routing actually
 
 ## Aurora Pulse live device gate
 
-- Current witness: `main-20260906-live28k18`.
+- Current witness: `main-20260907-live28k19`.
 - K18 baseline: core Beauty presentation, native Celestial Bloom, and live battlefield/enemy handoff passed on iPhone.
 - K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.
 - Latest phone evidence (main-20260906-live28k18): PASS core Aurora phone gate: user reported looks and sounds good; native M4A lane, Beauty V1, and live battlefield/enemy reconnect accepted. Next requested polish is visible move title.

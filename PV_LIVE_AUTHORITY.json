@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "updated": "2026-09-07",
-  "witness": "main-20260906-live28k18",
+  "witness": "main-20260907-live28k19",
   "production_route": [
     "index.html",
     "story-scroll.html",
@@ -99,7 +99,7 @@
     "live28k12_pending_iphone_validation": true,
     "pending_witness": "main-20260907-live28k19",
     "pending_iphone_validation": true,
-    "promotion_reason": "Promote the K18 iPhone media-decode correction after LIVE28K17 phone recording showed LIVE BATTLE BOOT ERROR \u00b7 Decoding failed after audio enable, preventing a valid Aurora Pulse test. Preserve the approved Beauty V1 cinematic, K16 smooth Beauty-to-live Hybrid battlefield crossfade and visible live Wraith impact, K17 Hybrid fetch retry, compression silence, crownless Aurora Pulse, separate Aurorb Slice, exact audio/video masters, and looping Triumph. Keep the exact Celestial Bloom and Triumph M4A bytes unchanged but remove them from Phaser/WebAudio preload; play them through native HTMLMediaElement, prime them on the explicit Hybrid audio-enable tap, start Bloom with a silent native preroll inside the Resonart gesture, retain the 0.84s actual-playback watchdog, and treat a late post-scene Decoding failed rejection as non-fatal rather than replacing gameplay with a boot overlay.",
+    "promotion_reason": "Promote the K19 Aurora Pulse move-title polish after LIVE28K18 passed the iPhone core presentation gate: boot clean, Celestial Bloom audible, Beauty V1 cinematic accepted, and live battlefield/enemy reconnect accepted. Preserve the exact K18 native M4A lane, Bloom watchdog, Pulse/damage timing, demo-tail cutoff, K16 battlefield crossfade and visible Wraith impact, crownless Aurora Pulse, separate Aurorb Slice, looping Triumph, and Hybrid/K ownership. Add only the exact approved 1672x941 PNG Auryi_AuroraPulse_TitleCard_Approved.png (SHA-256 455276790353db64f997326e8caf9d00cc096d8179c299e2f49eb57cb8c91ccb) as a full-screen DOM overlay above Beauty V1: reveal at 0.08s, begin fade at 1.28s, fully hidden by 1.55s before Aurora Growth. Keep machine authority, PriZim notepad, resume anchor, preflight, and iPhone pending gate synchronized to K19.",
     "aurora_beauty_v1_exact_master_installed": true,
     "aurora_beauty_v1_hybrid_runtime_pending_iphone_validation": true,
     "live28k14_beauty_video_played": true,
