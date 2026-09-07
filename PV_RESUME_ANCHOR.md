@@ -6,9 +6,12 @@ Last refreshed: 2026-09-06
 
 - Promoted witness: `main-20260906-live28k10`
 - Witness promotion commit: `dcd62ed439393c5aa8969ce5302a709cb7bb5770`
-- Current MAIN after audio-finalizer setup: `fa2ac459cb22ae88556b4f5073007f61b392ab4b`
+- Current MAIN after Aurora audio preload wiring: `94a7c9d4c560c68da1ca1e5b7c4bd191ec9fec6d`
 - Production battle adapter: `src/prizim/Live28K2PartyBattleScene.js`
 - Aurora Pulse resolver commit: `82b7a25607cb0cd310b6ad1ee4472c4ca0ce5c58`
+- Celestial Bloom synchronization commit: `fa623d615aecfb18d6038ed1b2896f58a78b1685`
+- Aurora/Triumph audio-controller hooks commit: `bfa15a31f2bf84cd81d63ce5fbafc68acb17aa90`
+- Exact M4A preload wiring commit: `94a7c9d4c560c68da1ca1e5b7c4bd191ec9fec6d`
 - Aurora Pulse result/banner authority commit: `34c5e56789d0b950e15aed4fb0c618316571a839`
 - Resonart drawer authority commit: `e9f6c54ede06aea60cfca37d4883b00657ad1109`
 - Resonart damage authority commit: `d77c43455d6a0dfbbcdcbe6db4a710d4453b9222`
@@ -27,7 +30,7 @@ Crownless Resonart. Do not use crown art, halo art, procedural crown/ellipse FX,
 
 Approved beat order:
 
-1. 01–02: battlefield handoff / invocation / lift
+1. 01–02: battlefield invocation / lift
 2. 03–05: Aurora growth and celestial expansion
 3. 06: maximum charge
 4. 07: compression / hand-smash
@@ -77,11 +80,28 @@ Audio rhythm:
 
 `lift → choir bloom → compression → silence → Pulse impact`
 
-Victory:
+Current code behavior when masters are present:
 
-`battle BGM fade/stop → Triumph of Light once → no ugly overlap`
+- Celestial Bloom starts at invocation/lift.
+- Generic Auryi gather/release cues are suppressed while Bloom owns the cinematic bed.
+- Bloom pauses for the 170ms silence pocket after compression.
+- Bloom resumes into Pulse and fades under aftermath/recompose.
+- Physical Auryi impact + enemy hit cues remain at Pulse contact.
+- Victory calls Triumph of Light when the real asset is cached; the old short victory cue remains fallback only.
+- Battle BGM fades/stops before Triumph to prevent overlap.
 
-A lossless reconstruction workflow has been added at `.github/workflows/finalize-auryi-audio.yml`. It verifies the exact SHA-256 and byte sizes before committing the masters. The binary transport into that workflow is the current implementation task.
+Exact production preload keys/paths:
+
+- `pv_auryi_celestial_bloom` -> `assets/music/Celestial Bloom.m4a`
+- `pv_triumph_of_light` -> `assets/music/Triumph of Light.m4a`
+
+A lossless reconstruction workflow exists at `.github/workflows/finalize-auryi-audio.yml`. It verifies the exact SHA-256 and byte sizes before committing the masters.
+
+### Current blocker
+
+The two exact M4A masters are mounted locally but are not yet physically installed in GitHub. Oversized Git text/base64 transport was rejected after a detected byte mismatch. Do not use a corrupted transport payload.
+
+Preferred clean route: save the two exact mounted masters to Dropbox as `/Celestial Bloom.m4a` and `/Triumph of Light.m4a`, then let GitHub Actions ingest and SHA-verify them. Dropbox account writes require explicit user approval before execution.
 
 ## Hard constraints
 
@@ -95,10 +115,11 @@ A lossless reconstruction workflow has been added at `.github/workflows/finalize
 
 ## Immediate next actions
 
-1. Finish lossless binary installation of Celestial Bloom and Triumph of Light.
-2. Add dedicated audio-controller hooks for Aurora Pulse bloom/silence/Pulse and Triumph victory handoff.
-3. Reinstall the already-approved numbered Aurora Pulse transparent PNG frame files when recoverable; do not regenerate or replace them with JPEG/composite crops.
-4. Promote the next numeric LIVE28K witness only after runtime/audio wiring is complete.
+1. With explicit approval, upload the two already-mounted exact M4A masters to Dropbox root under their clean production names.
+2. Create/downloadable Dropbox transport links and modify/trigger the GitHub audio finalizer to ingest them.
+3. Verify SHA-256 and byte counts after the GitHub Action commits the masters.
+4. Promote the next numeric LIVE28K witness only after the real audio assets are installed and runtime wiring is complete.
 5. Verify Pages/CI, then user performs iPhone MAIN evidence pass.
+6. Reinstall the already-approved numbered Aurora Pulse transparent PNG frame files when recoverable; do not regenerate or replace them with JPEG/composite crops.
 
 For a new chat: read this file first, then `PRIZIM_LIVE_NOTEPAD.md`. Do not restart asset discovery unless the authority/path recorded here actually fails.
