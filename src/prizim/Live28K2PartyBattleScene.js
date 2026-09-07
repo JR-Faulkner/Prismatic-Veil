@@ -13,6 +13,9 @@ const AURORA_BLOOM_KEY = 'pv_auryi_celestial_bloom';
 const AURORA_BLOOM_PATH = './assets/music/Celestial Bloom.m4a?pvasset=live28k11-audio';
 const TRIUMPH_LIGHT_KEY = 'pv_triumph_of_light';
 const TRIUMPH_LIGHT_PATH = './assets/music/Triumph of Light.m4a?pvasset=live28k11-audio';
+const AURORA_BEAUTY_VIDEO_READY = true;
+const AURORA_BEAUTY_VIDEO_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4?pvasset=live28k14-beauty';
+const AURORA_BEAUTY_TIMELINE = Object.freeze({ invocation: 0.70, silence: 4.56, pulse: 5.18, reconnect: 6.82, end: 7.375 });
 
 // Exact approved 01-08 production lane. Keep this false until the original
 // transparent PNG bytes are physically installed at the paths below. This
@@ -79,6 +82,10 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     this.formation.create(this.party);
     if (this.activeHeroId) this.formation.setActive(this.activeHeroId);
 
+    // Prewarm the exact Beauty V1 cinematic inside the live Hybrid/K scene.
+    this._prepareAuroraBeautyVideo();
+    this.events.once('shutdown', () => this._disposeAuroraBeautyVideo());
+
     globalThis.__PV_LIVE28K2_RUNTIME__ = true;
     globalThis.__PV_LIVE28K2_FULLRES_PRIMARIES__ = true;
     globalThis.__PV_LIVE28K2_PRISMEL_STATE_PAIR__ = true;
@@ -86,6 +93,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     globalThis.__PV_LIVE28K7_ATTACK_HALO_CLEAN__ = true;
     globalThis.__PV_LIVE28K_AURORA_PULSE_CINEMATIC__ = true;
     globalThis.__PV_LIVE28K_AURORA_MOCK_PORT__ = true;
+    globalThis.__PV_LIVE28K_AURORA_BEAUTY_VIDEO__ = true;
     globalThis.__PV_LIVE28K_AURORA_FRAME_LANE_READY__ = this._hasAuroraPulseFrames();
   }
 
@@ -202,6 +210,167 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     });
   }
 
+  _prepareAuroraBeautyVideo() {
+    if (!AURORA_BEAUTY_VIDEO_READY || typeof document === 'undefined') return null;
+    if (this._auroraBeautyVideo) return this._auroraBeautyVideo;
+
+    const video = document.createElement('video');
+    video.src = new URL(AURORA_BEAUTY_VIDEO_PATH, window.location.href).href;
+    video.preload = 'auto';
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.setAttribute('aria-hidden', 'true');
+    video.controls = false;
+    video.loop = false;
+    Object.assign(video.style, {
+      position: 'fixed',
+      inset: '0',
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain',
+      background: '#020108',
+      zIndex: '2147483000',
+      pointerEvents: 'none',
+      opacity: '0',
+      display: 'none',
+      transition: 'opacity 90ms linear'
+    });
+    document.body.appendChild(video);
+    video.load();
+    this._auroraBeautyVideo = video;
+    return video;
+  }
+
+  _disposeAuroraBeautyVideo() {
+    const video = this._auroraBeautyVideo;
+    if (!video) return;
+    try {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      video.remove();
+    } catch (err) { /* ignore cleanup errors */ }
+    this._auroraBeautyVideo = null;
+  }
+
+  _waitForAuroraBeautyTime(video, target, timeoutMs = 12000) {
+    return new Promise((resolve, reject) => {
+      const started = performance.now();
+      const tick = () => {
+        if (!video || video.error) {
+          reject(new Error('Aurora Beauty video playback error'));
+          return;
+        }
+        if (video.currentTime >= target - 0.015) {
+          resolve();
+          return;
+        }
+        if (video.ended) {
+          reject(new Error(`Aurora Beauty ended before ${target.toFixed(2)}s`));
+          return;
+        }
+        if (performance.now() - started > timeoutMs) {
+          reject(new Error(`Aurora Beauty timed out before ${target.toFixed(2)}s`));
+          return;
+        }
+        requestAnimationFrame(tick);
+      };
+      tick();
+    });
+  }
+
+  async _hideAuroraBeautyVideo(video, fadeMs = 90) {
+    if (!video) return;
+    video.style.opacity = '0';
+    await this._wait(fadeMs);
+    try { video.pause(); } catch (err) { /* ignore */ }
+    video.style.display = 'none';
+    try { video.currentTime = 0; } catch (err) { /* ignore */ }
+  }
+
+  async _playAuryiAuroraPulseBeauty(hero) {
+    const video = this._prepareAuroraBeautyVideo();
+    if (!video) return false;
+
+    this._turnLock = true;
+    this._hideCommandRail();
+    this._hideTargetCursor?.();
+
+    const base = hero.resonart.damage;
+    const low = Math.round(base * 0.85);
+    const high = Math.round(base * 1.15);
+    const hitRoll = Math.random() < AURORA_PULSE_HIT_CHANCE;
+    let ownsBloom = false;
+    let impactResolved = false;
+
+    this.audio.beginCinematicAttack?.();
+    this._setBanner(`${hero.name} invokes ${hero.resonart.name}!`);
+
+    try {
+      video.pause();
+      try { video.currentTime = 0; } catch (err) { /* metadata may still be settling */ }
+      video.style.display = 'block';
+      video.style.opacity = '0';
+      const playPromise = video.play();
+      if (playPromise) await playPromise;
+      requestAnimationFrame(() => { video.style.opacity = '1'; });
+
+      // Beauty V1 is the presentation clock. Starting Bloom at Invocation and
+      // pausing it for the approved compression pocket makes its 5.48s master
+      // land almost exactly at the 6.82s battlefield-reconnect beat.
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.invocation);
+      ownsBloom = this.audio.auroraBloomStart?.() === true;
+      if (!ownsBloom) this.audio.attackGather(hero.id);
+
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.silence);
+      if (ownsBloom) this.audio.auroraBloomSilence?.();
+
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.pulse);
+      if (ownsBloom) this.audio.auroraBloomResume?.();
+      else this.audio.attackRelease(hero.id);
+
+      if (hitRoll) {
+        const dmg = Phaser.Math.Between(low, high);
+        this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
+        this._updateTargetCard();
+        this.enemyView.hit();
+        this._floatText(`-${dmg}`, '#FFE8A0');
+        this._setBanner(`${hero.name} uses ${hero.resonart.name} for ${dmg} damage!`);
+        this.audio.attackImpact(hero.id);
+        this.audio.enemyHit();
+        if (this.enemy.hp <= 0) {
+          this.enemyView.die();
+          this.audio.enemyDefeat();
+        }
+      } else {
+        this._setBanner(`${hero.name} uses ${hero.resonart.name} — missed!`);
+      }
+      impactResolved = true;
+
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.reconnect);
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.end, 14000);
+    } catch (err) {
+      console.warn('[PV] Aurora Beauty V1 playback fell back to Hybrid mock:', err);
+      if (ownsBloom) this.audio.auroraBloomStop?.(120);
+      this.audio.endCinematicAttack?.();
+      await this._hideAuroraBeautyVideo(video, 40);
+      if (!impactResolved) {
+        this._turnLock = false;
+        return false;
+      }
+    }
+
+    if (ownsBloom) this.audio.auroraBloomStop?.(120);
+    await this._hideAuroraBeautyVideo(video, 90);
+    this.audio.endCinematicAttack?.();
+    this._turnLock = false;
+    this._endHeroTurn();
+    return true;
+  }
+
   async _resolveHeroAction(hero, command) {
     if (hero?.id === 'auryi' && command === 'Resonart' && hero.resonart) {
       return this._playAuryiAuroraPulse(hero);
@@ -210,6 +379,13 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
   }
 
   async _playAuryiAuroraPulse(hero) {
+    if (AURORA_BEAUTY_VIDEO_READY) {
+      const handled = await this._playAuryiAuroraPulseBeauty(hero);
+      if (handled) return;
+    }
+
+    // Fail-safe only: preserve the already-approved Hybrid mock if native video
+    // playback is unavailable on a device. Never substitute the old Aurorb Slice poses.
     this._turnLock = true;
     this._hideCommandRail();
     this._hideTargetCursor?.();

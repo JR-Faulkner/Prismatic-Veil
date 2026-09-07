@@ -125,17 +125,72 @@ for rel, (size, digest) in audio.items():
     if actual != digest:
         errors.append(f'audio SHA drift: {rel} = {actual}, expected {digest}')
 
-# 8. Future crown authority must preserve the corrected splash-screen hover semantics.
+# 8. Aurora Beauty V1 exact master is the primary live cinematic presentation.
+beauty_video = pathlib.Path('assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4')
+beauty_timeline = pathlib.Path('assets/characters/auryi/animations/aurora_pulse/cinematic/AuroraPulse_Beauty_v1_timeline.json')
+beauty_expected = {
+    beauty_video: (3400903, 'e70fc0f987646b1c1428c8797c0d95e8a38c2327448d3607826febb1e0065b1a'),
+    beauty_timeline: (1345, 'fe0116a3068ffb4614188099926ac6ae68affcf22dfcda5723e1b3c7e35f2c58'),
+}
+for rel, (size, digest) in beauty_expected.items():
+    p = ROOT / rel
+    if not p.exists():
+        errors.append(f'missing Aurora Beauty V1 production asset: {rel}')
+        continue
+    if p.stat().st_size != size:
+        errors.append(f'Aurora Beauty V1 size drift: {rel} = {p.stat().st_size}, expected {size}')
+    actual = sha256(rel)
+    if actual != digest:
+        errors.append(f'Aurora Beauty V1 SHA drift: {rel} = {actual}, expected {digest}')
+
+for token in [
+    'AURORA_BEAUTY_VIDEO_READY = true',
+    'AURORA_BEAUTY_VIDEO_PATH',
+    'AURORA_BEAUTY_TIMELINE',
+    '_playAuryiAuroraPulseBeauty',
+    'const handled = await this._playAuryiAuroraPulseBeauty(hero)',
+    "objectFit: 'contain'",
+    'invocation: 0.70',
+    'silence: 4.56',
+    'pulse: 5.18',
+    'reconnect: 6.82',
+    'end: 7.375'
+]:
+    if token not in k_scene:
+        errors.append(f'K adapter missing Aurora Beauty V1 runtime token: {token}')
+if 'Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4' in base_scene:
+    errors.append('Aurora Beauty V1 leaked into standalone PartyBattleScene')
+
+if beauty_timeline.exists():
+    try:
+        beauty = json.loads((ROOT / beauty_timeline).read_text(encoding='utf-8'))
+        if beauty.get('resolution') != '1920x1080' or beauty.get('fps') != 24:
+            errors.append('Aurora Beauty V1 timeline metadata drifted from 1920x1080 / 24 FPS authority')
+        beats = {b['label']: (float(b['start']), float(b['end'])) for b in beauty.get('beats', [])}
+        expected_beats = {
+            'Battlefield Handoff': (0.0, 0.7),
+            'Invocation': (0.7, 1.55),
+            'Compression Silence': (4.56, 5.18),
+            'Pulse Release': (5.18, 6.82),
+            'Battlefield Reconnect': (6.82, 7.4),
+        }
+        for label, expected in expected_beats.items():
+            if beats.get(label) != expected:
+                errors.append(f'Aurora Beauty V1 timeline beat drift: {label} = {beats.get(label)}, expected {expected}')
+    except Exception as exc:
+        errors.append(f'could not validate Aurora Beauty V1 timeline: {exc}')
+
+# 9. Future crown authority must preserve the corrected splash-screen hover semantics.
 crown = auth['auryi'].get('future_crown_authority', '').lower()
 if 'hovered' not in crown or 'not head-worn' not in crown:
     errors.append('future Auryi crown authority lost splash-screen hovered/not-head-worn semantics')
 
-# 9. Human PriZim ledger must explicitly state the Hybrid hard gate.
+# 10. Human PriZim ledger must explicitly state the Hybrid hard gate.
 for phrase in ['HYBRID STACK HARD GATE', 'ALL live battle/cinematic production work stays inside the Hybrid stack']:
     if phrase not in notepad:
         errors.append(f'PriZim notepad missing hard-gate phrase: {phrase}')
 
-# 10. Aurora 01-08 durability gate: user delivery and durable installation are distinct states.
+# 11. Aurora 01-08 durability gate: user delivery and durable installation are distinct states.
 frame_manifest_path = auth['auryi'].get('aurora_frame_authority')
 if not frame_manifest_path or not (ROOT / frame_manifest_path).exists():
     errors.append('missing Aurora Pulse frame authority manifest')
@@ -188,6 +243,6 @@ if errors:
 
 print(f'PriZim LIVE28K preflight PASS · {witness}')
 print('Hybrid route: hybrid-main -> hybrid-battle-live -> LIVE28K K adapters')
-print('Aurora Pulse authority: K adapter + approved mock choreography + crownless')
+print('Aurora Pulse authority: exact Beauty V1 Hybrid video primary + Phaser mock fail-safe + crownless')
 print('Aurora frame history: user-supplied and previously separated; exact-frame mode only after durable 8-file verification')
 print('Audio masters: exact SHA/size verified')

@@ -27,7 +27,9 @@
     "webp_forbidden_for_battle_critical_art": true,
     "real_iphone_evidence_is_final_runtime_gate": true,
     "approved_asset_delivery_must_not_be_reclassified_as_missing": true,
-    "exact_frame_mode_requires_durable_verified_binaries": true
+    "exact_frame_mode_requires_durable_verified_binaries": true,
+    "aurora_beauty_primary_must_use_exact_verified_master": true,
+    "aurora_beauty_must_remain_inside_hybrid_k_adapter": true
   },
   "auryi": {
     "basic_attack": "Aurorb Slice",
@@ -40,7 +42,24 @@
     "aurora_frames_previously_separated": true,
     "aurora_exact_frame_mode": false,
     "aurora_current_binary_state": "not-restored-to-durable-repo",
-    "future_crown_authority": "Main Splash Screen crown: hovered/offset above Auryi, not head-worn; preserve splash-screen silhouette, scale, and spacing. Aurora Pulse remains crownless."
+    "future_crown_authority": "Main Splash Screen crown: hovered/offset above Auryi, not head-worn; preserve splash-screen silhouette, scale, and spacing. Aurora Pulse remains crownless.",
+    "aurora_presentation": "Beauty V1 hybrid-video primary; Phaser mock fallback only",
+    "aurora_beauty_video": "assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4",
+    "aurora_beauty_video_sha256": "e70fc0f987646b1c1428c8797c0d95e8a38c2327448d3607826febb1e0065b1a",
+    "aurora_beauty_video_bytes": 3400903,
+    "aurora_beauty_resolution": "1920x1080",
+    "aurora_beauty_fps": 24,
+    "aurora_beauty_duration_seconds": 7.375,
+    "aurora_beauty_timeline": "assets/characters/auryi/animations/aurora_pulse/cinematic/AuroraPulse_Beauty_v1_timeline.json",
+    "aurora_beauty_timeline_sha256": "fe0116a3068ffb4614188099926ac6ae68affcf22dfcda5723e1b3c7e35f2c58",
+    "aurora_beauty_sync": {
+      "battlefield_handoff": 0.0,
+      "celestial_bloom_start": 0.7,
+      "compression_silence": 4.56,
+      "pulse_release_and_damage": 5.18,
+      "battlefield_reconnect": 6.82,
+      "return_to_battle": 7.375
+    }
   },
   "device_evidence": {
     "live28k11_celestial_bloom_played_and_sounded_good": true,
@@ -49,6 +68,8 @@
     "live28k12_pending_iphone_validation": true,
     "pending_witness": "main-20260906-live28k13",
     "pending_iphone_validation": true,
-    "promotion_reason": "Port the already-approved Aurora Pulse PZ-A mock choreography into the live Hybrid/K adapter while preserving the confirmed Celestial Bloom audio, crownless Resonart authority, Aurorb Slice separation, and looping Triumph victory music. The user already supplied and previously separated the exact 01-08 frame material; those binaries are not yet restored to durable production paths."
+    "promotion_reason": "Port the already-approved Aurora Pulse PZ-A mock choreography into the live Hybrid/K adapter while preserving the confirmed Celestial Bloom audio, crownless Resonart authority, Aurorb Slice separation, and looping Triumph victory music. The user already supplied and previously separated the exact 01-08 frame material; those binaries are not yet restored to durable production paths.",
+    "aurora_beauty_v1_exact_master_installed": true,
+    "aurora_beauty_v1_hybrid_runtime_pending_iphone_validation": true
   }
 }
