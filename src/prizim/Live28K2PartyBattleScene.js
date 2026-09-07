@@ -253,12 +253,6 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     const video = this._auroraBeautyVideo;
     if (!video) return;
     try {
-      // Let the live battlefield hold for one last beat while the camera
-      // commits to Auryi, then let Beauty take over without a static card.
-      this.tweens.killTweensOf(cam);
-      this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.05, duration: 170, ease: 'Sine.easeOut' });
-      await this._wait(110);
-      this.formation.setPovFocus?.(hero.id, true);
       video.pause();
       video.removeAttribute('src');
       video.load();
@@ -448,6 +442,13 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     // instead of attempting a fresh delayed play after native video has begun.
     ownsBloom = this.audio.auroraBloomStart?.(AURORA_BEAUTY_TIMELINE.invocation) === true;
     this._setBanner(`${hero.name} invokes ${hero.resonart.name}!`);
+
+    // K21: live-camera commitment belongs to the active Aurora action, never
+    // to DOM-video disposal. All referenced state is valid in this scope.
+    this.tweens.killTweensOf(cam);
+    this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.05, duration: 170, ease: 'Sine.easeOut' });
+    await this._wait(110);
+    this.formation.setPovFocus?.(hero.id, true);
 
     try {
       video.pause();

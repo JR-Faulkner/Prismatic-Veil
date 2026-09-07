@@ -348,6 +348,42 @@ if beauty_timeline.exists():
     except Exception as exc:
         errors.append(f'could not validate Aurora Beauty V1 timeline: {exc}')
 
+# 8h. K21 runtime-boot regression guard. DOM-video disposal is cleanup-only;
+# cinematic camera state must live in the active Aurora action scope.
+dispose_match = re.search(r"  _disposeAuroraBeautyVideo\(\) \{(.*?)\n  \}\n\n  _waitForAuroraBeautyTime", k_scene, re.S)
+if not dispose_match:
+    errors.append('K21 Aurora Beauty dispose method missing/unreadable')
+else:
+    dispose_body = dispose_match.group(1)
+    for forbidden in ['await ', 'cameraState', 'hero.id', 'killTweensOf(cam)', 'targets: cam']:
+        if forbidden in dispose_body:
+            errors.append(f'K21 cleanup-scope regression: forbidden cinematic token inside _disposeAuroraBeautyVideo(): {forbidden}')
+    for required in ['video.pause();', "video.removeAttribute('src');", 'video.load();', 'video.remove();']:
+        if required not in dispose_body:
+            errors.append(f'K21 Aurora Beauty cleanup token missing: {required}')
+
+action_match = re.search(r"  async _playAuryiAuroraPulseBeauty\(hero\) \{(.*?)\n  \}\n\n  async _resolveHeroAction", k_scene, re.S)
+if not action_match:
+    errors.append('K21 Aurora Beauty action method missing/unreadable')
+else:
+    action_body = action_match.group(1)
+    for required in [
+        'const cam = this.cameras.main;',
+        'const cameraState = { zoom: cam.zoom, scrollX: cam.scrollX, scrollY: cam.scrollY };',
+        'this.tweens.killTweensOf(cam);',
+        'zoom: cameraState.zoom * 1.05',
+        'await this._wait(110);',
+        'this.formation.setPovFocus?.(hero.id, true);',
+    ]:
+        if required not in action_body:
+            errors.append(f'K21 Aurora action camera-commit token missing: {required}')
+if auth.get('hard_gates', {}).get('aurora_dispose_cleanup_must_not_contain_cinematic_state') is not True:
+    errors.append('K21 cleanup-scope hard gate missing')
+if auth.get('hard_gates', {}).get('k21_camera_commit_must_live_inside_aurora_action') is not True:
+    errors.append('K21 camera-commit scope hard gate missing')
+if auth.get('device_evidence', {}).get('live28k20_unexpected_live_battle_error') is not True:
+    errors.append('K21 machine authority lost K20 iPhone runtime failure evidence')
+
 # 9. Future crown authority must preserve the corrected splash-screen hover semantics.
 crown = auth['auryi'].get('future_crown_authority', '').lower()
 if 'hovered' not in crown or 'not head-worn' not in crown:

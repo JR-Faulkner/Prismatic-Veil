@@ -40,7 +40,9 @@
     "aurora_reentry_wave_required": true,
     "aurora_reentry_live_enemy_reaction_required": true,
     "k20_must_preserve_k18_native_m4a_lane": true,
-    "k20_must_preserve_beauty_exact_master": true
+    "k20_must_preserve_beauty_exact_master": true,
+    "aurora_dispose_cleanup_must_not_contain_cinematic_state": true,
+    "k21_camera_commit_must_live_inside_aurora_action": true
   },
   "auryi": {
     "basic_attack": "Aurorb Slice",
@@ -104,9 +106,9 @@
     "live28k11_triumph_of_light_played": true,
     "live28k11_visual_cinematic_missing": true,
     "live28k12_pending_iphone_validation": true,
-    "pending_witness": "main-20260907-live28k20",
+    "pending_witness": "main-20260907-live28k21",
     "pending_iphone_validation": true,
-    "promotion_reason": "Promote LIVE28K20 Aurora Pulse Hybrid presentation upgrade after K19 phone review rejected the full-screen move-title card as interruptive. Preserve the K18 iPhone-safe native HTMLMediaElement lane for exact Celestial Bloom and Triumph M4A masters, Bloom playback watchdog, 5.18s Pulse/damage logic, exact Beauty V1 master/hash, 6.65s demo-tail cutoff, crownless Aurora Pulse, separate Aurorb Slice, and live Wraith reaction. Retire all Aurora cinematic move-title runtime hooks. Add Hybrid-directed presentation around Beauty V1: brief live battlefield/camera commitment to Auryi, subtle invocation push, wider perceived Aurora expansion, compression push-in and silent tension, Pulse-driven 500ms battlefield reveal, and at 6.30s an Auryi production-bank re-entry wave layered from release + idlePulse + impact with residual Aurora afterglow and live enemy recoil. Keep machine authority, PriZim notepad, resume anchor, canonical preflight, and iPhone pending gate synchronized to K20.",
+    "promotion_reason": "Hotfix K20 phone runtime failure by moving Aurora camera-commit code out of _disposeAuroraBeautyVideo() and into _playAuryiAuroraPulseBeauty(), where hero/cam/cameraState are valid and await is legal. Preserve all K20 presentation work and K18 native-media reliability. Add a permanent cleanup-scope guard.",
     "aurora_beauty_v1_exact_master_installed": true,
     "aurora_beauty_v1_hybrid_runtime_pending_iphone_validation": true,
     "live28k14_beauty_video_played": true,
@@ -124,9 +126,9 @@
     "live28k16_celestial_bloom_inaudible": true,
     "live28k16_result": "FAIL phone gate: intermittent LIVE BOOT ERROR observed and Celestial Bloom choir did not play.",
     "live28k16_handoff_visual_result": "Not yet accepted/rejected; boot/audio regression must be removed first.",
-    "latest_device_witness": "main-20260907-live28k19",
-    "latest_device_result": "REJECT presentation gate: the full-screen title card interrupted Aurora Pulse and reduced cinematic continuity. User requested the move name removed entirely and the Hybrid transition/camera/reconnect presentation upgraded.",
-    "pending_gate_summary": "LIVE28K20: no cinematic move-title card; smoother live battlefield-to-Beauty camera commitment; stronger expansion/compression/Pulse framing; Auryi wave-blast on battlefield return; live Wraith reaction and residual Aurora afterglow remain integrated, while K18 native M4A/boot reliability and exact Beauty V1 stay unchanged.",
+    "latest_device_witness": "main-20260907-live28k20",
+    "latest_device_result": "FAIL runtime gate: iPhone reported Unexpected live battle error. Root cause isolated to misplaced K20 camera-commit code inside _disposeAuroraBeautyVideo().",
+    "pending_gate_summary": "LIVE28K21: battle must boot cleanly on iPhone with no Unexpected live battle error; then Aurora Pulse should retain K20 camera/framing, exact Beauty V1, native Celestial Bloom, re-entry wave, Wraith reaction, and residual afterglow.",
     "live28k17_pending_iphone_validation": true,
     "live28k17_boot_decode_failed": true,
     "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR \u00b7 Decoding failed",
@@ -141,7 +143,10 @@
     "live28k19_pending_iphone_validation": false,
     "live28k19_title_presentation_rejected": true,
     "live28k19_result": "REJECT presentation gate: the full-screen title card interrupted Aurora Pulse and reduced cinematic continuity. User requested the move name removed entirely and the Hybrid transition/camera/reconnect presentation upgraded.",
-    "live28k20_pending_iphone_validation": true
+    "live28k20_pending_iphone_validation": false,
+    "live28k20_unexpected_live_battle_error": true,
+    "live28k20_result": "FAIL runtime gate: iPhone reported Unexpected live battle error. Root cause isolated to misplaced K20 camera-commit code inside _disposeAuroraBeautyVideo().",
+    "live28k21_pending_iphone_validation": true
   },
   "hybrid_boot_policy": "hybrid-main must retry live-build.json and hybrid-battle-live.html no-store fetches with bounded exponential backoff before surfacing LIVE BOOT ERROR."
 }

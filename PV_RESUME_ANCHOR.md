@@ -179,8 +179,8 @@ Do not add redundant base-file query-string surgery unless this routing actually
 - K19 phone review: full-screen title presentation was rejected because it interrupted cinematic continuity.
 - K20 presentation: title removed; Hybrid camera/framing and Pulse-driven battlefield re-entry are the active polish lane.
 
-- Latest phone evidence (main-20260907-live28k19): REJECT presentation gate: the full-screen title card interrupted Aurora Pulse and reduced cinematic continuity. User requested the move name removed entirely and the Hybrid transition/camera/reconnect presentation upgraded.
-- Current pending gate: LIVE28K20: no cinematic move-title card; smoother live battlefield-to-Beauty camera commitment; stronger expansion/compression/Pulse framing; Auryi wave-blast on battlefield return; live Wraith reaction and residual Aurora afterglow remain integrated, while K18 native M4A/boot reliability and exact Beauty V1 stay unchanged.
+- Latest phone evidence (main-20260907-live28k20): FAIL runtime gate: iPhone reported Unexpected live battle error. Root cause isolated to misplaced K20 camera-commit code inside _disposeAuroraBeautyVideo().
+- Current pending gate: LIVE28K21: battle must boot cleanly on iPhone with no Unexpected live battle error; then Aurora Pulse should retain K20 camera/framing, exact Beauty V1, native Celestial Bloom, re-entry wave, Wraith reaction, and residual afterglow.
 - Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.
 
 ## Hard constraints
