@@ -1,0 +1,71 @@
+{
+  "title": "Aurora Pulse",
+  "character": "Auryi",
+  "resolution": "1920x1080",
+  "fps": 24,
+  "duration_seconds": 7.4,
+  "beats": [
+    {
+      "start": 0.0,
+      "end": 0.7,
+      "pose": 1,
+      "label": "Battlefield Handoff"
+    },
+    {
+      "start": 0.7,
+      "end": 1.55,
+      "pose": 2,
+      "label": "Invocation"
+    },
+    {
+      "start": 1.55,
+      "end": 2.45,
+      "pose": 3,
+      "label": "Aurora Growth"
+    },
+    {
+      "start": 2.45,
+      "end": 3.35,
+      "pose": 4,
+      "label": "Maximum Expansion"
+    },
+    {
+      "start": 3.35,
+      "end": 4.15,
+      "pose": 5,
+      "label": "Compression Wind-Up"
+    },
+    {
+      "start": 4.15,
+      "end": 4.56,
+      "pose": 6,
+      "label": "Signature Hand Smash"
+    },
+    {
+      "start": 4.56,
+      "end": 5.18,
+      "pose": 7,
+      "label": "Compression Silence"
+    },
+    {
+      "start": 5.18,
+      "end": 6.82,
+      "pose": 8,
+      "label": "Pulse Release"
+    },
+    {
+      "start": 6.82,
+      "end": 7.4,
+      "pose": 8,
+      "label": "Battlefield Reconnect"
+    }
+  ],
+  "render_method": "720p beauty composite upscaled during final H.264 encode",
+  "notes": [
+    "approved 01-08 poses only",
+    "no character regeneration",
+    "smash freeze + camera shake",
+    "layered prismatic release",
+    "battlefield reconnect at tail"
+  ]
+}
