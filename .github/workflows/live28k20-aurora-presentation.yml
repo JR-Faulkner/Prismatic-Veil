@@ -27,23 +27,46 @@ jobs:
         run: |
           set -euo pipefail
 
-          # K19's synchronizer stores the device-gate paragraph with literal \\n
-          # sequences in Python source. Normalize only the old-phrase matcher so
-          # K20 does not depend on that formatting detail. The corrected patcher
-          # is committed with the production change below.
+          # Normalize two K19 source-format assumptions before running the K20
+          # patcher. The corrected patcher is committed with the production pass.
           python - <<'PY'
           from pathlib import Path
           p = Path('tools/prizim/fix_live28k20_aurora_presentation.py')
           text = p.read_text(encoding='utf-8')
-          old = '    "- K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.\\n",'
-          new = '    "- K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.",'
-          if old not in text:
-              raise SystemExit('K20 guard fix refused: resume matcher anchor missing')
-          p.write_text(text.replace(old, new, 1), encoding='utf-8')
+          replacements = [
+              (
+                  '    "- K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.\\n",',
+                  '    "- K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.",',
+              ),
+              (
+                  'Begin the Pulse-driven Beauty-to-Hybrid reveal ',
+                  'Begin the Pulse-driven reveal of the real Hybrid battlefield ',
+              ),
+          ]
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'K20 guard fix refused: anchor missing: {old[:64]}')
+              text = text.replace(old, new, 1)
+          p.write_text(text, encoding='utf-8')
           PY
 
           python -m py_compile tools/prizim/fix_live28k20_aurora_presentation.py
           python tools/prizim/fix_live28k20_aurora_presentation.py
+
+          # K16 guarded the original 550ms opacity-only reconnect. K20 replaces
+          # it with a 500ms opacity+transform Pulse wave. Keep the K16 semantic
+          # requirement, but make the canonical token compatible with K20.
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/prizim/preflight_live28k.py')
+          text = p.read_text(encoding='utf-8')
+          old = '    "video.style.transition = \'opacity 550ms cubic-bezier(0.22, 1, 0.36, 1)\'",\n'
+          new = "    'opacity 500ms cubic-bezier(0.22, 1, 0.36, 1)',\n"
+          if old not in text:
+              raise SystemExit('K20 preflight migration refused: K16 reveal-token anchor missing')
+          p.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
           python tools/prizim/sync_live_authority.py
           python tools/prizim/preflight_live28k.py
           node --check src/prizim/Live28K2PartyBattleScene.js
