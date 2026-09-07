@@ -1,0 +1,73 @@
+name: LIVE28K18 Native M4A + Boot Decode Resilience
+
+on:
+  push:
+    paths:
+      - '.github/ingest_live28k18/TRIGGER.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live28k18-native-m4a
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply guarded K18 native media correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile tools/prizim/fix_live28k18_native_m4a.py
+          python tools/prizim/fix_live28k18_native_m4a.py
+          python tools/prizim/sync_live_authority.py
+          python tools/prizim/preflight_live28k.py
+          node --check src/prizim/Live28K2PartyBattleScene.js
+          node --check src/PartyBattleAudioController.js
+          python - <<'PY'
+          from pathlib import Path
+          html = Path('hybrid-battle-live.html').read_text(encoding='utf-8')
+          script = html.split('<script type="module">', 1)[1].split('</script>', 1)[0]
+          Path('/tmp/pv-hybrid-battle.js').write_text(script, encoding='utf-8')
+          PY
+          node --check /tmp/pv-hybrid-battle.js
+          ! grep -F "this.load.audio(AURORA_BLOOM_KEY" src/prizim/Live28K2PartyBattleScene.js
+          ! grep -F "this.load.audio(TRIUMPH_LIGHT_KEY" src/prizim/Live28K2PartyBattleScene.js
+          grep -F "primeNativeMedia()" src/PartyBattleAudioController.js
+          grep -F "scene.audio?.primeNativeMedia?.();" hybrid-battle-live.html
+          grep -F "/decoding failed/i.test(msg)" hybrid-battle-live.html
+
+      - name: Commit guarded K18 correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/ingest_live28k18/TRIGGER.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            hybrid-battle-live.html \
+            src/PartyBattleAudioController.js \
+            src/prizim/Live28K2PartyBattleScene.js \
+            PV_LIVE_AUTHORITY.json \
+            PRIZIM_LIVE_NOTEPAD.md \
+            PV_RESUME_ANCHOR.md \
+            tools/prizim/preflight_live28k.py \
+            .github/ingest_live28k18/TRIGGER.txt
+          git commit -m 'LIVE28K18: move exact M4A masters to native media and prevent decode boot death'
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'K18 push failed after 3 attempts' >&2
+          exit 1
