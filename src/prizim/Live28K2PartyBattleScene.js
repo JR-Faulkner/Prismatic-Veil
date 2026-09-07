@@ -16,14 +16,14 @@ const TRIUMPH_LIGHT_PATH = './assets/music/Triumph of Light.m4a?pvasset=live28k1
 
 // Exact approved 01-08 production lane. Keep this false until the original
 // transparent PNG bytes are physically installed at the paths below. This
-// prevents 404s and guarantees LIVE28K11 continues using the proven pose bridge.
+// prevents 404s and leaves the approved mock choreography as the live visual bridge.
 const AURORA_PULSE_FRAMES_READY = false;
 const AURORA_PULSE_FRAMES = Object.freeze(
   Array.from({ length: 8 }, (_, i) => {
     const n = String(i + 1).padStart(2, '0');
     return Object.freeze({
       key: `auryi_aurora_pulse_${n}`,
-      path: `./assets/characters/auryi/animations/aurora_pulse/frames/Auryi_Aurora_Pulse_${n}.png?pvasset=live28k12-aurora`
+      path: `./assets/characters/auryi/animations/aurora_pulse/frames/Auryi_Aurora_Pulse_${n}.png?pvasset=live28k13-aurora`
     });
   })
 );
@@ -56,7 +56,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
     // Do not request missing production art. Once the already-approved 01-08
     // PNG bytes are restored, flipping the gate activates this lane without
-    // changing any Aurora choreography or battle logic.
+    // changing Aurora's Hybrid ownership, audio, camera, or damage logic.
     if (AURORA_PULSE_FRAMES_READY) {
       AURORA_PULSE_FRAMES.forEach(frame => this.load.image(frame.key, frame.path));
     }
@@ -85,6 +85,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     globalThis.__PV_LIVE28K6_AURYI_CROWN_HYBRID__ = true;
     globalThis.__PV_LIVE28K7_ATTACK_HALO_CLEAN__ = true;
     globalThis.__PV_LIVE28K_AURORA_PULSE_CINEMATIC__ = true;
+    globalThis.__PV_LIVE28K_AURORA_MOCK_PORT__ = true;
     globalThis.__PV_LIVE28K_AURORA_FRAME_LANE_READY__ = this._hasAuroraPulseFrames();
   }
 
@@ -131,6 +132,65 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     this.formation._forceActiveRing?.(this.activeHeroId);
   }
 
+  // Phaser realization of the already-approved PZ-A Aurora Pulse mock.
+  // This is scene-level Hybrid/K presentation, not a new standalone effect design.
+  _createAuroraMockStage(actor) {
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const x = actor?.sprite?.x ?? w * 0.5;
+    const bodyH = actor?.sprite?.displayHeight || h * 0.47;
+    const y = Math.max(h * 0.30, (actor?.sprite?.y ?? h * 0.66) - bodyH * 0.53);
+    const r = Math.max(34, Math.min(w, h) * 0.075);
+
+    const veilA = this.add.ellipse(x, y, w * 0.72, h * 0.46, 0xba8bff, 0.12)
+      .setDepth(7).setAlpha(0).setAngle(-18).setBlendMode(Phaser.BlendModes.ADD);
+    const veilB = this.add.ellipse(x, y, w * 0.58, h * 0.62, 0x79ffc5, 0.10)
+      .setDepth(7.1).setAlpha(0).setAngle(28).setBlendMode(Phaser.BlendModes.ADD);
+    const veilC = this.add.ellipse(x, y, w * 0.48, h * 0.54, 0xffd76a, 0.08)
+      .setDepth(7.2).setAlpha(0).setAngle(-42).setBlendMode(Phaser.BlendModes.ADD);
+
+    const auroraCore = this.add.circle(x, y, r, 0xb785ff, 0.16)
+      .setStrokeStyle(4, 0xd8b6ff, 0.95).setDepth(9).setAlpha(0).setScale(0.10)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    const auroraRingA = this.add.ellipse(x, y, r * 2.35, r * 1.38, 0x000000, 0)
+      .setStrokeStyle(2.5, 0x8effd6, 0.82).setDepth(9.1).setAlpha(0).setScale(0.10).setAngle(28)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    const auroraRingB = this.add.ellipse(x, y, r * 2.70, r * 1.55, 0x000000, 0)
+      .setStrokeStyle(2.5, 0xffd76a, 0.78).setDepth(9.2).setAlpha(0).setScale(0.10).setAngle(-31)
+      .setBlendMode(Phaser.BlendModes.ADD);
+
+    const pulse = this.add.circle(x, y, Math.max(20, r * 0.55), 0x000000, 0)
+      .setStrokeStyle(7, 0xf4e6ff, 1).setDepth(30).setAlpha(0).setScale(0.10)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    const pulseEcho = this.add.circle(x, y, Math.max(16, r * 0.42), 0x000000, 0)
+      .setStrokeStyle(3.5, 0x7affd2, 0.90).setDepth(29.9).setAlpha(0).setScale(0.10)
+      .setBlendMode(Phaser.BlendModes.ADD);
+
+    const flash = this.add.rectangle(w * 0.5, h * 0.5, w * 1.5, h * 1.5, 0xffffff, 1)
+      .setDepth(40).setAlpha(0).setBlendMode(Phaser.BlendModes.ADD);
+    const title = this.add.text(w * 0.5, h * 0.095, 'RESONART\nAURORA PULSE', {
+      fontFamily: 'Georgia, serif',
+      fontSize: `${Math.max(22, Math.min(42, w * 0.047))}px`,
+      color: '#fff2c5',
+      align: 'center',
+      stroke: '#120b24',
+      strokeThickness: 5,
+      letterSpacing: 2
+    }).setOrigin(0.5, 0).setDepth(32).setAlpha(0).setY(h * 0.08);
+
+    const objects = [veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho, flash, title];
+    this.worldAdd(objects);
+    return { x, y, veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho, flash, title, objects };
+  }
+
+  _destroyAuroraMockStage(stage) {
+    if (!stage) return;
+    stage.objects?.forEach(obj => {
+      this.tweens.killTweensOf(obj);
+      obj.destroy?.();
+    });
+  }
+
   async _resolveHeroAction(hero, command) {
     if (hero?.id === 'auryi' && command === 'Resonart' && hero.resonart) {
       return this._playAuryiAuroraPulse(hero);
@@ -141,6 +201,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
   async _playAuryiAuroraPulse(hero) {
     this._turnLock = true;
     this._hideCommandRail();
+    this._hideTargetCursor?.();
 
     const cam = this.cameras.main;
     const cameraState = {
@@ -153,25 +214,36 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     const high = Math.round(base * 1.15);
     const hitRoll = Math.random() < AURORA_PULSE_HIT_CHANCE;
     const useAuroraFrames = this._hasAuroraPulseFrames();
-    // Aurora Pulse must never fall back to Auryi's Basic Attack poses.
-    // Until the approved 01-08 PNGs return, keep her approved primary and
-    // use Aurora-specific lift/compression movement only.
     const fallbackActor = !useAuroraFrames ? this.formation?.actors?.get?.('auryi') : null;
     if (fallbackActor) this.formation._restoreAuryiPrimary?.(fallbackActor);
-    const fallbackY = fallbackActor?.sprite?.y ?? 0;
+
+    const actor = this.formation?.actors?.get?.('auryi');
+    const sprite = actor?.sprite;
+    const home = sprite ? { y: sprite.y, scaleX: sprite.scaleX, scaleY: sprite.scaleY } : null;
+    const stage = this._createAuroraMockStage(actor);
+    this.formation.setPovFocus?.(hero.id, true);
 
     this.audio.beginCinematicAttack?.();
     const ownsBloom = this.audio.auroraBloomStart?.() === true;
     this._setBanner(`${hero.name} invokes ${hero.resonart.name}!`);
 
-    // 01-02: battlefield invocation + lift.
+    // MOCK 01: battlefield handoff. The live Hybrid canvas keeps HUD/state
+    // ownership while Auryi and the Veil field take visual focus.
     if (useAuroraFrames) this._setAuroraPulseFrame(1);
-    else if (fallbackActor?.sprite) {
-      fallbackActor.ghost?.setVisible(false)?.setAlpha?.(0);
-      fallbackActor.attackSprite?.setVisible(false)?.setAlpha?.(1);
-      fallbackActor.ring?.setVisible(false)?.setAlpha?.(0);
-      this.tweens.add({ targets: fallbackActor.sprite, y: fallbackY - Math.min(28, this.scale.height * 0.05), duration: AURORA_PULSE_TIMING.lift, ease: 'Sine.easeOut' });
+    else if (sprite && home) {
+      actor.ghost?.setVisible(false)?.setAlpha?.(0);
+      actor.attackSprite?.setVisible(false)?.setAlpha?.(1);
+      actor.ring?.setVisible(false)?.setAlpha?.(0);
+      this.tweens.add({
+        targets: sprite,
+        y: home.y - Math.min(22, this.scale.height * 0.038),
+        scaleX: home.scaleX * 1.13,
+        scaleY: home.scaleY * 1.13,
+        duration: AURORA_PULSE_TIMING.lift,
+        ease: 'Sine.easeOut'
+      });
     }
+    this.tweens.add({ targets: [stage.veilA, stage.veilB, stage.veilC], alpha: 0.34, duration: AURORA_PULSE_TIMING.lift, ease: 'Sine.easeOut' });
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.10, duration: 280, ease: 'Sine.easeOut' });
     if (useAuroraFrames) {
       await this._wait(AURORA_PULSE_TIMING.lift / 2);
@@ -181,42 +253,101 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       await this._wait(AURORA_PULSE_TIMING.lift);
     }
 
-    // 03-05: Aurora growth and celestial expansion.
+    // MOCK 02/03: cinematic ownership + Aurora growth beyond body scale.
+    this.tweens.add({ targets: stage.title, alpha: 1, y: this.scale.height * 0.095, duration: 240, ease: 'Sine.easeOut' });
     if (!ownsBloom) this.audio.attackGather(hero.id);
     if (useAuroraFrames) this._setAuroraPulseFrame(3);
-    else if (fallbackActor?.sprite) {
-      this.tweens.add({ targets: fallbackActor.sprite, y: fallbackY - Math.min(38, this.scale.height * 0.065), duration: AURORA_PULSE_TIMING.bloomA + AURORA_PULSE_TIMING.bloomB, ease: 'Sine.easeInOut' });
+    else if (sprite && home) {
+      this.tweens.add({
+        targets: sprite,
+        y: home.y - Math.min(38, this.scale.height * 0.065),
+        scaleX: home.scaleX * 1.25,
+        scaleY: home.scaleY * 1.25,
+        duration: AURORA_PULSE_TIMING.bloomA,
+        ease: 'Sine.easeOut'
+      });
     }
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 0.96, duration: 420, ease: 'Sine.easeInOut' });
+    this.tweens.add({
+      targets: [stage.auroraCore, stage.auroraRingA, stage.auroraRingB],
+      alpha: 1,
+      scaleX: 2.0,
+      scaleY: 2.0,
+      duration: AURORA_PULSE_TIMING.bloomA,
+      ease: 'Cubic.easeOut'
+    });
+    this.tweens.add({ targets: stage.veilA, angle: 14, scaleX: 1.08, scaleY: 1.08, alpha: 0.58, duration: AURORA_PULSE_TIMING.bloomA });
+    this.tweens.add({ targets: stage.veilB, angle: 58, scaleX: 1.10, scaleY: 1.10, alpha: 0.58, duration: AURORA_PULSE_TIMING.bloomA });
+    this.tweens.add({ targets: stage.veilC, angle: -12, scaleX: 1.08, scaleY: 1.08, alpha: 0.48, duration: AURORA_PULSE_TIMING.bloomA });
+
     if (useAuroraFrames) {
       await this._wait(AURORA_PULSE_TIMING.bloomA / 2);
       this._setAuroraPulseFrame(4);
       await this._wait(AURORA_PULSE_TIMING.bloomA / 2);
       this._setAuroraPulseFrame(5);
-      await this._wait(AURORA_PULSE_TIMING.bloomB);
     } else {
       await this._wait(AURORA_PULSE_TIMING.bloomA);
-      await this._wait(AURORA_PULSE_TIMING.bloomB);
     }
 
-    // 06: maximum charge.
+    this.tweens.add({
+      targets: [stage.auroraCore, stage.auroraRingA, stage.auroraRingB],
+      scaleX: 4.3,
+      scaleY: 4.3,
+      duration: AURORA_PULSE_TIMING.bloomB,
+      ease: 'Cubic.easeOut'
+    });
+    this.tweens.add({ targets: [stage.veilA, stage.veilB], alpha: 0.75, scaleX: 1.15, scaleY: 1.15, duration: AURORA_PULSE_TIMING.bloomB });
+    if (!useAuroraFrames && sprite && home) {
+      this.tweens.add({ targets: sprite, scaleX: home.scaleX * 1.08, scaleY: home.scaleY * 1.08, duration: AURORA_PULSE_TIMING.bloomB, ease: 'Sine.easeInOut' });
+    }
+    await this._wait(AURORA_PULSE_TIMING.bloomB);
+
+    // MOCK max charge: hold the huge Aurora long enough for Celestial Bloom's
+    // strongest swell to read before the hand-smash/compression.
     if (useAuroraFrames) this._setAuroraPulseFrame(6);
+    this.tweens.add({ targets: stage.auroraRingA, angle: stage.auroraRingA.angle + 24, duration: AURORA_PULSE_TIMING.maxCharge, ease: 'Linear' });
+    this.tweens.add({ targets: stage.auroraRingB, angle: stage.auroraRingB.angle - 28, duration: AURORA_PULSE_TIMING.maxCharge, ease: 'Linear' });
     await this._wait(AURORA_PULSE_TIMING.maxCharge);
 
-    // 07: compression / hand-smash, then the approved frozen silence pocket.
+    // MOCK 04/05: hard inward collapse, then the approved frozen silence.
     if (useAuroraFrames) this._setAuroraPulseFrame(7);
-    else if (fallbackActor?.sprite) {
-      this.tweens.add({ targets: fallbackActor.sprite, y: fallbackY - Math.min(14, this.scale.height * 0.025), duration: AURORA_PULSE_TIMING.compression, ease: 'Quad.easeIn' });
+    else if (sprite && home) {
+      this.tweens.add({
+        targets: sprite,
+        y: home.y - Math.min(14, this.scale.height * 0.025),
+        scaleX: home.scaleX * 1.35,
+        scaleY: home.scaleY * 1.35,
+        duration: AURORA_PULSE_TIMING.compression,
+        ease: 'Quad.easeIn'
+      });
     }
+    this.tweens.add({
+      targets: [stage.auroraCore, stage.auroraRingA, stage.auroraRingB],
+      scaleX: 0.16,
+      scaleY: 0.16,
+      duration: AURORA_PULSE_TIMING.compression,
+      ease: 'Cubic.easeIn'
+    });
+    this.tweens.add({ targets: [stage.veilA, stage.veilB, stage.veilC], alpha: 0.16, duration: AURORA_PULSE_TIMING.compression });
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.13, duration: 220, ease: 'Sine.easeIn' });
     await this._wait(AURORA_PULSE_TIMING.compression);
+
     if (ownsBloom) this.audio.auroraBloomSilence?.();
+    stage.flash.setAlpha(0.90);
+    this.tweens.add({ targets: stage.flash, alpha: 0, duration: Math.max(80, AURORA_PULSE_TIMING.silence), ease: 'Quad.easeOut' });
     await this._wait(AURORA_PULSE_TIMING.silence);
 
-    // 08: outward Pulse.
+    // MOCK 06: massive outward Pulse. Runtime damage still lands only after
+    // this release beat, preserving Hybrid battle-state authority.
     if (useAuroraFrames) this._setAuroraPulseFrame(8);
     if (ownsBloom) this.audio.auroraBloomResume?.();
     else this.audio.attackRelease(hero.id);
+    stage.pulse.setAlpha(1).setScale(0.10);
+    stage.pulseEcho.setAlpha(0.86).setScale(0.10);
+    this.tweens.add({ targets: [stage.pulse, stage.pulseEcho], scaleX: 12, scaleY: 12, alpha: 0, duration: AURORA_PULSE_TIMING.release + 380, ease: 'Cubic.easeOut' });
+    stage.flash.setAlpha(0.62);
+    this.tweens.add({ targets: stage.flash, alpha: 0, duration: AURORA_PULSE_TIMING.release + 160, ease: 'Sine.easeOut' });
+    this.tweens.add({ targets: [stage.auroraCore, stage.auroraRingA, stage.auroraRingB], alpha: 0, duration: 110 });
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 0.91, duration: 130, ease: 'Quad.easeOut' });
     await this._wait(AURORA_PULSE_TIMING.release);
 
@@ -225,6 +356,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
       this._updateTargetCard();
       this.enemyView.hit();
+      this.cameras.main.shake(110, 0.0045);
       this._floatText(`-${dmg}`, '#FFE8A0');
       this._setBanner(`${hero.name} uses ${hero.resonart.name} for ${dmg} damage!`);
       this.audio.attackImpact(hero.id);
@@ -240,9 +372,19 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
     await this._wait(AURORA_PULSE_TIMING.aftermath);
 
-    // Recompose and restore battle framing cleanly while the Bloom tail fades.
-    if (!useAuroraFrames && fallbackActor?.sprite) {
-      this.tweens.add({ targets: fallbackActor.sprite, y: fallbackY, duration: AURORA_PULSE_TIMING.recover, ease: 'Sine.easeInOut' });
+    // MOCK 07: reconnect to the live Hybrid battlefield and restore all
+    // actor/camera/UI state without borrowing the Aurorb Slice pose lane.
+    this.tweens.add({ targets: stage.title, alpha: 0, y: this.scale.height * 0.08, duration: 220 });
+    this.tweens.add({ targets: [stage.veilA, stage.veilB, stage.veilC], alpha: 0, duration: AURORA_PULSE_TIMING.recover, ease: 'Sine.easeInOut' });
+    if (!useAuroraFrames && sprite && home) {
+      this.tweens.add({
+        targets: sprite,
+        y: home.y,
+        scaleX: home.scaleX,
+        scaleY: home.scaleY,
+        duration: AURORA_PULSE_TIMING.recover,
+        ease: 'Sine.easeInOut'
+      });
     }
     this.tweens.add({
       targets: cam,
@@ -253,12 +395,15 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       ease: 'Sine.easeInOut'
     });
     await this._wait(AURORA_PULSE_TIMING.recover);
+
     if (useAuroraFrames) this._restoreAuryiAfterAurora();
-    else if (fallbackActor) {
-      this.formation._restoreAuryiPrimary?.(fallbackActor);
+    else if (actor) {
+      this.formation._restoreAuryiPrimary?.(actor);
       this.formation.layout?.();
       this.formation._forceActiveRing?.(this.activeHeroId);
     }
+    this.formation.setPovFocus?.(hero.id, false);
+    this._destroyAuroraMockStage(stage);
     if (ownsBloom) this.audio.auroraBloomStop?.(420);
     this.audio.endCinematicAttack?.();
 
