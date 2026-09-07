@@ -64,6 +64,10 @@ A dormant exact numbered-frame lane now exists in `Live28K2PartyBattleScene.js`:
 - once the real set exists, the frame lane switches Auryi's existing formation sprite through 01–08, fits by visible-body bounds, hides the active ring during the cinematic, then restores the approved Auryi primary and battle layout
 - frame choreography is already aligned to the current audio/camera rhythm: 01→02 lift, 03→04→05 growth, 06 charge, 07 compression + frozen silence, 08 Pulse
 
+## Future Auryi crown authority
+
+This does **not** change crownless Aurora Pulse. When Auryi's crown is brought back in a future non-Aurora presentation pass, use the **Main Screen / title-screen crown on Auryi's head** as the visual authority. The returned crown should read closer to that crown's silhouette, scale, placement, and overall design language rather than the older hovering/orbiting crown treatment. Keep it head-worn unless the user later revises this direction.
+
 ## Approved frame/source history
 
 - The Aurora Pulse frame material was already supplied previously.
