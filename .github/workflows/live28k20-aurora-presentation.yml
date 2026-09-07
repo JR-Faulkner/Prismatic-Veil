@@ -26,6 +26,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
+          # K19's synchronizer stores the device-gate paragraph with literal \\n
+          # sequences in Python source. Normalize only the old-phrase matcher so
+          # K20 does not depend on that formatting detail. The corrected patcher
+          # is committed with the production change below.
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/prizim/fix_live28k20_aurora_presentation.py')
+          text = p.read_text(encoding='utf-8')
+          old = '    "- K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.\\n",'
+          new = '    "- K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.",'
+          if old not in text:
+              raise SystemExit('K20 guard fix refused: resume matcher anchor missing')
+          p.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
           python -m py_compile tools/prizim/fix_live28k20_aurora_presentation.py
           python tools/prizim/fix_live28k20_aurora_presentation.py
           python tools/prizim/sync_live_authority.py
