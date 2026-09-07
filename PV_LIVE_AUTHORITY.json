@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "updated": "2026-09-06",
-  "witness": "main-20260906-live28k17",
+  "witness": "main-20260906-live28k18",
   "production_route": [
     "index.html",
     "story-scroll.html",
@@ -79,9 +79,9 @@
     "live28k11_triumph_of_light_played": true,
     "live28k11_visual_cinematic_missing": true,
     "live28k12_pending_iphone_validation": true,
-    "pending_witness": "main-20260906-live28k17",
+    "pending_witness": "main-20260906-live28k18",
     "pending_iphone_validation": true,
-    "promotion_reason": "Promote the K17 resilience correction after LIVE28K16 failed the iPhone gate with intermittent LIVE BOOT ERROR and missing Celestial Bloom choir. Preserve the approved Beauty V1 cinematic, K16 smooth Beauty-to-live Hybrid battlefield crossfade, visible live Wraith hit/recoil, compression silence, crownless Aurora Pulse, separate Aurorb Slice, exact audio/video masters, and looping Triumph. Add bounded exponential retry for Hybrid live-build/template boot fetches and verify at Beauty time 0.84s that Celestial Bloom is actually playing; if Safari dropped the scheduled start, immediately restart the exact cached master. Record K16 as failed for boot/audio and leave handoff visual acceptance pending until K17 device validation.",
+    "promotion_reason": "Promote the K18 iPhone media-decode correction after LIVE28K17 phone recording showed LIVE BATTLE BOOT ERROR \u00b7 Decoding failed after audio enable, preventing a valid Aurora Pulse test. Preserve the approved Beauty V1 cinematic, K16 smooth Beauty-to-live Hybrid battlefield crossfade and visible live Wraith impact, K17 Hybrid fetch retry, compression silence, crownless Aurora Pulse, separate Aurorb Slice, exact audio/video masters, and looping Triumph. Keep the exact Celestial Bloom and Triumph M4A bytes unchanged but remove them from Phaser/WebAudio preload; play them through native HTMLMediaElement, prime them on the explicit Hybrid audio-enable tap, start Bloom with a silent native preroll inside the Resonart gesture, retain the 0.84s actual-playback watchdog, and treat a late post-scene Decoding failed rejection as non-fatal rather than replacing gameplay with a boot overlay.",
     "aurora_beauty_v1_exact_master_installed": true,
     "aurora_beauty_v1_hybrid_runtime_pending_iphone_validation": true,
     "live28k14_beauty_video_played": true,
