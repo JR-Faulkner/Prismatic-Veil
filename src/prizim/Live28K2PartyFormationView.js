@@ -11,6 +11,7 @@ const PRISMEL_K2_ACTIVE_KEY = 'prismel_live28k2_staff_ready';
 const AURYI_K2_PRIMARY_KEY = 'auryi_live28k2_primary';
 const AURYI_BODY_H_FRAC = 0.47;
 const PRISMEL_BODY_RATIO = 1 / 1.29;
+const KINEZA_LETHAL_HOME_SETTLE_MS = 240;
 
 export default class Live28K2PartyFormationView extends Live28PartyFormationView {
   constructor(scene) {
@@ -106,6 +107,31 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
     this.layout();
     this._forceActiveRing(this.scene?.activeHeroId);
     return restored;
+  }
+
+  async playAttackSheet(heroId, onFrame) {
+    if (heroId !== 'kineza') return super.playAttackSheet(heroId, onFrame);
+
+    const actor = this.actors.get('kineza');
+    const result = await super.playAttackSheet(heroId, onFrame);
+
+    // K22: on a lethal Blitzer, do not let turn/victory logic outrun the
+    // visual recovery. The Duo-Hybrid sequence must fully hand control back,
+    // then Kineza is restored to his exact HC formation home and given a
+    // short readable settle beat before PartyBattleScene can schedule Victory.
+    if (this.scene.enemy?.hp > 0 || !actor?.sprite) return result;
+
+    this.scene.tweens.killTweensOf(actor.sprite);
+    if (actor.ghost) this.scene.tweens.killTweensOf(actor.ghost);
+    actor._snapshot = null;
+    actor._poseScale = null;
+    if (actor.attackSprite) actor.attackSprite.setVisible(false).setAlpha(1);
+    if (actor.ghost) actor.ghost.setVisible(true).setAlpha(0);
+    actor.sprite.setVisible(true).setAlpha(1).setAngle(0);
+    this.layout();
+    this._forceActiveRing(this.scene?.activeHeroId);
+    await new Promise(resolve => this.scene.time.delayedCall(KINEZA_LETHAL_HOME_SETTLE_MS, resolve));
+    return result;
   }
 
   _fitActorToBodyHeight(actor, key, targetBodyH) {

@@ -42,6 +42,7 @@ build = json.loads(read('live-build.json'))
 hybrid_main = read('hybrid-main.html')
 hybrid_template = read('hybrid-battle-live.html')
 k_scene = read('src/prizim/Live28K2PartyBattleScene.js')
+k_formation = read('src/prizim/Live28K2PartyFormationView.js')
 audio_controller = read('src/PartyBattleAudioController.js')
 base_scene = read('src/PartyBattleScene.js')
 notepad = read('PRIZIM_LIVE_NOTEPAD.md')
@@ -383,6 +384,49 @@ if auth.get('hard_gates', {}).get('k21_camera_commit_must_live_inside_aurora_act
     errors.append('K21 camera-commit scope hard gate missing')
 if auth.get('device_evidence', {}).get('live28k20_unexpected_live_battle_error') is not True:
     errors.append('K21 machine authority lost K20 iPhone runtime failure evidence')
+
+# 8i. K22 lethal-Kineza victory recovery gate. Victory must not outrun the
+# Hybrid Blitzer return. The formation promise stays unresolved until Kineza is
+# restored to his exact home state and a short settle beat has completed.
+for token in [
+    'const KINEZA_LETHAL_HOME_SETTLE_MS = 240;',
+    "async playAttackSheet(heroId, onFrame) {",
+    "if (heroId !== 'kineza') return super.playAttackSheet(heroId, onFrame);",
+    "const result = await super.playAttackSheet(heroId, onFrame);",
+    "if (this.scene.enemy?.hp > 0 || !actor?.sprite) return result;",
+    'actor.sprite.setVisible(true).setAlpha(1).setAngle(0);',
+    'this.layout();',
+    'this._forceActiveRing(this.scene?.activeHeroId);',
+    'await new Promise(resolve => this.scene.time.delayedCall(KINEZA_LETHAL_HOME_SETTLE_MS, resolve));',
+]:
+    if token not in k_formation:
+        errors.append(f'K22 Kineza lethal-home-settle token missing: {token}')
+
+k22_method = re.search(r"  async playAttackSheet\(heroId, onFrame\) \{(.*?)\n  \}\n\n  _fitActorToBodyHeight", k_formation, re.S)
+if not k22_method:
+    errors.append('K22 Kineza playAttackSheet override missing/unreadable')
+else:
+    body = k22_method.group(1)
+    ordered = [
+        "const result = await super.playAttackSheet(heroId, onFrame);",
+        "if (this.scene.enemy?.hp > 0 || !actor?.sprite) return result;",
+        'actor.sprite.setVisible(true).setAlpha(1).setAngle(0);',
+        'this.layout();',
+        'await new Promise(resolve => this.scene.time.delayedCall(KINEZA_LETHAL_HOME_SETTLE_MS, resolve));',
+    ]
+    positions = [body.find(token) for token in ordered]
+    final_return = body.rfind('return result;')
+    if any(pos < 0 for pos in positions) or positions != sorted(positions) or final_return <= positions[-1]:
+        errors.append('K22 Kineza recovery ordering drifted: sequence -> lethal check -> home restore -> settle -> final resolve is required')
+
+if auth.get('hard_gates', {}).get('kineza_lethal_attack_must_settle_at_home_before_victory') is not True:
+    errors.append('K22 Kineza lethal-victory home-settle hard gate missing')
+if auth.get('hard_gates', {}).get('k22_must_preserve_k21_runtime_pass') is not True:
+    errors.append('K22 K21 runtime-pass preservation hard gate missing')
+if auth.get('kineza', {}).get('lethal_victory_home_settle_ms') != 240:
+    errors.append('K22 Kineza lethal home settle authority must be exactly 240ms')
+if auth.get('device_evidence', {}).get('live28k21_runtime_passed') is not True:
+    errors.append('K22 machine authority lost K21 iPhone runtime PASS evidence')
 
 # 9. Future crown authority must preserve the corrected splash-screen hover semantics.
 crown = auth['auryi'].get('future_crown_authority', '').lower()

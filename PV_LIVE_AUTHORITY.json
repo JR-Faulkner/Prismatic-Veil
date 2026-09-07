@@ -42,7 +42,9 @@
     "k20_must_preserve_k18_native_m4a_lane": true,
     "k20_must_preserve_beauty_exact_master": true,
     "aurora_dispose_cleanup_must_not_contain_cinematic_state": true,
-    "k21_camera_commit_must_live_inside_aurora_action": true
+    "k21_camera_commit_must_live_inside_aurora_action": true,
+    "kineza_lethal_attack_must_settle_at_home_before_victory": true,
+    "k22_must_preserve_k21_runtime_pass": true
   },
   "auryi": {
     "basic_attack": "Aurorb Slice",
@@ -106,9 +108,9 @@
     "live28k11_triumph_of_light_played": true,
     "live28k11_visual_cinematic_missing": true,
     "live28k12_pending_iphone_validation": true,
-    "pending_witness": "main-20260907-live28k21",
+    "pending_witness": "main-20260907-live28k22",
     "pending_iphone_validation": true,
-    "promotion_reason": "Promote LIVE28K21 runtime hotfix after K20 failed the iPhone runtime gate with Unexpected live battle error. Preserve all K20 Hybrid presentation upgrades and K18 native M4A reliability. Move the live-camera commitment block out of _disposeAuroraBeautyVideo() and into async _playAuryiAuroraPulseBeauty(), where hero/cam/cameraState are valid and await is legal. Restore _disposeAuroraBeautyVideo() to cleanup-only behavior. Preserve exact Beauty V1, Celestial Bloom native playback, 0.84s watchdog, 5.18s damage beat, 6.30s re-entry wave/Wraith reaction, 6.65s demo-tail cutoff, crownless Aurora, and no title-card runtime. Add permanent cleanup-scope and action-scope guards to canonical preflight, and keep phone evidence synchronized to the K20 failure with K21 pending iPhone validation.",
+    "promotion_reason": "Promote LIVE28K22 after K21 passed the iPhone runtime gate. Fix only Kineza lethal-victory timing by awaiting the full Duo-Hybrid attack, restoring his exact HC home formation state, and holding a 240ms settle beat before the existing end-turn timer can schedule Victory. Preserve K21 runtime stability, K20 Aurora presentation, K18 native M4A playback, Beauty V1 exact master, and all other combat timing.",
     "aurora_beauty_v1_exact_master_installed": true,
     "aurora_beauty_v1_hybrid_runtime_pending_iphone_validation": true,
     "live28k14_beauty_video_played": true,
@@ -126,9 +128,9 @@
     "live28k16_celestial_bloom_inaudible": true,
     "live28k16_result": "FAIL phone gate: intermittent LIVE BOOT ERROR observed and Celestial Bloom choir did not play.",
     "live28k16_handoff_visual_result": "Not yet accepted/rejected; boot/audio regression must be removed first.",
-    "latest_device_witness": "main-20260907-live28k20",
-    "latest_device_result": "FAIL runtime gate: iPhone reported Unexpected live battle error. Root cause isolated to misplaced K20 camera-commit code inside _disposeAuroraBeautyVideo().",
-    "pending_gate_summary": "LIVE28K21: battle must boot cleanly on iPhone with no Unexpected live battle error; then Aurora Pulse should retain K20 camera/framing, exact Beauty V1, native Celestial Bloom, re-entry wave, Wraith reaction, and residual afterglow.",
+    "latest_device_witness": "main-20260907-live28k21",
+    "latest_device_result": "PASS runtime gate: iPhone battle ran correctly after the K21 cleanup-scope hotfix. New presentation issue observed: a lethal Kineza attack can show Victory before his return-to-formation reads as complete.",
+    "pending_gate_summary": "LIVE28K22: on a lethal Kineza Basic Attack, Blitzer must finish and Kineza must visibly restore/settle at his exact formation home before Victory appears; K21 boot/runtime stability, Aurora Pulse presentation/audio, and all stable character lanes must remain unchanged.",
     "live28k17_pending_iphone_validation": true,
     "live28k17_boot_decode_failed": true,
     "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR \u00b7 Decoding failed",
@@ -146,7 +148,14 @@
     "live28k20_pending_iphone_validation": false,
     "live28k20_unexpected_live_battle_error": true,
     "live28k20_result": "FAIL runtime gate: iPhone reported Unexpected live battle error. Root cause isolated to misplaced K20 camera-commit code inside _disposeAuroraBeautyVideo().",
-    "live28k21_pending_iphone_validation": true
+    "live28k21_pending_iphone_validation": false,
+    "live28k21_runtime_passed": true,
+    "live28k21_result": "PASS runtime gate: iPhone battle ran correctly after the K21 cleanup-scope hotfix. New presentation issue observed: a lethal Kineza attack can show Victory before his return-to-formation reads as complete.",
+    "live28k22_pending_iphone_validation": true
   },
-  "hybrid_boot_policy": "hybrid-main must retry live-build.json and hybrid-battle-live.html no-store fetches with bounded exponential backoff before surfacing LIVE BOOT ERROR."
+  "hybrid_boot_policy": "hybrid-main must retry live-build.json and hybrid-battle-live.html no-store fetches with bounded exponential backoff before surfacing LIVE BOOT ERROR.",
+  "kineza": {
+    "lethal_victory_home_settle_ms": 240,
+    "victory_timing_policy": "On a lethal Kineza Basic Attack, await the complete Duo-Hybrid sequence, restore the exact HC idle at formation home, hold a 240ms readable settle beat, and only then allow PartyBattleScene to schedule the normal end-turn/victory transition."
+  }
 }

@@ -133,8 +133,8 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Triumph of Light loops while the victory/results screen remains open.
 - Aurora Pulse itself remains **crownless**.
 - LIVE28K18 core presentation is recorded as passed: boot clean = True; Bloom audible = True; battlefield/enemy handoff accepted = True.
-- Latest phone evidence (main-20260907-live28k20): FAIL runtime gate: iPhone reported Unexpected live battle error. Root cause isolated to misplaced K20 camera-commit code inside _disposeAuroraBeautyVideo().
-- Current pending gate: LIVE28K21: battle must boot cleanly on iPhone with no Unexpected live battle error; then Aurora Pulse should retain K20 camera/framing, exact Beauty V1, native Celestial Bloom, re-entry wave, Wraith reaction, and residual afterglow.
+- Latest phone evidence (main-20260907-live28k21): PASS runtime gate: iPhone battle ran correctly after the K21 cleanup-scope hotfix. New presentation issue observed: a lethal Kineza attack can show Victory before his return-to-formation reads as complete.
+- Current pending gate: LIVE28K22: on a lethal Kineza Basic Attack, Blitzer must finish and Kineza must visibly restore/settle at his exact formation home before Victory appears; K21 boot/runtime stability, Aurora Pulse presentation/audio, and all stable character lanes must remain unchanged.
 - Future non-Aurora crown authority: match the Main Splash Screen crown as a **hovered/offset element above Auryi**, not head-worn.
 
 ## Kineza
@@ -142,6 +142,7 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Locked standby authority remains `assets/party_formation/KINEZA_MAIN_BATTLE_IDLE_HC.png`.
 - Kineza remains shortest at the locked body ratio.
 - Generic Kineza state sheets must not overwrite the HC idle.
+- K22 lethal-victory gate: Blitzer must finish, Kineza must restore to exact HC formation home, and a 240ms visible settle beat must complete before Victory can be scheduled.
 
 ## Platform Constraints / Do-Not-Repeat Rules
 

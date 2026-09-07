@@ -179,9 +179,15 @@ Do not add redundant base-file query-string surgery unless this routing actually
 - K19 phone review: full-screen title presentation was rejected because it interrupted cinematic continuity.
 - K20 presentation: title removed; Hybrid camera/framing and Pulse-driven battlefield re-entry are the active polish lane.
 
-- Latest phone evidence (main-20260907-live28k20): FAIL runtime gate: iPhone reported Unexpected live battle error. Root cause isolated to misplaced K20 camera-commit code inside _disposeAuroraBeautyVideo().
-- Current pending gate: LIVE28K21: battle must boot cleanly on iPhone with no Unexpected live battle error; then Aurora Pulse should retain K20 camera/framing, exact Beauty V1, native Celestial Bloom, re-entry wave, Wraith reaction, and residual afterglow.
+- Latest phone evidence (main-20260907-live28k21): PASS runtime gate: iPhone battle ran correctly after the K21 cleanup-scope hotfix. New presentation issue observed: a lethal Kineza attack can show Victory before his return-to-formation reads as complete.
+- Current pending gate: LIVE28K22: on a lethal Kineza Basic Attack, Blitzer must finish and Kineza must visibly restore/settle at his exact formation home before Victory appears; K21 boot/runtime stability, Aurora Pulse presentation/audio, and all stable character lanes must remain unchanged.
 - Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.
+
+## Kineza victory timing gate
+
+- K21 iPhone runtime gate passed: battle ran correctly after the cleanup-scope repair.
+- K22 pending: a lethal Kineza Basic Attack must complete the Duo-Hybrid sequence, restore the exact HC idle at formation home, visibly settle for 240ms, and only then permit Victory.
+- This is a timing/presentation fix only. Do not alter Kineza identity, Blitzer frames, damage markers, Aurora Pulse, Prismel, or Auryi stable lanes.
 
 ## Hard constraints
 
