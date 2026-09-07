@@ -1,0 +1,84 @@
+name: LIVE28K21 Aurora Runtime Hotfix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/ingest_live28k21/TRIGGER.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live28k21-runtime-hotfix
+  cancel-in-progress: false
+
+jobs:
+  repair-and-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply K21 runtime boot repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile tools/prizim/fix_live28k21_runtime_boot.py
+          python tools/prizim/fix_live28k21_runtime_boot.py
+          python tools/prizim/sync_live_authority.py
+          python tools/prizim/preflight_live28k.py
+          node --check src/prizim/Live28K2PartyBattleScene.js
+          node --check src/PartyBattleAudioController.js
+
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s = Path('src/prizim/Live28K2PartyBattleScene.js').read_text(encoding='utf-8')
+          m = re.search(r"  _disposeAuroraBeautyVideo\(\) \{(.*?)\n  \}\n\n  _waitForAuroraBeautyTime", s, re.S)
+          if not m:
+              raise SystemExit('K21 workflow refused: dispose method not found')
+          body = m.group(1)
+          for bad in ['await ', 'cameraState', 'hero.id', 'killTweensOf(cam)', 'targets: cam']:
+              if bad in body:
+                  raise SystemExit(f'K21 workflow refused: forbidden dispose token survived: {bad}')
+          a = re.search(r"  async _playAuryiAuroraPulseBeauty\(hero\) \{(.*?)\n  \}\n\n  async _resolveHeroAction", s, re.S)
+          if not a:
+              raise SystemExit('K21 workflow refused: Aurora Beauty action not found')
+          action = a.group(1)
+          for req in ['zoom: cameraState.zoom * 1.05', 'await this._wait(110);', 'this.formation.setPovFocus?.(hero.id, true);']:
+              if req not in action:
+                  raise SystemExit(f'K21 workflow refused: action camera token missing: {req}')
+          PY
+
+          grep -F 'live28k20_unexpected_live_battle_error' PV_LIVE_AUTHORITY.json
+          grep -F 'main-20260907-live28k21' PV_LIVE_AUTHORITY.json
+
+      - name: Commit guarded K21 repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/ingest_live28k21/TRIGGER.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            src/prizim/Live28K2PartyBattleScene.js \
+            PV_LIVE_AUTHORITY.json \
+            PRIZIM_LIVE_NOTEPAD.md \
+            PV_RESUME_ANCHOR.md \
+            tools/prizim/preflight_live28k.py \
+            tools/prizim/fix_live28k21_runtime_boot.py \
+            .github/ingest_live28k21/TRIGGER.txt
+          git commit -m 'LIVE28K21: repair Aurora cleanup scope runtime crash'
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'K21 push failed after 3 attempts' >&2
+          exit 1
