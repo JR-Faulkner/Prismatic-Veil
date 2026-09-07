@@ -25,7 +25,6 @@ This is the fast operational failure-prevention ledger for PriZim production.
 - Run `python tools/prizim/preflight_live28k.py` before promotion. CI runs the same contract automatically.
 - `.github/workflows/prizim-hybrid-stack-guard.yml` rejects Hybrid-route regressions.
 
-
 ## Battle authorities
 
 - Prismel passive/off-turn: `assets/party_formation/PRISMEL_LIVE28K2_RIGHT_FACING.png`, native **1106×1422 PNG**.
