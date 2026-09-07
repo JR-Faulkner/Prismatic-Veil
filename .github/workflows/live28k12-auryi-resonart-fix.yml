@@ -1,0 +1,79 @@
+name: LIVE28K12 Auryi Resonart Fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/live28k12-auryi/NOW.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Patch Auryi Resonart and victory loop
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          # Visible Hybrid drawer: Resonart has its own identity authority.
+          p = Path('hybrid-battle-live.html')
+          s = p.read_text(encoding='utf-8')
+          old = "dr={title:(h.attack?.name||'RESONART').toUpperCase(),description:h.attack?.flavor||'A signature technique.'"
+          new = "dr={title:(h.resonart?.name||'RESONART').toUpperCase(),description:h.resonart?.flavor||'A signature technique.'"
+          if s.count(old) != 1:
+            raise SystemExit(f'hybrid authority target count={s.count(old)}')
+          p.write_text(s.replace(old, new), encoding='utf-8')
+
+          # Aurora Pulse fallback must not borrow the old Basic Attack pose set.
+          p = Path('src/prizim/Live28K2PartyBattleScene.js')
+          s = p.read_text(encoding='utf-8')
+          patches = [
+            ("    const useAuroraFrames = this._hasAuroraPulseFrames();\n    const usePoses = !useAuroraFrames && this.formation.hasActionPoses?.(hero.id);",
+             "    const useAuroraFrames = this._hasAuroraPulseFrames();\n    // Aurora Pulse must never fall back to Auryi's Basic Attack poses.\n    // Until the approved 01-08 PNGs return, keep her approved primary and\n    // use Aurora-specific lift/compression movement only.\n    const fallbackActor = !useAuroraFrames ? this.formation?.actors?.get?.('auryi') : null;\n    if (fallbackActor) this.formation._restoreAuryiPrimary?.(fallbackActor);\n    const fallbackY = fallbackActor?.sprite?.y ?? 0;"),
+            ("    if (useAuroraFrames) this._setAuroraPulseFrame(1);\n    else if (usePoses) this.formation.setActionPose(hero.id, 'step');",
+             "    if (useAuroraFrames) this._setAuroraPulseFrame(1);\n    else if (fallbackActor?.sprite) {\n      fallbackActor.ghost?.setVisible(false)?.setAlpha?.(0);\n      fallbackActor.attackSprite?.setVisible(false)?.setAlpha?.(1);\n      fallbackActor.ring?.setVisible(false)?.setAlpha?.(0);\n      this.tweens.add({ targets: fallbackActor.sprite, y: fallbackY - Math.min(28, this.scale.height * 0.05), duration: AURORA_PULSE_TIMING.lift, ease: 'Sine.easeOut' });\n    }"),
+            ("    if (useAuroraFrames) this._setAuroraPulseFrame(3);\n    else if (usePoses) this.formation.setActionPose(hero.id, 'gather');",
+             "    if (useAuroraFrames) this._setAuroraPulseFrame(3);\n    else if (fallbackActor?.sprite) {\n      this.tweens.add({ targets: fallbackActor.sprite, y: fallbackY - Math.min(38, this.scale.height * 0.065), duration: AURORA_PULSE_TIMING.bloomA + AURORA_PULSE_TIMING.bloomB, ease: 'Sine.easeInOut' });\n    }"),
+            ("    if (useAuroraFrames) this._setAuroraPulseFrame(7);\n    else if (usePoses) this.formation.setActionPose(hero.id, 'release');",
+             "    if (useAuroraFrames) this._setAuroraPulseFrame(7);\n    else if (fallbackActor?.sprite) {\n      this.tweens.add({ targets: fallbackActor.sprite, y: fallbackY - Math.min(14, this.scale.height * 0.025), duration: AURORA_PULSE_TIMING.compression, ease: 'Quad.easeIn' });\n    }"),
+            ("    // Recompose and restore battle framing cleanly while the Bloom tail fades.\n    if (!useAuroraFrames && usePoses) this.formation.setActionPose(hero.id, 'recover');",
+             "    // Recompose and restore battle framing cleanly while the Bloom tail fades.\n    if (!useAuroraFrames && fallbackActor?.sprite) {\n      this.tweens.add({ targets: fallbackActor.sprite, y: fallbackY, duration: AURORA_PULSE_TIMING.recover, ease: 'Sine.easeInOut' });\n    }"),
+            ("    if (useAuroraFrames) this._restoreAuryiAfterAurora();\n    else if (usePoses) this.formation.setActionPose(hero.id, 'idle');",
+             "    if (useAuroraFrames) this._restoreAuryiAfterAurora();\n    else if (fallbackActor) {\n      this.formation._restoreAuryiPrimary?.(fallbackActor);\n      this.formation.layout?.();\n      this.formation._forceActiveRing?.(this.activeHeroId);\n    }")
+          ]
+          for old, new in patches:
+            if s.count(old) != 1:
+              raise SystemExit(f'scene patch target count={s.count(old)}: {old[:70]}')
+            s = s.replace(old, new)
+          p.write_text(s, encoding='utf-8')
+
+          # Victory/results screen owns Triumph until the scene is left/retried.
+          p = Path('src/PartyBattleAudioController.js')
+          s = p.read_text(encoding='utf-8')
+          marker = "this._triumph = this.scene.sound.add(TRIUMPH_LIGHT_KEY, {\n      loop: false,\n      volume: this._effectiveVolume('music', 0.92)\n    });"
+          replacement = "this._triumph = this.scene.sound.add(TRIUMPH_LIGHT_KEY, {\n      loop: true,\n      volume: this._effectiveVolume('music', 0.92)\n    });"
+          if s.count(marker) != 1:
+            raise SystemExit(f'Triumph loop target count={s.count(marker)}')
+          p.write_text(s.replace(marker, replacement), encoding='utf-8')
+          PY
+
+      - name: Commit correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .github/live28k12-auryi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add hybrid-battle-live.html src/prizim/Live28K2PartyBattleScene.js src/PartyBattleAudioController.js .github/live28k12-auryi
+          git commit -m 'LIVE28K12: correct Auryi Resonart presentation and victory loop'
+          git push origin HEAD:main
