@@ -4,11 +4,12 @@ Last refreshed: 2026-09-06
 
 ## Current production witness
 
-- Promoted witness: `main-20260906-live28k11`
-- Witness promotion commit: `1e65e1b34251e72b4cba3c68c9c9e7c5030ccd88`
+- Promoted witness: `main-20260906-live28k12`
+- Witness promotion commit: `0c5a59b68d832aef44e58ac48cbabb9e3c885507`
 - Exact production audio install commit: `ac00a834471317edd98a60a7884a1896270be61f`
 - Production battle adapter: `src/prizim/Live28K2PartyBattleScene.js`
 - Dormant exact Aurora 01–08 runtime lane commit: `e60fd6b89c410edbd7c364acf496cf6c516f254a`
+- LIVE28K12 Auryi Resonart presentation + victory-loop correction commit: `bb272c54295ced703d3e1e88c3f4c8f05953cc39`
 - Aurora Pulse resolver commit: `82b7a25607cb0cd310b6ad1ee4472c4ca0ce5c58`
 - Celestial Bloom synchronization commit: `fa623d615aecfb18d6038ed1b2896f58a78b1685`
 - Aurora/Triumph audio-controller hooks commit: `bfa15a31f2bf84cd81d63ce5fbafc68acb17aa90`
@@ -52,14 +53,14 @@ Current live resolver timing:
 - aftermath 300ms
 - recover 320ms
 
-LIVE28K11 still uses the existing real Auryi action poses as a temporary presentation bridge.
+LIVE28K12 no longer borrows Auryi's old Basic Attack action poses for Aurora Pulse. Until the approved 01–08 PNGs return, the fallback keeps her approved primary visible and uses only Aurora-specific lift / camera / compression movement.
 
 A dormant exact numbered-frame lane now exists in `Live28K2PartyBattleScene.js`:
 
 - expected production paths: `assets/characters/auryi/animations/aurora_pulse/frames/Auryi_Aurora_Pulse_01.png` through `_08.png`
 - direct PNG only, no WebP
 - `AURORA_PULSE_FRAMES_READY = false` until the exact transparent production bytes are physically installed
-- while false, the scene does not request missing frame URLs and LIVE28K11 behavior remains unchanged
+- while false, the scene does not request missing frame URLs and LIVE28K12 uses the approved-primary Aurora fallback without old Basic Attack pose swaps
 - once the real set exists, the frame lane switches Auryi's existing formation sprite through 01–08, fits by visible-body bounds, hides the active ring during the cinematic, then restores the approved Auryi primary and battle layout
 - frame choreography is already aligned to the current audio/camera rhythm: 01→02 lift, 03→04→05 growth, 06 charge, 07 compression + frozen silence, 08 Pulse
 
@@ -134,14 +135,25 @@ Audio behavior:
 - Bloom pauses during the 170ms silence pocket after compression.
 - Bloom resumes into Pulse and fades beneath aftermath/recompose.
 - Physical Auryi impact + enemy hit cues remain at Pulse contact.
-- Victory calls Triumph of Light once; battle BGM fades/stops first to avoid overlap.
+- Victory calls Triumph of Light after battle BGM fades/stops; LIVE28K12 loops Triumph while the victory/results screen remains open.
 - The old short victory cue is fallback only when Triumph is absent.
 
 Dropbox bridge copies also exist at `/Celestial Bloom.m4a` and `/Triumph of Light.m4a`. They were used only to transport the exact originals into GitHub.
 
+## Real-device evidence through LIVE28K11
+
+User iPhone test confirmed:
+
+- **Celestial Bloom played during Aurora Pulse and sounded good.** Do not redesign or replace the Bloom audio lane.
+- **Triumph of Light played on victory.** LIVE28K12 changes it to loop while the results screen remains open.
+- Aurora Pulse was executing its dedicated Resonart/audio path, but the visible Hybrid drawer still said **Aurorb Slice** and the no-frame visual fallback reused old Auryi Basic Attack poses.
+- LIVE28K12 corrects those two presentation defects: Hybrid Resonart UI now reads `hero.resonart`, and the Aurora fallback no longer calls Auryi's old step/gather/release/recover pose sequence.
+
+Pages build + deployment for LIVE28K12 completed successfully. Real-device LIVE28K12 verification is the next gate.
+
 ## Safari / MAIN routing
 
-`hybrid-main.html` rewrites the fixed nested module URLs to the current `live-build.json` build ID through an import map. Therefore the LIVE28K11 witness cache-busts:
+`hybrid-main.html` rewrites the fixed nested module URLs to the current `live-build.json` build ID through an import map. Therefore the LIVE28K12 witness cache-busts:
 
 - K battle adapter
 - `PartyBattleConfig.js`
@@ -162,9 +174,9 @@ Do not add redundant base-file query-string surgery unless this routing actually
 
 ## Immediate next actions
 
-1. User checks the normal iPhone MAIN route and confirms witness `main-20260906-live28k11`.
-2. Trigger Auryi Resonart and verify: Aurora Pulse name, crownless presentation, Celestial Bloom start, compression silence, Pulse impact, camera restore, 22-damage range behavior, and clean return to idle.
-3. Win the encounter and verify battle BGM gives way cleanly to Triumph of Light with no old-sting overlap.
+1. User checks the normal iPhone MAIN route and confirms witness `main-20260906-live28k12`.
+2. Trigger Auryi Resonart and verify the visible drawer/banner says **Aurora Pulse**, Celestial Bloom remains correct, the old Aurorb Slice pose sequence no longer plays, the cinematic remains crownless, and camera/idle restore are clean.
+3. Win the encounter and verify **Triumph of Light loops** on the victory/results screen with no battle-music or old-sting overlap.
 4. If/when the exact approved transparent Aurora Pulse PNG bytes reappear from a new source, install them at the staged 01–08 production paths, verify RGBA + dimensions + anatomy/part-count + crownless integrity, flip `AURORA_PULSE_FRAMES_READY` true, and promote the next LIVE28K witness.
 5. Do **not** re-scan the already-cleared File Library / DuoHybrid / FX runtime packages unless new evidence indicates they changed.
 
