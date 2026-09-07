@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "updated": "2026-09-07",
-  "witness": "main-20260907-live28k20",
+  "witness": "main-20260907-live28k21",
   "production_route": [
     "index.html",
     "story-scroll.html",
@@ -108,7 +108,7 @@
     "live28k12_pending_iphone_validation": true,
     "pending_witness": "main-20260907-live28k21",
     "pending_iphone_validation": true,
-    "promotion_reason": "Hotfix K20 phone runtime failure by moving Aurora camera-commit code out of _disposeAuroraBeautyVideo() and into _playAuryiAuroraPulseBeauty(), where hero/cam/cameraState are valid and await is legal. Preserve all K20 presentation work and K18 native-media reliability. Add a permanent cleanup-scope guard.",
+    "promotion_reason": "Promote LIVE28K21 runtime hotfix after K20 failed the iPhone runtime gate with Unexpected live battle error. Preserve all K20 Hybrid presentation upgrades and K18 native M4A reliability. Move the live-camera commitment block out of _disposeAuroraBeautyVideo() and into async _playAuryiAuroraPulseBeauty(), where hero/cam/cameraState are valid and await is legal. Restore _disposeAuroraBeautyVideo() to cleanup-only behavior. Preserve exact Beauty V1, Celestial Bloom native playback, 0.84s watchdog, 5.18s damage beat, 6.30s re-entry wave/Wraith reaction, 6.65s demo-tail cutoff, crownless Aurora, and no title-card runtime. Add permanent cleanup-scope and action-scope guards to canonical preflight, and keep phone evidence synchronized to the K20 failure with K21 pending iPhone validation.",
     "aurora_beauty_v1_exact_master_installed": true,
     "aurora_beauty_v1_hybrid_runtime_pending_iphone_validation": true,
     "live28k14_beauty_video_played": true,
