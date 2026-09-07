@@ -1,0 +1,99 @@
+name: LIVE28K19 Aurora Pulse Exact Title Card
+
+on:
+  push:
+    paths:
+      - '.github/ingest_live28k19/TRIGGER.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live28k19-title-card
+  cancel-in-progress: false
+
+jobs:
+  install-and-wire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download and verify exact approved title-card PNG
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          src = json.loads(Path('.github/ingest_live28k19/SOURCE.json').read_text())
+          print(src['source_url'])
+          Path('/tmp/pv_k19_url.txt').write_text(src['source_url'])
+          PY
+          curl -fL --retry 3 --retry-delay 2 --connect-timeout 20 "$(cat /tmp/pv_k19_url.txt)" -o /tmp/Auryi_AuroraPulse_TitleCard_Approved.png
+          python - <<'PY'
+          import hashlib, json, struct
+          from pathlib import Path
+          src = json.loads(Path('.github/ingest_live28k19/SOURCE.json').read_text())
+          p = Path('/tmp/Auryi_AuroraPulse_TitleCard_Approved.png')
+          data = p.read_bytes()
+          if len(data) != src['bytes']:
+              raise SystemExit(f"size mismatch: {len(data)} != {src['bytes']}")
+          digest = hashlib.sha256(data).hexdigest()
+          if digest != src['sha256']:
+              raise SystemExit(f"SHA mismatch: {digest} != {src['sha256']}")
+          if data[:8] != b'\x89PNG\r\n\x1a\n' or data[12:16] != b'IHDR':
+              raise SystemExit('not a valid PNG/IHDR')
+          w, h = struct.unpack('>II', data[16:24])
+          if [w, h] != [src['width'], src['height']]:
+              raise SystemExit(f"dimension mismatch: {(w,h)} != {(src['width'],src['height'])}")
+          dest = Path(src['destination'])
+          dest.parent.mkdir(parents=True, exist_ok=True)
+          dest.write_bytes(data)
+          print(f"verified exact K19 title card: {w}x{h}, {len(data)} bytes, sha256={digest}")
+          PY
+
+      - name: Apply K19 runtime + authority + ledger guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile tools/prizim/fix_live28k19_title_card.py
+          python tools/prizim/fix_live28k19_title_card.py
+          python tools/prizim/sync_live_authority.py
+          python tools/prizim/preflight_live28k.py
+          node --check src/prizim/Live28K2PartyBattleScene.js
+          grep -F "AURORA_TITLE_CARD_TIMING = Object.freeze({ show: 0.08, fadeOut: 1.28, hide: 1.55 })" src/prizim/Live28K2PartyBattleScene.js
+          grep -F "Auryi_AuroraPulse_TitleCard_Approved.png" PV_LIVE_AUTHORITY.json
+          grep -F "Approved move-title card" PRIZIM_LIVE_NOTEPAD.md
+          grep -F "K19 title polish" PV_RESUME_ANCHOR.md
+
+      - name: Commit exact asset and guarded K19 wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/ingest_live28k19/TRIGGER.txt .github/ingest_live28k19/SOURCE.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_TitleCard_Approved.png \
+            src/prizim/Live28K2PartyBattleScene.js \
+            PV_LIVE_AUTHORITY.json \
+            PRIZIM_LIVE_NOTEPAD.md \
+            PV_RESUME_ANCHOR.md \
+            tools/prizim/preflight_live28k.py \
+            tools/prizim/sync_live_authority.py \
+            .github/ingest_live28k19/TRIGGER.txt \
+            .github/ingest_live28k19/SOURCE.json
+          git commit -m 'LIVE28K19: install exact Aurora Pulse title card and wire invocation reveal'
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'K19 push failed after 3 attempts' >&2
+          exit 1
