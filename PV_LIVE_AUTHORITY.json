@@ -25,7 +25,9 @@
     "aurorb_slice_must_remain_separate_basic_attack": true,
     "battle_critical_art_png_only": true,
     "webp_forbidden_for_battle_critical_art": true,
-    "real_iphone_evidence_is_final_runtime_gate": true
+    "real_iphone_evidence_is_final_runtime_gate": true,
+    "approved_asset_delivery_must_not_be_reclassified_as_missing": true,
+    "exact_frame_mode_requires_durable_verified_binaries": true
   },
   "auryi": {
     "basic_attack": "Aurorb Slice",
@@ -33,6 +35,11 @@
     "aurora_mock": "pz-a-aurora-pulse-lab.html",
     "audio": "assets/music/Celestial Bloom.m4a",
     "victory_music": "assets/music/Triumph of Light.m4a",
+    "aurora_frame_authority": "assets/characters/auryi/animations/aurora_pulse/FRAME_AUTHORITY.json",
+    "aurora_frames_user_supplied": true,
+    "aurora_frames_previously_separated": true,
+    "aurora_exact_frame_mode": false,
+    "aurora_current_binary_state": "not-restored-to-durable-repo",
     "future_crown_authority": "Main Splash Screen crown: hovered/offset above Auryi, not head-worn; preserve splash-screen silhouette, scale, and spacing. Aurora Pulse remains crownless."
   },
   "device_evidence": {
@@ -42,6 +49,6 @@
     "live28k12_pending_iphone_validation": true,
     "pending_witness": "main-20260906-live28k13",
     "pending_iphone_validation": true,
-    "promotion_reason": "Port the already-approved Aurora Pulse PZ-A mock choreography into the live Hybrid/K adapter while preserving the confirmed Celestial Bloom audio, crownless Resonart authority, Aurorb Slice separation, and looping Triumph victory music."
+    "promotion_reason": "Port the already-approved Aurora Pulse PZ-A mock choreography into the live Hybrid/K adapter while preserving the confirmed Celestial Bloom audio, crownless Resonart authority, Aurorb Slice separation, and looping Triumph victory music. The user already supplied and previously separated the exact 01-08 frame material; those binaries are not yet restored to durable production paths."
   }
 }
