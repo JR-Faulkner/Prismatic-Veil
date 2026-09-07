@@ -6,8 +6,9 @@ Last refreshed: 2026-09-06
 
 - Promoted witness: `main-20260906-live28k11`
 - Witness promotion commit: `1e65e1b34251e72b4cba3c68c9c9e7c5030ccd88`
-- Current production audio install commit: `ac00a834471317edd98a60a7884a1896270be61f`
+- Exact production audio install commit: `ac00a834471317edd98a60a7884a1896270be61f`
 - Production battle adapter: `src/prizim/Live28K2PartyBattleScene.js`
+- Dormant exact Aurora 01–08 runtime lane commit: `e60fd6b89c410edbd7c364acf496cf6c516f254a`
 - Aurora Pulse resolver commit: `82b7a25607cb0cd310b6ad1ee4472c4ca0ce5c58`
 - Celestial Bloom synchronization commit: `fa623d615aecfb18d6038ed1b2896f58a78b1685`
 - Aurora/Triumph audio-controller hooks commit: `bfa15a31f2bf84cd81d63ce5fbafc68acb17aa90`
@@ -51,7 +52,16 @@ Current live resolver timing:
 - aftermath 300ms
 - recover 320ms
 
-The current resolver still uses existing real Auryi action poses as a temporary presentation bridge until the already-approved numbered transparent PNG frame files are reinstalled. Do not redesign the cinematic around those fallback poses.
+LIVE28K11 still uses the existing real Auryi action poses as a temporary presentation bridge.
+
+A dormant exact numbered-frame lane now exists in `Live28K2PartyBattleScene.js`:
+
+- expected production paths: `assets/characters/auryi/animations/aurora_pulse/frames/Auryi_Aurora_Pulse_01.png` through `_08.png`
+- direct PNG only, no WebP
+- `AURORA_PULSE_FRAMES_READY = false` until the exact transparent production bytes are physically installed
+- while false, the scene does not request missing frame URLs and LIVE28K11 behavior remains unchanged
+- once the real set exists, the frame lane switches Auryi's existing formation sprite through 01–08, fits by visible-body bounds, hides the active ring during the cinematic, then restores the approved Auryi primary and battle layout
+- frame choreography is already aligned to the current audio/camera rhythm: 01→02 lift, 03→04→05 growth, 06 charge, 07 compression + frozen silence, 08 Pulse
 
 ## Approved frame/source history
 
@@ -61,9 +71,45 @@ The current resolver still uses existing real Auryi action poses as a temporary 
 - Current-chat composite/JPEG references are visual authority only and must **not** replace the already-approved transparent production PNG bytes.
 - Battle-critical art remains PNG only. **No WebP. No source-resolution downscaling.**
 
+### Recovery pass completed 2026-09-06
+
+File Library search for the exact Aurora package / numbered Aurora frames returned no usable file.
+
+Dropbox exact-name/title searches for `AURYI_AURORA_PULSE_PZ_04_08` and `Aurora Pulse` returned no result.
+
+Three older Auryi Dropbox archives remain:
+
+- `/Auryi_DuoHybrid_Complete_Handoff.zip`
+- `/Auryi_Auorb_Attack_PZ_Final_Package.zip`
+- `/AURYI_FX_RUNTIME_PNGS_ONLY.zip`
+
+A GitHub Actions archive inspector was added and used rather than guessing from ZIP names.
+
+`/Auryi_DuoHybrid_Complete_Handoff.zip` scan:
+
+- 72 files
+- contains the older **18-frame Auorb Attack** production chain, including raw / clean / 768×768 runtime frames
+- this is not the later 900×900 Aurora Pulse 01–08 sequence
+- do not repurpose it as Aurora Pulse art
+
+`/AURYI_FX_RUNTIME_PNGS_ONLY.zip` scan:
+
+- exactly five files:
+  - `01_crown_manifest_sheet.png`
+  - `02_auorb_charge_sheet.png`
+  - `03_auorb_projectile_sheet.png`
+  - `04_auorb_impact_sheet.png`
+  - `05_recompose_settle_sheet.png`
+- no Aurora / Pulse / Resonart frame assets
+- do not mix this crown/Auorb FX package into crownless Aurora Pulse
+
+The scan report is stored at `AURYI_HANDOFF_SCAN.md`. The inspector workflow is `.github/workflows/inspect-auryi-handoff.yml`.
+
+Conclusion: the exact old 900×900 Aurora Pulse production bytes have not been recovered from File Library, Dropbox, or current MAIN. Do not restart those same searches unless a new source appears.
+
 ## Audio authority — INSTALLED
 
-Production files now exist in MAIN:
+Production files exist in MAIN:
 
 - `assets/music/Celestial Bloom.m4a`
   - duration ~5.48s
@@ -116,10 +162,10 @@ Do not add redundant base-file query-string surgery unless this routing actually
 
 ## Immediate next actions
 
-1. Confirm the user sees witness `main-20260906-live28k11` on the normal iPhone MAIN route.
+1. User checks the normal iPhone MAIN route and confirms witness `main-20260906-live28k11`.
 2. Trigger Auryi Resonart and verify: Aurora Pulse name, crownless presentation, Celestial Bloom start, compression silence, Pulse impact, camera restore, 22-damage range behavior, and clean return to idle.
 3. Win the encounter and verify battle BGM gives way cleanly to Triumph of Light with no old-sting overlap.
-4. Reinstall the already-approved numbered Aurora Pulse transparent PNG frame files when their exact production bytes are recoverable; do not regenerate or replace them with composite crops.
-5. After real-device evidence, update this anchor with pass/fail findings and the next narrow correction only.
+4. If/when the exact approved transparent Aurora Pulse PNG bytes reappear from a new source, install them at the staged 01–08 production paths, verify RGBA + dimensions + anatomy/part-count + crownless integrity, flip `AURORA_PULSE_FRAMES_READY` true, and promote the next LIVE28K witness.
+5. Do **not** re-scan the already-cleared File Library / DuoHybrid / FX runtime packages unless new evidence indicates they changed.
 
 For a new chat: read this file first, then `PRIZIM_LIVE_NOTEPAD.md`. Resume from the witness/commit state above. Do not restart asset discovery unless a recorded authority/path actually fails.
