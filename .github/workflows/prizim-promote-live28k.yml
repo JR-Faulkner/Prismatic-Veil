@@ -1,0 +1,55 @@
+name: PriZim Atomic LIVE28K Promotion
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'PV_PROMOTION_REQUEST.json'
+      - 'tools/prizim/promote_live28k.py'
+      - '.github/workflows/prizim-promote-live28k.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Prepare, validate, and promote atomically
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          for attempt in 1 2 3; do
+            echo "PriZim promotion attempt ${attempt}/3"
+            git fetch origin main
+            git reset --hard origin/main
+
+            python tools/prizim/promote_live28k.py
+            python tools/prizim/sync_live_authority.py
+            python tools/prizim/preflight_live28k.py
+            node --check src/prizim/Live28K2PartyBattleScene.js
+            node --check src/prizim/Live28K7PartyFormationView.js
+
+            git add live-build.json PV_LIVE_AUTHORITY.json PRIZIM_LIVE_NOTEPAD.md PV_RESUME_ANCHOR.md
+            if git diff --cached --quiet; then
+              echo 'Requested witness is already promoted and synchronized.'
+              exit 0
+            fi
+
+            TARGET=$(python -c "import json; print(json.load(open('PV_PROMOTION_REQUEST.json'))['target_witness'])")
+            git commit -m "Promote ${TARGET} through PriZim atomic gate"
+            if git push origin HEAD:main; then
+              echo "Promoted ${TARGET} with synchronized authority and green preflight."
+              exit 0
+            fi
+
+            echo 'MAIN moved during promotion; retrying from latest origin/main.'
+          done
+
+          echo 'Atomic LIVE28K promotion failed after 3 attempts.' >&2
+          exit 1
