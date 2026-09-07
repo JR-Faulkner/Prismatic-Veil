@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'PV_LIVE_AUTHORITY.json'
+      - 'tools/prizim/sync_live_authority.py'
       - '.github/workflows/sync-prizim-live-authority.yml'
 
 permissions:
@@ -17,86 +18,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - name: Sync human-readable ledgers from machine authority
-        run: |
-          python - <<'PY'
-          import json
-          import pathlib
-          import re
-
-          root = pathlib.Path('.')
-          auth = json.loads((root/'PV_LIVE_AUTHORITY.json').read_text())
-          witness = auth['witness']
-          hybrid_gate = '''## HYBRID STACK HARD GATE
-
-- **ALL live battle/cinematic production work stays inside the Hybrid stack.**
-- Canonical live chain: `index.html` / `story-scroll.html` -> `hybrid-main.html` -> `hybrid-battle-live.html` -> import-map rewrite -> numeric LIVE28K K adapters.
-- Numeric LIVE28K battle authority: `src/prizim/Live28K2PartyBattleScene.js`.
-- Numeric LIVE28K formation authority: `src/prizim/Live28K7PartyFormationView.js`.
-- `src/PartyBattleScene.js` is a generic/base scene, **not** the production endpoint for new LIVE28K cinematic features.
-- `pz-a-aurora-pulse-lab.html` is the approved Aurora Pulse composition/timing mock. It is a reference authority, not a live entry page. Its choreography must be integrated through the Hybrid/K adapter stack, preserving Hybrid HUD/state publication, audio controller, camera ownership, targeting/damage, and return-to-battle semantics.
-- Before any live cinematic write, read `PV_LIVE_AUTHORITY.json`, `PV_RESUME_ANCHOR.md`, `PRIZIM_LIVE_NOTEPAD.md`, `live-build.json`, `hybrid-main.html`, and `hybrid-battle-live.html`. If those are not checked, **do not write production code yet**.
-- Run `python tools/prizim/preflight_live28k.py` before promotion. CI runs the same contract automatically.
-- `.github/workflows/prizim-hybrid-stack-guard.yml` rejects Hybrid-route regressions.
-
-'''
-
-          p = root/'PRIZIM_LIVE_NOTEPAD.md'
-          s = p.read_text()
-          s = re.sub(r'Last refreshed: .*', f"Last refreshed: {auth['updated']}", s, count=1)
-          s = re.sub(r'Current promoted build: `[^`]+`[^\n]*',
-                     f'Current promoted build: `{witness}` — **Hybrid production authority; iPhone evidence remains final runtime gate.**', s, count=1)
-          s = re.sub(r'- Current witness: `[^`]+`\.', f'- Current witness: `{witness}`.', s, count=1)
-
-          start = s.find('## HYBRID STACK HARD GATE')
-          if start != -1:
-              end = s.find('\n## ', start + 4)
-              if end == -1:
-                  s = s[:start] + hybrid_gate
-              else:
-                  s = s[:start] + hybrid_gate + s[end+1:]
-          else:
-              marker = '## Battle authorities\n'
-              s = s.replace(marker, hybrid_gate + marker, 1)
-
-          # Keep the current Aurora lane truth visible in the operational ledger.
-          current_aurora = '''## Auryi Resonart / Aurora Pulse current lane
-
-- Basic Attack authority remains **Aurorb Slice**.
-- Resonart authority is **Aurora Pulse**.
-- Aurora Pulse live production belongs in the Hybrid/K adapter stack, not standalone `PartyBattleScene.js`.
-- Approved composition/timing reference: `pz-a-aurora-pulse-lab.html`.
-- Celestial Bloom production audio is installed and has already played correctly on iPhone evidence.
-- Triumph of Light production victory audio is installed; current production behavior loops it while the victory/results screen remains open.
-- Aurora Pulse itself remains **crownless**.
-- Current exact 01–08 production PNG lane remains gated until the approved transparent bytes are restored; missing numbered PNGs do **not** authorize replacing the approved mock choreography with a simple float-only fallback.
-- Future non-Aurora crown authority: match the Main Splash Screen crown as a **hovered/offset element above Auryi**, not head-worn; preserve its silhouette, scale, spacing, and design language.
-
-'''
-          old_start = s.find('## Auryi Resonart / Aurora Pulse next lane')
-          if old_start != -1:
-              old_end = s.find('\n## ', old_start + 4)
-              if old_end != -1:
-                  s = s[:old_start] + current_aurora + s[old_end+1:]
-          elif '## Auryi Resonart / Aurora Pulse current lane' not in s:
-              marker = '## Kineza\n'
-              s = s.replace(marker, current_aurora + marker, 1)
-
-          p.write_text(s)
-
-          # Ensure resume anchor explicitly carries the same witness and Hybrid gate.
-          r = root/'PV_RESUME_ANCHOR.md'
-          rs = r.read_text()
-          rs = re.sub(r'- Promoted witness: `[^`]+`', f'- Promoted witness: `{witness}`', rs, count=1)
-          hybrid_resume = '''\n## Hybrid production safeguard\n\n- Live battle/cinematic production must remain inside `hybrid-main.html` -> `hybrid-battle-live.html` -> numeric LIVE28K K adapters.\n- Read `PV_LIVE_AUTHORITY.json` first. Run `python tools/prizim/preflight_live28k.py` before promotion.\n- `pz-a-aurora-pulse-lab.html` is a choreography/composition reference only; integrate it through the Hybrid stack rather than promoting it or rebuilding the effect in a disconnected standalone scene.\n'''
-          if '## Hybrid production safeguard' not in rs:
-              insert = rs.find('\n## Hard constraints')
-              if insert != -1:
-                  rs = rs[:insert] + hybrid_resume + rs[insert:]
-              else:
-                  rs += hybrid_resume
-          r.write_text(rs)
-          PY
+      - name: Sync PriZim ledgers
+        run: python tools/prizim/sync_live_authority.py
       - name: Commit synchronized ledgers
         run: |
           git config user.name 'github-actions[bot]'
