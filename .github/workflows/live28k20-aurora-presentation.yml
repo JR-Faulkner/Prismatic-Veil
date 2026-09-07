@@ -1,0 +1,86 @@
+name: LIVE28K20 Aurora Pulse Hybrid Presentation Director
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/ingest_live28k20/TRIGGER.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live28k20-aurora-presentation
+  cancel-in-progress: false
+
+jobs:
+  wire-and-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply K20 Hybrid cinematic presentation upgrade
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile tools/prizim/fix_live28k20_aurora_presentation.py
+          python tools/prizim/fix_live28k20_aurora_presentation.py
+          python tools/prizim/sync_live_authority.py
+          python tools/prizim/preflight_live28k.py
+          node --check src/prizim/Live28K2PartyBattleScene.js
+          node --check src/PartyBattleAudioController.js
+
+          grep -F '_runAuroraBeautyDirector(video)' src/prizim/Live28K2PartyBattleScene.js
+          grep -F '_playAuroraBattlefieldAfterglow()' src/prizim/Live28K2PartyBattleScene.js
+          grep -F 'this.audio.auroraReentryWave?.();' src/prizim/Live28K2PartyBattleScene.js
+          grep -F 'auroraReentryWave()' src/PartyBattleAudioController.js
+          grep -F 'live28k19_title_presentation_rejected' PV_LIVE_AUTHORITY.json
+          grep -F 'main-20260907-live28k20' PV_LIVE_AUTHORITY.json
+          grep -F 'K20 cinematic presentation' PRIZIM_LIVE_NOTEPAD.md
+          grep -F 'K20 presentation' PV_RESUME_ANCHOR.md
+
+          if grep -Fq 'AURORA_TITLE_CARD_READY' src/prizim/Live28K2PartyBattleScene.js; then
+            echo 'K20 refused: K19 title-card runtime constant survived' >&2
+            exit 1
+          fi
+          if grep -Fq '_prepareAuroraTitleCard' src/prizim/Live28K2PartyBattleScene.js; then
+            echo 'K20 refused: K19 title-card runtime method survived' >&2
+            exit 1
+          fi
+          if grep -Fq "'RESONART\\nAURORA PULSE'" src/prizim/Live28K2PartyBattleScene.js; then
+            echo 'K20 refused: fallback cinematic title survived' >&2
+            exit 1
+          fi
+
+      - name: Commit guarded K20 presentation wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/ingest_live28k20/TRIGGER.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            src/prizim/Live28K2PartyBattleScene.js \
+            src/PartyBattleAudioController.js \
+            PV_LIVE_AUTHORITY.json \
+            PRIZIM_LIVE_NOTEPAD.md \
+            PV_RESUME_ANCHOR.md \
+            tools/prizim/preflight_live28k.py \
+            tools/prizim/sync_live_authority.py \
+            tools/prizim/fix_live28k20_aurora_presentation.py \
+            .github/ingest_live28k20/TRIGGER.txt
+
+          git commit -m 'LIVE28K20: direct Aurora Pulse through cinematic Hybrid reconnect'
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'K20 push failed after 3 attempts' >&2
+          exit 1
