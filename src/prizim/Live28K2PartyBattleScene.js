@@ -17,7 +17,7 @@ const AURORA_BEAUTY_VIDEO_READY = true;
 const AURORA_BEAUTY_VIDEO_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4?pvasset=live28k14-beauty';
 // The Beauty master contains a placeholder/demo reconnect after ~6.65s.
 // LIVE28K never shows that tail: the real Hybrid battlefield owns reconnect.
-const AURORA_BEAUTY_TIMELINE = Object.freeze({ invocation: 0.70, silence: 4.56, pulse: 5.18, reveal: 6.08, impactReveal: 6.30, reconnect: 6.58, end: 6.65 });
+const AURORA_BEAUTY_TIMELINE = Object.freeze({ invocation: 0.70, bloomWatchdog: 0.84, silence: 4.56, pulse: 5.18, reveal: 6.08, impactReveal: 6.30, reconnect: 6.58, end: 6.65 });
 
 // Exact approved 01-08 production lane. Keep this false until the original
 // transparent PNG bytes are physically installed at the paths below. This
@@ -377,6 +377,15 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       // land almost exactly at the 6.82s battlefield-reconnect beat.
       await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.invocation);
       if (!ownsBloom) this.audio.attackGather(hero.id);
+
+      // K17 iPhone watchdog: scheduling Bloom is not proof Safari actually
+      // started it. Verify shortly after Invocation and recover the exact master
+      // immediately if the delayed WebAudio start was dropped.
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.bloomWatchdog);
+      if (ownsBloom && !this.audio.auroraBloomIsPlaying?.()) {
+        const recovered = this.audio.auroraBloomEnsurePlaying?.() === true;
+        if (!recovered) console.warn('[PV] Celestial Bloom watchdog armed recovery but playback is not yet confirmed.');
+      }
 
       await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.silence);
       if (ownsBloom) this.audio.auroraBloomSilence?.();

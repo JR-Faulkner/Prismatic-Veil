@@ -53,8 +53,9 @@ def main():
 - Celestial Bloom owns the cinematic foreground mix; normal battle BGM clears underneath it.
 - Triumph of Light loops while the victory/results screen remains open.
 - Aurora Pulse itself remains **crownless**.
-- LIVE28K15 phone evidence: choir audible = {device.get('live28k15_celestial_bloom_audible', False)}; demo tail absent = {device.get('live28k15_demo_tail_absent', False)}; core presentation passed = {device.get('live28k15_core_aurora_presentation_passed', False)}.
-- Current pending gate: smoother Beauty-to-live battlefield crossfade with visible enemy impact.
+- LIVE28K15 core presentation remains recorded as passed: choir audible = {device.get('live28k15_celestial_bloom_audible', False)}; demo tail absent = {device.get('live28k15_demo_tail_absent', False)}.
+- Latest phone evidence ({device.get('latest_device_witness', witness)}): {device.get('latest_device_result', 'pending device evidence')}
+- Current pending gate: {device.get('pending_gate_summary', 'pending iPhone validation')}
 - Future non-Aurora crown authority: match the Main Splash Screen crown as a **hovered/offset element above Auryi**, not head-worn.
 '''
 
@@ -104,7 +105,7 @@ def main():
             resume = resume.replace(marker, '\n' + safeguard + marker, 1)
         else:
             resume += '\n\n' + safeguard
-    aurora_gate = f'''## Aurora Pulse live device gate\n\n- Current witness: `{witness}`.\n- K15 phone result: core Beauty presentation passed, Celestial Bloom audible, demo tail absent.\n- Pending K16 gate: smooth Beauty-to-live battlefield crossfade with real enemy hit/recoil visible during reconnect.\n- Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.\n'''
+    aurora_gate = f'''## Aurora Pulse live device gate\n\n- Current witness: `{witness}`.\n- K15 baseline: core Beauty presentation passed, Celestial Bloom audible, demo tail absent.\n- Latest phone evidence ({device.get('latest_device_witness', witness)}): {device.get('latest_device_result', 'pending device evidence')}\n- Current pending gate: {device.get('pending_gate_summary', 'pending iPhone validation')}\n- Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.\n'''
     if '## Aurora Pulse live device gate' in resume:
         resume = replace_section(resume, '## Aurora Pulse live device gate', aurora_gate)
     else:

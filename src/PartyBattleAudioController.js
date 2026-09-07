@@ -236,6 +236,44 @@ export default class PartyBattleAudioController {
     return true;
   }
 
+  auroraBloomIsPlaying() {
+    return !!(this._auroraBloom?.isPlaying && !this._auroraBloom?.isPaused);
+  }
+
+  auroraBloomEnsurePlaying() {
+    if (!this.scene.cache.audio.exists(AURORA_BLOOM_KEY)) return false;
+    if (this.auroraBloomIsPlaying()) return true;
+
+    const fire = () => {
+      if (this.auroraBloomIsPlaying()) return true;
+      if (this._auroraBloom) {
+        try { this._auroraBloom.stop(); this._auroraBloom.destroy(); } catch (err) { /* ignore */ }
+      }
+      this._auroraBloom = this.scene.sound.add(AURORA_BLOOM_KEY, {
+        loop: false,
+        volume: this._effectiveVolume('sfx', 1.0)
+      });
+      try {
+        this._auroraBloom.play();
+      } catch (err) {
+        console.warn('[PV] Celestial Bloom watchdog restart failed:', err);
+        return false;
+      }
+      return this.auroraBloomIsPlaying();
+    };
+
+    if (this.scene.sound.locked) {
+      this.scene.sound.once('unlocked', fire);
+      return false;
+    }
+
+    const context = this.scene.sound.context;
+    if (context?.state === 'suspended' && context.resume) {
+      context.resume().then(() => { if (!this.auroraBloomIsPlaying()) fire(); }).catch(() => {});
+    }
+    return fire();
+  }
+
   auroraBloomSilence() {
     if (this._auroraBloom?.isPlaying) this._auroraBloom.pause();
   }

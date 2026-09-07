@@ -203,6 +203,38 @@ if sync.get('live_enemy_visual_impact') != 6.30:
     errors.append('K16 Aurora live enemy visual impact must occur at 6.30s')
 if 'real Hybrid battlefield' not in auth['auryi'].get('aurora_handoff_policy', ''):
     errors.append('K16 Aurora Hybrid handoff policy missing from machine authority')
+
+# 8d. K17 resilience guard: transient Hybrid boot fetches retry, and Bloom must
+# be verified as actually playing rather than merely scheduled.
+for token in [
+    'const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms))',
+    'const read=async (url,attempts=4)=>',
+    'for(let attempt=1;attempt<=attempts;attempt++)',
+    'await sleep(180*Math.pow(2,attempt-1))',
+]:
+    if token not in hybrid_main:
+        errors.append(f'K17 Hybrid boot resilience token missing: {token}')
+for token in [
+    'auroraBloomIsPlaying()',
+    'auroraBloomEnsurePlaying()',
+    "context?.state === 'suspended'",
+]:
+    if token not in audio_controller:
+        errors.append(f'K17 Aurora Bloom watchdog audio token missing: {token}')
+for token in [
+    'bloomWatchdog: 0.84',
+    'AURORA_BEAUTY_TIMELINE.bloomWatchdog',
+    'this.audio.auroraBloomIsPlaying?.()',
+    'this.audio.auroraBloomEnsurePlaying?.()',
+]:
+    if token not in k_scene:
+        errors.append(f'K17 Aurora Bloom runtime watchdog token missing: {token}')
+if auth.get('auryi', {}).get('aurora_beauty_sync', {}).get('bloom_playback_watchdog') != 0.84:
+    errors.append('K17 Bloom playback watchdog must be locked to 0.84s')
+if auth.get('hard_gates', {}).get('hybrid_boot_retry_required') is not True:
+    errors.append('K17 Hybrid boot retry hard gate missing')
+if auth.get('hard_gates', {}).get('aurora_bloom_actual_playback_watchdog_required') is not True:
+    errors.append('K17 Bloom actual-playback hard gate missing')
 if 'scheduled before native video play' not in auth['auryi'].get('aurora_bloom_mix_policy', ''):
     errors.append('Aurora Bloom iPhone scheduling policy missing from machine authority')
 

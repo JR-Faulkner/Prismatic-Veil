@@ -29,7 +29,9 @@
     "approved_asset_delivery_must_not_be_reclassified_as_missing": true,
     "exact_frame_mode_requires_durable_verified_binaries": true,
     "aurora_beauty_primary_must_use_exact_verified_master": true,
-    "aurora_beauty_must_remain_inside_hybrid_k_adapter": true
+    "aurora_beauty_must_remain_inside_hybrid_k_adapter": true,
+    "hybrid_boot_retry_required": true,
+    "aurora_bloom_actual_playback_watchdog_required": true
   },
   "auryi": {
     "basic_attack": "Aurorb Slice",
@@ -60,11 +62,13 @@
       "battlefield_reveal_crossfade": 6.08,
       "live_enemy_visual_impact": 6.3,
       "live_battlefield_reconnect": 6.58,
-      "beauty_video_hidden_before_demo_tail": 6.65
+      "beauty_video_hidden_before_demo_tail": 6.65,
+      "bloom_playback_watchdog": 0.84
     },
     "aurora_demo_tail_policy": "Never display Beauty V1 placeholder reconnect material at/after ~6.65s; live Hybrid battlefield owns reconnect.",
     "aurora_bloom_mix_policy": "Celestial Bloom is armed/scheduled before native video play on iPhone and owns the cinematic foreground mix; normal battle BGM is cleared beneath it.",
-    "aurora_handoff_policy": "Keep gameplay damage locked to the 5.18s Pulse beat, but reveal the real Hybrid battlefield through a 550ms Beauty-video crossfade beginning at 6.08s and show the live enemy hit/recoil plus prismatic impact at 6.30s before full reconnect. Never use the Beauty demo reconnect tail."
+    "aurora_handoff_policy": "Keep gameplay damage locked to the 5.18s Pulse beat, but reveal the real Hybrid battlefield through a 550ms Beauty-video crossfade beginning at 6.08s and show the live enemy hit/recoil plus prismatic impact at 6.30s before full reconnect. Never use the Beauty demo reconnect tail.",
+    "aurora_bloom_watchdog_policy": "Celestial Bloom scheduling is not sufficient evidence of playback on iPhone. At Beauty time 0.84s, verify the exact master is actually playing; if not, restart the exact cached master immediately without changing the Beauty video, compression silence, Pulse timing, or Hybrid handoff."
   },
   "device_evidence": {
     "live28k11_celestial_bloom_played_and_sounded_good": true,
@@ -86,6 +90,15 @@
     "live28k15_demo_tail_absent": true,
     "live28k15_core_aurora_presentation_passed": true,
     "live28k15_remaining_issue": "Needs smoother cinematic-to-battlefield handoff with the real enemy visibly affected during reconnect.",
-    "live28k16_pending_iphone_validation": true
-  }
+    "live28k16_pending_iphone_validation": true,
+    "live28k16_boot_errors_observed": true,
+    "live28k16_celestial_bloom_inaudible": true,
+    "live28k16_result": "FAIL phone gate: intermittent LIVE BOOT ERROR observed and Celestial Bloom choir did not play.",
+    "live28k16_handoff_visual_result": "Not yet accepted/rejected; boot/audio regression must be removed first.",
+    "latest_device_witness": "main-20260906-live28k16",
+    "latest_device_result": "FAIL phone gate: intermittent LIVE BOOT ERROR observed and Celestial Bloom choir did not play.",
+    "pending_gate_summary": "LIVE28K17: boot without transient LIVE BOOT ERROR, Aurora Pulse choir must audibly enter, and the K16 Beauty-to-live battlefield crossfade plus visible enemy impact must remain intact.",
+    "live28k17_pending_iphone_validation": true
+  },
+  "hybrid_boot_policy": "hybrid-main must retry live-build.json and hybrid-battle-live.html no-store fetches with bounded exponential backoff before surfacing LIVE BOOT ERROR."
 }

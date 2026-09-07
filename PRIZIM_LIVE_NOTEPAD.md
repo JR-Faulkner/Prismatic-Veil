@@ -130,8 +130,9 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Celestial Bloom owns the cinematic foreground mix; normal battle BGM clears underneath it.
 - Triumph of Light loops while the victory/results screen remains open.
 - Aurora Pulse itself remains **crownless**.
-- LIVE28K15 phone evidence: choir audible = True; demo tail absent = True; core presentation passed = True.
-- Current pending gate: smoother Beauty-to-live battlefield crossfade with visible enemy impact.
+- LIVE28K15 core presentation remains recorded as passed: choir audible = True; demo tail absent = True.
+- Latest phone evidence (main-20260906-live28k16): FAIL phone gate: intermittent LIVE BOOT ERROR observed and Celestial Bloom choir did not play.
+- Current pending gate: LIVE28K17: boot without transient LIVE BOOT ERROR, Aurora Pulse choir must audibly enter, and the K16 Beauty-to-live battlefield crossfade plus visible enemy impact must remain intact.
 - Future non-Aurora crown authority: match the Main Splash Screen crown as a **hovered/offset element above Auryi**, not head-worn.
 
 ## Kineza

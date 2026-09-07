@@ -175,8 +175,9 @@ Do not add redundant base-file query-string surgery unless this routing actually
 ## Aurora Pulse live device gate
 
 - Current witness: `main-20260906-live28k16`.
-- K15 phone result: core Beauty presentation passed, Celestial Bloom audible, demo tail absent.
-- Pending K16 gate: smooth Beauty-to-live battlefield crossfade with real enemy hit/recoil visible during reconnect.
+- K15 baseline: core Beauty presentation passed, Celestial Bloom audible, demo tail absent.
+- Latest phone evidence (main-20260906-live28k16): FAIL phone gate: intermittent LIVE BOOT ERROR observed and Celestial Bloom choir did not play.
+- Current pending gate: LIVE28K17: boot without transient LIVE BOOT ERROR, Aurora Pulse choir must audibly enter, and the K16 Beauty-to-live battlefield crossfade plus visible enemy impact must remain intact.
 - Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.
 
 ## Hard constraints
