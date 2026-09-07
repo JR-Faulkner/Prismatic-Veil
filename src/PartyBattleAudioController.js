@@ -264,7 +264,7 @@ export default class PartyBattleAudioController {
       try { this._triumph.stop(); this._triumph.destroy(); } catch (err) { /* ignore */ }
     }
     this._triumph = this.scene.sound.add(TRIUMPH_LIGHT_KEY, {
-      loop: false,
+      loop: true,
       volume: this._effectiveVolume('music', 0.92)
     });
     const fire = () => {

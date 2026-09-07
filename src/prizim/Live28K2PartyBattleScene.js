@@ -153,7 +153,12 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     const high = Math.round(base * 1.15);
     const hitRoll = Math.random() < AURORA_PULSE_HIT_CHANCE;
     const useAuroraFrames = this._hasAuroraPulseFrames();
-    const usePoses = !useAuroraFrames && this.formation.hasActionPoses?.(hero.id);
+    // Aurora Pulse must never fall back to Auryi's Basic Attack poses.
+    // Until the approved 01-08 PNGs return, keep her approved primary and
+    // use Aurora-specific lift/compression movement only.
+    const fallbackActor = !useAuroraFrames ? this.formation?.actors?.get?.('auryi') : null;
+    if (fallbackActor) this.formation._restoreAuryiPrimary?.(fallbackActor);
+    const fallbackY = fallbackActor?.sprite?.y ?? 0;
 
     this.audio.beginCinematicAttack?.();
     const ownsBloom = this.audio.auroraBloomStart?.() === true;
@@ -161,7 +166,12 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
     // 01-02: battlefield invocation + lift.
     if (useAuroraFrames) this._setAuroraPulseFrame(1);
-    else if (usePoses) this.formation.setActionPose(hero.id, 'step');
+    else if (fallbackActor?.sprite) {
+      fallbackActor.ghost?.setVisible(false)?.setAlpha?.(0);
+      fallbackActor.attackSprite?.setVisible(false)?.setAlpha?.(1);
+      fallbackActor.ring?.setVisible(false)?.setAlpha?.(0);
+      this.tweens.add({ targets: fallbackActor.sprite, y: fallbackY - Math.min(28, this.scale.height * 0.05), duration: AURORA_PULSE_TIMING.lift, ease: 'Sine.easeOut' });
+    }
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.10, duration: 280, ease: 'Sine.easeOut' });
     if (useAuroraFrames) {
       await this._wait(AURORA_PULSE_TIMING.lift / 2);
@@ -174,7 +184,9 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     // 03-05: Aurora growth and celestial expansion.
     if (!ownsBloom) this.audio.attackGather(hero.id);
     if (useAuroraFrames) this._setAuroraPulseFrame(3);
-    else if (usePoses) this.formation.setActionPose(hero.id, 'gather');
+    else if (fallbackActor?.sprite) {
+      this.tweens.add({ targets: fallbackActor.sprite, y: fallbackY - Math.min(38, this.scale.height * 0.065), duration: AURORA_PULSE_TIMING.bloomA + AURORA_PULSE_TIMING.bloomB, ease: 'Sine.easeInOut' });
+    }
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 0.96, duration: 420, ease: 'Sine.easeInOut' });
     if (useAuroraFrames) {
       await this._wait(AURORA_PULSE_TIMING.bloomA / 2);
@@ -193,7 +205,9 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
     // 07: compression / hand-smash, then the approved frozen silence pocket.
     if (useAuroraFrames) this._setAuroraPulseFrame(7);
-    else if (usePoses) this.formation.setActionPose(hero.id, 'release');
+    else if (fallbackActor?.sprite) {
+      this.tweens.add({ targets: fallbackActor.sprite, y: fallbackY - Math.min(14, this.scale.height * 0.025), duration: AURORA_PULSE_TIMING.compression, ease: 'Quad.easeIn' });
+    }
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.13, duration: 220, ease: 'Sine.easeIn' });
     await this._wait(AURORA_PULSE_TIMING.compression);
     if (ownsBloom) this.audio.auroraBloomSilence?.();
@@ -227,7 +241,9 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     await this._wait(AURORA_PULSE_TIMING.aftermath);
 
     // Recompose and restore battle framing cleanly while the Bloom tail fades.
-    if (!useAuroraFrames && usePoses) this.formation.setActionPose(hero.id, 'recover');
+    if (!useAuroraFrames && fallbackActor?.sprite) {
+      this.tweens.add({ targets: fallbackActor.sprite, y: fallbackY, duration: AURORA_PULSE_TIMING.recover, ease: 'Sine.easeInOut' });
+    }
     this.tweens.add({
       targets: cam,
       zoom: cameraState.zoom,
@@ -238,7 +254,11 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     });
     await this._wait(AURORA_PULSE_TIMING.recover);
     if (useAuroraFrames) this._restoreAuryiAfterAurora();
-    else if (usePoses) this.formation.setActionPose(hero.id, 'idle');
+    else if (fallbackActor) {
+      this.formation._restoreAuryiPrimary?.(fallbackActor);
+      this.formation.layout?.();
+      this.formation._forceActiveRing?.(this.activeHeroId);
+    }
     if (ownsBloom) this.audio.auroraBloomStop?.(420);
     this.audio.endCinematicAttack?.();
 
