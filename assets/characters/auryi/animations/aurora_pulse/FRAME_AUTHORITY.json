@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "sequence": "Auryi Aurora Pulse",
+  "user_supplied": true,
+  "previously_separated": true,
+  "production_format": "PNG RGBA",
+  "expected_dimensions": [900, 900],
+  "webp_forbidden": true,
+  "crownless": true,
+  "expected_frames": [
+    "assets/characters/auryi/animations/aurora_pulse/frames/Auryi_Aurora_Pulse_01.png",
+    "assets/characters/auryi/animations/aurora_pulse/frames/Auryi_Aurora_Pulse_02.png",
+    "assets/characters/auryi/animations/aurora_pulse/frames/Auryi_Aurora_Pulse_03.png",
+    "assets/characters/auryi/animations/aurora_pulse/frames/Auryi_Aurora_Pulse_04.png",
+    "assets/characters/auryi/animations/aurora_pulse/frames/Auryi_Aurora_Pulse_05.png",
+    "assets/characters/auryi/animations/aurora_pulse/frames/Auryi_Aurora_Pulse_06.png",
+    "assets/characters/auryi/animations/aurora_pulse/frames/Auryi_Aurora_Pulse_07.png",
+    "assets/characters/auryi/animations/aurora_pulse/frames/Auryi_Aurora_Pulse_08.png"
+  ],
+  "current_durable_state": "historically-supplied-and-separated-but-current-binary-paths-not-restored",
+  "exact_frame_mode": false,
+  "known_historical_evidence": {
+    "04_08_package": "AURYI_AURORA_PULSE_PZ_04_08.zip",
+    "04_08_verified_description": "five 900x900 transparent RGBA PNGs",
+    "full_sequence_delivery": "User supplied Aurora Pulse 01-08 frame material before LIVE28K13 integration. Missing current binaries are a persistence/retrieval failure, not missing user delivery."
+  },
+  "durability_gate": "Never mark Aurora Pulse exact-frame extraction/installation complete and never enable exact_frame_mode until all eight expected PNG paths physically exist in the durable repo, each validates as 900x900 PNG, and a durable manifest records their hashes. Do not replace missing originals with JPEGs, WebP, regenerated frames, or composite crops without explicit user instruction."
+}
