@@ -110,11 +110,11 @@ else:
         'actor.sprite.setVisible(true).setAlpha(1).setAngle(0);',
         'this.layout();',
         'await new Promise(resolve => this.scene.time.delayedCall(KINEZA_LETHAL_HOME_SETTLE_MS, resolve));',
-        'return result;',
     ]
     positions = [body.find(token) for token in ordered]
-    if any(pos < 0 for pos in positions) or positions != sorted(positions):
-        errors.append('K22 Kineza recovery ordering drifted: sequence -> lethal check -> home restore -> settle -> resolve is required')
+    final_return = body.rfind('return result;')
+    if any(pos < 0 for pos in positions) or positions != sorted(positions) or final_return <= positions[-1]:
+        errors.append('K22 Kineza recovery ordering drifted: sequence -> lethal check -> home restore -> settle -> final resolve is required')
 
 if auth.get('hard_gates', {}).get('kineza_lethal_attack_must_settle_at_home_before_victory') is not True:
     errors.append('K22 Kineza lethal-victory home-settle hard gate missing')
