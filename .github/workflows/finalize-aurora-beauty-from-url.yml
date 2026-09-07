@@ -1,0 +1,70 @@
+name: Finalize Aurora Pulse Beauty V1 From Temporary URL
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/ingest_aurora_beauty/URL.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download Beauty V1 source package once
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_URL="$(sed -n 's/^SOURCE_URL=//p' .github/ingest_aurora_beauty/URL.txt)"
+          test -n "$SOURCE_URL"
+          curl -fL "$SOURCE_URL" -o /tmp/aurora-beauty.zip
+          test "$(wc -c < /tmp/aurora-beauty.zip)" -eq 3694895
+
+      - name: Extract exact production master and timeline
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT='assets/characters/auryi/animations/aurora_pulse/cinematic'
+          mkdir -p "$OUT"
+          unzip -p /tmp/aurora-beauty.zip 'Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4' > "$OUT/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4"
+          unzip -p /tmp/aurora-beauty.zip 'AuroraPulse_Beauty_v1_timeline.json' > "$OUT/AuroraPulse_Beauty_v1_timeline.json"
+
+      - name: Verify exact source bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          VIDEO='assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4'
+          TIMELINE='assets/characters/auryi/animations/aurora_pulse/cinematic/AuroraPulse_Beauty_v1_timeline.json'
+          echo 'e70fc0f987646b1c1428c8797c0d95e8a38c2327448d3607826febb1e0065b1a  '"$VIDEO" | sha256sum -c -
+          echo 'fe0116a3068ffb4614188099926ac6ae68affcf22dfcda5723e1b3c7e35f2c58  '"$TIMELINE" | sha256sum -c -
+          test "$(wc -c < "$VIDEO")" -eq 3400903
+          test "$(wc -c < "$TIMELINE")" -eq 1345
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('assets/characters/auryi/animations/aurora_pulse/cinematic/AuroraPulse_Beauty_v1_timeline.json')
+          d=json.loads(p.read_text())
+          assert d['resolution']=='1920x1080'
+          assert d['fps']==24
+          assert abs(float(d['duration_seconds'])-7.4)<0.05
+          labels=[b['label'] for b in d['beats']]
+          assert labels==['Battlefield Handoff','Invocation','Aurora Growth','Maximum Expansion','Compression Wind-Up','Signature Hand Smash','Compression Silence','Pulse Release','Battlefield Reconnect']
+          PY
+
+      - name: Commit verified Beauty V1 and remove temporary URL manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/ingest_aurora_beauty/URL.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/characters/auryi/animations/aurora_pulse/cinematic .github/ingest_aurora_beauty/URL.txt
+          git commit -m 'LIVE28K: install exact Aurora Pulse Beauty V1 cinematic master'
+          git push origin HEAD:main
