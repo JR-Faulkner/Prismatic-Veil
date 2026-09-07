@@ -22,25 +22,25 @@ jobs:
           from pathlib import Path
           p = Path('src/prizim/Live28K2PartyBattleScene.js')
           s = p.read_text()
-          old = """    const objects = [veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho, flash, title];
-    this.worldAdd(objects);
-    return { x, y, veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho, flash, title, objects };
-"""
-          new = """    const objects = [veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho, flash, title];
-    this.worldAdd(objects);
-
-    // Phaser Container children render by local list order, so make the
-    // approved lab stacking explicit rather than trusting child depth:
-    // Veil/Aurora/Pulse behind Auryi, title and white flash in front.
-    if (actor?.sprite && this.world?.moveBelow) {
-      [veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho]
-        .forEach(obj => this.world.moveBelow(obj, actor.sprite));
-    }
-    this.world?.bringToTop?.(title);
-    this.world?.bringToTop?.(flash);
-
-    return { x, y, veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho, flash, title, objects };
-"""
+          old = (
+              "    const objects = [veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho, flash, title];\n"
+              "    this.worldAdd(objects);\n"
+              "    return { x, y, veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho, flash, title, objects };\n"
+          )
+          new = (
+              "    const objects = [veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho, flash, title];\n"
+              "    this.worldAdd(objects);\n\n"
+              "    // Phaser Container children render by local list order, so make the\n"
+              "    // approved lab stacking explicit rather than trusting child depth.\n"
+              "    // Veil/Aurora/Pulse stay behind Auryi; title and white flash stay in front.\n"
+              "    if (actor?.sprite && this.world?.moveBelow) {\n"
+              "      [veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho]\n"
+              "        .forEach(obj => this.world.moveBelow(obj, actor.sprite));\n"
+              "    }\n"
+              "    this.world?.bringToTop?.(title);\n"
+              "    this.world?.bringToTop?.(flash);\n\n"
+              "    return { x, y, veilA, veilB, veilC, auroraCore, auroraRingA, auroraRingB, pulse, pulseEcho, flash, title, objects };\n"
+          )
           if old not in s:
               raise SystemExit('Aurora mock stage insertion point not found')
           p.write_text(s.replace(old, new, 1))
