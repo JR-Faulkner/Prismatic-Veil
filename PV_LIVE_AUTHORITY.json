@@ -31,7 +31,10 @@
     "aurora_beauty_primary_must_use_exact_verified_master": true,
     "aurora_beauty_must_remain_inside_hybrid_k_adapter": true,
     "hybrid_boot_retry_required": true,
-    "aurora_bloom_actual_playback_watchdog_required": true
+    "aurora_bloom_actual_playback_watchdog_required": true,
+    "exact_m4a_masters_must_not_enter_phaser_webaudio_decode": true,
+    "native_media_prime_required_for_exact_m4a": true,
+    "post_scene_media_decode_rejection_nonfatal": true
   },
   "auryi": {
     "basic_attack": "Aurorb Slice",
@@ -66,9 +69,10 @@
       "bloom_playback_watchdog": 0.84
     },
     "aurora_demo_tail_policy": "Never display Beauty V1 placeholder reconnect material at/after ~6.65s; live Hybrid battlefield owns reconnect.",
-    "aurora_bloom_mix_policy": "Celestial Bloom is armed/scheduled before native video play on iPhone and owns the cinematic foreground mix; normal battle BGM is cleared beneath it.",
+    "aurora_bloom_mix_policy": "Celestial Bloom uses native HTMLMediaElement. Hybrid audio-enable tap primes the exact M4A; Aurora starts a silent native preroll inside the Resonart gesture, seeks to source time 0 and raises it to foreground volume at Invocation, retains the 0.84s actual-playback watchdog, and clears normal battle BGM beneath it.",
     "aurora_handoff_policy": "Keep gameplay damage locked to the 5.18s Pulse beat, but reveal the real Hybrid battlefield through a 550ms Beauty-video crossfade beginning at 6.08s and show the live enemy hit/recoil plus prismatic impact at 6.30s before full reconnect. Never use the Beauty demo reconnect tail.",
-    "aurora_bloom_watchdog_policy": "Celestial Bloom scheduling is not sufficient evidence of playback on iPhone. At Beauty time 0.84s, verify the exact master is actually playing; if not, restart the exact cached master immediately without changing the Beauty video, compression silence, Pulse timing, or Hybrid handoff."
+    "aurora_bloom_watchdog_policy": "Celestial Bloom scheduling is not sufficient evidence of playback on iPhone. At Beauty time 0.84s, verify the exact master is actually playing; if not, restart the exact cached master immediately without changing the Beauty video, compression silence, Pulse timing, or Hybrid handoff.",
+    "exact_m4a_playback_lane": "native HTMLMediaElement; exact source bytes; no Phaser/WebAudio decode"
   },
   "device_evidence": {
     "live28k11_celestial_bloom_played_and_sounded_good": true,
@@ -95,10 +99,15 @@
     "live28k16_celestial_bloom_inaudible": true,
     "live28k16_result": "FAIL phone gate: intermittent LIVE BOOT ERROR observed and Celestial Bloom choir did not play.",
     "live28k16_handoff_visual_result": "Not yet accepted/rejected; boot/audio regression must be removed first.",
-    "latest_device_witness": "main-20260906-live28k16",
-    "latest_device_result": "FAIL phone gate: intermittent LIVE BOOT ERROR observed and Celestial Bloom choir did not play.",
-    "pending_gate_summary": "LIVE28K17: boot without transient LIVE BOOT ERROR, Aurora Pulse choir must audibly enter, and the K16 Beauty-to-live battlefield crossfade plus visible enemy impact must remain intact.",
-    "live28k17_pending_iphone_validation": true
+    "latest_device_witness": "main-20260906-live28k17",
+    "latest_device_result": "FAIL boot gate: iPhone recording shows LIVE BATTLE BOOT ERROR \u00b7 Decoding failed after audio enable. Aurora Pulse did not run, so this recording is not valid evidence for Bloom or handoff quality.",
+    "pending_gate_summary": "LIVE28K18: boot with no decode overlay, Celestial Bloom audibly enters, and K16 battlefield/enemy handoff remains intact.",
+    "live28k17_pending_iphone_validation": true,
+    "live28k17_boot_decode_failed": true,
+    "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR \u00b7 Decoding failed",
+    "live28k17_aurora_test_blocked_by_boot": true,
+    "live28k17_bloom_not_validly_tested_in_recording": true,
+    "live28k18_pending_iphone_validation": true
   },
   "hybrid_boot_policy": "hybrid-main must retry live-build.json and hybrid-battle-live.html no-store fetches with bounded exponential backoff before surfacing LIVE BOOT ERROR."
 }

@@ -176,8 +176,8 @@ Do not add redundant base-file query-string surgery unless this routing actually
 
 - Current witness: `main-20260906-live28k17`.
 - K15 baseline: core Beauty presentation passed, Celestial Bloom audible, demo tail absent.
-- Latest phone evidence (main-20260906-live28k16): FAIL phone gate: intermittent LIVE BOOT ERROR observed and Celestial Bloom choir did not play.
-- Current pending gate: LIVE28K17: boot without transient LIVE BOOT ERROR, Aurora Pulse choir must audibly enter, and the K16 Beauty-to-live battlefield crossfade plus visible enemy impact must remain intact.
+- Latest phone evidence (main-20260906-live28k17): FAIL boot gate: iPhone recording shows LIVE BATTLE BOOT ERROR · Decoding failed after audio enable. Aurora Pulse did not run, so this recording is not valid evidence for Bloom or handoff quality.
+- Current pending gate: LIVE28K18: boot with no decode overlay, Celestial Bloom audibly enters, and K16 battlefield/enemy handoff remains intact.
 - Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.
 
 ## Hard constraints

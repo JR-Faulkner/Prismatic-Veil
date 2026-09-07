@@ -164,15 +164,14 @@ for token in [
 if 'Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4' in base_scene:
     errors.append('Aurora Beauty V1 leaked into standalone PartyBattleScene')
 
-# 8b. K15 presentation guard: iPhone-safe choir start and no baked demo tail.
+# 8b. K15+ presentation guard: foreground Bloom ownership and no baked demo tail.
 for token in [
     'auroraBloomStart(delaySeconds = 0)',
-    'this._auroraBloom.play(undefined, { delay:',
     'targets: this.music, volume: 0',
-    "volume: this._effectiveVolume('sfx', 1.0)"
+    "this._effectiveVolume('sfx', 1.0)"
 ]:
     if token not in audio_controller:
-        errors.append(f'K15 Aurora Bloom presentation token missing: {token}')
+        errors.append(f'Aurora Bloom presentation token missing: {token}')
 for token in [
     'auroraBloomStart?.(AURORA_BEAUTY_TIMELINE.invocation)',
     'reconnect: 6.58',
@@ -217,7 +216,6 @@ for token in [
 for token in [
     'auroraBloomIsPlaying()',
     'auroraBloomEnsurePlaying()',
-    "context?.state === 'suspended'",
 ]:
     if token not in audio_controller:
         errors.append(f'K17 Aurora Bloom watchdog audio token missing: {token}')
@@ -235,8 +233,46 @@ if auth.get('hard_gates', {}).get('hybrid_boot_retry_required') is not True:
     errors.append('K17 Hybrid boot retry hard gate missing')
 if auth.get('hard_gates', {}).get('aurora_bloom_actual_playback_watchdog_required') is not True:
     errors.append('K17 Bloom actual-playback hard gate missing')
-if 'scheduled before native video play' not in auth['auryi'].get('aurora_bloom_mix_policy', ''):
-    errors.append('Aurora Bloom iPhone scheduling policy missing from machine authority')
+
+# 8e. K18 iPhone media-decode guard: exact M4A masters must bypass Phaser
+# WebAudio decode and be primed through native HTMLMediaElement on the explicit
+# Hybrid audio-enable gesture. A late non-critical decode rejection after the
+# scene is live must not replace gameplay with a fatal boot overlay.
+for forbidden in [
+    'this.load.audio(AURORA_BLOOM_KEY',
+    'this.load.audio(TRIUMPH_LIGHT_KEY',
+]:
+    if forbidden in k_scene:
+        errors.append(f'K18 exact M4A master regressed into Phaser/WebAudio preload: {forbidden}')
+for token in [
+    "const AURORA_BLOOM_PATH = './assets/music/Celestial Bloom.m4a?pvasset=live28k18-native'",
+    "const TRIUMPH_LIGHT_PATH = './assets/music/Triumph of Light.m4a?pvasset=live28k18-native'",
+    'function makeNativeAudio(path, loop = false)',
+    'primeNativeMedia()',
+    'sound.volume = 0',
+    'sound.currentTime = 0',
+    "new Audio(new URL(path, window.location.href).href)",
+]:
+    if token not in audio_controller:
+        errors.append(f'K18 native exact-M4A token missing: {token}')
+for token in [
+    'scene.audio?.primeNativeMedia?.();',
+    '/decoding failed/i.test(msg)',
+    "console.warn('[PV] non-fatal media decode rejection after live scene start:'",
+]:
+    if token not in hybrid_template:
+        errors.append(f'K18 Hybrid native-media resilience token missing: {token}')
+if auth.get('hard_gates', {}).get('exact_m4a_masters_must_not_enter_phaser_webaudio_decode') is not True:
+    errors.append('K18 exact M4A/WebAudio prohibition hard gate missing')
+if auth.get('hard_gates', {}).get('native_media_prime_required_for_exact_m4a') is not True:
+    errors.append('K18 native media prime hard gate missing')
+if auth.get('hard_gates', {}).get('post_scene_media_decode_rejection_nonfatal') is not True:
+    errors.append('K18 post-scene media decode resilience hard gate missing')
+if 'native HTMLMediaElement' not in auth['auryi'].get('exact_m4a_playback_lane', ''):
+    errors.append('K18 exact M4A playback lane missing from machine authority')
+bloom_policy = auth['auryi'].get('aurora_bloom_mix_policy', '')
+if 'scheduled before native video play' not in bloom_policy and 'native HTMLMediaElement' not in bloom_policy:
+    errors.append('Aurora Bloom iPhone scheduling/native-media policy missing from machine authority')
 
 if beauty_timeline.exists():
     try:

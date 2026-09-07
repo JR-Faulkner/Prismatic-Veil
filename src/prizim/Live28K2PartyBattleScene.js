@@ -9,10 +9,9 @@ const PRISMEL_K2_ACTIVE_KEY = 'prismel_live28k2_staff_ready';
 const PRISMEL_K2_ACTIVE_PATH = './assets/party_formation/PRISMEL_LIVE28K2_STAFF_READY.png?pvasset=live28k3';
 const AURYI_K2_PRIMARY_KEY = 'auryi_live28k2_primary';
 const AURYI_K2_PRIMARY_PATH = './assets/party_formation/AURYI_LIVE28K2_PRIMARY.png?pvasset=live28k3';
-const AURORA_BLOOM_KEY = 'pv_auryi_celestial_bloom';
-const AURORA_BLOOM_PATH = './assets/music/Celestial Bloom.m4a?pvasset=live28k11-audio';
-const TRIUMPH_LIGHT_KEY = 'pv_triumph_of_light';
-const TRIUMPH_LIGHT_PATH = './assets/music/Triumph of Light.m4a?pvasset=live28k11-audio';
+// Exact Celestial Bloom / Triumph M4A masters are owned by native HTMLMediaElement
+// playback in PartyBattleAudioController. Never route these through Phaser/WebAudio
+// decode on iPhone Safari; the original bytes remain unchanged in assets/music/.
 const AURORA_BEAUTY_VIDEO_READY = true;
 const AURORA_BEAUTY_VIDEO_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4?pvasset=live28k14-beauty';
 // The Beauty master contains a placeholder/demo reconnect after ~6.65s.
@@ -54,10 +53,9 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     this.load.image(PRISMEL_K2_ACTIVE_KEY, PRISMEL_K2_ACTIVE_PATH);
     this.load.image(AURYI_K2_PRIMARY_KEY, AURYI_K2_PRIMARY_PATH);
 
-    // Exact supplied masters. These paths intentionally remain M4A so no
-    // source transcode/recompression is introduced during the production ingest.
-    this.load.audio(AURORA_BLOOM_KEY, AURORA_BLOOM_PATH);
-    this.load.audio(TRIUMPH_LIGHT_KEY, TRIUMPH_LIGHT_PATH);
+    // LIVE28K18: exact M4A cinematic/victory masters are intentionally NOT
+    // loaded through Phaser. Safari can surface WebAudio decodeAudioData failures
+    // for M4A after the audio-unlock gesture. Native HTMLMediaElement owns them.
 
     // Do not request missing production art. Once the already-approved 01-08
     // PNG bytes are restored, flipping the gate activates this lane without
