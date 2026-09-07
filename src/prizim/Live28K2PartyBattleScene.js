@@ -14,9 +14,6 @@ const AURYI_K2_PRIMARY_PATH = './assets/party_formation/AURYI_LIVE28K2_PRIMARY.p
 // decode on iPhone Safari; the original bytes remain unchanged in assets/music/.
 const AURORA_BEAUTY_VIDEO_READY = true;
 const AURORA_BEAUTY_VIDEO_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4?pvasset=live28k14-beauty';
-const AURORA_TITLE_CARD_READY = true;
-const AURORA_TITLE_CARD_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_TitleCard_Approved.png?pvasset=live28k19-title';
-const AURORA_TITLE_CARD_TIMING = Object.freeze({ show: 0.08, fadeOut: 1.28, hide: 1.55 });
 // The Beauty master contains a placeholder/demo reconnect after ~6.65s.
 // LIVE28K never shows that tail: the real Hybrid battlefield owns reconnect.
 const AURORA_BEAUTY_TIMELINE = Object.freeze({ invocation: 0.70, bloomWatchdog: 0.84, silence: 4.56, pulse: 5.18, reveal: 6.08, impactReveal: 6.30, reconnect: 6.58, end: 6.65 });
@@ -85,14 +82,10 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     this.formation.create(this.party);
     if (this.activeHeroId) this.formation.setActive(this.activeHeroId);
 
-    // Prewarm the exact Beauty V1 cinematic and approved move-title PNG inside
-    // the live Hybrid/K scene. K19 is presentation-only; K18 audio/handoff stay intact.
+    // K20: prewarm only the exact Beauty V1 motion master. Hybrid owns the
+    // cinematic camera/framing/reconnect; no move-title overlay is shown.
     this._prepareAuroraBeautyVideo();
-    this._prepareAuroraTitleCard();
-    this.events.once('shutdown', () => {
-      this._disposeAuroraBeautyVideo();
-      this._disposeAuroraTitleCard();
-    });
+    this.events.once('shutdown', () => this._disposeAuroraBeautyVideo());
 
     globalThis.__PV_LIVE28K2_RUNTIME__ = true;
     globalThis.__PV_LIVE28K2_FULLRES_PRIMARIES__ = true;
@@ -184,7 +177,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
     const flash = this.add.rectangle(w * 0.5, h * 0.5, w * 1.5, h * 1.5, 0xffffff, 1)
       .setDepth(40).setAlpha(0).setBlendMode(Phaser.BlendModes.ADD);
-    const title = this.add.text(w * 0.5, h * 0.095, 'RESONART\nAURORA PULSE', {
+    const title = this.add.text(w * 0.5, h * 0.095, '', {
       fontFamily: 'Georgia, serif',
       fontSize: `${Math.max(22, Math.min(42, w * 0.047))}px`,
       color: '#fff2c5',
@@ -244,7 +237,11 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       pointerEvents: 'none',
       opacity: '0',
       display: 'none',
-      transition: 'opacity 90ms linear'
+      transform: 'scale(1.018)',
+      transformOrigin: '50% 50%',
+      filter: 'brightness(0.96) contrast(1.04) saturate(1.04)',
+      willChange: 'opacity, transform, filter',
+      transition: 'opacity 120ms linear, transform 620ms cubic-bezier(0.22, 1, 0.36, 1), filter 260ms ease'
     });
     document.body.appendChild(video);
     video.load();
@@ -252,73 +249,16 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     return video;
   }
 
-  _prepareAuroraTitleCard() {
-    if (!AURORA_TITLE_CARD_READY || typeof document === 'undefined') return null;
-    if (this._auroraTitleCard) return this._auroraTitleCard;
-
-    const image = document.createElement('img');
-    image.src = new URL(AURORA_TITLE_CARD_PATH, window.location.href).href;
-    image.alt = 'Aurora Pulse';
-    image.decoding = 'async';
-    image.loading = 'eager';
-    image.setAttribute('aria-hidden', 'true');
-    Object.assign(image.style, {
-      position: 'fixed',
-      inset: '0',
-      width: '100%',
-      height: '100%',
-      objectFit: 'contain',
-      background: '#11071f',
-      zIndex: '2147483001',
-      pointerEvents: 'none',
-      opacity: '0',
-      display: 'none',
-      transition: 'opacity 180ms cubic-bezier(0.22, 1, 0.36, 1)'
-    });
-    document.body.appendChild(image);
-    image.decode?.().catch?.(() => {});
-    this._auroraTitleCard = image;
-    return image;
-  }
-
-  _disposeAuroraTitleCard() {
-    const image = this._auroraTitleCard;
-    if (!image) return;
-    try { image.remove(); } catch (err) { /* ignore cleanup errors */ }
-    this._auroraTitleCard = null;
-  }
-
-  async _hideAuroraTitleCard(image, fadeMs = 80) {
-    if (!image) return;
-    image.style.transition = `opacity ${Math.max(0, fadeMs)}ms linear`;
-    image.style.opacity = '0';
-    if (fadeMs > 0) await this._wait(fadeMs);
-    image.style.display = 'none';
-    image.style.transition = 'opacity 180ms cubic-bezier(0.22, 1, 0.36, 1)';
-  }
-
-  async _runAuroraTitleCardSequence(video, image) {
-    if (!video || !image) return;
-    image.style.display = 'block';
-    image.style.opacity = '0';
-    image.style.transition = 'opacity 180ms cubic-bezier(0.22, 1, 0.36, 1)';
-
-    await this._waitForAuroraBeautyTime(video, AURORA_TITLE_CARD_TIMING.show);
-    requestAnimationFrame(() => { if (image) image.style.opacity = '1'; });
-
-    await this._waitForAuroraBeautyTime(video, AURORA_TITLE_CARD_TIMING.fadeOut);
-    image.style.transition = 'opacity 270ms cubic-bezier(0.4, 0, 1, 1)';
-    image.style.opacity = '0';
-
-    await this._waitForAuroraBeautyTime(video, AURORA_TITLE_CARD_TIMING.hide);
-    image.style.display = 'none';
-    image.style.transition = 'opacity 180ms cubic-bezier(0.22, 1, 0.36, 1)';
-  }
-
   _disposeAuroraBeautyVideo() {
     const video = this._auroraBeautyVideo;
     if (!video) return;
     try {
+      // Let the live battlefield hold for one last beat while the camera
+      // commits to Auryi, then let Beauty take over without a static card.
+      this.tweens.killTweensOf(cam);
+      this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.05, duration: 170, ease: 'Sine.easeOut' });
+      await this._wait(110);
+      this.formation.setPovFocus?.(hero.id, true);
       video.pause();
       video.removeAttribute('src');
       video.load();
@@ -360,15 +300,90 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     await this._wait(fadeMs);
     try { video.pause(); } catch (err) { /* ignore */ }
     video.style.display = 'none';
-    video.style.transition = 'opacity 90ms linear';
+    video.style.transform = 'scale(1.018)';
+    video.style.filter = 'brightness(0.96) contrast(1.04) saturate(1.04)';
+    video.style.transition = 'opacity 120ms linear, transform 620ms cubic-bezier(0.22, 1, 0.36, 1), filter 260ms ease';
     try { video.currentTime = 0; } catch (err) { /* ignore */ }
+  }
+
+  async _runAuroraBeautyDirector(video) {
+    if (!video) return;
+    // Hybrid is the director; Beauty V1 remains the exact motion master.
+    video.style.transition = 'opacity 180ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1), filter 220ms ease';
+    video.style.transform = 'scale(1.035)';
+    video.style.filter = 'brightness(0.92) contrast(1.06) saturate(0.96)';
+
+    await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.invocation);
+    video.style.transform = 'scale(1.025)';
+    video.style.filter = 'brightness(1.00) contrast(1.05) saturate(1.04)';
+
+    await this._waitForAuroraBeautyTime(video, 1.55);
+    video.style.transition = 'opacity 180ms ease, transform 900ms cubic-bezier(0.22, 1, 0.36, 1), filter 380ms ease';
+    video.style.transform = 'scale(1.010)';
+    video.style.filter = 'brightness(1.03) contrast(1.04) saturate(1.07)';
+
+    await this._waitForAuroraBeautyTime(video, 2.45);
+    video.style.transform = 'scale(1.000)';
+    video.style.filter = 'brightness(1.05) contrast(1.03) saturate(1.08)';
+
+    await this._waitForAuroraBeautyTime(video, 3.35);
+    video.style.transition = 'opacity 180ms ease, transform 540ms cubic-bezier(0.55, 0, 1, 0.45), filter 300ms ease';
+    video.style.transform = 'scale(1.028)';
+
+    await this._waitForAuroraBeautyTime(video, 4.15);
+    video.style.transition = 'opacity 180ms ease, transform 260ms cubic-bezier(0.55, 0, 1, 0.45), filter 180ms ease';
+    video.style.transform = 'scale(1.058)';
+    video.style.filter = 'brightness(0.91) contrast(1.09) saturate(0.98)';
+
+    await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.silence);
+    video.style.transition = 'opacity 90ms linear, transform 90ms linear, filter 90ms linear';
+    video.style.transform = 'scale(1.066)';
+    video.style.filter = 'brightness(0.82) contrast(1.11) saturate(0.88)';
+
+    await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.pulse);
+    video.style.transition = 'opacity 120ms linear, transform 150ms cubic-bezier(0.22, 1, 0.36, 1), filter 140ms ease';
+    video.style.transform = 'scale(1.016)';
+    video.style.filter = 'brightness(1.18) contrast(1.05) saturate(1.14)';
+  }
+
+  _playAuroraBattlefieldAfterglow() {
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const wash = this.add.rectangle(w * 0.5, h * 0.5, w * 1.5, h * 1.5, 0xf5ecff, 0.30)
+      .setDepth(30.7).setBlendMode(Phaser.BlendModes.ADD);
+    const sweep = this.add.ellipse(w * 0.56, h * 0.47, w * 1.26, h * 0.74, 0xb58cff, 0.17)
+      .setDepth(30.6).setAngle(-12).setBlendMode(Phaser.BlendModes.ADD);
+    wash.setScrollFactor?.(0);
+    sweep.setScrollFactor?.(0);
+    this.worldAdd([wash, sweep]);
+    this.world?.bringToTop?.(sweep);
+    this.world?.bringToTop?.(wash);
+    this.tweens.add({ targets: wash, alpha: 0, duration: 430, ease: 'Cubic.easeOut', onComplete: () => wash.destroy() });
+    this.tweens.add({ targets: sweep, scaleX: 1.12, scaleY: 1.18, alpha: 0, duration: 560, ease: 'Cubic.easeOut', onComplete: () => sweep.destroy() });
+  }
+
+  _restoreAuroraBeautyDirector(heroId, cameraState) {
+    this.formation.setPovFocus?.(heroId, false);
+    const cam = this.cameras.main;
+    if (!cam || !cameraState) return;
+    this.tweens.killTweensOf(cam);
+    this.tweens.add({
+      targets: cam,
+      zoom: cameraState.zoom,
+      scrollX: cameraState.scrollX,
+      scrollY: cameraState.scrollY,
+      duration: 220,
+      ease: 'Sine.easeOut'
+    });
   }
 
   _beginAuroraBeautyBattlefieldReveal(video) {
     if (!video) return;
-    // Blend the approved Beauty Pulse over the real Hybrid battlefield instead
-    // of cutting from full-screen video to gameplay in one frame.
-    video.style.transition = 'opacity 550ms cubic-bezier(0.22, 1, 0.36, 1)';
+    // K20: the Pulse itself carries the viewer back into the real Hybrid
+    // battlefield. The slight push/bloom turns the crossfade into a wave exit.
+    video.style.transition = 'opacity 500ms cubic-bezier(0.22, 1, 0.36, 1), transform 500ms cubic-bezier(0.22, 1, 0.36, 1), filter 260ms ease';
+    video.style.transform = 'scale(1.065)';
+    video.style.filter = 'brightness(1.24) contrast(1.02) saturate(1.12)';
     video.style.opacity = '0';
   }
 
@@ -411,7 +426,6 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
   async _playAuryiAuroraPulseBeauty(hero) {
     const video = this._prepareAuroraBeautyVideo();
-    const titleCard = this._prepareAuroraTitleCard();
     if (!video) return false;
 
     this._turnLock = true;
@@ -425,6 +439,8 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     let ownsBloom = false;
     let impactResolved = false;
     let pendingImpact = null;
+    const cam = this.cameras.main;
+    const cameraState = { zoom: cam.zoom, scrollX: cam.scrollX, scrollY: cam.scrollY };
 
     this.audio.beginCinematicAttack?.();
     // iPhone/Safari: arm the exact choir cue while still inside the user-gesture
@@ -438,11 +454,12 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       try { video.currentTime = 0; } catch (err) { /* metadata may still be settling */ }
       video.style.display = 'block';
       video.style.opacity = '0';
+      video.style.transform = 'scale(1.035)';
       const playPromise = video.play();
       if (playPromise) await playPromise;
       requestAnimationFrame(() => { video.style.opacity = '1'; });
-      const titleCardTask = this._runAuroraTitleCardSequence(video, titleCard)
-        .catch(err => console.warn('[PV] Aurora Pulse title-card sequence skipped:', err));
+      const directorTask = this._runAuroraBeautyDirector(video)
+        .catch(err => console.warn('[PV] Aurora Pulse Hybrid director skipped:', err));
 
       // Beauty V1 is the presentation clock. Starting Bloom at Invocation and
       // pausing it for the approved compression pocket makes its 5.48s master
@@ -485,6 +502,8 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.reveal);
       this._beginAuroraBeautyBattlefieldReveal(video);
       await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.impactReveal);
+      this.audio.auroraReentryWave?.();
+      this._playAuroraBattlefieldAfterglow();
       if (pendingImpact) this._playAuroraEnemyReconnectImpact(pendingImpact.dmg, pendingImpact.lethal);
       await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.reconnect);
       await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.end, 14000);
@@ -492,8 +511,8 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       console.warn('[PV] Aurora Beauty V1 playback fell back to Hybrid mock:', err);
       if (ownsBloom) this.audio.auroraBloomStop?.(120);
       this.audio.endCinematicAttack?.();
-      await this._hideAuroraTitleCard(titleCard, 40);
       await this._hideAuroraBeautyVideo(video, 40);
+      this._restoreAuroraBeautyDirector(hero.id, cameraState);
       if (!impactResolved) {
         this._turnLock = false;
         return false;
@@ -501,8 +520,8 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     }
 
     if (ownsBloom) this.audio.auroraBloomStop?.(120);
-    await this._hideAuroraTitleCard(titleCard, 0);
     await this._hideAuroraBeautyVideo(video, 90);
+    this._restoreAuroraBeautyDirector(hero.id, cameraState);
     this.audio.endCinematicAttack?.();
     this._turnLock = false;
     this._endHeroTurn();

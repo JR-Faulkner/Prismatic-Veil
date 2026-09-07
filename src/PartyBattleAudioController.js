@@ -381,6 +381,16 @@ export default class PartyBattleAudioController {
     return true;
   }
 
+  auroraReentryWave() {
+    // K20 battlefield-return wave: layer Auryi's existing production bank
+    // at lower rates for a broad energy front, then give it a body transient.
+    // Celestial Bloom itself remains the untouched exact native M4A master.
+    this._duckMusic(0.34, 460);
+    this._playLayer({ key: 'pb_hero_auryi_release', volumeMul: 0.92, rate: 0.72 }, 'sfx');
+    this._playLayer({ key: 'pb_hero_auryi_idlePulse', volumeMul: 0.56, rate: 0.62, delayMs: 28 }, 'sfx');
+    this._playLayer({ key: 'pb_hero_auryi_impact', volumeMul: 0.88, rate: 0.82, delayMs: 72 }, 'sfx');
+  }
+
   uiMove() { this._play('uiMove'); }
   uiConfirm() { this._play('uiConfirm'); }
   uiReject() { this._play('uiReject'); }

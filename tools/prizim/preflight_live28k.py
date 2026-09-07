@@ -187,7 +187,7 @@ if auth['auryi'].get('aurora_beauty_sync', {}).get('beauty_video_hidden_before_d
 # the real live enemy reaction must be visible during that crossfade.
 for token in [
     '_beginAuroraBeautyBattlefieldReveal',
-    "video.style.transition = 'opacity 550ms cubic-bezier(0.22, 1, 0.36, 1)'",
+    'opacity 500ms cubic-bezier(0.22, 1, 0.36, 1)',
     '_playAuroraEnemyReconnectImpact',
     'pendingImpact = { dmg, lethal: this.enemy.hp <= 0 }',
     'AURORA_BEAUTY_TIMELINE.reveal',
@@ -272,53 +272,59 @@ if 'native HTMLMediaElement' not in auth['auryi'].get('exact_m4a_playback_lane',
     errors.append('K18 exact M4A playback lane missing from machine authority')
 
 
-# 8f. K19 exact move-title guard: the approved PNG is immutable and must live
-# above Beauty V1 only during Invocation, disappearing before Aurora Growth.
-title_card = pathlib.Path('assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_TitleCard_Approved.png')
-title_expected = (1886155, '455276790353db64f997326e8caf9d00cc096d8179c299e2f49eb57cb8c91ccb', (1672, 941))
-if not (ROOT / title_card).exists():
-    errors.append(f'missing approved Aurora Pulse title card: {title_card}')
-else:
-    p = ROOT / title_card
-    if p.stat().st_size != title_expected[0]:
-        errors.append(f'Aurora title-card size drift: {p.stat().st_size}, expected {title_expected[0]}')
-    actual = sha256(title_card)
-    if actual != title_expected[1]:
-        errors.append(f'Aurora title-card SHA drift: {actual}, expected {title_expected[1]}')
-    try:
-        dims = png_dimensions(title_card)
-        if dims != title_expected[2]:
-            errors.append(f'Aurora title-card dimensions drift: {dims}, expected {title_expected[2]}')
-    except Exception as exc:
-        errors.append(f'Aurora title-card PNG validation failed: {exc}')
+# 8f. K20 Hybrid cinematic-director guard. K19's full-screen move-title card
+# is retired from runtime. Beauty V1 and the exact native M4A lane stay immutable.
+for forbidden in [
+    'AURORA_TITLE_CARD_READY',
+    'AURORA_TITLE_CARD_PATH',
+    'AURORA_TITLE_CARD_TIMING',
+    '_prepareAuroraTitleCard',
+    '_runAuroraTitleCardSequence',
+    "'RESONART\nAURORA PULSE'",
+]:
+    if forbidden in k_scene:
+        errors.append(f'K20 retired Aurora move-title runtime token returned: {forbidden}')
 
 for token in [
-    'AURORA_TITLE_CARD_READY = true',
-    'AURORA_TITLE_CARD_PATH',
-    'AURORA_TITLE_CARD_TIMING = Object.freeze({ show: 0.08, fadeOut: 1.28, hide: 1.55 })',
-    '_prepareAuroraTitleCard()',
-    '_runAuroraTitleCardSequence(video, image)',
-    "zIndex: '2147483001'",
-    "objectFit: 'contain'",
-    'this._runAuroraTitleCardSequence(video, titleCard)',
+    '_runAuroraBeautyDirector(video)',
+    '_playAuroraBattlefieldAfterglow()',
+    '_restoreAuroraBeautyDirector(heroId, cameraState)',
+    'this.formation.setPovFocus?.(hero.id, true)',
+    'this.audio.auroraReentryWave?.();',
+    "video.style.transform = 'scale(1.065)'",
+    'AURORA_BEAUTY_TIMELINE.impactReveal',
 ]:
     if token not in k_scene:
-        errors.append(f'K19 Aurora title-card runtime token missing: {token}')
-if 'Auryi_AuroraPulse_TitleCard_Approved.png' in base_scene:
-    errors.append('K19 Aurora title card leaked into standalone PartyBattleScene')
-if auth.get('hard_gates', {}).get('aurora_title_card_exact_png_required') is not True:
-    errors.append('K19 exact title-card PNG hard gate missing')
-if auth.get('hard_gates', {}).get('aurora_title_card_must_hide_before_growth') is not True:
-    errors.append('K19 title-card-before-growth hard gate missing')
-if auth.get('hard_gates', {}).get('k19_title_card_must_not_change_k18_audio_or_handoff') is not True:
-    errors.append('K19 K18-audio/handoff preservation hard gate missing')
-title_timing = auth.get('auryi', {}).get('aurora_title_card_timing', {})
-if title_timing != {'show': 0.08, 'fade_out': 1.28, 'hide': 1.55}:
-    errors.append(f'K19 title-card timing drift: {title_timing}')
-if float(title_timing.get('hide', 99)) > 1.55:
-    errors.append('K19 title card remains visible into Aurora Growth')
-if auth.get('auryi', {}).get('aurora_title_card_sha256') != title_expected[1]:
-    errors.append('K19 title-card SHA missing/drifted in machine authority')
+        errors.append(f'K20 Aurora Hybrid director token missing: {token}')
+
+for token in [
+    'auroraReentryWave()',
+    "key: 'pb_hero_auryi_release'",
+    "key: 'pb_hero_auryi_idlePulse'",
+    "key: 'pb_hero_auryi_impact'",
+]:
+    if token not in audio_controller:
+        errors.append(f'K20 Aurora re-entry wave audio token missing: {token}')
+
+for gate in [
+    'aurora_runtime_title_forbidden',
+    'aurora_hybrid_director_required',
+    'aurora_reentry_wave_required',
+    'aurora_reentry_live_enemy_reaction_required',
+    'k20_must_preserve_k18_native_m4a_lane',
+    'k20_must_preserve_beauty_exact_master',
+]:
+    if auth.get('hard_gates', {}).get(gate) is not True:
+        errors.append(f'K20 hard gate missing: {gate}')
+
+if auth.get('auryi', {}).get('aurora_title_card_runtime_enabled') is not False:
+    errors.append('K20 Aurora title-card runtime must be explicitly disabled')
+if 'archived visual/reference asset' not in auth.get('auryi', {}).get('aurora_title_card_policy', ''):
+    errors.append('K20 title-card reference-only policy missing from machine authority')
+if auth.get('auryi', {}).get('aurora_beauty_sync', {}).get('battlefield_reentry_wave') != 6.30:
+    errors.append('K20 battlefield re-entry wave must be locked to 6.30s')
+if 'release + idlePulse + impact' not in auth.get('auryi', {}).get('aurora_reentry_wave_policy', ''):
+    errors.append('K20 re-entry wave construction policy missing from machine authority')
 bloom_policy = auth['auryi'].get('aurora_bloom_mix_policy', '')
 if 'scheduled before native video play' not in bloom_policy and 'native HTMLMediaElement' not in bloom_policy:
     errors.append('Aurora Bloom iPhone scheduling/native-media policy missing from machine authority')

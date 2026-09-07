@@ -35,9 +35,12 @@
     "exact_m4a_masters_must_not_enter_phaser_webaudio_decode": true,
     "native_media_prime_required_for_exact_m4a": true,
     "post_scene_media_decode_rejection_nonfatal": true,
-    "aurora_title_card_exact_png_required": true,
-    "aurora_title_card_must_hide_before_growth": true,
-    "k19_title_card_must_not_change_k18_audio_or_handoff": true
+    "aurora_runtime_title_forbidden": true,
+    "aurora_hybrid_director_required": true,
+    "aurora_reentry_wave_required": true,
+    "aurora_reentry_live_enemy_reaction_required": true,
+    "k20_must_preserve_k18_native_m4a_lane": true,
+    "k20_must_preserve_beauty_exact_master": true
   },
   "auryi": {
     "basic_attack": "Aurorb Slice",
@@ -51,7 +54,7 @@
     "aurora_exact_frame_mode": false,
     "aurora_current_binary_state": "not-restored-to-durable-repo",
     "future_crown_authority": "Main Splash Screen crown: hovered/offset above Auryi, not head-worn; preserve splash-screen silhouette, scale, and spacing. Aurora Pulse remains crownless.",
-    "aurora_presentation": "Beauty V1 hybrid-video primary; Phaser mock fallback only",
+    "aurora_presentation": "Beauty V1 exact master staged by the K20 Hybrid cinematic director; no move-title overlay; Pulse-driven battlefield reconnect with live enemy reaction and residual Aurora afterglow.",
     "aurora_beauty_video": "assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4",
     "aurora_beauty_video_sha256": "e70fc0f987646b1c1428c8797c0d95e8a38c2327448d3607826febb1e0065b1a",
     "aurora_beauty_video_bytes": 3400903,
@@ -69,11 +72,12 @@
       "live_enemy_visual_impact": 6.3,
       "live_battlefield_reconnect": 6.58,
       "beauty_video_hidden_before_demo_tail": 6.65,
-      "bloom_playback_watchdog": 0.84
+      "bloom_playback_watchdog": 0.84,
+      "battlefield_reentry_wave": 6.3
     },
     "aurora_demo_tail_policy": "Never display Beauty V1 placeholder reconnect material at/after ~6.65s; live Hybrid battlefield owns reconnect.",
     "aurora_bloom_mix_policy": "Celestial Bloom uses native HTMLMediaElement. Hybrid audio-enable tap primes the exact M4A; Aurora starts a silent native preroll inside the Resonart gesture, seeks to source time 0 and raises it to foreground volume at Invocation, retains the 0.84s actual-playback watchdog, and clears normal battle BGM beneath it.",
-    "aurora_handoff_policy": "Keep gameplay damage locked to the 5.18s Pulse beat, but reveal the real Hybrid battlefield through a 550ms Beauty-video crossfade beginning at 6.08s and show the live enemy hit/recoil plus prismatic impact at 6.30s before full reconnect. Never use the Beauty demo reconnect tail.",
+    "aurora_handoff_policy": "Keep gameplay damage locked to the 5.18s Pulse beat. Begin the Pulse-driven reveal of the real Hybrid battlefield at 6.08s; at 6.30s fire the Auryi re-entry wave, residual Aurora afterglow, and live enemy hit/recoil; restore live battlefield ownership by 6.58s and hide Beauty before 6.65s. Never show the Beauty demo tail.",
     "aurora_bloom_watchdog_policy": "Celestial Bloom scheduling is not sufficient evidence of playback on iPhone. At Beauty time 0.84s, verify the exact master is actually playing; if not, restart the exact cached master immediately without changing the Beauty video, compression silence, Pulse timing, or Hybrid handoff.",
     "exact_m4a_playback_lane": "native HTMLMediaElement; exact source bytes; no Phaser/WebAudio decode",
     "aurora_title_card": "assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_TitleCard_Approved.png",
@@ -90,14 +94,17 @@
       "fade_out": 1.28,
       "hide": 1.55
     },
-    "aurora_title_card_policy": "Use the exact approved PNG as a full-screen DOM overlay above Beauty V1 during the early Aurora Pulse invocation. Fade in at 0.08s, begin fade at 1.28s, and be fully hidden by 1.55s before Aurora Growth. No regeneration, recompression, redesign, or K18 audio/handoff changes."
+    "aurora_title_card_policy": "Retained only as an archived visual/reference asset. It is not loaded, displayed, or required by the Aurora Pulse runtime after K19 phone review.",
+    "aurora_title_card_runtime_enabled": false,
+    "aurora_cinematic_director_policy": "Hybrid owns presentation around the exact Beauty V1 master: brief live-camera commitment to Auryi, subtle invocation push, wider perceived Aurora scale, compression push-in, silent frozen tension, Pulse snap, then a wave-driven reveal of the real battlefield. Do not re-encode or upscale Beauty V1.",
+    "aurora_reentry_wave_policy": "At 6.30s layer Auryi production release + idlePulse + impact cues at lower rates to create a broad wave-blast synchronized to battlefield re-entry. No new binary and no modification to Celestial Bloom M4A."
   },
   "device_evidence": {
     "live28k11_celestial_bloom_played_and_sounded_good": true,
     "live28k11_triumph_of_light_played": true,
     "live28k11_visual_cinematic_missing": true,
     "live28k12_pending_iphone_validation": true,
-    "pending_witness": "main-20260907-live28k19",
+    "pending_witness": "main-20260907-live28k20",
     "pending_iphone_validation": true,
     "promotion_reason": "Promote the K19 Aurora Pulse move-title polish after LIVE28K18 passed the iPhone core presentation gate: boot clean, Celestial Bloom audible, Beauty V1 cinematic accepted, and live battlefield/enemy reconnect accepted. Preserve the exact K18 native M4A lane, Bloom watchdog, Pulse/damage timing, demo-tail cutoff, K16 battlefield crossfade and visible Wraith impact, crownless Aurora Pulse, separate Aurorb Slice, looping Triumph, and Hybrid/K ownership. Add only the exact approved 1672x941 PNG Auryi_AuroraPulse_TitleCard_Approved.png (SHA-256 455276790353db64f997326e8caf9d00cc096d8179c299e2f49eb57cb8c91ccb) as a full-screen DOM overlay above Beauty V1: reveal at 0.08s, begin fade at 1.28s, fully hidden by 1.55s before Aurora Growth. Keep machine authority, PriZim notepad, resume anchor, preflight, and iPhone pending gate synchronized to K19.",
     "aurora_beauty_v1_exact_master_installed": true,
@@ -117,9 +124,9 @@
     "live28k16_celestial_bloom_inaudible": true,
     "live28k16_result": "FAIL phone gate: intermittent LIVE BOOT ERROR observed and Celestial Bloom choir did not play.",
     "live28k16_handoff_visual_result": "Not yet accepted/rejected; boot/audio regression must be removed first.",
-    "latest_device_witness": "main-20260906-live28k18",
-    "latest_device_result": "PASS core Aurora phone gate: user reported looks and sounds good; native M4A lane, Beauty V1, and live battlefield/enemy reconnect accepted. Next requested polish is visible move title.",
-    "pending_gate_summary": "LIVE28K19: exact approved AURORA PULSE title card appears cleanly during invocation, fades before Aurora Growth, while K18 choir/audio, Beauty cinematic, Pulse timing, and live enemy handoff remain unchanged.",
+    "latest_device_witness": "main-20260907-live28k19",
+    "latest_device_result": "REJECT presentation gate: the full-screen title card interrupted Aurora Pulse and reduced cinematic continuity. User requested the move name removed entirely and the Hybrid transition/camera/reconnect presentation upgraded.",
+    "pending_gate_summary": "LIVE28K20: no cinematic move-title card; smoother live battlefield-to-Beauty camera commitment; stronger expansion/compression/Pulse framing; Auryi wave-blast on battlefield return; live Wraith reaction and residual Aurora afterglow remain integrated, while K18 native M4A/boot reliability and exact Beauty V1 stay unchanged.",
     "live28k17_pending_iphone_validation": true,
     "live28k17_boot_decode_failed": true,
     "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR \u00b7 Decoding failed",
@@ -131,7 +138,10 @@
     "live28k18_battlefield_enemy_handoff_accepted": true,
     "live28k18_core_aurora_presentation_passed": true,
     "live28k18_result": "PASS core Aurora phone gate: user reported looks and sounds good; native M4A lane, Beauty V1, and live battlefield/enemy reconnect accepted. Next requested polish is visible move title.",
-    "live28k19_pending_iphone_validation": true
+    "live28k19_pending_iphone_validation": false,
+    "live28k19_title_presentation_rejected": true,
+    "live28k19_result": "REJECT presentation gate: the full-screen title card interrupted Aurora Pulse and reduced cinematic continuity. User requested the move name removed entirely and the Hybrid transition/camera/reconnect presentation upgraded.",
+    "live28k20_pending_iphone_validation": true
   },
   "hybrid_boot_policy": "hybrid-main must retry live-build.json and hybrid-battle-live.html no-store fetches with bounded exponential backoff before surfacing LIVE BOOT ERROR."
 }

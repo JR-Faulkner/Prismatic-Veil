@@ -124,7 +124,8 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Aurora Pulse live production belongs in the Hybrid/K adapter stack, not standalone `PartyBattleScene.js`.
 - Approved composition/timing reference: `pz-a-aurora-pulse-lab.html`.
 - **Primary live presentation:** exact `Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4` inside the Hybrid/K adapter. Verified 1920×1080 H.264, 24 FPS, 7.375s, SHA-256 `e70fc0f987646b1c1428c8797c0d95e8a38c2327448d3607826febb1e0065b1a`.
-- **Approved move-title card:** exact `Auryi_AuroraPulse_TitleCard_Approved.png`, 1672×941 PNG, SHA-256 `455276790353db64f997326e8caf9d00cc096d8179c299e2f49eb57cb8c91ccb`; show 0.08s -> fade 1.28s -> hidden 1.55s before Aurora Growth.
+- **K20 cinematic presentation:** no move-title card. Hybrid directs the exact Beauty V1 master with live-camera commitment, expansion/compression framing, Pulse-driven reconnect, Auryi re-entry wave, live enemy reaction, and residual Aurora afterglow.
+- The K19 title-card PNG is retained as an archived/reference asset only and is not loaded by Aurora Pulse runtime.
 - Live sync is derived from `PV_LIVE_AUTHORITY.json`: Bloom 0.70s -> silence 4.56s -> Pulse/damage logic 5.18s -> battlefield reveal 6.08s -> live enemy impact 6.30s -> reconnect 6.58s -> Beauty hidden 6.65s.
 - The real Hybrid battlefield owns the final handoff and enemy reaction; the Beauty master's baked demo reconnect tail is never displayed.
 - The Phaser Aurora mock is fail-safe presentation only if native video playback fails. The old Aurorb Slice pose sequence is never an Aurora Pulse fallback.
@@ -132,8 +133,8 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Triumph of Light loops while the victory/results screen remains open.
 - Aurora Pulse itself remains **crownless**.
 - LIVE28K18 core presentation is recorded as passed: boot clean = True; Bloom audible = True; battlefield/enemy handoff accepted = True.
-- Latest phone evidence (main-20260906-live28k18): PASS core Aurora phone gate: user reported looks and sounds good; native M4A lane, Beauty V1, and live battlefield/enemy reconnect accepted. Next requested polish is visible move title.
-- Current pending gate: LIVE28K19: exact approved AURORA PULSE title card appears cleanly during invocation, fades before Aurora Growth, while K18 choir/audio, Beauty cinematic, Pulse timing, and live enemy handoff remain unchanged.
+- Latest phone evidence (main-20260907-live28k19): REJECT presentation gate: the full-screen title card interrupted Aurora Pulse and reduced cinematic continuity. User requested the move name removed entirely and the Hybrid transition/camera/reconnect presentation upgraded.
+- Current pending gate: LIVE28K20: no cinematic move-title card; smoother live battlefield-to-Beauty camera commitment; stronger expansion/compression/Pulse framing; Auryi wave-blast on battlefield return; live Wraith reaction and residual Aurora afterglow remain integrated, while K18 native M4A/boot reliability and exact Beauty V1 stay unchanged.
 - Future non-Aurora crown authority: match the Main Splash Screen crown as a **hovered/offset element above Auryi**, not head-worn.
 
 ## Kineza

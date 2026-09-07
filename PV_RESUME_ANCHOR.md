@@ -176,9 +176,11 @@ Do not add redundant base-file query-string surgery unless this routing actually
 
 - Current witness: `main-20260907-live28k19`.
 - K18 baseline: core Beauty presentation, native Celestial Bloom, and live battlefield/enemy handoff passed on iPhone.
-- K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.
-- Latest phone evidence (main-20260906-live28k18): PASS core Aurora phone gate: user reported looks and sounds good; native M4A lane, Beauty V1, and live battlefield/enemy reconnect accepted. Next requested polish is visible move title.
-- Current pending gate: LIVE28K19: exact approved AURORA PULSE title card appears cleanly during invocation, fades before Aurora Growth, while K18 choir/audio, Beauty cinematic, Pulse timing, and live enemy handoff remain unchanged.
+- K19 phone review: full-screen title presentation was rejected because it interrupted cinematic continuity.
+- K20 presentation: title removed; Hybrid camera/framing and Pulse-driven battlefield re-entry are the active polish lane.
+
+- Latest phone evidence (main-20260907-live28k19): REJECT presentation gate: the full-screen title card interrupted Aurora Pulse and reduced cinematic continuity. User requested the move name removed entirely and the Hybrid transition/camera/reconnect presentation upgraded.
+- Current pending gate: LIVE28K20: no cinematic move-title card; smoother live battlefield-to-Beauty camera commitment; stronger expansion/compression/Pulse framing; Auryi wave-blast on battlefield return; live Wraith reaction and residual Aurora afterglow remain integrated, while K18 native M4A/boot reliability and exact Beauty V1 stay unchanged.
 - Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.
 
 ## Hard constraints

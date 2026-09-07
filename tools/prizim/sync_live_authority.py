@@ -39,7 +39,6 @@ def main():
 
     aur = auth.get('auryi', {})
     beat = aur.get('aurora_beauty_sync', {})
-    title_beat = aur.get('aurora_title_card_timing', {})
     device = auth.get('device_evidence', {})
     current_aurora = f'''## Auryi Resonart / Aurora Pulse current lane
 
@@ -48,7 +47,8 @@ def main():
 - Aurora Pulse live production belongs in the Hybrid/K adapter stack, not standalone `PartyBattleScene.js`.
 - Approved composition/timing reference: `pz-a-aurora-pulse-lab.html`.
 - **Primary live presentation:** exact `Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4` inside the Hybrid/K adapter. Verified 1920×1080 H.264, 24 FPS, 7.375s, SHA-256 `e70fc0f987646b1c1428c8797c0d95e8a38c2327448d3607826febb1e0065b1a`.
-- **Approved move-title card:** exact `Auryi_AuroraPulse_TitleCard_Approved.png`, 1672×941 PNG, SHA-256 `455276790353db64f997326e8caf9d00cc096d8179c299e2f49eb57cb8c91ccb`; show {title_beat.get('show', 0.08):.2f}s -> fade {title_beat.get('fade_out', 1.28):.2f}s -> hidden {title_beat.get('hide', 1.55):.2f}s before Aurora Growth.
+- **K20 cinematic presentation:** no move-title card. Hybrid directs the exact Beauty V1 master with live-camera commitment, expansion/compression framing, Pulse-driven reconnect, Auryi re-entry wave, live enemy reaction, and residual Aurora afterglow.
+- The K19 title-card PNG is retained as an archived/reference asset only and is not loaded by Aurora Pulse runtime.
 - Live sync is derived from `PV_LIVE_AUTHORITY.json`: Bloom {beat.get('celestial_bloom_scheduled_from_user_gesture', 0.70):.2f}s -> silence {beat.get('compression_silence', 4.56):.2f}s -> Pulse/damage logic {beat.get('pulse_release_and_damage_logic', 5.18):.2f}s -> battlefield reveal {beat.get('battlefield_reveal_crossfade', 6.08):.2f}s -> live enemy impact {beat.get('live_enemy_visual_impact', 6.30):.2f}s -> reconnect {beat.get('live_battlefield_reconnect', 6.58):.2f}s -> Beauty hidden {beat.get('beauty_video_hidden_before_demo_tail', 6.65):.2f}s.
 - The real Hybrid battlefield owns the final handoff and enemy reaction; the Beauty master's baked demo reconnect tail is never displayed.
 - The Phaser Aurora mock is fail-safe presentation only if native video playback fails. The old Aurorb Slice pose sequence is never an Aurora Pulse fallback.
@@ -107,7 +107,9 @@ def main():
             resume = resume.replace(marker, '\n' + safeguard + marker, 1)
         else:
             resume += '\n\n' + safeguard
-    aurora_gate = f'''## Aurora Pulse live device gate\n\n- Current witness: `{witness}`.\n- K18 baseline: core Beauty presentation, native Celestial Bloom, and live battlefield/enemy handoff passed on iPhone.\n- K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.\n- Latest phone evidence ({device.get('latest_device_witness', witness)}): {device.get('latest_device_result', 'pending device evidence')}\n- Current pending gate: {device.get('pending_gate_summary', 'pending iPhone validation')}\n- Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.\n'''
+    aurora_gate = f'''## Aurora Pulse live device gate\n\n- Current witness: `{witness}`.\n- K18 baseline: core Beauty presentation, native Celestial Bloom, and live battlefield/enemy handoff passed on iPhone.\n- K19 phone review: full-screen title presentation was rejected because it interrupted cinematic continuity.
+- K20 presentation: title removed; Hybrid camera/framing and Pulse-driven battlefield re-entry are the active polish lane.
+\n- Latest phone evidence ({device.get('latest_device_witness', witness)}): {device.get('latest_device_result', 'pending device evidence')}\n- Current pending gate: {device.get('pending_gate_summary', 'pending iPhone validation')}\n- Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.\n'''
     if '## Aurora Pulse live device gate' in resume:
         resume = replace_section(resume, '## Aurora Pulse live device gate', aurora_gate)
     else:

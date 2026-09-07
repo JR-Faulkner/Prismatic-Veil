@@ -343,7 +343,7 @@ aur['aurora_cinematic_director_policy'] = (
     'Pulse snap, then a wave-driven reveal of the real battlefield. Do not re-encode or upscale Beauty V1.'
 )
 aur['aurora_handoff_policy'] = (
-    'Keep gameplay damage locked to the 5.18s Pulse beat. Begin the Pulse-driven Beauty-to-Hybrid reveal '
+    'Keep gameplay damage locked to the 5.18s Pulse beat. Begin the Pulse-driven reveal of the real Hybrid battlefield '
     'at 6.08s; at 6.30s fire the Auryi re-entry wave, residual Aurora afterglow, and live enemy hit/recoil; '
     'restore live battlefield ownership by 6.58s and hide Beauty before 6.65s. Never show the Beauty demo tail.'
 )
@@ -454,7 +454,7 @@ sync = replace_once(
 )
 sync = replace_once(
     sync,
-    "- K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.\n",
+    "- K19 title polish: exact approved PNG title card overlays early Invocation and is hidden by 1.55s before Aurora Growth.",
     "- K19 phone review: full-screen title presentation was rejected because it interrupted cinematic continuity.\n"
     "- K20 presentation: title removed; Hybrid camera/framing and Pulse-driven battlefield re-entry are the active polish lane.\n",
     'resume K19 title line',
