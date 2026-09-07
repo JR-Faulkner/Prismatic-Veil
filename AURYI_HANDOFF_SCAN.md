@@ -1,149 +1,17 @@
-# Auryi DuoHybrid Archive Scan
+# Auryi Archive Scan
 
-Archive source: /Auryi_DuoHybrid_Complete_Handoff.zip
+Archive source: /AURYI_FX_RUNTIME_PNGS_ONLY.zip
 
-Total files: 72
+Total files: 5
 
 ## Matching Aurora / Pulse / Resonart / numbered Auryi candidates
 
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_01_raw.png` | 178328 bytes | sha256 `b0851c6e01153e5a316e27c4b6a1191fce27cb553c67dc7d9e0ddae16a833597` | PNG 256x341
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_02_raw.png` | 182791 bytes | sha256 `edac7d07aac9ca4884770ca3f428907c2545f31f2db337a761b40c1a7fab8ddd` | PNG 256x341
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_03_raw.png` | 185314 bytes | sha256 `eeaa80a864cda2bdda6de84524a5f8218540a08e02acc95031841c205f4a1390` | PNG 256x341
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_04_raw.png` | 196971 bytes | sha256 `306a5a3efa98011e6e53ea340c982fbc52ff6d00814464c8c783df56c06e0f46` | PNG 256x341
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_05_raw.png` | 191726 bytes | sha256 `c2d3b10778997242dcf8be5ffc7a0ad5eb42be8a1feba99f9c35bba0ac93dfc1` | PNG 256x341
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_06_raw.png` | 202976 bytes | sha256 `efdeb06015aa63cbeff746c7b0944db03a3416f3c1b048c97028cfddde6ef546` | PNG 256x341
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_07_raw.png` | 209609 bytes | sha256 `126c77defd6297da790a14c590d2f790f5d35e8edc1e576734a0223feafc3a71` | PNG 256x342
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_08_raw.png` | 207348 bytes | sha256 `27d70fd050c82b1ff50679959b1f11035f1fab168d34399053378f81ac1176a8` | PNG 256x342
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_09_raw.png` | 197576 bytes | sha256 `5cd43b4426122102454a57a1bdd31bb67f231937968c6303ba10e495cf37be63` | PNG 256x342
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_10_raw.png` | 206266 bytes | sha256 `fc1936a4a2bd272c4d0783f795158c89f4ab8d3c74a04c5b087aa56845d5db6b` | PNG 256x342
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_11_raw.png` | 190848 bytes | sha256 `52a5ea9f18888c07872de3445b73f1a379c56f8c503302a8c0b56cc5cc790973` | PNG 256x342
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_12_raw.png` | 171913 bytes | sha256 `1c1e3991e044f17d7d8d959ddaf18cec97fe8d0b823f89f350cc1247f4b02e76` | PNG 256x342
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_13_raw.png` | 185703 bytes | sha256 `e46041a861dd7212b6dac17829d482b04c54a589a1818385922351780a11fbce` | PNG 256x341
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_14_raw.png` | 189786 bytes | sha256 `fd8325be4b838de71405751637d1a895a6f7d92c642f79ff4577a1fec983ac4f` | PNG 256x341
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_15_raw.png` | 187315 bytes | sha256 `60a2990bc9e7f0e8276c3cc4d5e0fe4029f1b2312d6b04a7093d691b39c6af89` | PNG 256x341
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_16_raw.png` | 183400 bytes | sha256 `b12ad48fcdf16358e03115fdb02343c09709b84016501bfc3a60ea16758d8c9e` | PNG 256x341
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_17_raw.png` | 176707 bytes | sha256 `b9c63a4daef8070b7a26978c008b26fa577a31c8aed6ed02517db619085028bb` | PNG 256x341
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_18_raw.png` | 179184 bytes | sha256 `4b1e2bf26d4bed6e8506498a8a088e3f9720caa5f9c082c45600940c52c04c9e` | PNG 256x341
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_01.png` | 170103 bytes | sha256 `986fbb1bd9956bd025f06c473c9d50e8a6611c67fb84b74f8b883bca1a1c70cf` | PNG 250x323
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_02.png` | 173971 bytes | sha256 `f367b7afdc866b6dea60821b5d50a955d20bbd64ee59af5f2ae36ef2b0ab3b21` | PNG 250x323
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_03.png` | 175581 bytes | sha256 `93c37ad91cd8a96d1d039f8671e448840691522a94af690aab21bf4364077a96` | PNG 250x323
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_04.png` | 183076 bytes | sha256 `c978870a45245c01e1e78c729d139b68b3ec52430ae8e264a71f301e95230f3f` | PNG 250x323
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_05.png` | 182008 bytes | sha256 `a795c70e8e2b93e18d3f1d3732600f318cd948f98b891e151c057d5b4a6e0da6` | PNG 250x323
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_06.png` | 189822 bytes | sha256 `7582c8b6135d9c90447fc3db3897acbb814c55efe6b4eaa18829fb2480b8d2d4` | PNG 250x323
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_07.png` | 195335 bytes | sha256 `8782d6e4eff3999ed896d52a44b64bd048c0038040e9a2e9c51adf242014a695` | PNG 250x324
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_08.png` | 193469 bytes | sha256 `9b406d25281374dc464e59ddee6f2ea8d0cc7bcd0c6110a4abb16dbea0346d33` | PNG 250x324
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_09.png` | 185491 bytes | sha256 `ba6274a49f3f54d558e84bafb1e7eb8830da13680e8e302fd2af61d295007bce` | PNG 250x324
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_10.png` | 190943 bytes | sha256 `70b6057d2a0107766e9bd6aea95e005c4329e4a8b002b0bd7da03b451ebbbaeb` | PNG 250x324
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_11.png` | 181361 bytes | sha256 `e5d72a46326fc9dea959ff57a7aaa9ef9cfc822297014e1138c00a314c90de7a` | PNG 250x324
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_12.png` | 162394 bytes | sha256 `669502861746877cdde9658a5fb8ee0b747be0dfe3076bcfd177f0783f5a4c95` | PNG 250x324
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_13.png` | 176567 bytes | sha256 `265545c71b5ca29a127e25a69ee8b766b351699dfb55631ec333d26f06a6db80` | PNG 250x323
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_14.png` | 180638 bytes | sha256 `f159845b1aceca0f24f5c95cb909e5dbedc6b51804d187cc54cf7bc4135c97be` | PNG 250x323
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_15.png` | 178123 bytes | sha256 `e03c4019fdedc87253f5787dec0d4b2f97f2c6610d26687caa00a52e06f3e4dc` | PNG 250x323
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_16.png` | 172187 bytes | sha256 `dd0f78f21db3fc62657e00c7f055bcf67274a78983179f83fa712c308c9781a5` | PNG 250x323
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_17.png` | 167736 bytes | sha256 `31d7819932cde36772ec4e6a3316466d3b319f172503c4c2e9bf168997e4e45c` | PNG 250x323
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_18.png` | 170290 bytes | sha256 `f554a2f176142d4a9fdd40f8c310bcab8d60766e7236711920f255187175a11d` | PNG 250x323
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_01.png` | 657522 bytes | sha256 `35f1db8ed08d14b5a58e5ba963da9070f3117f0a75c22eff086ada5d0df561c7` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_02.png` | 673577 bytes | sha256 `cad47b0b651b94ccc2752ec5ea29d62c23e9d0dba54e0cd2401e2ed281819431` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_03.png` | 678605 bytes | sha256 `94095d96d3b06df7b6e2d8f5eca543faf2c93db4c7b19fde105597746b17c5fc` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_04.png` | 715883 bytes | sha256 `eb5e3dfb50753d2cfee939da378bf0197df3531394b12670068b43e91c904816` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_05.png` | 704959 bytes | sha256 `bcdabc654260ee7281b1439fa113c2ca90e9e338d448d55e7999a0222b68d2bf` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_06.png` | 747454 bytes | sha256 `5d7118a93693cfe154c81813617ce587171ed59050108cec2b20c10b88e88d73` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_07.png` | 766743 bytes | sha256 `4a4d74f4aeb9d438f0b689a64fae17b77a31c864faacaac09888169563dafb51` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_08.png` | 755392 bytes | sha256 `f74dd79f669b0394c0105630f665cf561dad4c07b6b60acef65469ccbac76752` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_09.png` | 719875 bytes | sha256 `a01540809cea78a1fa7c5ece8346b19357d9ea734dfaf89e1be6bd98b554e708` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_10.png` | 743541 bytes | sha256 `8c17415430364ee69039550eb362c453e4e897a7cfe55396bf43dd3e1134fc0e` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_11.png` | 694645 bytes | sha256 `7205f904966171bf801b33dd507d48338f2e962ab9f4899b8f40c0f5f6807837` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_12.png` | 609653 bytes | sha256 `f7c18148f500aeea7a3de42ff1db3760093ee3a3a1a8f760977034f5c75a729e` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_13.png` | 678605 bytes | sha256 `e1502245c5792806e027cbae025654b3ba626dc5f50c2600d1a8023898421518` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_14.png` | 696768 bytes | sha256 `11bfd21a9a2969570dbea5c4fd5447a047ea775a355c28b2aa4750c7eca8de66` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_15.png` | 686867 bytes | sha256 `dbea9b2842cadb5e3e043b624ee13f85a59620bcc6fe675666f0c6783053457a` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_16.png` | 662622 bytes | sha256 `4e1e957e6020812ba2dde03f606405f1d8577020dde9bf6305eab3ba8003f5fe` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_17.png` | 640780 bytes | sha256 `013be51a77bc10f8fea419d0181f251215b12e95cc388d4cfd2b2b2255bf3260` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_18.png` | 653962 bytes | sha256 `c0c1890db19829ea9b7b08d32df981b9de6b201ec7a6d2572ec2a2b7dc933333` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/01_raw/Auryi_Entry_01_raw.png` | 402317 bytes | sha256 `404dc1e9ec4196a45b2767da54f80ef5ce0cedb2df7e4bc1568f3ad48599ffab` | PNG 512x512
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/01_raw/Auryi_Entry_02_raw.png` | 400934 bytes | sha256 `a99e1687e1620d5b31983b227ff5c2df9de3e57c94c2c0e8987d69dbb4aec756` | PNG 512x512
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/01_raw/Auryi_Entry_03_raw.png` | 431881 bytes | sha256 `3bd1f38d9db2e89bc341e327742eb990951875defb4d5453b6009a7d5696ac05` | PNG 512x512
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/01_raw/Auryi_Entry_04_raw.png` | 424499 bytes | sha256 `0ad15e4eb6b228f8f0ea6f5a929a54cab1ce12a3296bb07f19511f0dc4ece22f` | PNG 512x512
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/01_raw/Auryi_Entry_05_raw.png` | 426178 bytes | sha256 `191efb8c3cb7d3e17851803bd0f58c561f806ec3bf93ea6fefbc98726c68f61e` | PNG 512x512
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/01_raw/Auryi_Entry_06_raw.png` | 413545 bytes | sha256 `45f9ed18bf862f7121368a344779b6186b0de4ee3e00966ea4363941aaaedf48` | PNG 512x512
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/02_runtime_frames/Auryi_Entry_01.png` | 735944 bytes | sha256 `ebdc3c6b1b073bcf54116e87de2061fcb121d9313eeee48364527d949398a297` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/02_runtime_frames/Auryi_Entry_02.png` | 733608 bytes | sha256 `0fd20b5203721b1fe4ccc98de8a7a6c2c528ed2865b11db9bceb76bf5d5832e4` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/02_runtime_frames/Auryi_Entry_03.png` | 794257 bytes | sha256 `4615e82ee5af045b6a110a531f15719aec86f22affaff6f93825bf7306e79191` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/02_runtime_frames/Auryi_Entry_04.png` | 783862 bytes | sha256 `3b78af05c3b42e6af05745f77a2b50fe4bca5e0fc3d08b06df14ad3e3c42c0ea` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/02_runtime_frames/Auryi_Entry_05.png` | 787689 bytes | sha256 `4a392ea76cef3623d02bcefabe05481175f833677d7b8e85a63000a92fd321f2` | PNG 768x768
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/02_runtime_frames/Auryi_Entry_06.png` | 761991 bytes | sha256 `3d499d9c468658647f1629d11450d98a9850a020a85e82e5c218f257b6957dc8` | PNG 768x768
+NONE
 
 ## Full file inventory
 
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_01_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_02_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_03_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_04_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_05_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_06_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_07_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_08_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_09_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_10_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_11_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_12_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_13_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_14_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_15_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_16_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_17_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/01_replaced_raw/Auryi_Auorb_Attack_18_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_01.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_02.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_03.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_04.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_05.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_06.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_07.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_08.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_09.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_10.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_11.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_12.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_13.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_14.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_15.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_16.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_17.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/02_clean_frames/Auryi_Auorb_Attack_18.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_01.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_02.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_03.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_04.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_05.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_06.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_07.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_08.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_09.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_10.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_11.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_12.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_13.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_14.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_15.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_16.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_17.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/03_runtime_frames/Auryi_Auorb_Attack_18.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/Auryi_Auorb_Attack_Anchors.json`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/Auryi_Auorb_Attack_Final_Harmonization_Report.txt`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/Auryi_Auorb_Attack_Final_Watch.png`
-- `Auryi_DuoHybrid_Complete_Handoff/attack/Auryi_Auorb_Attack_PZ_Final/Auryi_Auorb_Attack_Runtime_Manifest.json`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/01_raw/Auryi_Entry_01_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/01_raw/Auryi_Entry_02_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/01_raw/Auryi_Entry_03_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/01_raw/Auryi_Entry_04_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/01_raw/Auryi_Entry_05_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/01_raw/Auryi_Entry_06_raw.png`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/02_runtime_frames/Auryi_Entry_01.png`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/02_runtime_frames/Auryi_Entry_02.png`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/02_runtime_frames/Auryi_Entry_03.png`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/02_runtime_frames/Auryi_Entry_04.png`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/02_runtime_frames/Auryi_Entry_05.png`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/02_runtime_frames/Auryi_Entry_06.png`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/Auryi_Entry_PZ_Report.txt`
-- `Auryi_DuoHybrid_Complete_Handoff/entry/Auryi_Entry_PZ_Final/Auryi_Entry_Runtime_Manifest.json`
+- `01_crown_manifest_sheet.png`
+- `02_auorb_charge_sheet.png`
+- `03_auorb_projectile_sheet.png`
+- `04_auorb_impact_sheet.png`
+- `05_recompose_settle_sheet.png`
