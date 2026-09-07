@@ -4,7 +4,7 @@ Last refreshed: 2026-09-06
 
 ## Current production witness
 
-- Promoted witness: `main-20260906-live28k15`
+- Promoted witness: `main-20260906-live28k16`
 - Witness promotion commit: `0c5a59b68d832aef44e58ac48cbabb9e3c885507`
 - Exact production audio install commit: `ac00a834471317edd98a60a7884a1896270be61f`
 - Production battle adapter: `src/prizim/Live28K2PartyBattleScene.js`
@@ -174,7 +174,7 @@ Do not add redundant base-file query-string surgery unless this routing actually
 
 ## Aurora Pulse live device gate
 
-- Current witness: `main-20260906-live28k15`.
+- Current witness: `main-20260906-live28k16`.
 - K15 phone result: core Beauty presentation passed, Celestial Bloom audible, demo tail absent.
 - Pending K16 gate: smooth Beauty-to-live battlefield crossfade with real enemy hit/recoil visible during reconnect.
 - Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.
