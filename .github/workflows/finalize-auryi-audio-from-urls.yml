@@ -1,0 +1,51 @@
+name: Finalize Auryi Audio From Temporary URLs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/ingest_auryi_audio/URLS.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download exact masters once
+        shell: bash
+        run: |
+          set -euo pipefail
+          CELESTIAL_URL="$(sed -n 's/^CELESTIAL_URL=//p' .github/ingest_auryi_audio/URLS.txt)"
+          TRIUMPH_URL="$(sed -n 's/^TRIUMPH_URL=//p' .github/ingest_auryi_audio/URLS.txt)"
+          test -n "$CELESTIAL_URL"
+          test -n "$TRIUMPH_URL"
+          mkdir -p assets/music
+          curl -fL "$CELESTIAL_URL" -o 'assets/music/Celestial Bloom.m4a'
+          curl -fL "$TRIUMPH_URL" -o 'assets/music/Triumph of Light.m4a'
+
+      - name: Verify source bytes exactly
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '0e8762907bf36650cbdebab8f6497079350054f9819c81e6cb1ba4f3b14cff3d  assets/music/Celestial Bloom.m4a' | sha256sum -c -
+          echo '98c77e8bc536425b8da8ad4212ed26011335c5ac3b9dadbce0ec28c201cca437  assets/music/Triumph of Light.m4a' | sha256sum -c -
+          test "$(wc -c < 'assets/music/Celestial Bloom.m4a')" -eq 113740
+          test "$(wc -c < 'assets/music/Triumph of Light.m4a')" -eq 186602
+
+      - name: Commit verified masters and remove temporary manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/ingest_auryi_audio/URLS.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add 'assets/music/Celestial Bloom.m4a' 'assets/music/Triumph of Light.m4a' .github/ingest_auryi_audio/URLS.txt
+          git commit -m 'LIVE28K: install exact Aurora Pulse and victory audio masters'
+          git push origin HEAD:main
