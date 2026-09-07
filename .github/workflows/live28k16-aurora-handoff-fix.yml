@@ -27,6 +27,16 @@ jobs:
           set -euo pipefail
           python -m py_compile tools/prizim/fix_live28k16_aurora_handoff.py
           python tools/prizim/fix_live28k16_aurora_handoff.py
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/prizim/Live28K2PartyBattleScene.js')
+          s = p.read_text(encoding='utf-8')
+          old = 'inside that crossfade. Never show the baked placeholder/demo reconnect.'
+          new = 'inside that crossfade. Never show the baked placeholder/demo reconnect tail.'
+          if old not in s:
+              raise SystemExit('K16 guard-word repair refused: expected reconnect comment not found')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
           python tools/prizim/sync_live_authority.py
           python tools/prizim/preflight_live28k.py
           node --check src/prizim/Live28K2PartyBattleScene.js
@@ -35,6 +45,7 @@ jobs:
           grep -F "_beginAuroraBeautyBattlefieldReveal(video)" src/prizim/Live28K2PartyBattleScene.js
           grep -F "_playAuroraEnemyReconnectImpact" src/prizim/Live28K2PartyBattleScene.js
           grep -F "pendingImpact = { dmg, lethal: this.enemy.hp <= 0 }" src/prizim/Live28K2PartyBattleScene.js
+          grep -F "placeholder/demo reconnect tail" src/prizim/Live28K2PartyBattleScene.js
 
       - name: Commit guarded K16 correction
         shell: bash
