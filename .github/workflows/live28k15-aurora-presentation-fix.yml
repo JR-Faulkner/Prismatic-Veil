@@ -1,0 +1,45 @@
+name: LIVE28K15 Aurora Presentation Fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/ingest_live28k15/TRIGGER.txt'
+      - 'tools/prizim/fix_live28k15_aurora_presentation.py'
+      - '.github/workflows/live28k15-aurora-presentation-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply K15 Aurora presentation correction
+        run: |
+          set -euo pipefail
+          python tools/prizim/fix_live28k15_aurora_presentation.py
+          python tools/prizim/sync_live_authority.py
+          python tools/prizim/preflight_live28k.py
+          node --check src/prizim/Live28K2PartyBattleScene.js
+          node --check src/PartyBattleAudioController.js
+
+          grep -F "auroraBloomStart?.(AURORA_BEAUTY_TIMELINE.invocation)" src/prizim/Live28K2PartyBattleScene.js
+          grep -F "reconnect: 6.58, end: 6.65" src/prizim/Live28K2PartyBattleScene.js
+          grep -F "auroraBloomStart(delaySeconds = 0)" src/PartyBattleAudioController.js
+          grep -F "targets: this.music, volume: 0" src/PartyBattleAudioController.js
+
+      - name: Commit guarded K15 correction
+        run: |
+          set -euo pipefail
+          rm -f .github/ingest_live28k15/TRIGGER.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/prizim/Live28K2PartyBattleScene.js src/PartyBattleAudioController.js PV_LIVE_AUTHORITY.json PRIZIM_LIVE_NOTEPAD.md PV_RESUME_ANCHOR.md tools/prizim/preflight_live28k.py tools/prizim/sync_live_authority.py .github/ingest_live28k15/TRIGGER.txt
+          git commit -m 'LIVE28K15: restore Aurora choir and remove demo reconnect tail'
+          git push origin HEAD:main
