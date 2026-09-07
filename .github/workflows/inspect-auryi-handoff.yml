@@ -1,4 +1,4 @@
-name: Inspect Auryi Handoff Archive
+name: Inspect Auryi Archive
 
 on:
   push:
@@ -22,41 +22,37 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          URL=$(cat .github/inspect_auryi_handoff/URL.txt)
-          curl --fail --location --silent --show-error "$URL" -o /tmp/auryi_handoff.zip
-          unzip -t /tmp/auryi_handoff.zip >/tmp/ziptest.txt
-          unzip -l /tmp/auryi_handoff.zip >/tmp/ziplist.txt
-          rm -rf /tmp/auryi_handoff
-          mkdir -p /tmp/auryi_handoff
-          unzip -q /tmp/auryi_handoff.zip -d /tmp/auryi_handoff
+          SOURCE=$(sed -n '1p' .github/inspect_auryi_handoff/URL.txt)
+          URL=$(sed -n '2p' .github/inspect_auryi_handoff/URL.txt)
+          test -n "$SOURCE"
+          test -n "$URL"
+          printf '%s' "$SOURCE" >/tmp/auryi_source.txt
+          curl --fail --location --silent --show-error "$URL" -o /tmp/auryi_archive.zip
+          unzip -t /tmp/auryi_archive.zip >/tmp/ziptest.txt
+          rm -rf /tmp/auryi_archive
+          mkdir -p /tmp/auryi_archive
+          unzip -q /tmp/auryi_archive.zip -d /tmp/auryi_archive
 
           python - <<'PY'
           from pathlib import Path
           import hashlib, struct, re
 
-          root = Path('/tmp/auryi_handoff')
-          out = []
-          out.append('# Auryi DuoHybrid Archive Scan')
-          out.append('')
-          out.append('Archive source: /Auryi_DuoHybrid_Complete_Handoff.zip')
-          out.append('')
+          root = Path('/tmp/auryi_archive')
+          source = Path('/tmp/auryi_source.txt').read_text(encoding='utf-8')
+          out = ['# Auryi Archive Scan', '', f'Archive source: {source}', '']
           names = sorted(p for p in root.rglob('*') if p.is_file())
-          out.append(f'Total files: {len(names)}')
-          out.append('')
-          out.append('## Matching Aurora / Pulse / Resonart / numbered Auryi candidates')
-          out.append('')
+          out += [f'Total files: {len(names)}', '', '## Matching Aurora / Pulse / Resonart / numbered Auryi candidates', '']
 
           def png_dims(path):
             try:
               b = path.read_bytes()[:32]
               if b[:8] == b'\x89PNG\r\n\x1a\n' and b[12:16] == b'IHDR':
-                w,h = struct.unpack('>II', b[16:24])
-                return w,h
+                return struct.unpack('>II', b[16:24])
             except Exception:
               pass
             return None
 
-          pat = re.compile(r'(aurora|pulse|resonart|auryi.*(?:^|[^0-9])0?[1-8](?:[^0-9]|$)|04_08)', re.I)
+          pat = re.compile(r'(aurora|pulse|resonart|04_08|auryi.*(?:^|[^0-9])0?[1-8](?:[^0-9]|$))', re.I)
           matches = [p for p in names if pat.search(str(p.relative_to(root)))]
           if not matches:
             out.append('NONE')
@@ -69,12 +65,8 @@ jobs:
               suffix = f' | PNG {dims[0]}x{dims[1]}' if dims else ''
               out.append(f'- `{rel}` | {size} bytes | sha256 `{sha}`{suffix}')
 
-          out.append('')
-          out.append('## Full file inventory')
-          out.append('')
-          for p in names:
-            out.append(f'- `{p.relative_to(root)}`')
-
+          out += ['', '## Full file inventory', '']
+          out += [f'- `{p.relative_to(root)}`' for p in names]
           Path('AURYI_HANDOFF_SCAN.md').write_text('\n'.join(out) + '\n', encoding='utf-8')
           PY
 
@@ -86,5 +78,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add AURYI_HANDOFF_SCAN.md .github/inspect_auryi_handoff
-          git commit -m 'Record Auryi handoff archive scan'
+          git commit -m 'Record Auryi archive scan'
           git push origin HEAD:main
