@@ -23,8 +23,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p assets/music
-          cat .github/ingest_auryi_audio/celestial_bloom.part*.b64 | base64 --decode > 'assets/music/Celestial Bloom.m4a'
-          cat .github/ingest_auryi_audio/triumph_of_light.part*.b64 | base64 --decode > 'assets/music/Triumph of Light.m4a'
+          find .github/ingest_auryi_audio/celestial -type f -name '*.b64' -print0 | sort -z | xargs -0 cat | base64 --decode > 'assets/music/Celestial Bloom.m4a'
+          find .github/ingest_auryi_audio/triumph -type f -name '*.b64' -print0 | sort -z | xargs -0 cat | base64 --decode > 'assets/music/Triumph of Light.m4a'
           echo '0e8762907bf36650cbdebab8f6497079350054f9819c81e6cb1ba4f3b14cff3d  assets/music/Celestial Bloom.m4a' | sha256sum -c -
           echo '98c77e8bc536425b8da8ad4212ed26011335c5ac3b9dadbce0ec28c201cca437  assets/music/Triumph of Light.m4a' | sha256sum -c -
           test "$(wc -c < 'assets/music/Celestial Bloom.m4a')" -eq 113740
