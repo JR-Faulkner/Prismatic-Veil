@@ -25,7 +25,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m py_compile tools/prizim/fix_live28k18_native_m4a.py
+          python -m py_compile tools/prizim/k18_guard_compat.py tools/prizim/fix_live28k18_native_m4a.py
+          python tools/prizim/k18_guard_compat.py
           python tools/prizim/fix_live28k18_native_m4a.py
           python tools/prizim/sync_live_authority.py
           python tools/prizim/preflight_live28k.py
