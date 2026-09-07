@@ -14,6 +14,20 @@ const AURORA_BLOOM_PATH = './assets/music/Celestial Bloom.m4a?pvasset=live28k11-
 const TRIUMPH_LIGHT_KEY = 'pv_triumph_of_light';
 const TRIUMPH_LIGHT_PATH = './assets/music/Triumph of Light.m4a?pvasset=live28k11-audio';
 
+// Exact approved 01-08 production lane. Keep this false until the original
+// transparent PNG bytes are physically installed at the paths below. This
+// prevents 404s and guarantees LIVE28K11 continues using the proven pose bridge.
+const AURORA_PULSE_FRAMES_READY = false;
+const AURORA_PULSE_FRAMES = Object.freeze(
+  Array.from({ length: 8 }, (_, i) => {
+    const n = String(i + 1).padStart(2, '0');
+    return Object.freeze({
+      key: `auryi_aurora_pulse_${n}`,
+      path: `./assets/characters/auryi/animations/aurora_pulse/frames/Auryi_Aurora_Pulse_${n}.png?pvasset=live28k12-aurora`
+    });
+  })
+);
+
 const AURORA_PULSE_HIT_CHANCE = 0.92;
 const AURORA_PULSE_TIMING = Object.freeze({
   lift: 360,
@@ -39,6 +53,13 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     // source transcode/recompression is introduced during the production ingest.
     this.load.audio(AURORA_BLOOM_KEY, AURORA_BLOOM_PATH);
     this.load.audio(TRIUMPH_LIGHT_KEY, TRIUMPH_LIGHT_PATH);
+
+    // Do not request missing production art. Once the already-approved 01-08
+    // PNG bytes are restored, flipping the gate activates this lane without
+    // changing any Aurora choreography or battle logic.
+    if (AURORA_PULSE_FRAMES_READY) {
+      AURORA_PULSE_FRAMES.forEach(frame => this.load.image(frame.key, frame.path));
+    }
   }
 
   create() {
@@ -64,6 +85,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     globalThis.__PV_LIVE28K6_AURYI_CROWN_HYBRID__ = true;
     globalThis.__PV_LIVE28K7_ATTACK_HALO_CLEAN__ = true;
     globalThis.__PV_LIVE28K_AURORA_PULSE_CINEMATIC__ = true;
+    globalThis.__PV_LIVE28K_AURORA_FRAME_LANE_READY__ = this._hasAuroraPulseFrames();
   }
 
   _onCommand(label) {
@@ -77,6 +99,36 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     // Aurorb Slice remains Attack; Aurora Pulse owns the Resonart drawer.
     this._drawer.title.setText(hero.resonart.name.toUpperCase());
     this._drawer.detail.setText(hero.resonart.flavor || 'A signature technique.');
+  }
+
+  _hasAuroraPulseFrames() {
+    return AURORA_PULSE_FRAMES_READY && AURORA_PULSE_FRAMES.every(frame => this.textures.exists(frame.key));
+  }
+
+  _setAuroraPulseFrame(index) {
+    if (!this._hasAuroraPulseFrames()) return false;
+    const actor = this.formation?.actors?.get?.('auryi');
+    const frame = AURORA_PULSE_FRAMES[index - 1];
+    if (!actor?.sprite || !frame || !this.textures.exists(frame.key)) return false;
+
+    actor.sprite.setTexture(frame.key).setVisible(true).setAlpha(1).setAngle(0);
+    actor.ghost?.setVisible(false)?.setAlpha?.(0);
+    actor.attackSprite?.setVisible(false)?.setAlpha?.(1);
+    actor.ring?.setVisible(false)?.setAlpha?.(0);
+
+    // Fit by measured visible-body bounds instead of raw 900x900 canvas size,
+    // preserving Auryi's approved battlefield height and anchor across all frames.
+    const targetBodyH = this.scale.height * 0.47;
+    this.formation._fitActorToBodyHeight?.(actor, frame.key, targetBodyH);
+    return true;
+  }
+
+  _restoreAuryiAfterAurora() {
+    const actor = this.formation?.actors?.get?.('auryi');
+    if (!actor) return;
+    this.formation._restoreAuryiPrimary?.(actor);
+    this.formation.layout?.();
+    this.formation._forceActiveRing?.(this.activeHeroId);
   }
 
   async _resolveHeroAction(hero, command) {
@@ -100,39 +152,55 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     const low = Math.round(base * 0.85);
     const high = Math.round(base * 1.15);
     const hitRoll = Math.random() < AURORA_PULSE_HIT_CHANCE;
-    const usePoses = this.formation.hasActionPoses?.(hero.id);
+    const useAuroraFrames = this._hasAuroraPulseFrames();
+    const usePoses = !useAuroraFrames && this.formation.hasActionPoses?.(hero.id);
 
     this.audio.beginCinematicAttack?.();
     const ownsBloom = this.audio.auroraBloomStart?.() === true;
     this._setBanner(`${hero.name} invokes ${hero.resonart.name}!`);
 
-    // 01-02: isolate + lift. Keep crown/halo FX out of this Resonart path.
-    if (usePoses) this.formation.setActionPose(hero.id, 'step');
+    // 01-02: battlefield invocation + lift.
+    if (useAuroraFrames) this._setAuroraPulseFrame(1);
+    else if (usePoses) this.formation.setActionPose(hero.id, 'step');
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.10, duration: 280, ease: 'Sine.easeOut' });
-    await this._wait(AURORA_PULSE_TIMING.lift);
+    if (useAuroraFrames) {
+      await this._wait(AURORA_PULSE_TIMING.lift / 2);
+      this._setAuroraPulseFrame(2);
+      await this._wait(AURORA_PULSE_TIMING.lift / 2);
+    } else {
+      await this._wait(AURORA_PULSE_TIMING.lift);
+    }
 
-    // 03-05: Aurora growth. Celestial Bloom owns the cinematic bed when
-    // present; generic Auryi gather remains a safe fallback for older builds.
+    // 03-05: Aurora growth and celestial expansion.
     if (!ownsBloom) this.audio.attackGather(hero.id);
-    if (usePoses) this.formation.setActionPose(hero.id, 'gather');
+    if (useAuroraFrames) this._setAuroraPulseFrame(3);
+    else if (usePoses) this.formation.setActionPose(hero.id, 'gather');
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 0.96, duration: 420, ease: 'Sine.easeInOut' });
-    await this._wait(AURORA_PULSE_TIMING.bloomA);
-    await this._wait(AURORA_PULSE_TIMING.bloomB);
+    if (useAuroraFrames) {
+      await this._wait(AURORA_PULSE_TIMING.bloomA / 2);
+      this._setAuroraPulseFrame(4);
+      await this._wait(AURORA_PULSE_TIMING.bloomA / 2);
+      this._setAuroraPulseFrame(5);
+      await this._wait(AURORA_PULSE_TIMING.bloomB);
+    } else {
+      await this._wait(AURORA_PULSE_TIMING.bloomA);
+      await this._wait(AURORA_PULSE_TIMING.bloomB);
+    }
 
-    // 06: max charge.
+    // 06: maximum charge.
+    if (useAuroraFrames) this._setAuroraPulseFrame(6);
     await this._wait(AURORA_PULSE_TIMING.maxCharge);
 
-    // 07: compression / hand-smash. Tighten camera, then explicitly pause
-    // Celestial Bloom for the approved silence pocket instead of merely
-    // lowering battle BGM underneath it.
-    if (usePoses) this.formation.setActionPose(hero.id, 'release');
+    // 07: compression / hand-smash, then the approved frozen silence pocket.
+    if (useAuroraFrames) this._setAuroraPulseFrame(7);
+    else if (usePoses) this.formation.setActionPose(hero.id, 'release');
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.13, duration: 220, ease: 'Sine.easeIn' });
     await this._wait(AURORA_PULSE_TIMING.compression);
     if (ownsBloom) this.audio.auroraBloomSilence?.();
     await this._wait(AURORA_PULSE_TIMING.silence);
 
-    // 08: Pulse. Resume the real cue into its release/tail; old builds use
-    // the established character release cue instead.
+    // 08: outward Pulse.
+    if (useAuroraFrames) this._setAuroraPulseFrame(8);
     if (ownsBloom) this.audio.auroraBloomResume?.();
     else this.audio.attackRelease(hero.id);
     this.tweens.add({ targets: cam, zoom: cameraState.zoom * 0.91, duration: 130, ease: 'Quad.easeOut' });
@@ -145,8 +213,6 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       this.enemyView.hit();
       this._floatText(`-${dmg}`, '#FFE8A0');
       this._setBanner(`${hero.name} uses ${hero.resonart.name} for ${dmg} damage!`);
-      // Keep the physical Pulse transient on impact; Celestial Bloom supplies
-      // the celestial body/tail rather than replacing target feedback.
       this.audio.attackImpact(hero.id);
       this.audio.enemyHit();
 
@@ -160,9 +226,8 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
     await this._wait(AURORA_PULSE_TIMING.aftermath);
 
-    // Recompose and restore battle framing cleanly while the Bloom tail
-    // fades underneath the aftermath.
-    if (usePoses) this.formation.setActionPose(hero.id, 'recover');
+    // Recompose and restore battle framing cleanly while the Bloom tail fades.
+    if (!useAuroraFrames && usePoses) this.formation.setActionPose(hero.id, 'recover');
     this.tweens.add({
       targets: cam,
       zoom: cameraState.zoom,
@@ -172,7 +237,8 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       ease: 'Sine.easeInOut'
     });
     await this._wait(AURORA_PULSE_TIMING.recover);
-    if (usePoses) this.formation.setActionPose(hero.id, 'idle');
+    if (useAuroraFrames) this._restoreAuryiAfterAurora();
+    else if (usePoses) this.formation.setActionPose(hero.id, 'idle');
     if (ownsBloom) this.audio.auroraBloomStop?.(420);
     this.audio.endCinematicAttack?.();
 
