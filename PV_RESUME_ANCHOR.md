@@ -66,7 +66,7 @@ A dormant exact numbered-frame lane now exists in `Live28K2PartyBattleScene.js`:
 
 ## Future Auryi crown authority
 
-This does **not** change crownless Aurora Pulse. When Auryi's crown is brought back in a future non-Aurora presentation pass, use the **Main Screen / title-screen crown on Auryi's head** as the visual authority. The returned crown should read closer to that crown's silhouette, scale, placement, and overall design language rather than the older hovering/orbiting crown treatment. Keep it head-worn unless the user later revises this direction.
+This does **not** change crownless Aurora Pulse. When Auryi's crown is brought back in a future non-Aurora presentation pass, use the **Main Splash Screen crown** as the visual authority. It should remain **hovered / offset above Auryi rather than worn directly on her head**, matching the splash screen's crown silhouette, scale, spacing, and relationship to her head as closely as the runtime composition allows. Do not revert to the older wide/orbiting crown treatment unless the user later revises this direction.
 
 ## Approved frame/source history
 
