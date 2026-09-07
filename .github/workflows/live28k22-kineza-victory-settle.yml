@@ -48,11 +48,11 @@ jobs:
               'actor.sprite.setVisible(true).setAlpha(1).setAngle(0);',
               'this.layout();',
               'await new Promise(resolve => this.scene.time.delayedCall(KINEZA_LETHAL_HOME_SETTLE_MS, resolve));',
-              'return result;',
           ]
           pos = [body.find(x) for x in ordered]
-          if any(x < 0 for x in pos) or pos != sorted(pos):
-              raise SystemExit('K22 workflow refused: lethal recovery ordering is not sequence -> home -> settle -> resolve')
+          final_return = body.rfind('return result;')
+          if any(x < 0 for x in pos) or pos != sorted(pos) or final_return <= pos[-1]:
+              raise SystemExit('K22 workflow refused: lethal recovery ordering is not sequence -> home -> settle -> final resolve')
           if 'const KINEZA_LETHAL_HOME_SETTLE_MS = 240;' not in s:
               raise SystemExit('K22 workflow refused: exact 240ms settle authority missing')
           PY
