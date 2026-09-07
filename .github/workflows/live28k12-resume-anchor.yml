@@ -1,0 +1,46 @@
+name: LIVE28K12 Resume Anchor
+on:
+  push:
+    paths:
+      - '.github/live28k12-anchor.trigger'
+permissions:
+  contents: write
+jobs:
+  update-anchor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update LIVE28K12 resume authority
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('PV_RESUME_ANCHOR.md')
+          s = p.read_text()
+          s = s.replace('Promoted witness: `main-20260906-live28k11`', 'Promoted witness: `main-20260906-live28k12`')
+          s = s.replace('Witness promotion commit: `1e65e1b34251e72b4cba3c68c9c9e7c5030ccd88`', 'Witness promotion commit: `0c5a59b68d832aef44e58ac48cbabb9e3c885507`')
+          needle = '- Dormant exact Aurora 01–08 runtime lane commit: `e60fd6b89c410edbd7c364acf496cf6c516f254a`\n'
+          insert = needle + '- LIVE28K12 Auryi Resonart presentation + victory-loop correction commit: `bb272c54295ced703d3e1e88c3f4c8f05953cc39`\n'
+          if insert not in s:
+              s = s.replace(needle, insert)
+          s = s.replace('LIVE28K11 still uses the existing real Auryi action poses as a temporary presentation bridge.', 'LIVE28K12 no longer borrows Auryi\'s old Basic Attack action poses for Aurora Pulse. Until the approved 01–08 PNGs return, the fallback keeps her approved primary visible and uses only Aurora-specific lift / camera / compression movement.')
+          s = s.replace('while false, the scene does not request missing frame URLs and LIVE28K11 behavior remains unchanged', 'while false, the scene does not request missing frame URLs and LIVE28K12 uses the approved-primary Aurora fallback without old Basic Attack pose swaps')
+          s = s.replace('Victory calls Triumph of Light once; battle BGM fades/stops first to avoid overlap.', 'Victory calls Triumph of Light after battle BGM fades/stops; LIVE28K12 loops Triumph while the victory/results screen remains open.')
+          s = s.replace('Therefore the LIVE28K11 witness cache-busts:', 'Therefore the LIVE28K12 witness cache-busts:')
+          marker = '## Safari / MAIN routing\n'
+          evidence = '''## Real-device evidence through LIVE28K11\n\nUser iPhone test confirmed:\n\n- **Celestial Bloom played during Aurora Pulse and sounded good.** Do not redesign or replace the Bloom audio lane.\n- **Triumph of Light played on victory.** LIVE28K12 changes it to loop while the results screen remains open.\n- Aurora Pulse was executing its dedicated Resonart/audio path, but the visible Hybrid drawer still said **Aurorb Slice** and the no-frame visual fallback reused old Auryi Basic Attack poses.\n- LIVE28K12 corrects those two presentation defects: Hybrid Resonart UI now reads `hero.resonart`, and the Aurora fallback no longer calls Auryi's old step/gather/release/recover pose sequence.\n\nPages build + deployment for LIVE28K12 completed successfully. Real-device LIVE28K12 verification is the next gate.\n\n'''
+          if '## Real-device evidence through LIVE28K11' not in s:
+              s = s.replace(marker, evidence + marker)
+          old = '''## Immediate next actions\n\n1. User checks the normal iPhone MAIN route and confirms witness `main-20260906-live28k11`.\n2. Trigger Auryi Resonart and verify: Aurora Pulse name, crownless presentation, Celestial Bloom start, compression silence, Pulse impact, camera restore, 22-damage range behavior, and clean return to idle.\n3. Win the encounter and verify battle BGM gives way cleanly to Triumph of Light with no old-sting overlap.\n4. If/when the exact approved transparent Aurora Pulse PNG bytes reappear from a new source, install them at the staged 01–08 production paths, verify RGBA + dimensions + anatomy/part-count + crownless integrity, flip `AURORA_PULSE_FRAMES_READY` true, and promote the next LIVE28K witness.\n5. Do **not** re-scan the already-cleared File Library / DuoHybrid / FX runtime packages unless new evidence indicates they changed.\n'''
+          new = '''## Immediate next actions\n\n1. User checks the normal iPhone MAIN route and confirms witness `main-20260906-live28k12`.\n2. Trigger Auryi Resonart and verify the visible drawer/banner says **Aurora Pulse**, Celestial Bloom remains correct, the old Aurorb Slice pose sequence no longer plays, the cinematic remains crownless, and camera/idle restore are clean.\n3. Win the encounter and verify **Triumph of Light loops** on the victory/results screen with no battle-music or old-sting overlap.\n4. If/when the exact approved transparent Aurora Pulse PNG bytes reappear from a new source, install them at the staged 01–08 production paths, verify RGBA + dimensions + anatomy/part-count + crownless integrity, flip `AURORA_PULSE_FRAMES_READY` true, and promote the next LIVE28K witness.\n5. Do **not** re-scan the already-cleared File Library / DuoHybrid / FX runtime packages unless new evidence indicates they changed.\n'''
+          if old in s:
+              s = s.replace(old, new)
+          p.write_text(s)
+          PY
+      - name: Commit resume anchor
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add PV_RESUME_ANCHOR.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'LIVE28K12: advance resume anchor with iPhone evidence'
+          git push
