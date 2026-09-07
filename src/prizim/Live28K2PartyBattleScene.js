@@ -10,6 +10,19 @@ const PRISMEL_K2_ACTIVE_PATH = './assets/party_formation/PRISMEL_LIVE28K2_STAFF_
 const AURYI_K2_PRIMARY_KEY = 'auryi_live28k2_primary';
 const AURYI_K2_PRIMARY_PATH = './assets/party_formation/AURYI_LIVE28K2_PRIMARY.png?pvasset=live28k3';
 
+const AURORA_PULSE_HIT_CHANCE = 0.92;
+const AURORA_PULSE_TIMING = Object.freeze({
+  lift: 360,
+  bloomA: 520,
+  bloomB: 520,
+  maxCharge: 420,
+  compression: 260,
+  silence: 170,
+  release: 240,
+  aftermath: 300,
+  recover: 320
+});
+
 export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
   preload() {
     super.preload();
@@ -41,6 +54,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     globalThis.__PV_LIVE28K2_PRISMEL_STATE_PAIR__ = true;
     globalThis.__PV_LIVE28K6_AURYI_CROWN_HYBRID__ = true;
     globalThis.__PV_LIVE28K7_ATTACK_HALO_CLEAN__ = true;
+    globalThis.__PV_LIVE28K_AURORA_PULSE_CINEMATIC__ = true;
   }
 
   _onCommand(label) {
@@ -54,6 +68,98 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     // Aurorb Slice remains Attack; Aurora Pulse owns the Resonart drawer.
     this._drawer.title.setText(hero.resonart.name.toUpperCase());
     this._drawer.detail.setText(hero.resonart.flavor || 'A signature technique.');
+  }
+
+  async _resolveHeroAction(hero, command) {
+    if (hero?.id === 'auryi' && command === 'Resonart' && hero.resonart) {
+      return this._playAuryiAuroraPulse(hero);
+    }
+    return super._resolveHeroAction(hero, command);
+  }
+
+  async _playAuryiAuroraPulse(hero) {
+    this._turnLock = true;
+    this._hideCommandRail();
+
+    const cam = this.cameras.main;
+    const cameraState = {
+      zoom: cam.zoom,
+      scrollX: cam.scrollX,
+      scrollY: cam.scrollY
+    };
+    const base = hero.resonart.damage;
+    const low = Math.round(base * 0.85);
+    const high = Math.round(base * 1.15);
+    const hitRoll = Math.random() < AURORA_PULSE_HIT_CHANCE;
+    const usePoses = this.formation.hasActionPoses?.(hero.id);
+
+    this.audio.beginCinematicAttack?.();
+    this._setBanner(`${hero.name} invokes ${hero.resonart.name}!`);
+
+    // 01-02: isolate + lift. Keep crown/halo FX out of this Resonart path.
+    if (usePoses) this.formation.setActionPose(hero.id, 'step');
+    this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.10, duration: 280, ease: 'Sine.easeOut' });
+    await this._wait(AURORA_PULSE_TIMING.lift);
+
+    // 03-05: Aurora growth. Existing real Auryi action poses are used as
+    // motion authority until the already-approved numbered PNGs are reinstalled.
+    this.audio.attackGather(hero.id);
+    if (usePoses) this.formation.setActionPose(hero.id, 'gather');
+    this.tweens.add({ targets: cam, zoom: cameraState.zoom * 0.96, duration: 420, ease: 'Sine.easeInOut' });
+    await this._wait(AURORA_PULSE_TIMING.bloomA);
+    await this._wait(AURORA_PULSE_TIMING.bloomB);
+
+    // 06: max charge.
+    await this._wait(AURORA_PULSE_TIMING.maxCharge);
+
+    // 07: compression / hand-smash. Tighten camera and then hold absolute
+    // silence before release, matching the approved cinematic rhythm.
+    if (usePoses) this.formation.setActionPose(hero.id, 'release');
+    this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.13, duration: 220, ease: 'Sine.easeIn' });
+    await this._wait(AURORA_PULSE_TIMING.compression);
+    await this._wait(AURORA_PULSE_TIMING.silence);
+
+    // 08: Pulse. Release audio begins after the silence pocket.
+    this.audio.attackRelease(hero.id);
+    this.tweens.add({ targets: cam, zoom: cameraState.zoom * 0.91, duration: 130, ease: 'Quad.easeOut' });
+    await this._wait(AURORA_PULSE_TIMING.release);
+
+    if (hitRoll) {
+      const dmg = Phaser.Math.Between(low, high);
+      this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
+      this._updateTargetCard();
+      this.enemyView.hit();
+      this._floatText(`-${dmg}`, '#FFE8A0');
+      this._setBanner(`${hero.name} uses ${hero.resonart.name} for ${dmg} damage!`);
+      this.audio.attackImpact(hero.id);
+      this.audio.enemyHit();
+
+      if (this.enemy.hp <= 0) {
+        this.enemyView.die();
+        this.audio.enemyDefeat();
+      }
+    } else {
+      this._setBanner(`${hero.name} uses ${hero.resonart.name} — missed!`);
+    }
+
+    await this._wait(AURORA_PULSE_TIMING.aftermath);
+
+    // Recompose and restore battle framing cleanly.
+    if (usePoses) this.formation.setActionPose(hero.id, 'recover');
+    this.tweens.add({
+      targets: cam,
+      zoom: cameraState.zoom,
+      scrollX: cameraState.scrollX,
+      scrollY: cameraState.scrollY,
+      duration: 300,
+      ease: 'Sine.easeInOut'
+    });
+    await this._wait(AURORA_PULSE_TIMING.recover);
+    if (usePoses) this.formation.setActionPose(hero.id, 'idle');
+    this.audio.endCinematicAttack?.();
+
+    this._turnLock = false;
+    this._endHeroTurn();
   }
 
   _setBanner(msg) {
