@@ -1,7 +1,7 @@
 # PriZim Live Notepad
 
-Last refreshed: 2026-09-05
-Current promoted build: `main-20260905-live28k6` — **MAIN lane promoted, pending real-iPhone crown QA**.
+Last refreshed: 2026-09-06
+Current promoted build: `main-20260906-live28k12` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
 
 This is the fast operational failure-prevention ledger for PriZim production.
 
@@ -10,8 +10,21 @@ This is the fast operational failure-prevention ledger for PriZim production.
 - The user's normal validation path is the **iPhone web-app link into MAIN**. MAIN is the production/runtime authority.
 - A green GitHub Pages deployment proves deployment only. It does **not** prove the live iPhone runtime is correct.
 - Real-device screenshots/video/evidence outrank code inspection, CI success, and desktop assumptions.
-- Current witness: `main-20260905-live28k6`.
+- Current witness: `main-20260906-live28k12`.
 - Any numeric `LIVE28K` witness stays on the high-quality `Live28K2PartyBattleScene.js` + `Live28K2PartyFormationView.js` lineage through future-proof routing. Router commit: `781e68f94118ff4ba4272b43899dc1b6dc0a26b1`.
+
+## HYBRID STACK HARD GATE
+
+- **ALL live battle/cinematic production work stays inside the Hybrid stack.**
+- Canonical live chain: `index.html` / `story-scroll.html` -> `hybrid-main.html` -> `hybrid-battle-live.html` -> import-map rewrite -> numeric LIVE28K K adapters.
+- Numeric LIVE28K battle authority: `src/prizim/Live28K2PartyBattleScene.js`.
+- Numeric LIVE28K formation authority: `src/prizim/Live28K7PartyFormationView.js`.
+- `src/PartyBattleScene.js` is a generic/base scene, **not** the production endpoint for new LIVE28K cinematic features.
+- `pz-a-aurora-pulse-lab.html` is the approved Aurora Pulse composition/timing mock. It is reference authority, not a live entry page. Integrate its choreography through the Hybrid/K adapter stack while preserving Hybrid HUD/state publication, audio controller, camera ownership, targeting/damage, and return-to-battle semantics.
+- Before any live cinematic write, read `PV_LIVE_AUTHORITY.json`, `PV_RESUME_ANCHOR.md`, `PRIZIM_LIVE_NOTEPAD.md`, `live-build.json`, `hybrid-main.html`, and `hybrid-battle-live.html`. If those are not checked, **do not write production code yet**.
+- Run `python tools/prizim/preflight_live28k.py` before promotion. CI runs the same contract automatically.
+- `.github/workflows/prizim-hybrid-stack-guard.yml` rejects Hybrid-route regressions.
+
 
 ## Battle authorities
 
@@ -105,12 +118,17 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - K6 binds the fresh hybrid crown driver directly at the K formation boundary so Safari cannot reuse the old nested `live26g` driver URL. K-adapter driver binding commit: `2cf6ddd54872c70df835c2e2e4b6959b49c4cd6b`.
 - K6 battle scene cache-busts the K formation import with `?v=live28k6-crown`. Cache-guard commit: `ecb83dae62b19919e0d1759383e0e9facf7264ec`.
 
-## Auryi Resonart / Aurora Pulse next lane
+## Auryi Resonart / Aurora Pulse current lane
 
-- **Aurora Pulse Resonart resumes immediately after the K6 crown manifestation passes real-iPhone QA.**
-- Use the previously supplied/approved Auryi Resonart video as the motion/timing authority for the next production pass.
-- Do not reopen stable basic attack/Auorb behavior while building Resonart.
-- Preserve current Auryi identity, direct-primary body authority, crown asset language, pair-centered camera behavior, and return-to-idle semantics.
+- Basic Attack authority remains **Aurorb Slice**.
+- Resonart authority is **Aurora Pulse**.
+- Aurora Pulse live production belongs in the Hybrid/K adapter stack, not standalone `PartyBattleScene.js`.
+- Approved composition/timing reference: `pz-a-aurora-pulse-lab.html`.
+- Celestial Bloom production audio is installed and has already played correctly on iPhone evidence.
+- Triumph of Light production victory audio is installed; current production behavior loops it while the victory/results screen remains open.
+- Aurora Pulse itself remains **crownless**.
+- Current exact 01–08 production PNG lane remains gated until the approved transparent bytes are restored; missing numbered PNGs do **not** authorize replacing the approved mock choreography with a simple float-only fallback.
+- Future non-Aurora crown authority: match the Main Splash Screen crown as a **hovered/offset element above Auryi**, not head-worn; preserve its silhouette, scale, spacing, and design language.
 
 ## Kineza
 

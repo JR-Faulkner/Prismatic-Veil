@@ -166,6 +166,12 @@ Pages build + deployment for LIVE28K12 completed successfully. Real-device LIVE2
 
 Do not add redundant base-file query-string surgery unless this routing actually fails on-device.
 
+## Hybrid production safeguard
+
+- Live battle/cinematic production must remain inside `hybrid-main.html` -> `hybrid-battle-live.html` -> numeric LIVE28K K adapters.
+- Read `PV_LIVE_AUTHORITY.json` first. Run `python tools/prizim/preflight_live28k.py` before promotion.
+- `pz-a-aurora-pulse-lab.html` is choreography/composition authority only; integrate it through the Hybrid stack rather than promoting it or rebuilding it in a disconnected standalone scene.
+
 ## Hard constraints
 
 - No WebP for this production lane.
