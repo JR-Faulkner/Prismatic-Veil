@@ -3,6 +3,7 @@ import hashlib
 import json
 import pathlib
 import re
+import struct
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -18,6 +19,15 @@ def sha256(path):
         for chunk in iter(lambda: f.read(1024 * 1024), b''):
             h.update(chunk)
     return h.hexdigest()
+
+
+def png_dimensions(path):
+    p = ROOT / path
+    with p.open('rb') as f:
+        header = f.read(24)
+    if len(header) < 24 or header[:8] != b'\x89PNG\r\n\x1a\n' or header[12:16] != b'IHDR':
+        raise ValueError('not a valid PNG/IHDR header')
+    return struct.unpack('>II', header[16:24])
 
 
 def fail(errors):
@@ -125,10 +135,59 @@ for phrase in ['HYBRID STACK HARD GATE', 'ALL live battle/cinematic production w
     if phrase not in notepad:
         errors.append(f'PriZim notepad missing hard-gate phrase: {phrase}')
 
+# 10. Aurora 01-08 durability gate: user delivery and durable installation are distinct states.
+frame_manifest_path = auth['auryi'].get('aurora_frame_authority')
+if not frame_manifest_path or not (ROOT / frame_manifest_path).exists():
+    errors.append('missing Aurora Pulse frame authority manifest')
+else:
+    frame_manifest = json.loads(read(frame_manifest_path))
+    if frame_manifest.get('user_supplied') is not True or frame_manifest.get('previously_separated') is not True:
+        errors.append('Aurora frame authority incorrectly lost user-supplied / previously-separated history')
+    if auth['auryi'].get('aurora_frames_user_supplied') is not True:
+        errors.append('machine authority incorrectly reclassified supplied Aurora frames as missing delivery')
+    if auth['auryi'].get('aurora_frames_previously_separated') is not True:
+        errors.append('machine authority incorrectly lost prior Aurora frame separation state')
+
+    exact_mode = bool(auth['auryi'].get('aurora_exact_frame_mode'))
+    if exact_mode != bool(frame_manifest.get('exact_frame_mode')):
+        errors.append('Aurora exact-frame mode differs between machine authority and frame manifest')
+
+    expected_dims = tuple(frame_manifest.get('expected_dimensions', []))
+    expected_frames = frame_manifest.get('expected_frames', [])
+    if len(expected_frames) != 8:
+        errors.append(f'Aurora frame manifest must define exactly 8 production frames; found {len(expected_frames)}')
+
+    if exact_mode:
+        hashes = frame_manifest.get('sha256', {})
+        for rel in expected_frames:
+            p = ROOT / rel
+            if not p.exists():
+                errors.append(f'exact Aurora frame mode enabled but production frame is missing: {rel}')
+                continue
+            if p.suffix.lower() != '.png':
+                errors.append(f'exact Aurora frame is not PNG: {rel}')
+                continue
+            try:
+                dims = png_dimensions(rel)
+            except Exception as exc:
+                errors.append(f'invalid Aurora PNG {rel}: {exc}')
+                continue
+            if expected_dims and dims != expected_dims:
+                errors.append(f'Aurora frame dimensions drift: {rel} = {dims}, expected {expected_dims}')
+            expected_hash = hashes.get(rel)
+            if not expected_hash:
+                errors.append(f'exact Aurora frame mode enabled without durable SHA-256 manifest entry: {rel}')
+            elif sha256(rel) != expected_hash:
+                errors.append(f'Aurora frame SHA drift: {rel}')
+    else:
+        if frame_manifest.get('current_durable_state') in {'complete', 'installed', 'durable'}:
+            errors.append('Aurora frame manifest claims durable completion while exact-frame mode is disabled')
+
 if errors:
     fail(errors)
 
 print(f'PriZim LIVE28K preflight PASS · {witness}')
 print('Hybrid route: hybrid-main -> hybrid-battle-live -> LIVE28K K adapters')
 print('Aurora Pulse authority: K adapter + approved mock choreography + crownless')
+print('Aurora frame history: user-supplied and previously separated; exact-frame mode only after durable 8-file verification')
 print('Audio masters: exact SHA/size verified')
