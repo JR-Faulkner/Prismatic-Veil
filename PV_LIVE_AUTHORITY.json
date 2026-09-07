@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "updated": "2026-09-06",
-  "witness": "main-20260906-live28k16",
+  "witness": "main-20260906-live28k17",
   "production_route": [
     "index.html",
     "story-scroll.html",
@@ -75,9 +75,9 @@
     "live28k11_triumph_of_light_played": true,
     "live28k11_visual_cinematic_missing": true,
     "live28k12_pending_iphone_validation": true,
-    "pending_witness": "main-20260906-live28k16",
+    "pending_witness": "main-20260906-live28k17",
     "pending_iphone_validation": true,
-    "promotion_reason": "Promote the Aurora Pulse handoff polish after LIVE28K15 passed the core iPhone presentation gate. Preserve the exact Beauty V1 cinematic, audible Celestial Bloom, compression silence, crownless Aurora Pulse, separate Aurorb Slice, exact media masters, and looping Triumph. Keep damage logic locked to the 5.18s Pulse beat, begin a 550ms Beauty-to-live Hybrid battlefield crossfade at 6.08s, show the real live Wraith hit/recoil plus prismatic impact and damage number at 6.30s, reach full live reconnect at 6.58s, and hide the Beauty video by 6.65s before its baked demo reconnect tail. Record LIVE28K15 as core presentation passed with smoother battlefield/enemy handoff remaining for LIVE28K16 device validation.",
+    "promotion_reason": "Promote the K17 resilience correction after LIVE28K16 failed the iPhone gate with intermittent LIVE BOOT ERROR and missing Celestial Bloom choir. Preserve the approved Beauty V1 cinematic, K16 smooth Beauty-to-live Hybrid battlefield crossfade, visible live Wraith hit/recoil, compression silence, crownless Aurora Pulse, separate Aurorb Slice, exact audio/video masters, and looping Triumph. Add bounded exponential retry for Hybrid live-build/template boot fetches and verify at Beauty time 0.84s that Celestial Bloom is actually playing; if Safari dropped the scheduled start, immediately restart the exact cached master. Record K16 as failed for boot/audio and leave handoff visual acceptance pending until K17 device validation.",
     "aurora_beauty_v1_exact_master_installed": true,
     "aurora_beauty_v1_hybrid_runtime_pending_iphone_validation": true,
     "live28k14_beauty_video_played": true,
