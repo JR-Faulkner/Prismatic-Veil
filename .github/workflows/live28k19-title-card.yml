@@ -29,7 +29,6 @@ jobs:
           import json
           from pathlib import Path
           src = json.loads(Path('.github/ingest_live28k19/SOURCE.json').read_text())
-          print(src['source_url'])
           Path('/tmp/pv_k19_url.txt').write_text(src['source_url'])
           PY
           curl -fL --retry 3 --retry-delay 2 --connect-timeout 20 "$(cat /tmp/pv_k19_url.txt)" -o /tmp/Auryi_AuroraPulse_TitleCard_Approved.png
@@ -59,6 +58,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Correct the escaped-newline match used for the resume-gate source string.
+          # The first K19 run deliberately stopped before production commit when this
+          # bookkeeping matcher did not account for the literal \\n characters in code.
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/prizim/fix_live28k19_title_card.py')
+          text = p.read_text(encoding='utf-8')
+          old = '    "- K15 baseline: core Beauty presentation passed, Celestial Bloom audible, demo tail absent.\\n",\n'
+          new = '    "\\n- K15 baseline: core Beauty presentation passed, Celestial Bloom audible, demo tail absent.\\n",\n'
+          if old not in text:
+              raise SystemExit('K19 workflow refused: patcher resume search literal not found')
+          text = text.replace(old, new, 1)
+          old2 = '    "- K18 baseline: core Beauty presentation, native Celestial Bloom, and live battlefield/enemy handoff passed on iPhone.\\n"\n'
+          new2 = '    "\\n- K18 baseline: core Beauty presentation, native Celestial Bloom, and live battlefield/enemy handoff passed on iPhone.\\n"\n'
+          if old2 not in text:
+              raise SystemExit('K19 workflow refused: patcher resume replacement literal not found')
+          text = text.replace(old2, new2, 1)
+          p.write_text(text, encoding='utf-8')
+          PY
           python -m py_compile tools/prizim/fix_live28k19_title_card.py
           python tools/prizim/fix_live28k19_title_card.py
           python tools/prizim/sync_live_authority.py
@@ -84,6 +102,7 @@ jobs:
             PV_RESUME_ANCHOR.md \
             tools/prizim/preflight_live28k.py \
             tools/prizim/sync_live_authority.py \
+            tools/prizim/fix_live28k19_title_card.py \
             .github/ingest_live28k19/TRIGGER.txt \
             .github/ingest_live28k19/SOURCE.json
           git commit -m 'LIVE28K19: install exact Aurora Pulse title card and wire invocation reveal'
