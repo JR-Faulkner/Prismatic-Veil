@@ -1,9 +1,20 @@
 # PriZim Live Notepad
 
 Last refreshed: 2026-09-07
-Current promoted build: `main-20260907-live28k22` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
+Current promoted build: `main-20260908-live28k23` — **Aurora Pulse Beauty V2 promotion; iPhone evidence remains final runtime gate.**
 
 This is the fast operational failure-prevention ledger for PriZim production.
+
+
+## LIVE28K23 Aurora Pulse V2
+
+- Promoted witness: `main-20260908-live28k23`.
+- Exact Beauty V2 is production Aurora Pulse: 910×512, 30 FPS, 10.033333s, SHA-256 `57101593d7bee82ab444f3f556dd634ad71928975f43cf1a4eebadce020825ac`.
+- Exact packet-copied native V2 SFX SHA-256: `9d3da298c2f5712e3a52446ecaca9b7eb3100e030d0d3acf04f6e041b1f727d0`.
+- Battle BGM is fully silent during the cinematic. Celestial Bloom enters only as the final choir-tail bridge.
+- Timing: choir 9.35s → battlefield reveal 9.50s → live enemy impact 9.72s → live ownership 9.90s → video hidden 10.02s → battle BGM restore.
+- Aurora remains crownless; Aurorb Slice remains separate; K22 Kineza settle-before-Victory remains locked.
+- Pending final gate: normal iPhone MAIN route.
 
 ## Current truths
 

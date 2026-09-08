@@ -13,10 +13,13 @@ const AURYI_K2_PRIMARY_PATH = './assets/party_formation/AURYI_LIVE28K2_PRIMARY.p
 // playback in PartyBattleAudioController. Never route these through Phaser/WebAudio
 // decode on iPhone Safari; the original bytes remain unchanged in assets/music/.
 const AURORA_BEAUTY_VIDEO_READY = true;
-const AURORA_BEAUTY_VIDEO_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4?pvasset=live28k14-beauty';
+const AURORA_BEAUTY_VIDEO_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4?pvasset=live28k23-aurora-v2';
 // The Beauty master contains a placeholder/demo reconnect after ~6.65s.
 // LIVE28K never shows that tail: the real Hybrid battlefield owns reconnect.
-const AURORA_BEAUTY_TIMELINE = Object.freeze({ invocation: 0.70, bloomWatchdog: 0.84, silence: 4.56, pulse: 5.18, reveal: 6.08, impactReveal: 6.30, reconnect: 6.58, end: 6.65 });
+const AURORA_BEAUTY_TIMELINE = Object.freeze({ choirTail: 9.35, reveal: 9.50, impactReveal: 9.72, reconnect: 9.90, end: 10.02 });
+const AURORA_BLOOM_TAIL_SOURCE = 3.86;
+const AURORA_LIVE_INTRO_MS = 900;
+const AURORA_LIVE_HANDOFF_MS = 220;
 
 // Exact approved 01-08 production lane. Keep this false until the original
 // transparent PNG bytes are physically installed at the paths below. This
@@ -302,42 +305,17 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
   async _runAuroraBeautyDirector(video) {
     if (!video) return;
-    // Hybrid is the director; Beauty V1 remains the exact motion master.
-    video.style.transition = 'opacity 180ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1), filter 220ms ease';
-    video.style.transform = 'scale(1.035)';
-    video.style.filter = 'brightness(0.92) contrast(1.06) saturate(0.96)';
-
-    await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.invocation);
-    video.style.transform = 'scale(1.025)';
-    video.style.filter = 'brightness(1.00) contrast(1.05) saturate(1.04)';
-
-    await this._waitForAuroraBeautyTime(video, 1.55);
-    video.style.transition = 'opacity 180ms ease, transform 900ms cubic-bezier(0.22, 1, 0.36, 1), filter 380ms ease';
-    video.style.transform = 'scale(1.010)';
-    video.style.filter = 'brightness(1.03) contrast(1.04) saturate(1.07)';
-
-    await this._waitForAuroraBeautyTime(video, 2.45);
-    video.style.transform = 'scale(1.000)';
+    video.style.transition = 'opacity 160ms ease, transform 1800ms cubic-bezier(0.22, 1, 0.36, 1), filter 320ms ease';
+    video.style.transform = 'scale(1.026)';
+    video.style.filter = 'brightness(0.98) contrast(1.04) saturate(1.05)';
+    await this._waitForAuroraBeautyTime(video, 7.90);
+    video.style.transition = 'opacity 160ms ease, transform 1500ms cubic-bezier(0.22, 1, 0.36, 1), filter 300ms ease';
+    video.style.transform = 'scale(1.012)';
     video.style.filter = 'brightness(1.05) contrast(1.03) saturate(1.08)';
-
-    await this._waitForAuroraBeautyTime(video, 3.35);
-    video.style.transition = 'opacity 180ms ease, transform 540ms cubic-bezier(0.55, 0, 1, 0.45), filter 300ms ease';
-    video.style.transform = 'scale(1.028)';
-
-    await this._waitForAuroraBeautyTime(video, 4.15);
-    video.style.transition = 'opacity 180ms ease, transform 260ms cubic-bezier(0.55, 0, 1, 0.45), filter 180ms ease';
-    video.style.transform = 'scale(1.058)';
-    video.style.filter = 'brightness(0.91) contrast(1.09) saturate(0.98)';
-
-    await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.silence);
-    video.style.transition = 'opacity 90ms linear, transform 90ms linear, filter 90ms linear';
-    video.style.transform = 'scale(1.066)';
-    video.style.filter = 'brightness(0.82) contrast(1.11) saturate(0.88)';
-
-    await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.pulse);
-    video.style.transition = 'opacity 120ms linear, transform 150ms cubic-bezier(0.22, 1, 0.36, 1), filter 140ms ease';
-    video.style.transform = 'scale(1.016)';
-    video.style.filter = 'brightness(1.18) contrast(1.05) saturate(1.14)';
+    await this._waitForAuroraBeautyTime(video, 9.30);
+    video.style.transition = 'opacity 140ms ease, transform 520ms cubic-bezier(0.22, 1, 0.36, 1), filter 180ms ease';
+    video.style.transform = 'scale(1.045)';
+    video.style.filter = 'brightness(1.14) contrast(1.02) saturate(1.10)';
   }
 
   _playAuroraBattlefieldAfterglow() {
@@ -430,60 +408,49 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     const low = Math.round(base * 0.85);
     const high = Math.round(base * 1.15);
     const hitRoll = Math.random() < AURORA_PULSE_HIT_CHANCE;
-    let ownsBloom = false;
+    let ownsV2Sfx = false;
+    let ownsBloomTail = false;
     let impactResolved = false;
     let pendingImpact = null;
     const cam = this.cameras.main;
     const cameraState = { zoom: cam.zoom, scrollX: cam.scrollX, scrollY: cam.scrollY };
 
-    this.audio.beginCinematicAttack?.();
-    // iPhone/Safari: arm the exact choir cue while still inside the user-gesture
-    // execution chain. Phaser/WebAudio schedules its 0.70s Invocation start,
-    // instead of attempting a fresh delayed play after native video has begun.
-    ownsBloom = this.audio.auroraBloomStart?.(AURORA_BEAUTY_TIMELINE.invocation) === true;
+    this.audio.beginAuroraVideoMix?.();
+    ownsV2Sfx = this.audio.auroraV2SfxPrime?.() === true;
+    ownsBloomTail = this.audio.auroraBloomTailPrime?.() === true;
     this._setBanner(`${hero.name} invokes ${hero.resonart.name}!`);
 
-    // K21: live-camera commitment belongs to the active Aurora action, never
-    // to DOM-video disposal. All referenced state is valid in this scope.
     this.tweens.killTweensOf(cam);
-    this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.05, duration: 170, ease: 'Sine.easeOut' });
-    await this._wait(110);
+    this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.045, duration: AURORA_LIVE_INTRO_MS, ease: 'Sine.easeOut' });
+    const liveActor = this.formation?.actors?.get?.('auryi');
+    const liveSprite = liveActor?.sprite;
+    const liveY = liveSprite?.y;
+    if (liveSprite && Number.isFinite(liveY)) {
+      this.tweens.add({ targets: liveSprite, y: liveY - Math.min(18, this.scale.height * 0.03), duration: AURORA_LIVE_INTRO_MS, ease: 'Sine.easeOut' });
+    }
+    await this._wait(AURORA_LIVE_INTRO_MS);
     this.formation.setPovFocus?.(hero.id, true);
+    await this._wait(AURORA_LIVE_HANDOFF_MS);
 
     try {
       video.pause();
       try { video.currentTime = 0; } catch (err) { /* metadata may still be settling */ }
       video.style.display = 'block';
       video.style.opacity = '0';
-      video.style.transform = 'scale(1.035)';
+      video.style.transform = 'scale(1.026)';
       const playPromise = video.play();
       if (playPromise) await playPromise;
+      if (ownsV2Sfx) this.audio.auroraV2SfxReveal?.();
       requestAnimationFrame(() => { video.style.opacity = '1'; });
-      const directorTask = this._runAuroraBeautyDirector(video)
-        .catch(err => console.warn('[PV] Aurora Pulse Hybrid director skipped:', err));
+      const directorTask = this._runAuroraBeautyDirector(video).catch(err => console.warn('[PV] Aurora Pulse V2 Hybrid director skipped:', err));
 
-      // Beauty V1 is the presentation clock. Starting Bloom at Invocation and
-      // pausing it for the approved compression pocket makes its 5.48s master
-      // land almost exactly at the 6.82s battlefield-reconnect beat.
-      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.invocation);
-      if (!ownsBloom) this.audio.attackGather(hero.id);
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.choirTail);
+      if (ownsBloomTail) this.audio.auroraBloomTailReveal?.(AURORA_BLOOM_TAIL_SOURCE);
 
-      // K17 iPhone watchdog: scheduling Bloom is not proof Safari actually
-      // started it. Verify shortly after Invocation and recover the exact master
-      // immediately if the delayed WebAudio start was dropped.
-      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.bloomWatchdog);
-      if (ownsBloom && !this.audio.auroraBloomIsPlaying?.()) {
-        const recovered = this.audio.auroraBloomEnsurePlaying?.() === true;
-        if (!recovered) console.warn('[PV] Celestial Bloom watchdog armed recovery but playback is not yet confirmed.');
-      }
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.reveal);
+      this._beginAuroraBeautyBattlefieldReveal(video);
 
-      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.silence);
-      if (ownsBloom) this.audio.auroraBloomSilence?.();
-
-      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.pulse);
-      if (ownsBloom) this.audio.auroraBloomResume?.();
-      else this.audio.attackRelease(hero.id);
-
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.impactReveal);
       if (hitRoll) {
         const dmg = Phaser.Math.Between(low, high);
         this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
@@ -496,22 +463,18 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
         this._setBanner(`${hero.name} uses ${hero.resonart.name} — missed!`);
       }
       impactResolved = true;
-
-      // Smooth Hybrid reconnect: the real battlefield begins bleeding through
-      // the tail of the Beauty Pulse, then the live enemy visibly takes the hit
-      // inside that crossfade. Never show the baked placeholder/demo reconnect tail.
-      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.reveal);
-      this._beginAuroraBeautyBattlefieldReveal(video);
-      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.impactReveal);
       this.audio.auroraReentryWave?.();
       this._playAuroraBattlefieldAfterglow();
       if (pendingImpact) this._playAuroraEnemyReconnectImpact(pendingImpact.dmg, pendingImpact.lethal);
+
       await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.reconnect);
-      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.end, 14000);
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.end, 16000);
+      await directorTask;
     } catch (err) {
-      console.warn('[PV] Aurora Beauty V1 playback fell back to Hybrid mock:', err);
-      if (ownsBloom) this.audio.auroraBloomStop?.(120);
-      this.audio.endCinematicAttack?.();
+      console.warn('[PV] Aurora Beauty V2 playback fell back to Hybrid mock:', err);
+      if (ownsV2Sfx) this.audio.auroraV2SfxStop?.(80);
+      if (ownsBloomTail) this.audio.auroraBloomStop?.(120);
+      this.audio.endAuroraVideoMix?.();
       await this._hideAuroraBeautyVideo(video, 40);
       this._restoreAuroraBeautyDirector(hero.id, cameraState);
       if (!impactResolved) {
@@ -520,10 +483,11 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
       }
     }
 
-    if (ownsBloom) this.audio.auroraBloomStop?.(120);
+    if (ownsV2Sfx) this.audio.auroraV2SfxStop?.(90);
+    if (ownsBloomTail) this.audio.auroraBloomStop?.(420);
     await this._hideAuroraBeautyVideo(video, 90);
     this._restoreAuroraBeautyDirector(hero.id, cameraState);
-    this.audio.endCinematicAttack?.();
+    this.audio.endAuroraVideoMix?.();
     this._turnLock = false;
     this._endHeroTurn();
     return true;

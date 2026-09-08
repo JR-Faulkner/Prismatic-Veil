@@ -9,6 +9,7 @@ const PREFS_KEY = 'pv_party_battle_audio_prefs_v1';
 const DEFAULT_PREFS = Object.freeze({ master: 0.9, music: 0.6, sfx: 0.95, ui: 0.72, muted: false });
 const SFX_MIX_GAIN = 1.05;
 const AURORA_BLOOM_PATH = './assets/music/Celestial Bloom.m4a?pvasset=live28k18-native';
+const AURORA_V2_SFX_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a?pvasset=live28k23-aurora-v2';
 const TRIUMPH_LIGHT_PATH = './assets/music/Triumph of Light.m4a?pvasset=live28k18-native';
 // Cinematic weight now comes from contrast, not louder SFX. Give Blitzer a
 // deeper temporary music pocket while preserving the normal battle mix.
@@ -52,12 +53,14 @@ export default class PartyBattleAudioController {
     this.sounds = {};
     this.music = null;
     this._auroraBloom = null;
+    this._auroraV2Sfx = null;
     this._triumph = null;
     this._auroraBloomStartTimer = null;
-    this._nativeResume = { bloom: false, triumph: false };
+    this._nativeResume = { bloom: false, v2sfx: false, triumph: false };
     this._visHandler = null;
     this._unlockPending = false;
     this._cinematicActive = false;
+    this._cinematicBgmSilenced = false;
   }
 
   preload() {
@@ -73,20 +76,25 @@ export default class PartyBattleAudioController {
     this.enemyDirector = new EnemyAudioDirector(this.scene, this.scene.enemy);
     this.enemyDirector.create();
     this._auroraBloom = makeNativeAudio(AURORA_BLOOM_PATH, false);
+    this._auroraV2Sfx = makeNativeAudio(AURORA_V2_SFX_PATH, false);
     this._triumph = makeNativeAudio(TRIUMPH_LIGHT_PATH, true);
-    try { this._auroraBloom.load(); this._triumph.load(); } catch (err) { /* native preload is best-effort */ }
+    try { this._auroraBloom.load(); this._auroraV2Sfx.load(); this._triumph.load(); } catch (err) { /* native preload is best-effort */ }
     this._visHandler = () => {
       if (document.hidden) {
         if (this.music?.isPlaying) this.music.pause();
         this._nativeResume.bloom = !!(this._auroraBloom && !this._auroraBloom.paused && !this._auroraBloom.ended);
+        this._nativeResume.v2sfx = !!(this._auroraV2Sfx && !this._auroraV2Sfx.paused && !this._auroraV2Sfx.ended);
         this._nativeResume.triumph = !!(this._triumph && !this._triumph.paused && !this._triumph.ended);
         if (this._nativeResume.bloom) this._auroraBloom.pause();
+        if (this._nativeResume.v2sfx) this._auroraV2Sfx.pause();
         if (this._nativeResume.triumph) this._triumph.pause();
       } else {
         if (this.music?.isPaused) this.music.resume();
         if (this._nativeResume.bloom) this._auroraBloom?.play?.().catch?.(() => {});
+        if (this._nativeResume.v2sfx) this._auroraV2Sfx?.play?.().catch?.(() => {});
         if (this._nativeResume.triumph) this._triumph?.play?.().catch?.(() => {});
         this._nativeResume.bloom = false;
+        this._nativeResume.v2sfx = false;
         this._nativeResume.triumph = false;
       }
     };
@@ -110,6 +118,7 @@ export default class PartyBattleAudioController {
     savePrefs(this.prefs);
     this._applyMusicVolume();
     if (this._auroraBloom && !this._auroraBloom.paused) this._auroraBloom.volume = this._effectiveVolume('sfx', 1.0);
+    if (this._auroraV2Sfx && !this._auroraV2Sfx.paused) this._auroraV2Sfx.volume = this._effectiveVolume('sfx', 1.0);
     if (this._triumph && !this._triumph.paused) this._triumph.volume = this._effectiveVolume('music', 0.92);
   }
 
@@ -123,11 +132,108 @@ export default class PartyBattleAudioController {
   }
 
   _musicTargetVolume() {
+    if (this._cinematicBgmSilenced) return 0;
     return this._effectiveVolume('music') * (this._cinematicActive ? CINEMATIC_MUSIC_MULT : 1);
   }
 
   _applyMusicVolume() {
     if (this.music) this.music.setVolume(this._musicTargetVolume());
+  }
+
+  beginAuroraVideoMix() {
+    this._cinematicActive = true;
+    this._cinematicBgmSilenced = true;
+    if (!this.music || !this.music.isPlaying) return;
+    this._duckToken = (this._duckToken || 0) + 1;
+    this.scene.tweens.killTweensOf(this.music);
+    this.scene.tweens.add({ targets: this.music, volume: 0, duration: 110, ease: 'Sine.easeOut' });
+  }
+
+  endAuroraVideoMix() {
+    this._cinematicBgmSilenced = false;
+    this._cinematicActive = false;
+    if (!this.music || !this.music.isPlaying) return;
+    this._duckToken = (this._duckToken || 0) + 1;
+    this.scene.tweens.killTweensOf(this.music);
+    this.scene.tweens.add({ targets: this.music, volume: this._musicTargetVolume(), duration: 320, ease: 'Sine.easeIn' });
+  }
+
+  auroraV2SfxPrime() {
+    const sound = this._auroraV2Sfx;
+    if (!sound) return false;
+    resetNativeAudio(sound);
+    sound.loop = false;
+    sound.volume = 0;
+    try {
+      const pending = sound.play();
+      pending?.catch?.(err => console.warn('[PV] Aurora V2 SFX native prime blocked:', err));
+    } catch (err) {
+      console.warn('[PV] Aurora V2 SFX native prime failed:', err);
+      return false;
+    }
+    return true;
+  }
+
+  auroraV2SfxReveal() {
+    const sound = this._auroraV2Sfx;
+    if (!sound) return false;
+    try { sound.currentTime = 0; } catch (err) { /* metadata may still be settling */ }
+    sound.volume = this._effectiveVolume('sfx', 1.0);
+    try {
+      const pending = sound.play();
+      pending?.catch?.(err => console.warn('[PV] Aurora V2 SFX native reveal blocked:', err));
+    } catch (err) {
+      console.warn('[PV] Aurora V2 SFX native reveal failed:', err);
+      return false;
+    }
+    return true;
+  }
+
+  auroraV2SfxStop(fadeMs = 120) {
+    const sound = this._auroraV2Sfx;
+    if (!sound) return;
+    if (sound.paused || sound.ended) {
+      resetNativeAudio(sound);
+      sound.volume = this._effectiveVolume('sfx', 1.0);
+      return;
+    }
+    this.scene.tweens.killTweensOf(sound);
+    this.scene.tweens.add({
+      targets: sound, volume: 0, duration: fadeMs, ease: 'Sine.easeOut',
+      onComplete: () => { resetNativeAudio(sound); sound.volume = this._effectiveVolume('sfx', 1.0); }
+    });
+  }
+
+  auroraBloomTailPrime() {
+    const sound = this._auroraBloom;
+    if (!sound) return false;
+    resetNativeAudio(sound);
+    sound.loop = true;
+    sound.volume = 0;
+    try {
+      const pending = sound.play();
+      pending?.catch?.(err => console.warn('[PV] Celestial Bloom tail prime blocked:', err));
+    } catch (err) {
+      console.warn('[PV] Celestial Bloom tail prime failed:', err);
+      return false;
+    }
+    return true;
+  }
+
+  auroraBloomTailReveal(sourceSeconds = 3.86) {
+    const sound = this._auroraBloom;
+    if (!sound) return false;
+    sound.loop = false;
+    try { sound.currentTime = Math.max(0, Number(sourceSeconds) || 0); } catch (err) { /* metadata may still be settling */ }
+    sound.volume = this._effectiveVolume('sfx', 1.0);
+    try {
+      const pending = sound.play();
+      pending?.catch?.(err => console.warn('[PV] Celestial Bloom choir-tail reveal blocked:', err));
+    } catch (err) {
+      console.warn('[PV] Celestial Bloom choir-tail reveal failed:', err);
+      return false;
+    }
+    return true;
   }
 
   beginCinematicAttack() {
@@ -260,6 +366,7 @@ export default class PartyBattleAudioController {
       }
     };
     prime(this._auroraBloom);
+    prime(this._auroraV2Sfx);
     prime(this._triumph);
   }
 
@@ -415,6 +522,7 @@ export default class PartyBattleAudioController {
     if (this.music) { try { this.music.stop(); this.music.destroy(); } catch (err) { /* ignore */ } this.music = null; }
     if (this._auroraBloomStartTimer) { try { this._auroraBloomStartTimer.remove(false); } catch (err) { /* ignore */ } this._auroraBloomStartTimer = null; }
     if (this._auroraBloom) { try { this._auroraBloom.pause(); this._auroraBloom.removeAttribute('src'); this._auroraBloom.load(); } catch (err) { /* ignore */ } this._auroraBloom = null; }
+    if (this._auroraV2Sfx) { try { this._auroraV2Sfx.pause(); this._auroraV2Sfx.removeAttribute('src'); this._auroraV2Sfx.load(); } catch (err) { /* ignore */ } this._auroraV2Sfx = null; }
     if (this._triumph) { try { this._triumph.pause(); this._triumph.removeAttribute('src'); this._triumph.load(); } catch (err) { /* ignore */ } this._triumph = null; }
     Object.values(this.sounds).forEach(s => { try { s.stop(); s.destroy(); } catch (err) { /* ignore */ } });
     this.sounds = {};

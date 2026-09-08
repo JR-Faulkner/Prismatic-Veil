@@ -4,7 +4,7 @@ Last refreshed: 2026-09-06
 
 ## Current production witness
 
-- Promoted witness: `main-20260907-live28k22`
+- Promoted witness: `main-20260908-live28k23`
 - Witness promotion commit: `0c5a59b68d832aef44e58ac48cbabb9e3c885507`
 - Exact production audio install commit: `ac00a834471317edd98a60a7884a1896270be61f`
 - Production battle adapter: `src/prizim/Live28K2PartyBattleScene.js`
@@ -17,6 +17,15 @@ Last refreshed: 2026-09-06
 - Resonart damage authority commit: `d77c43455d6a0dfbbcdcbe6db4a710d4453b9222`
 - Resonart drawer authority commit: `e9f6c54ede06aea60cfca37d4883b00657ad1109`
 - Resonart result/banner authority commit: `34c5e56789d0b950e15aed4fb0c618316571a839`
+
+
+## LIVE28K23 Aurora Pulse V2 current lane
+
+- Current witness: `main-20260908-live28k23`.
+- Beauty V2 exact master is production Aurora Pulse.
+- Battle BGM is silent during Beauty V2; V2 SFX uses native M4A; Celestial Bloom supplies only the choir-tail bridge.
+- Reconnect timing: choir 9.35s, battlefield reveal 9.50s, live enemy impact 9.72s, live ownership 9.90s, video hidden 10.02s, then battle BGM restore.
+- Final validation is the normal iPhone MAIN route. Preserve K22 Kineza settle-before-Victory behavior and stable Prismel/Auryi Basic/Kineza lanes.
 
 ## Auryi command authority
 
