@@ -1,0 +1,45 @@
+name: LIVE28K24 Kineza Thunder Tornado ingest
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/kineza_thunder_tornado/GO.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Preflight accepted LIVE28K23 baseline
+        run: python tools/prizim/preflight_live28k.py
+
+      - name: Download and verify Thunder Tornado master
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/characters/kineza/animations/thunder_tornado/cinematic
+          URL='https://uc59f5c772e0cd755f36fc855528.dl.dropboxusercontent.com/cd/0/get/DHwhKpjDCi2iV2QwP8LJfXJrlmwHUlu81eazxi053NhOlZsdP7CUa_Oji-nxj4QnXz48M0CGLgfH_x3pcILtsYAUROk80hFFmbHzmjkjNUp2Vk9uWzRP4gbTS676TMlsjC3q4O3FnZkQzUjCi5HdLG8JgV5Wupund0Q5q2SiYz7G4g/file?c_luid=9bd25e73'
+          OUT='assets/characters/kineza/animations/thunder_tornado/cinematic/Kineza_ThunderTornado_Resonart_MASTER.mp4'
+          curl -fL "$URL" -o "$OUT"
+          test "$(wc -c < "$OUT")" -eq 6312497
+          echo '77e8fe6e9fcf430d013f0189355b0f725e150c850b240fd5b53060a4f94f9b93  '"$OUT" | sha256sum -c -
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height,r_frame_rate -of default=noprint_wrappers=1 "$OUT"
+          ffprobe -v error -select_streams a:0 -show_entries stream=codec_name,sample_rate,channels -of default=noprint_wrappers=1 "$OUT"
+
+      - name: Commit verified cinematic asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/characters/kineza/animations/thunder_tornado/cinematic/Kineza_ThunderTornado_Resonart_MASTER.mp4
+          git commit -m 'LIVE28K24: install verified Kineza Thunder Tornado cinematic'
+          git push origin main
