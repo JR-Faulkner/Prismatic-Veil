@@ -1,7 +1,7 @@
 # PriZim Live Notepad
 
-Last refreshed: 2026-09-07
-Current promoted build: `main-20260908-live28k23` — **Aurora Pulse Beauty V2 promotion; iPhone evidence remains final runtime gate.**
+Last refreshed: 2026-09-08
+Current promoted build: `main-20260908-live28k23` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
 
 This is the fast operational failure-prevention ledger for PriZim production.
 
@@ -21,7 +21,7 @@ This is the fast operational failure-prevention ledger for PriZim production.
 - The user's normal validation path is the **iPhone web-app link into MAIN**. MAIN is the production/runtime authority.
 - A green GitHub Pages deployment proves deployment only. It does **not** prove the live iPhone runtime is correct.
 - Real-device screenshots/video/evidence outrank code inspection, CI success, and desktop assumptions.
-- Current witness: `main-20260907-live28k22`.
+- Current witness: `main-20260908-live28k23`.
 - Any numeric `LIVE28K` witness stays on the high-quality `Live28K2PartyBattleScene.js` + `Live28K2PartyFormationView.js` lineage through future-proof routing. Router commit: `781e68f94118ff4ba4272b43899dc1b6dc0a26b1`.
 
 ## HYBRID STACK HARD GATE
@@ -137,15 +137,15 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - **Primary live presentation:** exact `Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4` inside the Hybrid/K adapter. Verified 1920×1080 H.264, 24 FPS, 7.375s, SHA-256 `e70fc0f987646b1c1428c8797c0d95e8a38c2327448d3607826febb1e0065b1a`.
 - **K20 cinematic presentation:** no move-title card. Hybrid directs the exact Beauty V1 master with live-camera commitment, expansion/compression framing, Pulse-driven reconnect, Auryi re-entry wave, live enemy reaction, and residual Aurora afterglow.
 - The K19 title-card PNG is retained as an archived/reference asset only and is not loaded by Aurora Pulse runtime.
-- Live sync is derived from `PV_LIVE_AUTHORITY.json`: Bloom 0.70s -> silence 4.56s -> Pulse/damage logic 5.18s -> battlefield reveal 6.08s -> live enemy impact 6.30s -> reconnect 6.58s -> Beauty hidden 6.65s.
+- Live sync is derived from `PV_LIVE_AUTHORITY.json`: Bloom 0.70s -> silence 4.56s -> Pulse/damage logic 5.18s -> battlefield reveal 9.50s -> live enemy impact 9.72s -> reconnect 9.90s -> Beauty hidden 6.65s.
 - The real Hybrid battlefield owns the final handoff and enemy reaction; the Beauty master's baked demo reconnect tail is never displayed.
 - The Phaser Aurora mock is fail-safe presentation only if native video playback fails. The old Aurorb Slice pose sequence is never an Aurora Pulse fallback.
 - Celestial Bloom owns the cinematic foreground mix; normal battle BGM clears underneath it.
 - Triumph of Light loops while the victory/results screen remains open.
 - Aurora Pulse itself remains **crownless**.
 - LIVE28K18 core presentation is recorded as passed: boot clean = True; Bloom audible = True; battlefield/enemy handoff accepted = True.
-- Latest phone evidence (main-20260907-live28k21): PASS runtime gate: iPhone battle ran correctly after the K21 cleanup-scope hotfix. New presentation issue observed: a lethal Kineza attack can show Victory before his return-to-formation reads as complete.
-- Current pending gate: LIVE28K22: on a lethal Kineza Basic Attack, Blitzer must finish and Kineza must visibly restore/settle at his exact formation home before Victory appears; K21 boot/runtime stability, Aurora Pulse presentation/audio, and all stable character lanes must remain unchanged.
+- Latest phone evidence (main-20260908-live28k23): PASS iPhone MAIN gate: Aurora Pulse Beauty V2 cinematic played in the live Hybrid route with native V2 SFX, battle BGM silence during the video, Celestial Bloom choir-tail bridge into the battlefield reconnect, and live battle ownership restored cleanly.
+- Current pending gate: No pending Auryi gate. LIVE28K23 is the accepted iPhone runtime baseline. Next active production lane: Kineza Resonart Thunder Tornado.
 - Future non-Aurora crown authority: match the Main Splash Screen crown as a **hovered/offset element above Auryi**, not head-worn.
 
 ## Kineza

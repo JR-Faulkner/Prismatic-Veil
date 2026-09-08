@@ -183,13 +183,13 @@ Do not add redundant base-file query-string surgery unless this routing actually
 
 ## Aurora Pulse live device gate
 
-- Current witness: `main-20260907-live28k22`.
+- Current witness: `main-20260908-live28k23`.
 - K18 baseline: core Beauty presentation, native Celestial Bloom, and live battlefield/enemy handoff passed on iPhone.
 - K19 phone review: full-screen title presentation was rejected because it interrupted cinematic continuity.
 - K20 presentation: title removed; Hybrid camera/framing and Pulse-driven battlefield re-entry are the active polish lane.
 
-- Latest phone evidence (main-20260907-live28k21): PASS runtime gate: iPhone battle ran correctly after the K21 cleanup-scope hotfix. New presentation issue observed: a lethal Kineza attack can show Victory before his return-to-formation reads as complete.
-- Current pending gate: LIVE28K22: on a lethal Kineza Basic Attack, Blitzer must finish and Kineza must visibly restore/settle at his exact formation home before Victory appears; K21 boot/runtime stability, Aurora Pulse presentation/audio, and all stable character lanes must remain unchanged.
+- Latest phone evidence (main-20260908-live28k23): PASS iPhone MAIN gate: Aurora Pulse Beauty V2 cinematic played in the live Hybrid route with native V2 SFX, battle BGM silence during the video, Celestial Bloom choir-tail bridge into the battlefield reconnect, and live battle ownership restored cleanly.
+- Current pending gate: No pending Auryi gate. LIVE28K23 is the accepted iPhone runtime baseline. Next active production lane: Kineza Resonart Thunder Tornado.
 - Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.
 
 ## Kineza victory timing gate
