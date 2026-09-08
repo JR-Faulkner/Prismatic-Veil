@@ -58,6 +58,7 @@ fixed = {
     'assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a': (164264, '9d3da298c2f5712e3a52446ecaca9b7eb3100e030d0d3acf04f6e041b1f727d0'),
     'assets/music/Celestial Bloom.m4a': (113740, '0e8762907bf36650cbdebab8f6497079350054f9819c81e6cb1ba4f3b14cff3d'),
     'assets/music/Triumph of Light.m4a': (186602, '98c77e8bc536425b8da8ad4212ed26011335c5ac3b9dadbce0ec28c201cca437'),
+    'assets/characters/kineza/animations/thunder_tornado/cinematic/Kineza_ThunderTornado_Resonart_MASTER.mp4': (6312497, '77e8fe6e9fcf430d013f0189355b0f725e150c850b240fd5b53060a4f94f9b93'),
 }
 for rel, (size, digest) in fixed.items():
     p = ROOT / rel
@@ -128,6 +129,39 @@ for key, expected in {
 
 if auth.get('kineza', {}).get('lethal_victory_home_settle_ms') != 240:
     errors.append('K22 Kineza settle-before-Victory drift')
+
+for token in [
+    "hero?.id === 'kineza' && command === 'Resonart'",
+    'Kineza_ThunderTornado_Resonart_MASTER.mp4',
+    'THUNDER_TORNADO_TIMELINE',
+    'reveal: 9.18',
+    'livePass: 9.40',
+    'impact: 9.66',
+    'hide: 9.92',
+    '_playKinezaThunderTornado',
+    '_createThunderTornadoLivePass',
+]:
+    if token not in k_scene:
+        errors.append(f'K24 Thunder Tornado runtime token missing: {token}')
+
+for key in [
+    'kineza_thunder_tornado_exact_master_required',
+    'kineza_thunder_tornado_must_be_owned_by_k_adapter',
+    'kineza_thunder_tornado_live_enemy_handoff_required',
+    'kineza_thunder_tornado_lethal_home_settle_required',
+]:
+    if hard.get(key) is not True:
+        errors.append(f'K24 hard gate missing: {key}')
+
+ksync = auth.get('kineza', {}).get('thunder_tornado_sync', {})
+for key, expected in {
+    'battlefield_reveal_crossfade': 9.18,
+    'live_tornado_pass': 9.40,
+    'live_enemy_visual_impact': 9.66,
+    'cinematic_hide': 9.92,
+}.items():
+    if abs(float(ksync.get(key, -99)) - expected) > 0.001:
+        errors.append(f'K24 Thunder Tornado sync drift: {key}')
 
 if errors:
     print('PRIZIM LIVE28K PREFLIGHT FAILED')

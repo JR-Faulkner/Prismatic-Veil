@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "updated": "2026-09-08",
-  "witness": "main-20260908-live28k23",
+  "witness": "main-20260908-live28k24",
   "production_route": [
     "index.html",
     "story-scroll.html",
@@ -48,7 +48,11 @@
     "aurora_v2_exact_master_required": true,
     "aurora_v2_native_sfx_lane_required": true,
     "aurora_v2_battle_bgm_silence_required": true,
-    "aurora_v2_choir_tail_bridge_required": true
+    "aurora_v2_choir_tail_bridge_required": true,
+    "kineza_thunder_tornado_exact_master_required": true,
+    "kineza_thunder_tornado_must_be_owned_by_k_adapter": true,
+    "kineza_thunder_tornado_live_enemy_handoff_required": true,
+    "kineza_thunder_tornado_lethal_home_settle_required": true
   },
   "auryi": {
     "basic_attack": "Aurorb Slice",
@@ -114,8 +118,8 @@
     "live28k11_triumph_of_light_played": true,
     "live28k11_visual_cinematic_missing": true,
     "live28k12_pending_iphone_validation": true,
-    "pending_witness": "",
-    "pending_iphone_validation": false,
+    "pending_witness": "main-20260908-live28k24",
+    "pending_iphone_validation": true,
     "promotion_reason": "Promote LIVE28K22 after K21 passed the iPhone runtime gate. Fix only Kineza lethal-victory timing: await the full Duo-Hybrid Blitzer sequence, restore Kineza to his exact HC formation home, hold a 240ms readable settle beat, and only then allow the existing end-turn timer to schedule Victory. Preserve K21 runtime stability, K20 Aurora Pulse Hybrid presentation, K18 native M4A playback, exact Beauty V1 master/hash, Celestial Bloom watchdog, re-entry wave/Wraith reaction, crownless Aurora, Prismel/Auryi stable lanes, Kineza identity and attack frames, and existing damage markers/timing. Keep machine authority, PriZim notepad, resume anchor, canonical preflight, and iPhone pending gate synchronized to K22.",
     "aurora_beauty_v1_exact_master_installed": true,
     "aurora_beauty_v1_hybrid_runtime_pending_iphone_validation": true,
@@ -136,7 +140,7 @@
     "live28k16_handoff_visual_result": "Not yet accepted/rejected; boot/audio regression must be removed first.",
     "latest_device_witness": "main-20260908-live28k23",
     "latest_device_result": "PASS iPhone MAIN gate: Aurora Pulse Beauty V2 cinematic played in the live Hybrid route with native V2 SFX, battle BGM silence during the video, Celestial Bloom choir-tail bridge into the battlefield reconnect, and live battle ownership restored cleanly.",
-    "pending_gate_summary": "No pending Auryi gate. LIVE28K23 is the accepted iPhone runtime baseline. Next active production lane: Kineza Resonart Thunder Tornado.",
+    "pending_gate_summary": "LIVE28K24: Kineza Thunder Tornado exact cinematic + SFX, generated-to-live tornado handoff through the actual enemy, live damage/death, Kineza recovery/home settle before Victory. Preserve accepted LIVE28K23 Aurora V2 and all stable lanes.",
     "live28k17_pending_iphone_validation": true,
     "live28k17_boot_decode_failed": true,
     "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR \u00b7 Decoding failed",
@@ -160,11 +164,28 @@
     "live28k22_pending_iphone_validation": true,
     "live28k23_pending_iphone_validation": false,
     "live28k23_runtime_passed": true,
-    "live28k23_result": "PASS iPhone MAIN gate: Aurora Pulse Beauty V2 cinematic played in the live Hybrid route with native V2 SFX, battle BGM silence during the video, Celestial Bloom choir-tail bridge into the battlefield reconnect, and live battle ownership restored cleanly."
+    "live28k23_result": "PASS iPhone MAIN gate: Aurora Pulse Beauty V2 cinematic played in the live Hybrid route with native V2 SFX, battle BGM silence during the video, Celestial Bloom choir-tail bridge into the battlefield reconnect, and live battle ownership restored cleanly.",
+    "live28k24_pending_iphone_validation": true
   },
   "hybrid_boot_policy": "hybrid-main must retry live-build.json and hybrid-battle-live.html no-store fetches with bounded exponential backoff before surfacing LIVE BOOT ERROR.",
   "kineza": {
     "lethal_victory_home_settle_ms": 240,
-    "victory_timing_policy": "On a lethal Kineza Basic Attack, await the complete Duo-Hybrid sequence, restore the exact HC idle at formation home, hold a 240ms readable settle beat, and only then allow PartyBattleScene to schedule the normal end-turn/victory transition."
+    "victory_timing_policy": "On a lethal Kineza Basic Attack, await the complete Duo-Hybrid sequence, restore the exact HC idle at formation home, hold a 240ms readable settle beat, and only then allow PartyBattleScene to schedule the normal end-turn/victory transition.",
+    "resonart": "Thunder Tornado",
+    "thunder_tornado_video": "assets/characters/kineza/animations/thunder_tornado/cinematic/Kineza_ThunderTornado_Resonart_MASTER.mp4",
+    "thunder_tornado_video_sha256": "77e8fe6e9fcf430d013f0189355b0f725e150c850b240fd5b53060a4f94f9b93",
+    "thunder_tornado_video_bytes": 6312497,
+    "thunder_tornado_resolution": "910x512",
+    "thunder_tornado_fps": 30,
+    "thunder_tornado_duration_seconds": 10.006667,
+    "thunder_tornado_sync": {
+      "live_intro_ms": 520,
+      "battlefield_reveal_crossfade": 9.18,
+      "live_tornado_pass": 9.4,
+      "live_enemy_visual_impact": 9.66,
+      "cinematic_hide": 9.92
+    },
+    "thunder_tornado_audio_policy": "Generated cinematic contributes SFX only; no generated music or vocals. Existing battle music remains runtime-owned and is ducked by the cinematic controller.",
+    "thunder_tornado_handoff_policy": "Generated cinematic contains no enemy. Final launch crossfades into a live emerald tornado pass through the actual enemy; live runtime owns damage/death and Kineza returns home before Victory."
   }
 }

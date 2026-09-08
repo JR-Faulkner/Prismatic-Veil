@@ -99,6 +99,12 @@ export const HEROES = Object.freeze({
       critChance: 0.22,
       critMultiplier: 2
     }),
+    resonart: Object.freeze({
+      name: 'Thunder Tornado',
+      damage: 26,
+      flavor: 'Kineza punches fast enough to build a kinetic cyclone, lets emerald thunder charge it, then drives the tornado through the battlefield.',
+      presentation: 'hybrid-video'
+    }),
     frameColourway: 'teal',
     commands: Object.freeze([
       Object.freeze({ glyph: 'resonance', label: 'ATTACK', kind: 'attack' }),

@@ -203,3 +203,15 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Active-turn markers must be resynchronized to turn state after layout/state restores.
 - Future cache-busted LIVE28K witnesses remain on the intended adapter lineage through a generic numeric matcher.
 - Prefer narrow adapters over broad rewrites and preserve passed runtime work.
+
+
+## LIVE28K24 Kineza Thunder Tornado
+
+- Current promoted witness: `main-20260908-live28k24`.
+- Accepted baseline: LIVE28K23 Auryi Aurora Pulse V2 iPhone MAIN pass.
+- Kineza Resonart: **Thunder Tornado**.
+- Exact master: `assets/characters/kineza/animations/thunder_tornado/cinematic/Kineza_ThunderTornado_Resonart_MASTER.mp4` · SHA-256 `77e8fe6e9fcf430d013f0189355b0f725e150c850b240fd5b53060a4f94f9b93` · 6,312,497 bytes · 910×512 · ~30 FPS · 10.006667s.
+- Generated clip has SFX only, no generated music/vocals, and no enemy.
+- Hybrid handoff: reveal 9.18s → live tornado pass 9.40s → real enemy impact 9.66s → movie hidden 9.92s → live tornado exits → Kineza returns home.
+- Lethal finish preserves the K22 240ms readable home settle before Victory.
+- iPhone MAIN remains the final gate.

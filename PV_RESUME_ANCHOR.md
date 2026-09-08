@@ -217,3 +217,15 @@ Do not add redundant base-file query-string surgery unless this routing actually
 5. Do **not** re-scan the already-cleared File Library / DuoHybrid / FX runtime packages unless new evidence indicates they changed.
 
 For a new chat: read this file first, then `PRIZIM_LIVE_NOTEPAD.md`. Resume from the witness/commit state above. Do not restart asset discovery unless a recorded authority/path actually fails.
+
+
+## LIVE28K24 Kineza Thunder Tornado
+
+- Current promoted witness: `main-20260908-live28k24`.
+- Accepted baseline: LIVE28K23 Auryi Aurora Pulse V2 iPhone MAIN pass.
+- Kineza Resonart: **Thunder Tornado**.
+- Exact master: `assets/characters/kineza/animations/thunder_tornado/cinematic/Kineza_ThunderTornado_Resonart_MASTER.mp4` · SHA-256 `77e8fe6e9fcf430d013f0189355b0f725e150c850b240fd5b53060a4f94f9b93` · 6,312,497 bytes · 910×512 · ~30 FPS · 10.006667s.
+- Generated clip has SFX only, no generated music/vocals, and no enemy.
+- Hybrid handoff: reveal 9.18s → live tornado pass 9.40s → real enemy impact 9.66s → movie hidden 9.92s → live tornado exits → Kineza returns home.
+- Lethal finish preserves the K22 240ms readable home settle before Victory.
+- iPhone MAIN remains the final gate.
