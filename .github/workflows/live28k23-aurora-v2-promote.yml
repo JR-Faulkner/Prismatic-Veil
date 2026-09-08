@@ -1,0 +1,232 @@
+name: Promote LIVE28K23 Aurora Pulse V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/promote_aurora_v2/URL.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Run current canonical PriZim preflight before live write
+        run: python tools/prizim/preflight_live28k.py
+
+      - name: Download prepared V2 runtime package
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_URL="$(sed -n 's/^SOURCE_URL=//p' .github/promote_aurora_v2/URL.txt)"
+          test -n "$SOURCE_URL"
+          curl -fL "$SOURCE_URL" -o /tmp/aurora-v2.zip
+          test "$(wc -c < /tmp/aurora-v2.zip)" -eq 6409165
+
+      - name: Verify installed V2 media and apply runtime patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          VIDEO='assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4'
+          AUDIO='assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a'
+          echo '57101593d7bee82ab444f3f556dd634ad71928975f43cf1a4eebadce020825ac  '"$VIDEO" | sha256sum -c -
+          echo '9d3da298c2f5712e3a52446ecaca9b7eb3100e030d0d3acf04f6e041b1f727d0  '"$AUDIO" | sha256sum -c -
+          unzip -p /tmp/aurora-v2.zip 'patches/aurora_pulse_v2_runtime.patch' > /tmp/aurora-v2-runtime.patch
+          git apply --check /tmp/aurora-v2-runtime.patch
+          git apply /tmp/aurora-v2-runtime.patch
+
+      - name: Correct V2 reveal ordering and harden audio ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('src/prizim/Live28K2PartyBattleScene.js')
+          s=p.read_text()
+          old="""      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.choirTail);\n      if (ownsBloomTail) this.audio.auroraBloomTailReveal?.(AURORA_BLOOM_TAIL_SOURCE);\n\n      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.impactReveal);\n      if (hitRoll) {"""
+          new="""      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.choirTail);\n      if (ownsBloomTail) this.audio.auroraBloomTailReveal?.(AURORA_BLOOM_TAIL_SOURCE);\n\n      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.reveal);\n      this._beginAuroraBeautyBattlefieldReveal(video);\n      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.impactReveal);\n      if (hitRoll) {"""
+          assert old in s, 'expected V2 choir/impact block not found'
+          s=s.replace(old,new,1)
+          old2="""      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.reveal);\n      this._beginAuroraBeautyBattlefieldReveal(video);\n      this.audio.auroraReentryWave?.();"""
+          new2="""      this.audio.auroraReentryWave?.();"""
+          assert old2 in s, 'duplicate reveal block not found'
+          s=s.replace(old2,new2,1)
+          p.write_text(s)
+
+          p=Path('src/PartyBattleAudioController.js')
+          s=p.read_text()
+          s=s.replace("this._nativeResume = { bloom: false, triumph: false };", "this._nativeResume = { bloom: false, v2sfx: false, triumph: false };")
+          s=s.replace("        this._nativeResume.triumph = !!(this._triumph && !this._triumph.paused && !this._triumph.ended);", "        this._nativeResume.v2sfx = !!(this._auroraV2Sfx && !this._auroraV2Sfx.paused && !this._auroraV2Sfx.ended);\n        this._nativeResume.triumph = !!(this._triumph && !this._triumph.paused && !this._triumph.ended);")
+          s=s.replace("        if (this._nativeResume.bloom) this._auroraBloom.pause();", "        if (this._nativeResume.bloom) this._auroraBloom.pause();\n        if (this._nativeResume.v2sfx) this._auroraV2Sfx.pause();")
+          s=s.replace("        if (this._nativeResume.bloom) this._auroraBloom?.play?.().catch?.(() => {});", "        if (this._nativeResume.bloom) this._auroraBloom?.play?.().catch?.(() => {});\n        if (this._nativeResume.v2sfx) this._auroraV2Sfx?.play?.().catch?.(() => {});")
+          s=s.replace("        this._nativeResume.bloom = false;", "        this._nativeResume.bloom = false;\n        this._nativeResume.v2sfx = false;")
+          s=s.replace("    if (this._auroraBloom && !this._auroraBloom.paused) this._auroraBloom.volume = this._effectiveVolume('sfx', 1.0);", "    if (this._auroraBloom && !this._auroraBloom.paused) this._auroraBloom.volume = this._effectiveVolume('sfx', 1.0);\n    if (this._auroraV2Sfx && !this._auroraV2Sfx.paused) this._auroraV2Sfx.volume = this._effectiveVolume('sfx', 1.0);")
+          p.write_text(s)
+          PY
+
+      - name: Update LIVE28K23 machine authority and human ledgers
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          W='main-20260908-live28k23'
+          authp=Path('PV_LIVE_AUTHORITY.json')
+          a=json.loads(authp.read_text())
+          a['updated']='2026-09-08'
+          a['witness']=W
+          hg=a.setdefault('hard_gates',{})
+          hg['aurora_v2_exact_master_required']=True
+          hg['aurora_v2_native_sfx_lane_required']=True
+          hg['aurora_v2_battle_bgm_silence_required']=True
+          hg['aurora_v2_choir_tail_bridge_required']=True
+          au=a['auryi']
+          au['aurora_presentation']='Beauty V2 exact KingAI master inside the Hybrid K adapter; live battlefield intro, embedded SFX on native media, battle BGM fully silent during cinematic, Celestial Bloom choir-tail bridge at the final blast, and live battlefield/enemy reconnect.'
+          au['aurora_beauty_video']='assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4'
+          au['aurora_beauty_video_sha256']='57101593d7bee82ab444f3f556dd634ad71928975f43cf1a4eebadce020825ac'
+          au['aurora_beauty_video_bytes']=6256162
+          au['aurora_beauty_resolution']='910x512'
+          au['aurora_beauty_fps']=30
+          au['aurora_beauty_duration_seconds']=10.033333
+          au['aurora_beauty_timeline']='assets/characters/auryi/animations/aurora_pulse/cinematic/AuroraPulse_Beauty_v2_runtime_timeline.json'
+          au['aurora_v2_sfx']='assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a'
+          au['aurora_v2_sfx_sha256']='9d3da298c2f5712e3a52446ecaca9b7eb3100e030d0d3acf04f6e041b1f727d0'
+          au['aurora_v2_sfx_bytes']=164264
+          au['aurora_beauty_sync']={
+            'live_intro_ms':900,
+            'live_handoff_ms':220,
+            'video_sfx_reveal':0.0,
+            'celestial_bloom_choir_tail_video_time':9.35,
+            'celestial_bloom_choir_tail_source_time':3.86,
+            'battlefield_reveal_crossfade':9.50,
+            'live_enemy_visual_impact':9.72,
+            'live_battlefield_reconnect':9.90,
+            'beauty_video_hidden':10.02
+          }
+          au['aurora_bloom_mix_policy']='Beauty V2 embedded AAC is packet-copied to a native M4A lane with no re-encode. Normal battle BGM is fully silent from Aurora action start through reconnect. Celestial Bloom remains exact native M4A and reveals only its choir tail from source ~3.86s at Beauty V2 ~9.35s to bridge the final blast into the live battlefield.'
+          au['aurora_handoff_policy']='Hybrid commits briefly to live Auryi, hands off to Beauty V2, begins the real Hybrid battlefield reveal at 9.50s, resolves live enemy hit/recoil at 9.72s, restores live battlefield ownership by 9.90s, hides Beauty by 10.02s, then restores battle BGM. Crownless Aurora and Aurorb Slice separation remain locked.'
+          dev=a.setdefault('device_evidence',{})
+          dev['pending_witness']=W
+          dev['pending_iphone_validation']=True
+          dev['live28k23_pending_iphone_validation']=True
+          dev['pending_gate_summary']='LIVE28K23: Aurora Pulse must use Beauty V2, silence battle BGM during the cinematic, preserve V2 SFX, bring in the Celestial Bloom choir tail at the final blast, reconnect cleanly to the live enemy/battlefield, then restore battle BGM. K22 Kineza victory-settle behavior and all stable lanes must remain intact.'
+          authp.write_text(json.dumps(a,indent=2)+"\n")
+
+          b=Path('live-build.json')
+          d=json.loads(b.read_text()); d['id']=W; b.write_text(json.dumps(d,indent=2)+"\n")
+
+          n=Path('PRIZIM_LIVE_NOTEPAD.md')
+          s=n.read_text()
+          import re
+          s=re.sub(r'Current promoted build: `[^`]+`[^\n]*', f'Current promoted build: `{W}` — **Aurora Pulse Beauty V2 promotion; iPhone evidence remains final runtime gate.**', s, count=1)
+          block=f'''\n## LIVE28K23 Aurora Pulse V2\n\n- Promoted witness: `{W}`.\n- Aurora Pulse now targets exact Beauty V2: `Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4`, 910×512, 30 FPS, 10.033333s, SHA-256 `57101593d7bee82ab444f3f556dd634ad71928975f43cf1a4eebadce020825ac`.\n- V2 embedded AAC is preserved by packet-copy to native M4A, SHA-256 `9d3da298c2f5712e3a52446ecaca9b7eb3100e030d0d3acf04f6e041b1f727d0`.\n- Battle BGM is fully silent during the Aurora cinematic.\n- Celestial Bloom stays exact and enters only as the choir-tail bridge near Beauty 9.35s, source ~3.86s.\n- Live battlefield reveal 9.50s → live enemy impact 9.72s → live ownership 9.90s → video hidden 10.02s → battle BGM restore.\n- Aurora remains crownless. Aurorb Slice remains separate. K22 Kineza lethal-victory settle remains locked.\n- Pending final gate: normal iPhone MAIN route.\n\n'''
+          marker='## Current truths\n'
+          if block.strip() not in s:
+            s=s.replace(marker, block+marker,1)
+          n.write_text(s)
+
+          r=Path('PV_RESUME_ANCHOR.md')
+          s=r.read_text()
+          s=re.sub(r'- Promoted witness: `[^`]+`', f'- Promoted witness: `{W}`', s, count=1)
+          block=f'''\n## LIVE28K23 Aurora Pulse V2 current lane\n\n- Current witness: `{W}`.\n- Beauty V2 exact master is now the production Aurora Pulse cinematic.\n- Battle BGM is silent during Beauty V2. The video SFX lane is native M4A; Celestial Bloom contributes only the choir-tail bridge at the final blast.\n- Reconnect timing: choir 9.35s, battlefield reveal 9.50s, live enemy impact 9.72s, live ownership 9.90s, video hidden 10.02s, then battle BGM restore.\n- Final validation remains the normal iPhone MAIN route.\n- Preserve K22 Kineza settle-before-Victory behavior and all Prismel/Auryi basic/Kineza stable lanes.\n\n'''
+          marker='## Auryi command authority\n'
+          if block.strip() not in s:
+            s=s.replace(marker,block+marker,1)
+          r.write_text(s)
+          PY
+
+      - name: Refresh canonical PriZim preflight for V2 authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > tools/prizim/preflight_live28k.py <<'PYFILE'
+          #!/usr/bin/env python3
+          import hashlib, json, pathlib, sys
+          ROOT=pathlib.Path(__file__).resolve().parents[2]
+          def read(p): return (ROOT/p).read_text(encoding='utf-8')
+          def sha(p):
+              h=hashlib.sha256()
+              with (ROOT/p).open('rb') as f:
+                  for c in iter(lambda:f.read(1024*1024),b''): h.update(c)
+              return h.hexdigest()
+          errors=[]
+          auth=json.loads(read('PV_LIVE_AUTHORITY.json'))
+          build=json.loads(read('live-build.json'))
+          k=read('src/prizim/Live28K2PartyBattleScene.js')
+          audio=read('src/PartyBattleAudioController.js')
+          base=read('src/PartyBattleScene.js')
+          main=read('hybrid-main.html')
+          hybrid=read('hybrid-battle-live.html')
+          note=read('PRIZIM_LIVE_NOTEPAD.md')
+          resume=read('PV_RESUME_ANCHOR.md')
+          w=auth['witness']
+          if build.get('id')!=w: errors.append('live-build witness drift')
+          if w not in note: errors.append('notepad missing witness')
+          if w not in resume: errors.append('resume anchor missing witness')
+          for token in ["const live28kLineage=/live28k\\d+/i.test(id)","Live28K2PartyBattleScene.js","Live28K7PartyFormationView.js"]:
+              if token not in main: errors.append('hybrid-main route token missing: '+token)
+          if "h.resonart?.name" not in hybrid or "h.resonart?.flavor" not in hybrid: errors.append('Hybrid Resonart HUD authority drift')
+          if "hero?.id === 'auryi' && command === 'Resonart'" not in k or '_playAuryiAuroraPulseBeauty' not in k: errors.append('Aurora Pulse K-adapter authority missing')
+          if 'Aurora Pulse' in base or '_playAuryiAuroraPulse' in base: errors.append('Aurora leaked into base scene')
+          if '.webp' in k.lower(): errors.append('WebP found in LIVE28K battle adapter')
+          v2='assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4'
+          sfx='assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a'
+          fixed={
+            v2:(6256162,'57101593d7bee82ab444f3f556dd634ad71928975f43cf1a4eebadce020825ac'),
+            sfx:(164264,'9d3da298c2f5712e3a52446ecaca9b7eb3100e030d0d3acf04f6e041b1f727d0'),
+            'assets/music/Celestial Bloom.m4a':(113740,'0e8762907bf36650cbdebab8f6497079350054f9819c81e6cb1ba4f3b14cff3d'),
+            'assets/music/Triumph of Light.m4a':(186602,'98c77e8bc536425b8da8ad4212ed26011335c5ac3b9dadbce0ec28c201cca437')}
+          for p,(size,digest) in fixed.items():
+              q=ROOT/p
+              if not q.exists(): errors.append('missing exact media: '+p); continue
+              if q.stat().st_size!=size: errors.append('media size drift: '+p)
+              elif sha(p)!=digest: errors.append('media SHA drift: '+p)
+          for token in ['Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4','choirTail: 9.35','reveal: 9.50','impactReveal: 9.72','reconnect: 9.90','end: 10.02','AURORA_BLOOM_TAIL_SOURCE = 3.86','video.muted = true','video.defaultMuted = true','beginAuroraVideoMix','auroraV2SfxPrime','auroraV2SfxReveal','auroraBloomTailPrime','auroraBloomTailReveal']:
+              if token not in k and token not in audio: errors.append('Aurora V2 runtime token missing: '+token)
+          for token in ["const AURORA_V2_SFX_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a?pvasset=live28k23-aurora-v2'",'beginAuroraVideoMix()','endAuroraVideoMix()','auroraV2SfxPrime()','auroraV2SfxReveal()','auroraBloomTailPrime()','auroraBloomTailReveal(sourceSeconds = 3.86)','_cinematicBgmSilenced']:
+              if token not in audio: errors.append('Aurora V2 native audio token missing: '+token)
+          if auth.get('hard_gates',{}).get('aurora_v2_exact_master_required') is not True: errors.append('V2 exact-master hard gate missing')
+          if auth.get('hard_gates',{}).get('aurora_v2_native_sfx_lane_required') is not True: errors.append('V2 native-SFX hard gate missing')
+          if auth.get('hard_gates',{}).get('aurora_v2_battle_bgm_silence_required') is not True: errors.append('V2 BGM-silence hard gate missing')
+          if auth.get('hard_gates',{}).get('aurora_v2_choir_tail_bridge_required') is not True: errors.append('V2 choir-tail hard gate missing')
+          if auth.get('hard_gates',{}).get('aurora_pulse_is_crownless') is not True: errors.append('Aurora crownless hard gate missing')
+          if 'AURORA_TITLE_CARD_READY' in k or '_runAuroraTitleCardSequence' in k: errors.append('retired Aurora title runtime returned')
+          sync=auth.get('auryi',{}).get('aurora_beauty_sync',{})
+          expected={'celestial_bloom_choir_tail_video_time':9.35,'battlefield_reveal_crossfade':9.50,'live_enemy_visual_impact':9.72,'live_battlefield_reconnect':9.90,'beauty_video_hidden':10.02}
+          for key,val in expected.items():
+              if abs(float(sync.get(key,-99))-val)>0.001: errors.append('Aurora V2 sync drift: '+key)
+          if auth.get('kineza',{}).get('lethal_victory_home_settle_ms')!=240: errors.append('K22 Kineza victory settle drift')
+          if errors:
+              print('PRIZIM LIVE28K PREFLIGHT FAILED')
+              for e in errors: print(' -',e)
+              sys.exit(1)
+          print('PRIZIM LIVE28K PREFLIGHT PASS ·',w)
+          PYFILE
+          chmod +x tools/prizim/preflight_live28k.py
+
+      - name: Validate LIVE28K23 runtime and authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/prizim/preflight_live28k.py
+          node --input-type=module --check < src/PartyBattleAudioController.js
+          node --input-type=module --check < src/prizim/Live28K2PartyBattleScene.js
+
+      - name: Commit and promote LIVE28K23
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/promote_aurora_v2/URL.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/PartyBattleAudioController.js src/prizim/Live28K2PartyBattleScene.js tools/prizim/preflight_live28k.py PV_LIVE_AUTHORITY.json PV_RESUME_ANCHOR.md PRIZIM_LIVE_NOTEPAD.md live-build.json .github/promote_aurora_v2/URL.txt
+          git commit -m 'LIVE28K23: promote Aurora Pulse Beauty V2 hybrid runtime'
+          git push origin HEAD:main
