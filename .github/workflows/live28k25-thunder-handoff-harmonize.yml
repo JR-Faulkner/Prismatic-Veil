@@ -1,0 +1,44 @@
+name: Promote LIVE28K25 Thunder Tornado handoff harmonization
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/kineza_thunder_tornado/HARMONIZE.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Preflight LIVE28K24 baseline
+        run: python tools/prizim/preflight_live28k.py
+
+      - name: Apply LIVE28K25 handoff harmonization
+        run: python tools/prizim/promote_live28k25_thunder_handoff.py
+
+      - name: Validate LIVE28K25
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/prizim/Live28K2PartyBattleScene.js
+          python tools/prizim/preflight_live28k.py
+          grep -q 'main-20260908-live28k25' live-build.json
+          grep -q "structured-spiral-v2" src/prizim/Live28K2PartyBattleScene.js
+
+      - name: Commit LIVE28K25 promotion
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/prizim/Live28K2PartyBattleScene.js PV_LIVE_AUTHORITY.json live-build.json PRIZIM_LIVE_NOTEPAD.md PV_RESUME_ANCHOR.md tools/prizim/preflight_live28k.py
+          git commit -m 'LIVE28K25: harmonize Thunder Tornado live handoff'
+          git push origin main
