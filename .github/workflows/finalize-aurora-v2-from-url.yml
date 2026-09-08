@@ -1,0 +1,73 @@
+name: Finalize Aurora Pulse Beauty V2 From Temporary URL
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/ingest_aurora_v2/URL.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download Aurora Pulse V2 package once
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_URL="$(sed -n 's/^SOURCE_URL=//p' .github/ingest_aurora_v2/URL.txt)"
+          test -n "$SOURCE_URL"
+          curl -fL "$SOURCE_URL" -o /tmp/aurora-v2.zip
+          test "$(wc -c < /tmp/aurora-v2.zip)" -eq 6409165
+
+      - name: Extract verified V2 media assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT='assets/characters/auryi/animations/aurora_pulse/cinematic'
+          mkdir -p "$OUT"
+          unzip -p /tmp/aurora-v2.zip 'assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4' > "$OUT/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4"
+          unzip -p /tmp/aurora-v2.zip 'assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a' > "$OUT/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a"
+          unzip -p /tmp/aurora-v2.zip 'assets/characters/auryi/animations/aurora_pulse/cinematic/AuroraPulse_Beauty_v2_runtime_timeline.json' > "$OUT/AuroraPulse_Beauty_v2_runtime_timeline.json"
+
+      - name: Verify exact V2 bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          VIDEO='assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4'
+          AUDIO='assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a'
+          echo '57101593d7bee82ab444f3f556dd634ad71928975f43cf1a4eebadce020825ac  '"$VIDEO" | sha256sum -c -
+          echo '9d3da298c2f5712e3a52446ecaca9b7eb3100e030d0d3acf04f6e041b1f727d0  '"$AUDIO" | sha256sum -c -
+          test "$(wc -c < "$VIDEO")" -eq 6256162
+          test "$(wc -c < "$AUDIO")" -eq 164264
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('assets/characters/auryi/animations/aurora_pulse/cinematic/AuroraPulse_Beauty_v2_runtime_timeline.json')
+          d=json.loads(p.read_text())
+          assert abs(float(d['video_duration_seconds'])-10.033333)<0.01
+          v=d['video']
+          assert abs(float(v['choir_tail_reveal'])-9.35)<0.01
+          assert abs(float(v['battlefield_reveal'])-9.50)<0.01
+          assert abs(float(v['logical_damage_and_live_impact'])-9.72)<0.01
+          assert abs(float(v['live_battlefield_reconnect'])-9.90)<0.01
+          assert abs(float(v['video_hide'])-10.02)<0.01
+          PY
+
+      - name: Commit verified V2 media and remove temporary URL manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/ingest_aurora_v2/URL.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/characters/auryi/animations/aurora_pulse/cinematic .github/ingest_aurora_v2/URL.txt
+          git commit -m 'LIVE28K23: install verified Aurora Pulse V2 media'
+          git push origin HEAD:main
