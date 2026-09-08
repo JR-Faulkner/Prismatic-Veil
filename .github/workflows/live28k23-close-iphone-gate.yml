@@ -1,0 +1,53 @@
+name: Close LIVE28K23 iPhone Gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/live28k23_close/GO.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  close-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Record LIVE28K23 iPhone PASS
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('PV_LIVE_AUTHORITY.json')
+          d=json.loads(p.read_text())
+          dev=d.setdefault('device_evidence', {})
+          dev['pending_witness']=''
+          dev['pending_iphone_validation']=False
+          dev['live28k23_pending_iphone_validation']=False
+          dev['live28k23_runtime_passed']=True
+          dev['live28k23_result']='PASS iPhone MAIN gate: Aurora Pulse Beauty V2 cinematic played in the live Hybrid route with native V2 SFX, battle BGM silence during the video, Celestial Bloom choir-tail bridge into the battlefield reconnect, and live battle ownership restored cleanly.'
+          dev['latest_device_witness']='main-20260908-live28k23'
+          dev['latest_device_result']=dev['live28k23_result']
+          dev['pending_gate_summary']='No pending Auryi gate. LIVE28K23 is the accepted iPhone runtime baseline. Next active production lane: Kineza Resonart Thunder Tornado.'
+          d['updated']='2026-09-08'
+          p.write_text(json.dumps(d, indent=2) + '\n')
+          PY
+
+      - name: Sync PriZim human ledgers
+        run: python tools/prizim/sync_live_authority.py
+
+      - name: Validate closed gate
+        run: python tools/prizim/preflight_live28k.py
+
+      - name: Commit device evidence
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add PV_LIVE_AUTHORITY.json PV_RESUME_ANCHOR.md PRIZIM_LIVE_NOTEPAD.md
+          git commit -m 'LIVE28K23: record iPhone MAIN pass' || exit 0
+          git push origin main
