@@ -1,0 +1,55 @@
+name: Promote LIVE28K23 Aurora Pulse V2 Final
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/promote_aurora_v2_final/GO.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Preflight current live authority
+        run: python tools/prizim/preflight_live28k.py
+
+      - name: Verify installed V2 media
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '57101593d7bee82ab444f3f556dd634ad71928975f43cf1a4eebadce020825ac  assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4' | sha256sum -c -
+          echo '9d3da298c2f5712e3a52446ecaca9b7eb3100e030d0d3acf04f6e041b1f727d0  assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a' | sha256sum -c -
+
+      - name: Apply Aurora V2 runtime transforms
+        run: |
+          python tools/prizim/aurora_v2_audio_transform.py
+          python tools/prizim/aurora_v2_scene_transform.py
+          python tools/prizim/aurora_v2_authority_promote.py
+          cp tools/prizim/preflight_live28k_v2.py tools/prizim/preflight_live28k.py
+
+      - name: Validate promoted runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/prizim/preflight_live28k.py
+          node --input-type=module --check < src/PartyBattleAudioController.js
+          node --input-type=module --check < src/prizim/Live28K2PartyBattleScene.js
+
+      - name: Commit LIVE28K23
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/promote_aurora_v2_final/GO.txt .github/promote_aurora_v2_fix/GO.txt .github/promote_aurora_v2/URL.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/PartyBattleAudioController.js src/prizim/Live28K2PartyBattleScene.js tools/prizim/preflight_live28k.py PV_LIVE_AUTHORITY.json PV_RESUME_ANCHOR.md PRIZIM_LIVE_NOTEPAD.md live-build.json .github/promote_aurora_v2_final/GO.txt .github/promote_aurora_v2_fix/GO.txt .github/promote_aurora_v2/URL.txt
+          git commit -m 'LIVE28K23: promote Aurora Pulse Beauty V2 hybrid runtime'
+          git push origin HEAD:main
