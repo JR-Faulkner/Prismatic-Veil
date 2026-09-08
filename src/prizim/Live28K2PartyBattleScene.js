@@ -26,6 +26,7 @@ const THUNDER_TORNADO_VIDEO_PATH = './assets/characters/kineza/animations/thunde
 const THUNDER_TORNADO_TIMELINE = Object.freeze({ reveal: 9.18, livePass: 9.40, impact: 9.66, hide: 9.92 });
 const THUNDER_TORNADO_LIVE_INTRO_MS = 520;
 const THUNDER_TORNADO_HIT_CHANCE = 0.92;
+const THUNDER_TORNADO_LIVE_PASS_STYLE = 'structured-spiral-v2';
 
 // Exact approved 01-08 production lane. Keep this false until the original
 // transparent PNG bytes are physically installed at the paths below. This
@@ -803,31 +804,58 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     const h = this.scale.height;
     const enemyX = this.enemyView?.container?.x ?? w * 0.76;
     const enemyY = this.enemyView?.container?.y ?? h * 0.55;
-    const startX = w * 0.18;
-    const startY = enemyY - h * 0.04;
-    const core = this.add.ellipse(startX, startY, w * 0.30, h * 0.13, 0x86ffac, 0.42)
+    const startX = w * 0.16;
+    const startY = enemyY - h * 0.035;
+
+    // LIVE28K25: preserve the cinematic tornado's readable funnel language on
+    // the live battlefield. The old continuation was a broad green wash; this
+    // version is a narrower white-hot core wrapped by separated emerald spiral
+    // bands so it reads as the SAME tornado continuing through the real enemy.
+    const core = this.add.ellipse(startX, startY, w * 0.19, h * 0.075, 0xbfffd0, 0.24)
       .setDepth(28).setBlendMode(Phaser.BlendModes.ADD);
-    const shellA = this.add.ellipse(startX - w * 0.03, startY, w * 0.34, h * 0.18, 0x000000, 0)
-      .setStrokeStyle(Math.max(3, h * 0.010), 0x41ff75, 0.92).setDepth(28.1).setAngle(-8)
+    const hotCore = this.add.ellipse(startX + w * 0.018, startY, w * 0.075, h * 0.045, 0xf4fff5, 0.68)
+      .setDepth(28.45).setBlendMode(Phaser.BlendModes.ADD);
+    const spiralA = this.add.ellipse(startX - w * 0.018, startY, w * 0.235, h * 0.105, 0x000000, 0)
+      .setStrokeStyle(Math.max(2, h * 0.0065), 0x42ff72, 0.92).setDepth(28.1).setAngle(-16)
       .setBlendMode(Phaser.BlendModes.ADD);
-    const shellB = this.add.ellipse(startX - w * 0.06, startY, w * 0.40, h * 0.22, 0x000000, 0)
-      .setStrokeStyle(Math.max(2, h * 0.006), 0xd8ffe0, 0.78).setDepth(28.2).setAngle(9)
+    const spiralB = this.add.ellipse(startX - w * 0.045, startY, w * 0.275, h * 0.135, 0x000000, 0)
+      .setStrokeStyle(Math.max(2, h * 0.0048), 0xd9ffe1, 0.74).setDepth(28.2).setAngle(12)
       .setBlendMode(Phaser.BlendModes.ADD);
-    const flash = this.add.ellipse(startX, startY, w * 0.13, h * 0.09, 0xf2fff3, 0.62)
-      .setDepth(28.3).setBlendMode(Phaser.BlendModes.ADD);
-    const objects = [core, shellA, shellB, flash];
+    const spiralC = this.add.ellipse(startX - w * 0.075, startY, w * 0.315, h * 0.165, 0x000000, 0)
+      .setStrokeStyle(Math.max(1.5, h * 0.0038), 0x2eea62, 0.66).setDepth(28.05).setAngle(-7)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    const lightning = this.add.ellipse(startX - w * 0.012, startY, w * 0.145, h * 0.055, 0x000000, 0)
+      .setStrokeStyle(Math.max(1.5, h * 0.0035), 0xf0fff2, 0.88).setDepth(28.35).setAngle(4)
+      .setBlendMode(Phaser.BlendModes.ADD);
+
+    const objects = [core, spiralC, spiralB, spiralA, lightning, hotCore];
     this.worldAdd(objects);
+
+    const travelX = enemyX + w * 0.25;
     objects.forEach((obj, i) => {
+      const outer = i > 0 && i < 4;
       this.tweens.add({
         targets: obj,
-        x: enemyX + w * (0.20 + i * 0.015),
-        scaleX: 1.15 + i * 0.06,
-        scaleY: 0.88 + i * 0.04,
-        angle: obj.angle + (i % 2 ? 38 : -34),
-        duration: 520 + i * 25,
+        x: travelX + w * (i * 0.008),
+        scaleX: outer ? 1.12 + i * 0.035 : 1.06,
+        scaleY: outer ? 0.90 + i * 0.018 : 0.84,
+        angle: obj.angle + (i % 2 ? 62 : -58),
+        alpha: outer ? 0.78 : obj.alpha,
+        duration: 430 + i * 18,
         ease: 'Cubic.easeIn'
       });
     });
+
+    // A brief compression as the live funnel crosses the enemy gives stronger
+    // forward velocity without covering the battlefield in opaque green.
+    this.tweens.add({
+      targets: [core, hotCore],
+      scaleX: 1.24,
+      scaleY: 0.72,
+      duration: 360,
+      ease: 'Quad.easeIn'
+    });
+
     return { objects, enemyX, enemyY };
   }
 

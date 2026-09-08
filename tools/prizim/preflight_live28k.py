@@ -163,6 +163,13 @@ for key, expected in {
     if abs(float(ksync.get(key, -99)) - expected) > 0.001:
         errors.append(f'K24 Thunder Tornado sync drift: {key}')
 
+if "THUNDER_TORNADO_LIVE_PASS_STYLE = 'structured-spiral-v2'" not in k_scene:
+    errors.append('K25 Thunder Tornado live-pass style token missing')
+if hard.get('kineza_thunder_tornado_live_handoff_harmonized') is not True:
+    errors.append('K25 Thunder Tornado harmonization hard gate missing')
+if auth.get('kineza', {}).get('thunder_tornado_live_pass_style') != 'structured-spiral-v2':
+    errors.append('K25 Thunder Tornado live-pass authority drift')
+
 if errors:
     print('PRIZIM LIVE28K PREFLIGHT FAILED')
     for err in errors:

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "updated": "2026-09-08",
-  "witness": "main-20260908-live28k24",
+  "witness": "main-20260908-live28k25",
   "production_route": [
     "index.html",
     "story-scroll.html",
@@ -52,7 +52,8 @@
     "kineza_thunder_tornado_exact_master_required": true,
     "kineza_thunder_tornado_must_be_owned_by_k_adapter": true,
     "kineza_thunder_tornado_live_enemy_handoff_required": true,
-    "kineza_thunder_tornado_lethal_home_settle_required": true
+    "kineza_thunder_tornado_lethal_home_settle_required": true,
+    "kineza_thunder_tornado_live_handoff_harmonized": true
   },
   "auryi": {
     "basic_attack": "Aurorb Slice",
@@ -118,7 +119,7 @@
     "live28k11_triumph_of_light_played": true,
     "live28k11_visual_cinematic_missing": true,
     "live28k12_pending_iphone_validation": true,
-    "pending_witness": "main-20260908-live28k24",
+    "pending_witness": "main-20260908-live28k25",
     "pending_iphone_validation": true,
     "promotion_reason": "Promote LIVE28K22 after K21 passed the iPhone runtime gate. Fix only Kineza lethal-victory timing: await the full Duo-Hybrid Blitzer sequence, restore Kineza to his exact HC formation home, hold a 240ms readable settle beat, and only then allow the existing end-turn timer to schedule Victory. Preserve K21 runtime stability, K20 Aurora Pulse Hybrid presentation, K18 native M4A playback, exact Beauty V1 master/hash, Celestial Bloom watchdog, re-entry wave/Wraith reaction, crownless Aurora, Prismel/Auryi stable lanes, Kineza identity and attack frames, and existing damage markers/timing. Keep machine authority, PriZim notepad, resume anchor, canonical preflight, and iPhone pending gate synchronized to K22.",
     "aurora_beauty_v1_exact_master_installed": true,
@@ -140,7 +141,7 @@
     "live28k16_handoff_visual_result": "Not yet accepted/rejected; boot/audio regression must be removed first.",
     "latest_device_witness": "main-20260908-live28k23",
     "latest_device_result": "PASS iPhone MAIN gate: Aurora Pulse Beauty V2 cinematic played in the live Hybrid route with native V2 SFX, battle BGM silence during the video, Celestial Bloom choir-tail bridge into the battlefield reconnect, and live battle ownership restored cleanly.",
-    "pending_gate_summary": "LIVE28K24: Kineza Thunder Tornado exact cinematic + SFX, generated-to-live tornado handoff through the actual enemy, live damage/death, Kineza recovery/home settle before Victory. Preserve accepted LIVE28K23 Aurora V2 and all stable lanes.",
+    "pending_gate_summary": "LIVE28K25: Thunder Tornado handoff harmonization only. Verify cinematic-to-live tornado continuity, narrower spiral structure, reduced green wash, clear real-enemy pass, unchanged damage/death/recovery/Victory behavior, and preserved LIVE28K23 Aurora V2.",
     "live28k17_pending_iphone_validation": true,
     "live28k17_boot_decode_failed": true,
     "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR \u00b7 Decoding failed",
@@ -165,7 +166,8 @@
     "live28k23_pending_iphone_validation": false,
     "live28k23_runtime_passed": true,
     "live28k23_result": "PASS iPhone MAIN gate: Aurora Pulse Beauty V2 cinematic played in the live Hybrid route with native V2 SFX, battle BGM silence during the video, Celestial Bloom choir-tail bridge into the battlefield reconnect, and live battle ownership restored cleanly.",
-    "live28k24_pending_iphone_validation": true
+    "live28k24_pending_iphone_validation": true,
+    "live28k25_pending_iphone_validation": true
   },
   "hybrid_boot_policy": "hybrid-main must retry live-build.json and hybrid-battle-live.html no-store fetches with bounded exponential backoff before surfacing LIVE BOOT ERROR.",
   "kineza": {
@@ -186,6 +188,8 @@
       "cinematic_hide": 9.92
     },
     "thunder_tornado_audio_policy": "Generated cinematic contributes SFX only; no generated music or vocals. Existing battle music remains runtime-owned and is ducked by the cinematic controller.",
-    "thunder_tornado_handoff_policy": "Generated cinematic contains no enemy. Final launch crossfades into a live emerald tornado pass through the actual enemy; live runtime owns damage/death and Kineza returns home before Victory."
+    "thunder_tornado_handoff_policy": "Generated cinematic contains no enemy. Final launch crossfades into a live emerald tornado pass through the actual enemy; live runtime owns damage/death and Kineza returns home before Victory.",
+    "thunder_tornado_live_pass_style": "structured-spiral-v2",
+    "thunder_tornado_live_pass_visual_policy": "Live continuation must preserve the cinematic funnel read: narrow luminous core, separated emerald/white spiral bands, reduced opaque green fill, and fast forward travel through the real enemy. It must not read as a full-screen green wash."
   }
 }

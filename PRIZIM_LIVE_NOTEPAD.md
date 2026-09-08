@@ -215,3 +215,13 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Hybrid handoff: reveal 9.18s → live tornado pass 9.40s → real enemy impact 9.66s → movie hidden 9.92s → live tornado exits → Kineza returns home.
 - Lethal finish preserves the K22 240ms readable home settle before Victory.
 - iPhone MAIN remains the final gate.
+
+
+## LIVE28K25 Thunder Tornado handoff harmonization
+
+- Current promoted witness: `main-20260908-live28k25`.
+- Scope is visual handoff only. Thunder Tornado cinematic master/timing/damage authority remain unchanged.
+- Live continuation style: `structured-spiral-v2`.
+- Narrow luminous core + separated emerald/white spiral bands + reduced opaque green wash + faster forward enemy pass.
+- Preserve K22 240ms lethal Kineza home settle and LIVE28K23 Aurora V2.
+- iPhone MAIN remains the final gate.
