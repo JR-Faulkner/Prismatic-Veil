@@ -1,0 +1,22 @@
+{
+  "name": "Aurora Pulse Beauty V2 / Hybrid handoff",
+  "video_duration_seconds": 10.033333,
+  "live_intro_ms": 900,
+  "live_handoff_ms": 220,
+  "video": {
+    "sfx_reveal": 0.0,
+    "choir_tail_reveal": 9.35,
+    "choir_source_offset": 3.86,
+    "battlefield_reveal": 9.5,
+    "logical_damage_and_live_impact": 9.72,
+    "live_battlefield_reconnect": 9.9,
+    "video_hide": 10.02
+  },
+  "audio_policy": {
+    "battle_bgm": "fully silent from Aurora action start through live reconnect",
+    "video_music": "none added by runtime",
+    "video_embedded_audio": "AAC stream copied to native M4A without re-encoding; native HTMLMediaElement owns playback",
+    "celestial_bloom": "source tail begins at 3.86s around video 9.35s and carries across battlefield reconnect",
+    "battle_bgm_restore": "after live battlefield ownership is restored and video is hidden"
+  }
+}
