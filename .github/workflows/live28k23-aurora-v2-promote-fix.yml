@@ -1,0 +1,436 @@
+name: Promote LIVE28K23 Aurora Pulse V2 Fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/promote_aurora_v2_fix/GO.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Run current canonical PriZim preflight before live write
+        run: python tools/prizim/preflight_live28k.py
+
+      - name: Verify V2 media already installed
+        shell: bash
+        run: |
+          set -euo pipefail
+          VIDEO='assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4'
+          AUDIO='assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a'
+          echo '57101593d7bee82ab444f3f556dd634ad71928975f43cf1a4eebadce020825ac  '"$VIDEO" | sha256sum -c -
+          echo '9d3da298c2f5712e3a52446ecaca9b7eb3100e030d0d3acf04f6e041b1f727d0  '"$AUDIO" | sha256sum -c -
+
+      - name: Transform K audio controller for Aurora V2 native mix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('src/PartyBattleAudioController.js')
+          s=p.read_text()
+          def once(old,new,label):
+              global s
+              assert old in s, f'missing audio transform anchor: {label}'
+              s=s.replace(old,new,1)
+
+          once("const AURORA_BLOOM_PATH = './assets/music/Celestial Bloom.m4a?pvasset=live28k18-native';",
+               "const AURORA_BLOOM_PATH = './assets/music/Celestial Bloom.m4a?pvasset=live28k18-native';\nconst AURORA_V2_SFX_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a?pvasset=live28k23-aurora-v2';",
+               'V2 SFX constant')
+          once("    this._auroraBloom = null;\n    this._triumph = null;",
+               "    this._auroraBloom = null;\n    this._auroraV2Sfx = null;\n    this._triumph = null;",
+               'constructor native media')
+          once("    this._nativeResume = { bloom: false, triumph: false };",
+               "    this._nativeResume = { bloom: false, v2sfx: false, triumph: false };",
+               'native resume state')
+          once("    this._cinematicActive = false;",
+               "    this._cinematicActive = false;\n    this._cinematicBgmSilenced = false;",
+               'cinematic silence state')
+          once("    this._auroraBloom = makeNativeAudio(AURORA_BLOOM_PATH, false);\n    this._triumph = makeNativeAudio(TRIUMPH_LIGHT_PATH, true);\n    try { this._auroraBloom.load(); this._triumph.load(); } catch (err) { /* native preload is best-effort */ }",
+               "    this._auroraBloom = makeNativeAudio(AURORA_BLOOM_PATH, false);\n    this._auroraV2Sfx = makeNativeAudio(AURORA_V2_SFX_PATH, false);\n    this._triumph = makeNativeAudio(TRIUMPH_LIGHT_PATH, true);\n    try { this._auroraBloom.load(); this._auroraV2Sfx.load(); this._triumph.load(); } catch (err) { /* native preload is best-effort */ }",
+               'native media create')
+          once("        this._nativeResume.bloom = !!(this._auroraBloom && !this._auroraBloom.paused && !this._auroraBloom.ended);\n        this._nativeResume.triumph = !!(this._triumph && !this._triumph.paused && !this._triumph.ended);\n        if (this._nativeResume.bloom) this._auroraBloom.pause();\n        if (this._nativeResume.triumph) this._triumph.pause();",
+               "        this._nativeResume.bloom = !!(this._auroraBloom && !this._auroraBloom.paused && !this._auroraBloom.ended);\n        this._nativeResume.v2sfx = !!(this._auroraV2Sfx && !this._auroraV2Sfx.paused && !this._auroraV2Sfx.ended);\n        this._nativeResume.triumph = !!(this._triumph && !this._triumph.paused && !this._triumph.ended);\n        if (this._nativeResume.bloom) this._auroraBloom.pause();\n        if (this._nativeResume.v2sfx) this._auroraV2Sfx.pause();\n        if (this._nativeResume.triumph) this._triumph.pause();",
+               'visibility pause')
+          once("        if (this._nativeResume.bloom) this._auroraBloom?.play?.().catch?.(() => {});\n        if (this._nativeResume.triumph) this._triumph?.play?.().catch?.(() => {});\n        this._nativeResume.bloom = false;\n        this._nativeResume.triumph = false;",
+               "        if (this._nativeResume.bloom) this._auroraBloom?.play?.().catch?.(() => {});\n        if (this._nativeResume.v2sfx) this._auroraV2Sfx?.play?.().catch?.(() => {});\n        if (this._nativeResume.triumph) this._triumph?.play?.().catch?.(() => {});\n        this._nativeResume.bloom = false;\n        this._nativeResume.v2sfx = false;\n        this._nativeResume.triumph = false;",
+               'visibility resume')
+          once("    if (this._auroraBloom && !this._auroraBloom.paused) this._auroraBloom.volume = this._effectiveVolume('sfx', 1.0);\n    if (this._triumph && !this._triumph.paused) this._triumph.volume = this._effectiveVolume('music', 0.92);",
+               "    if (this._auroraBloom && !this._auroraBloom.paused) this._auroraBloom.volume = this._effectiveVolume('sfx', 1.0);\n    if (this._auroraV2Sfx && !this._auroraV2Sfx.paused) this._auroraV2Sfx.volume = this._effectiveVolume('sfx', 1.0);\n    if (this._triumph && !this._triumph.paused) this._triumph.volume = this._effectiveVolume('music', 0.92);",
+               'mute propagation')
+          once("  _musicTargetVolume() {\n    return this._effectiveVolume('music') * (this._cinematicActive ? CINEMATIC_MUSIC_MULT : 1);\n  }",
+               "  _musicTargetVolume() {\n    if (this._cinematicBgmSilenced) return 0;\n    return this._effectiveVolume('music') * (this._cinematicActive ? CINEMATIC_MUSIC_MULT : 1);\n  }",
+               'music target silence')
+
+          marker="  beginCinematicAttack() {"
+          assert marker in s, 'missing beginCinematicAttack marker'
+          methods=r'''  beginAuroraVideoMix() {
+    this._cinematicActive = true;
+    this._cinematicBgmSilenced = true;
+    if (!this.music || !this.music.isPlaying) return;
+    this._duckToken = (this._duckToken || 0) + 1;
+    this.scene.tweens.killTweensOf(this.music);
+    this.scene.tweens.add({ targets: this.music, volume: 0, duration: 110, ease: 'Sine.easeOut' });
+  }
+
+  endAuroraVideoMix() {
+    this._cinematicBgmSilenced = false;
+    this._cinematicActive = false;
+    if (!this.music || !this.music.isPlaying) return;
+    this._duckToken = (this._duckToken || 0) + 1;
+    this.scene.tweens.killTweensOf(this.music);
+    this.scene.tweens.add({ targets: this.music, volume: this._musicTargetVolume(), duration: 320, ease: 'Sine.easeIn' });
+  }
+
+  auroraV2SfxPrime() {
+    const sound = this._auroraV2Sfx;
+    if (!sound) return false;
+    resetNativeAudio(sound);
+    sound.loop = false;
+    sound.volume = 0;
+    try {
+      const pending = sound.play();
+      pending?.catch?.(err => console.warn('[PV] Aurora V2 SFX native prime blocked:', err));
+    } catch (err) {
+      console.warn('[PV] Aurora V2 SFX native prime failed:', err);
+      return false;
+    }
+    return true;
+  }
+
+  auroraV2SfxReveal() {
+    const sound = this._auroraV2Sfx;
+    if (!sound) return false;
+    try { sound.currentTime = 0; } catch (err) { /* metadata may still be settling */ }
+    sound.volume = this._effectiveVolume('sfx', 1.0);
+    try {
+      const pending = sound.play();
+      pending?.catch?.(err => console.warn('[PV] Aurora V2 SFX native reveal blocked:', err));
+    } catch (err) {
+      console.warn('[PV] Aurora V2 SFX native reveal failed:', err);
+      return false;
+    }
+    return true;
+  }
+
+  auroraV2SfxStop(fadeMs = 120) {
+    const sound = this._auroraV2Sfx;
+    if (!sound) return;
+    if (sound.paused || sound.ended) {
+      resetNativeAudio(sound);
+      sound.volume = this._effectiveVolume('sfx', 1.0);
+      return;
+    }
+    this.scene.tweens.killTweensOf(sound);
+    this.scene.tweens.add({
+      targets: sound, volume: 0, duration: fadeMs, ease: 'Sine.easeOut',
+      onComplete: () => { resetNativeAudio(sound); sound.volume = this._effectiveVolume('sfx', 1.0); }
+    });
+  }
+
+  auroraBloomTailPrime() {
+    const sound = this._auroraBloom;
+    if (!sound) return false;
+    resetNativeAudio(sound);
+    sound.loop = true;
+    sound.volume = 0;
+    try {
+      const pending = sound.play();
+      pending?.catch?.(err => console.warn('[PV] Celestial Bloom tail prime blocked:', err));
+    } catch (err) {
+      console.warn('[PV] Celestial Bloom tail prime failed:', err);
+      return false;
+    }
+    return true;
+  }
+
+  auroraBloomTailReveal(sourceSeconds = 3.86) {
+    const sound = this._auroraBloom;
+    if (!sound) return false;
+    sound.loop = false;
+    try { sound.currentTime = Math.max(0, Number(sourceSeconds) || 0); } catch (err) { /* metadata may still be settling */ }
+    sound.volume = this._effectiveVolume('sfx', 1.0);
+    try {
+      const pending = sound.play();
+      pending?.catch?.(err => console.warn('[PV] Celestial Bloom choir-tail reveal blocked:', err));
+    } catch (err) {
+      console.warn('[PV] Celestial Bloom choir-tail reveal failed:', err);
+      return false;
+    }
+    return true;
+  }
+
+'''
+          s=s.replace(marker,methods+marker,1)
+          once("    prime(this._auroraBloom);\n    prime(this._triumph);",
+               "    prime(this._auroraBloom);\n    prime(this._auroraV2Sfx);\n    prime(this._triumph);",
+               'prime native V2')
+          once("    if (this._auroraBloom) { try { this._auroraBloom.pause(); this._auroraBloom.removeAttribute('src'); this._auroraBloom.load(); } catch (err) { /* ignore */ } this._auroraBloom = null; }\n    if (this._triumph)",
+               "    if (this._auroraBloom) { try { this._auroraBloom.pause(); this._auroraBloom.removeAttribute('src'); this._auroraBloom.load(); } catch (err) { /* ignore */ } this._auroraBloom = null; }\n    if (this._auroraV2Sfx) { try { this._auroraV2Sfx.pause(); this._auroraV2Sfx.removeAttribute('src'); this._auroraV2Sfx.load(); } catch (err) { /* ignore */ } this._auroraV2Sfx = null; }\n    if (this._triumph)",
+               'destroy V2 native')
+          p.write_text(s)
+          PY
+
+      - name: Transform K Aurora director to Beauty V2
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('src/prizim/Live28K2PartyBattleScene.js')
+          s=p.read_text()
+          old="const AURORA_BEAUTY_VIDEO_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v1_1080p.mp4?pvasset=live28k14-beauty';"
+          assert old in s, 'missing V1 Beauty path anchor'
+          s=s.replace(old,"const AURORA_BEAUTY_VIDEO_PATH = './assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4?pvasset=live28k23-aurora-v2';",1)
+          old="const AURORA_BEAUTY_TIMELINE = Object.freeze({ invocation: 0.70, bloomWatchdog: 0.84, silence: 4.56, pulse: 5.18, reveal: 6.08, impactReveal: 6.30, reconnect: 6.58, end: 6.65 });"
+          assert old in s, 'missing V1 timeline anchor'
+          new="const AURORA_BEAUTY_TIMELINE = Object.freeze({ choirTail: 9.35, reveal: 9.50, impactReveal: 9.72, reconnect: 9.90, end: 10.02 });\nconst AURORA_BLOOM_TAIL_SOURCE = 3.86;\nconst AURORA_LIVE_INTRO_MS = 900;\nconst AURORA_LIVE_HANDOFF_MS = 220;"
+          s=s.replace(old,new,1)
+
+          director=r'''  async _runAuroraBeautyDirector(video) {
+    if (!video) return;
+    // Beauty V2 owns its internal cinematic camera. Hybrid adds only a restrained
+    // breathing push so the source animation stays visually authoritative.
+    video.style.transition = 'opacity 160ms ease, transform 1800ms cubic-bezier(0.22, 1, 0.36, 1), filter 320ms ease';
+    video.style.transform = 'scale(1.026)';
+    video.style.filter = 'brightness(0.98) contrast(1.04) saturate(1.05)';
+    await this._waitForAuroraBeautyTime(video, 7.90);
+    video.style.transition = 'opacity 160ms ease, transform 1500ms cubic-bezier(0.22, 1, 0.36, 1), filter 300ms ease';
+    video.style.transform = 'scale(1.012)';
+    video.style.filter = 'brightness(1.05) contrast(1.03) saturate(1.08)';
+    await this._waitForAuroraBeautyTime(video, 9.30);
+    video.style.transition = 'opacity 140ms ease, transform 520ms cubic-bezier(0.22, 1, 0.36, 1), filter 180ms ease';
+    video.style.transform = 'scale(1.045)';
+    video.style.filter = 'brightness(1.14) contrast(1.02) saturate(1.10)';
+  }
+
+'''
+          pat=r"  async _runAuroraBeautyDirector\(video\) \{.*?\n  \}\n\n(?=  _playAuroraBattlefieldAfterglow\()"
+          s,n=re.subn(pat,director,s,count=1,flags=re.S)
+          assert n==1, 'failed to replace Aurora Beauty director'
+
+          beauty=r'''  async _playAuryiAuroraPulseBeauty(hero) {
+    const video = this._prepareAuroraBeautyVideo();
+    if (!video) return false;
+
+    this._turnLock = true;
+    this._hideCommandRail();
+    this._hideTargetCursor?.();
+
+    const base = hero.resonart.damage;
+    const low = Math.round(base * 0.85);
+    const high = Math.round(base * 1.15);
+    const hitRoll = Math.random() < AURORA_PULSE_HIT_CHANCE;
+    let ownsV2Sfx = false;
+    let ownsBloomTail = false;
+    let impactResolved = false;
+    let pendingImpact = null;
+    const cam = this.cameras.main;
+    const cameraState = { zoom: cam.zoom, scrollX: cam.scrollX, scrollY: cam.scrollY };
+
+    // Aurora V2 mix: normal battle BGM is completely silent. The exact V2
+    // SFX packet-copy owns the cinematic middle; Celestial Bloom enters only
+    // as the choir-tail bridge at the final blast.
+    this.audio.beginAuroraVideoMix?.();
+    ownsV2Sfx = this.audio.auroraV2SfxPrime?.() === true;
+    ownsBloomTail = this.audio.auroraBloomTailPrime?.() === true;
+    this._setBanner(`${hero.name} invokes ${hero.resonart.name}!`);
+
+    this.tweens.killTweensOf(cam);
+    this.tweens.add({ targets: cam, zoom: cameraState.zoom * 1.045, duration: AURORA_LIVE_INTRO_MS, ease: 'Sine.easeOut' });
+    const liveActor = this.formation?.actors?.get?.('auryi');
+    const liveSprite = liveActor?.sprite;
+    const liveY = liveSprite?.y;
+    if (liveSprite && Number.isFinite(liveY)) {
+      this.tweens.add({ targets: liveSprite, y: liveY - Math.min(18, this.scale.height * 0.03), duration: AURORA_LIVE_INTRO_MS, ease: 'Sine.easeOut' });
+    }
+    await this._wait(AURORA_LIVE_INTRO_MS);
+    this.formation.setPovFocus?.(hero.id, true);
+    await this._wait(AURORA_LIVE_HANDOFF_MS);
+
+    try {
+      video.pause();
+      try { video.currentTime = 0; } catch (err) { /* metadata may still be settling */ }
+      video.style.display = 'block';
+      video.style.opacity = '0';
+      video.style.transform = 'scale(1.026)';
+      const playPromise = video.play();
+      if (playPromise) await playPromise;
+      if (ownsV2Sfx) this.audio.auroraV2SfxReveal?.();
+      requestAnimationFrame(() => { video.style.opacity = '1'; });
+      const directorTask = this._runAuroraBeautyDirector(video).catch(err => console.warn('[PV] Aurora Pulse V2 Hybrid director skipped:', err));
+
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.choirTail);
+      if (ownsBloomTail) this.audio.auroraBloomTailReveal?.(AURORA_BLOOM_TAIL_SOURCE);
+
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.reveal);
+      this._beginAuroraBeautyBattlefieldReveal(video);
+
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.impactReveal);
+      if (hitRoll) {
+        const dmg = Phaser.Math.Between(low, high);
+        this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
+        this._updateTargetCard();
+        pendingImpact = { dmg, lethal: this.enemy.hp <= 0 };
+        this._setBanner(`${hero.name} uses ${hero.resonart.name} for ${dmg} damage!`);
+        this.audio.attackImpact(hero.id);
+        this.audio.enemyHit();
+      } else {
+        this._setBanner(`${hero.name} uses ${hero.resonart.name} — missed!`);
+      }
+      impactResolved = true;
+      this.audio.auroraReentryWave?.();
+      this._playAuroraBattlefieldAfterglow();
+      if (pendingImpact) this._playAuroraEnemyReconnectImpact(pendingImpact.dmg, pendingImpact.lethal);
+
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.reconnect);
+      await this._waitForAuroraBeautyTime(video, AURORA_BEAUTY_TIMELINE.end, 16000);
+      await directorTask;
+    } catch (err) {
+      console.warn('[PV] Aurora Beauty V2 playback fell back to Hybrid mock:', err);
+      if (ownsV2Sfx) this.audio.auroraV2SfxStop?.(80);
+      if (ownsBloomTail) this.audio.auroraBloomStop?.(120);
+      this.audio.endAuroraVideoMix?.();
+      await this._hideAuroraBeautyVideo(video, 40);
+      this._restoreAuroraBeautyDirector(hero.id, cameraState);
+      if (!impactResolved) {
+        this._turnLock = false;
+        return false;
+      }
+    }
+
+    if (ownsV2Sfx) this.audio.auroraV2SfxStop?.(90);
+    if (ownsBloomTail) this.audio.auroraBloomStop?.(420);
+    await this._hideAuroraBeautyVideo(video, 90);
+    this._restoreAuroraBeautyDirector(hero.id, cameraState);
+    this.audio.endAuroraVideoMix?.();
+    this._turnLock = false;
+    this._endHeroTurn();
+    return true;
+  }
+
+'''
+          pat=r"  async _playAuryiAuroraPulseBeauty\(hero\) \{.*?\n  \}\n\n(?=  async _resolveHeroAction\()"
+          s,n=re.subn(pat,beauty,s,count=1,flags=re.S)
+          assert n==1, 'failed to replace Aurora Beauty action'
+          p.write_text(s)
+          PY
+
+      - name: Update LIVE28K23 authority and ledgers
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          W='main-20260908-live28k23'
+          p=Path('PV_LIVE_AUTHORITY.json'); a=json.loads(p.read_text())
+          a['updated']='2026-09-08'; a['witness']=W
+          hg=a.setdefault('hard_gates',{})
+          hg.update({'aurora_v2_exact_master_required':True,'aurora_v2_native_sfx_lane_required':True,'aurora_v2_battle_bgm_silence_required':True,'aurora_v2_choir_tail_bridge_required':True})
+          au=a['auryi']
+          au.update({
+            'aurora_presentation':'Beauty V2 exact KingAI master inside the Hybrid K adapter; live battlefield intro, native V2 SFX, battle BGM fully silent during cinematic, Celestial Bloom choir-tail bridge at final blast, and live battlefield/enemy reconnect.',
+            'aurora_beauty_video':'assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4',
+            'aurora_beauty_video_sha256':'57101593d7bee82ab444f3f556dd634ad71928975f43cf1a4eebadce020825ac',
+            'aurora_beauty_video_bytes':6256162,
+            'aurora_beauty_resolution':'910x512','aurora_beauty_fps':30,'aurora_beauty_duration_seconds':10.033333,
+            'aurora_beauty_timeline':'assets/characters/auryi/animations/aurora_pulse/cinematic/AuroraPulse_Beauty_v2_runtime_timeline.json',
+            'aurora_v2_sfx':'assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a',
+            'aurora_v2_sfx_sha256':'9d3da298c2f5712e3a52446ecaca9b7eb3100e030d0d3acf04f6e041b1f727d0','aurora_v2_sfx_bytes':164264,
+            'aurora_beauty_sync':{'live_intro_ms':900,'live_handoff_ms':220,'video_sfx_reveal':0.0,'celestial_bloom_choir_tail_video_time':9.35,'celestial_bloom_choir_tail_source_time':3.86,'battlefield_reveal_crossfade':9.50,'live_enemy_visual_impact':9.72,'live_battlefield_reconnect':9.90,'beauty_video_hidden':10.02},
+            'aurora_bloom_mix_policy':'Beauty V2 embedded AAC is packet-copied to a native M4A lane with no re-encode. Normal battle BGM is fully silent from Aurora action start through reconnect. Celestial Bloom remains exact native M4A and reveals only its choir tail from source ~3.86s at Beauty V2 ~9.35s to bridge the final blast into the live battlefield.',
+            'aurora_handoff_policy':'Hybrid commits briefly to live Auryi, hands off to Beauty V2, begins real battlefield reveal at 9.50s, resolves live enemy hit/recoil at 9.72s, restores live battlefield ownership by 9.90s, hides Beauty by 10.02s, then restores battle BGM. Crownless Aurora and Aurorb Slice separation remain locked.'})
+          dev=a.setdefault('device_evidence',{}); dev['pending_witness']=W; dev['pending_iphone_validation']=True; dev['live28k23_pending_iphone_validation']=True
+          dev['pending_gate_summary']='LIVE28K23: Aurora Pulse Beauty V2, silent battle BGM during cinematic, native V2 SFX, Celestial Bloom choir-tail bridge, clean live battlefield/enemy reconnect, then battle BGM restore. Preserve K22 Kineza settle-before-Victory and all stable lanes.'
+          p.write_text(json.dumps(a,indent=2)+"\n")
+          p=Path('live-build.json'); d=json.loads(p.read_text()); d['id']=W; p.write_text(json.dumps(d,indent=2)+"\n")
+
+          p=Path('PRIZIM_LIVE_NOTEPAD.md'); s=p.read_text(); s=re.sub(r'Current promoted build: `[^`]+`[^\n]*',f'Current promoted build: `{W}` — **Aurora Pulse Beauty V2 promotion; iPhone evidence remains final runtime gate.**',s,count=1)
+          block=f'''\n## LIVE28K23 Aurora Pulse V2\n\n- Promoted witness: `{W}`.\n- Exact Beauty V2 is production Aurora Pulse: 910×512, 30 FPS, 10.033333s, SHA-256 `57101593d7bee82ab444f3f556dd634ad71928975f43cf1a4eebadce020825ac`.\n- Exact packet-copied native V2 SFX SHA-256: `9d3da298c2f5712e3a52446ecaca9b7eb3100e030d0d3acf04f6e041b1f727d0`.\n- Battle BGM is fully silent during the cinematic. Celestial Bloom enters only as the final choir-tail bridge.\n- Timing: choir 9.35s → battlefield reveal 9.50s → live enemy impact 9.72s → live ownership 9.90s → video hidden 10.02s → battle BGM restore.\n- Aurora remains crownless; Aurorb Slice remains separate; K22 Kineza settle-before-Victory remains locked.\n- Pending final gate: normal iPhone MAIN route.\n\n'''
+          if '## LIVE28K23 Aurora Pulse V2' not in s: s=s.replace('## Current truths\n',block+'## Current truths\n',1)
+          p.write_text(s)
+
+          p=Path('PV_RESUME_ANCHOR.md'); s=p.read_text(); s=re.sub(r'- Promoted witness: `[^`]+`',f'- Promoted witness: `{W}`',s,count=1)
+          block=f'''\n## LIVE28K23 Aurora Pulse V2 current lane\n\n- Current witness: `{W}`.\n- Beauty V2 exact master is production Aurora Pulse.\n- Battle BGM is silent during Beauty V2; V2 SFX uses native M4A; Celestial Bloom supplies only the choir-tail bridge.\n- Reconnect timing: choir 9.35s, battlefield reveal 9.50s, live enemy impact 9.72s, live ownership 9.90s, video hidden 10.02s, then battle BGM restore.\n- Final validation is the normal iPhone MAIN route. Preserve K22 Kineza settle-before-Victory behavior and stable Prismel/Auryi Basic/Kineza lanes.\n\n'''
+          if '## LIVE28K23 Aurora Pulse V2 current lane' not in s: s=s.replace('## Auryi command authority\n',block+'## Auryi command authority\n',1)
+          p.write_text(s)
+          PY
+
+      - name: Refresh canonical PriZim preflight for V2
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > tools/prizim/preflight_live28k.py <<'PYFILE'
+          #!/usr/bin/env python3
+          import hashlib,json,pathlib,sys
+          ROOT=pathlib.Path(__file__).resolve().parents[2]
+          def read(p): return (ROOT/p).read_text(encoding='utf-8')
+          def sha(p):
+              h=hashlib.sha256()
+              with (ROOT/p).open('rb') as f:
+                  for c in iter(lambda:f.read(1048576),b''): h.update(c)
+              return h.hexdigest()
+          E=[]; a=json.loads(read('PV_LIVE_AUTHORITY.json')); b=json.loads(read('live-build.json')); w=a['witness']
+          k=read('src/prizim/Live28K2PartyBattleScene.js'); ac=read('src/PartyBattleAudioController.js'); base=read('src/PartyBattleScene.js'); hm=read('hybrid-main.html'); hb=read('hybrid-battle-live.html'); note=read('PRIZIM_LIVE_NOTEPAD.md'); resume=read('PV_RESUME_ANCHOR.md')
+          if b.get('id')!=w:E.append('witness drift')
+          if w not in note:E.append('notepad witness missing')
+          if w not in resume:E.append('resume witness missing')
+          for t in ["const live28kLineage=/live28k\\d+/i.test(id)",'Live28K2PartyBattleScene.js','Live28K7PartyFormationView.js']:
+              if t not in hm:E.append('Hybrid route missing '+t)
+          if "h.resonart?.name" not in hb or "h.resonart?.flavor" not in hb:E.append('Resonart HUD authority drift')
+          if "hero?.id === 'auryi' && command === 'Resonart'" not in k or '_playAuryiAuroraPulseBeauty' not in k:E.append('Aurora K authority missing')
+          if 'Aurora Pulse' in base or '_playAuryiAuroraPulse' in base:E.append('Aurora leaked into base')
+          if '.webp' in k.lower():E.append('WebP in K battle adapter')
+          fixed={'assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4':(6256162,'57101593d7bee82ab444f3f556dd634ad71928975f43cf1a4eebadce020825ac'),'assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_AUDIO.m4a':(164264,'9d3da298c2f5712e3a52446ecaca9b7eb3100e030d0d3acf04f6e041b1f727d0'),'assets/music/Celestial Bloom.m4a':(113740,'0e8762907bf36650cbdebab8f6497079350054f9819c81e6cb1ba4f3b14cff3d'),'assets/music/Triumph of Light.m4a':(186602,'98c77e8bc536425b8da8ad4212ed26011335c5ac3b9dadbce0ec28c201cca437')}
+          for p,(z,h) in fixed.items():
+              q=ROOT/p
+              if not q.exists():E.append('missing media '+p)
+              elif q.stat().st_size!=z:E.append('size drift '+p)
+              elif sha(p)!=h:E.append('SHA drift '+p)
+          for t in ['Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4','choirTail: 9.35','reveal: 9.50','impactReveal: 9.72','reconnect: 9.90','end: 10.02','AURORA_BLOOM_TAIL_SOURCE = 3.86','video.muted = true','video.defaultMuted = true','beginAuroraVideoMix','auroraV2SfxPrime','auroraV2SfxReveal','auroraBloomTailPrime','auroraBloomTailReveal']:
+              if t not in k and t not in ac:E.append('V2 runtime token missing '+t)
+          for t in ['AURORA_V2_SFX_PATH','beginAuroraVideoMix()','endAuroraVideoMix()','auroraV2SfxPrime()','auroraV2SfxReveal()','auroraBloomTailPrime()','auroraBloomTailReveal(sourceSeconds = 3.86)','_cinematicBgmSilenced']:
+              if t not in ac:E.append('V2 native audio token missing '+t)
+          hg=a.get('hard_gates',{})
+          for key in ['aurora_v2_exact_master_required','aurora_v2_native_sfx_lane_required','aurora_v2_battle_bgm_silence_required','aurora_v2_choir_tail_bridge_required','aurora_pulse_is_crownless']:
+              if hg.get(key) is not True:E.append('hard gate missing '+key)
+          if 'AURORA_TITLE_CARD_READY' in k or '_runAuroraTitleCardSequence' in k:E.append('retired title runtime returned')
+          sync=a.get('auryi',{}).get('aurora_beauty_sync',{})
+          for key,val in {'celestial_bloom_choir_tail_video_time':9.35,'battlefield_reveal_crossfade':9.50,'live_enemy_visual_impact':9.72,'live_battlefield_reconnect':9.90,'beauty_video_hidden':10.02}.items():
+              if abs(float(sync.get(key,-99))-val)>.001:E.append('sync drift '+key)
+          if a.get('kineza',{}).get('lethal_victory_home_settle_ms')!=240:E.append('K22 Kineza settle drift')
+          if E:
+              print('PRIZIM LIVE28K PREFLIGHT FAILED'); [print(' -',x) for x in E]; sys.exit(1)
+          print('PRIZIM LIVE28K PREFLIGHT PASS ·',w)
+          PYFILE
+          chmod +x tools/prizim/preflight_live28k.py
+
+      - name: Validate runtime, authority, and syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/prizim/preflight_live28k.py
+          node --input-type=module --check < src/PartyBattleAudioController.js
+          node --input-type=module --check < src/prizim/Live28K2PartyBattleScene.js
+
+      - name: Commit LIVE28K23 promotion
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/promote_aurora_v2_fix/GO.txt .github/promote_aurora_v2/URL.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/PartyBattleAudioController.js src/prizim/Live28K2PartyBattleScene.js tools/prizim/preflight_live28k.py PV_LIVE_AUTHORITY.json PV_RESUME_ANCHOR.md PRIZIM_LIVE_NOTEPAD.md live-build.json .github/promote_aurora_v2_fix/GO.txt .github/promote_aurora_v2/URL.txt
+          git commit -m 'LIVE28K23: promote Aurora Pulse Beauty V2 hybrid runtime'
+          git push origin HEAD:main
