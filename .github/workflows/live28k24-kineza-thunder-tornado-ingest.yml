@@ -26,13 +26,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p assets/characters/kineza/animations/thunder_tornado/cinematic
-          URL='https://uc59f5c772e0cd755f36fc855528.dl.dropboxusercontent.com/cd/0/get/DHwhKpjDCi2iV2QwP8LJfXJrlmwHUlu81eazxi053NhOlZsdP7CUa_Oji-nxj4QnXz48M0CGLgfH_x3pcILtsYAUROk80hFFmbHzmjkjNUp2Vk9uWzRP4gbTS676TMlsjC3q4O3FnZkQzUjCi5HdLG8JgV5Wupund0Q5q2SiYz7G4g/file?c_luid=9bd25e73'
+          URL='https://uceb87895bb176dbb90b5d3eeb84.dl.dropboxusercontent.com/cd/0/get/DHwjluYrKpQqsPROE5lVUQZkrC7wCwuwaSt4xLmWn54-Qljx1_8QcaFNOq9MVkhv-3EScLvoaq2sZmIWqX8u7fk3QclPowOp9oa3e-ma6406Gq1Sn4r4MbZ31KjzLuFxQ0QdFUOW1ie5TuLjqgf37hixdu9QEa5pCGBcmchAIxNFOQ/file?c_luid=9bd25e73'
           OUT='assets/characters/kineza/animations/thunder_tornado/cinematic/Kineza_ThunderTornado_Resonart_MASTER.mp4'
           curl -fL "$URL" -o "$OUT"
           test "$(wc -c < "$OUT")" -eq 6312497
           echo '77e8fe6e9fcf430d013f0189355b0f725e150c850b240fd5b53060a4f94f9b93  '"$OUT" | sha256sum -c -
-          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height,r_frame_rate -of default=noprint_wrappers=1 "$OUT"
-          ffprobe -v error -select_streams a:0 -show_entries stream=codec_name,sample_rate,channels -of default=noprint_wrappers=1 "$OUT"
 
       - name: Commit verified cinematic asset
         shell: bash
