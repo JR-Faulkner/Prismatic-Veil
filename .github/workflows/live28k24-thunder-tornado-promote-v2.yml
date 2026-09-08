@@ -1,0 +1,53 @@
+name: Promote LIVE28K24 Thunder Tornado v2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/kineza_thunder_tornado/PROMOTE_V2.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Preflight accepted LIVE28K23 baseline
+        run: python tools/prizim/preflight_live28k.py
+
+      - name: Verify Thunder Tornado exact master
+        shell: bash
+        run: |
+          set -euo pipefail
+          TT='assets/characters/kineza/animations/thunder_tornado/cinematic/Kineza_ThunderTornado_Resonart_MASTER.mp4'
+          test "$(wc -c < "$TT")" -eq 6312497
+          echo '77e8fe6e9fcf430d013f0189355b0f725e150c850b240fd5b53060a4f94f9b93  '"$TT" | sha256sum -c -
+
+      - name: Apply PriZim LIVE28K24 promotion
+        run: python tools/prizim/promote_live28k24_thunder_tornado.py
+
+      - name: Validate LIVE28K24
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/BattleConfig.js
+          node --check src/prizim/Live28K2PartyBattleScene.js
+          python tools/prizim/preflight_live28k.py
+          grep -q 'main-20260908-live28k24' live-build.json
+          grep -q 'Thunder Tornado' src/BattleConfig.js
+
+      - name: Commit LIVE28K24 promotion
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/BattleConfig.js src/prizim/Live28K2PartyBattleScene.js PV_LIVE_AUTHORITY.json live-build.json PRIZIM_LIVE_NOTEPAD.md PV_RESUME_ANCHOR.md tools/prizim/preflight_live28k.py
+          git commit -m 'LIVE28K24: wire Kineza Thunder Tornado Hybrid Resonart'
+          git push origin main
