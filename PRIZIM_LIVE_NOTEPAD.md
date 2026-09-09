@@ -1,7 +1,7 @@
 # PriZim Live Notepad
 
-Last refreshed: 2026-09-08
-Current promoted build: `main-20260908-live28k23` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
+Last refreshed: 2026-09-09
+Current promoted build: `main-20260909-live28k26` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
 
 This is the fast operational failure-prevention ledger for PriZim production.
 
@@ -21,7 +21,7 @@ This is the fast operational failure-prevention ledger for PriZim production.
 - The user's normal validation path is the **iPhone web-app link into MAIN**. MAIN is the production/runtime authority.
 - A green GitHub Pages deployment proves deployment only. It does **not** prove the live iPhone runtime is correct.
 - Real-device screenshots/video/evidence outrank code inspection, CI success, and desktop assumptions.
-- Current witness: `main-20260908-live28k23`.
+- Current witness: `main-20260909-live28k26`.
 - Any numeric `LIVE28K` witness stays on the high-quality `Live28K2PartyBattleScene.js` + `Live28K2PartyFormationView.js` lineage through future-proof routing. Router commit: `781e68f94118ff4ba4272b43899dc1b6dc0a26b1`.
 
 ## HYBRID STACK HARD GATE
@@ -145,7 +145,7 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Aurora Pulse itself remains **crownless**.
 - LIVE28K18 core presentation is recorded as passed: boot clean = True; Bloom audible = True; battlefield/enemy handoff accepted = True.
 - Latest phone evidence (main-20260908-live28k23): PASS iPhone MAIN gate: Aurora Pulse Beauty V2 cinematic played in the live Hybrid route with native V2 SFX, battle BGM silence during the video, Celestial Bloom choir-tail bridge into the battlefield reconnect, and live battle ownership restored cleanly.
-- Current pending gate: No pending Auryi gate. LIVE28K23 is the accepted iPhone runtime baseline. Next active production lane: Kineza Resonart Thunder Tornado.
+- Current pending gate: LIVE28K26: verify Prismel Refracted-Reflections exact cinematic, 9.35s staff/lens takeover, readable mirror crack, captured-frame shards, live battlefield reveal beneath shards, live enemy refracted impact/damage, no music/language during cinematic, clean HUD/turn restore, and unchanged Aurora Pulse + Thunder Tornado.
 - Future non-Aurora crown authority: match the Main Splash Screen crown as a **hovered/offset element above Auryi**, not head-worn.
 
 ## Kineza
