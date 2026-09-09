@@ -1,0 +1,125 @@
+name: LIVE29A HR3 Menu Audio
+
+on:
+  push:
+    paths:
+      - '.github/workflows/live29a-hr3-menu-audio.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-hr3:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build HR3 from approved HR2 payload
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import gzip
+
+          src = Path('assets/ui/overworld/v1/hybrid-overworld.hr2.html.gz')
+          html = gzip.decompress(src.read_bytes()).decode('utf-8')
+
+          css = r'''
+          /* LIVE29A HR3 menu stabilization */
+          .hero-card{grid-template-columns:minmax(78px,42%) minmax(0,1fr)!important}
+          .hero-info{min-width:0!important;overflow:hidden!important}
+          .hero-name,.hero-role,.vital-row{min-width:0!important}
+          .hero-role{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+          .hero-portrait img{transform:none!important;object-fit:cover!important}
+          .hero-card[data-hero="prismel"] .hero-portrait img{object-position:center 23%!important}
+          .hero-card[data-hero="kineza"] .hero-portrait img{object-position:center 22%!important}
+          .hero-card[data-hero="auryi"] .hero-portrait img{object-position:center 20%!important;transform:none!important}
+          .tabs{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:4px!important}
+          .tab{grid-template-columns:auto minmax(0,auto)!important;padding-inline:6px!important;min-width:0!important}
+          .tab .txt{min-width:0!important;overflow:hidden!important}
+          .tab strong,.tab small{overflow:hidden!important;text-overflow:ellipsis!important}
+          .right{min-width:0!important}
+          .location-card h2,.location-card p{overflow-wrap:anywhere}
+          .travel button{min-height:34px}
+          .audio-toggle{position:absolute;right:8px;top:7px;z-index:12;border:1px solid #d8b75d88;background:#061a39dd;color:#ffe9ad;width:31px;height:27px;border-radius:3px;font:700 14px system-ui;display:grid;place-items:center;box-shadow:inset 0 0 0 1px #ffffff12}
+          .audio-toggle.off{opacity:.55;filter:grayscale(.65)}
+          @media(max-height:430px){.tab small{display:none!important}.tabs{gap:3px!important;padding:3px 6px!important}.tab{padding:4px!important}.shell{grid-template-rows:minmax(0,1fr) clamp(52px,13vh,66px)!important}.brand{padding-block:4px!important}.brand h1{font-size:clamp(18px,3.8vh,27px)!important}}
+          @media(max-width:760px){.shell{grid-template-columns:minmax(174px,24%) minmax(0,1fr) minmax(126px,16%)!important}.tab{gap:5px!important}.tab strong{font-size:clamp(9px,1.8vh,13px)!important}.hero-role{font-size:clamp(7px,1.15vh,9px)!important}}
+          '''
+          html = html.replace('</style>', css + '\n</style>', 1)
+
+          if 'id="audioToggle"' not in html:
+              html = html.replace('<div class="brand">', '<div class="brand"><button id="audioToggle" class="audio-toggle" aria-label="Toggle menu audio">♪</button>', 1)
+
+          audio = r'''
+          // LIVE29A HR3 PV Option-1 audio: UI sounds are short slices of Magical Awakening.
+          const PV_HR3_BGM='https://cdn1.suno.ai/1cf25965-8eee-4f3f-bf4c-96f8fed25bf9.mp3';
+          const PV_HR3_BGM_FALLBACK='https://cdn2.suno.ai/1cf25965-8eee-4f3f-bf4c-96f8fed25bf9.mp3';
+          let pvAudioEnabled=localStorage.getItem('pv.audioEnabled')!=='0',pvAudioUnlocked=false;
+          const pvBgm=new Audio(PV_HR3_BGM);pvBgm.loop=true;pvBgm.preload='auto';pvBgm.volume=0;
+          pvBgm.addEventListener('error',()=>{if(!pvBgm.dataset.fallback){pvBgm.dataset.fallback='1';pvBgm.src=PV_HR3_BGM_FALLBACK;pvBgm.load()}});
+          const PV_HR3_SFX={move:{t:17.333,d:.095,v:.17,r:1},confirm:{t:13.205,d:.19,v:.29,r:1},back:{t:16.458,d:.155,v:.22,r:.92},tab:{t:21.312,d:.145,v:.20,r:1.03},locked:{t:31.253,d:.16,v:.22,r:.78}};
+          const pvSfxPool=Object.fromEntries(Object.keys(PV_HR3_SFX).map(k=>{const a=new Audio(PV_HR3_BGM);a.preload='auto';a.addEventListener('error',()=>{if(!a.dataset.fallback){a.dataset.fallback='1';a.src=PV_HR3_BGM_FALLBACK;a.load()}});return[k,a]}));
+          function pvSetAudioIcon(){const b=document.getElementById('audioToggle');if(!b)return;b.textContent=pvAudioEnabled?'♪':'×';b.classList.toggle('off',!pvAudioEnabled);b.setAttribute('aria-label',pvAudioEnabled?'Mute menu audio':'Enable menu audio')}
+          function pvSfx(name){if(!pvAudioEnabled)return;const c=PV_HR3_SFX[name],a=pvSfxPool[name];if(!c||!a)return;try{clearTimeout(a._pvStop);a.pause();a.playbackRate=c.r;a.volume=c.v;a.currentTime=c.t;const p=a.play();if(p)p.catch(()=>{});a._pvStop=setTimeout(()=>a.pause(),Math.max(70,c.d*1000))}catch(e){}}
+          async function pvStartBgm(){if(!pvAudioEnabled)return;try{await pvBgm.play();pvAudioUnlocked=true;clearInterval(pvBgm._pvFade);let v=pvBgm.volume;pvBgm._pvFade=setInterval(()=>{v=Math.min(.32,v+.032);pvBgm.volume=v;if(v>=.32)clearInterval(pvBgm._pvFade)},55)}catch(e){}}
+          function pvFadeBgm(){clearInterval(pvBgm._pvFade);let v=pvBgm.volume;pvBgm._pvFade=setInterval(()=>{v=Math.max(0,v-.045);pvBgm.volume=v;if(v<=0){clearInterval(pvBgm._pvFade);pvBgm.pause()}},45)}
+          function pvUnlockAudio(){if(!pvAudioUnlocked&&pvAudioEnabled)pvStartBgm()}
+          addEventListener('pointerdown',pvUnlockAudio,{once:true,capture:true});
+          addEventListener('click',e=>{
+            const t=e.target.closest?.('.tab,[data-front],.hotspot,#clearButton,#closeModal,#travelButton,#saveNow,#audioToggle');if(!t)return;
+            if(t.id==='audioToggle'){e.stopPropagation();pvAudioEnabled=!pvAudioEnabled;localStorage.setItem('pv.audioEnabled',pvAudioEnabled?'1':'0');pvSetAudioIcon();if(pvAudioEnabled){pvAudioUnlocked=false;pvStartBgm();pvSfx('confirm')}else pvFadeBgm();return}
+            if(t.matches('.tab'))pvSfx('tab');
+            else if(t.matches('[data-front]'))pvSfx('move');
+            else if(t.matches('.hotspot'))pvSfx(t.classList.contains('locked')?'locked':'move');
+            else if(t.id==='clearButton'||t.id==='closeModal')pvSfx('back');
+            else if(t.id==='travelButton'){pvSfx(t.disabled?'locked':'confirm');if(!t.disabled)pvFadeBgm()}
+            else if(t.id==='saveNow')pvSfx('confirm');
+          },true);
+          pvSetAudioIcon();pvStartBgm();
+          '''
+
+          marker = 'let leader='
+          if marker in html:
+              html = html.replace(marker, audio + '\n  ' + marker, 1)
+          else:
+              html = html.replace('</script>', '<script>'+audio+'</script>\n</script>', 1)
+
+          # Player-facing cleanup, only if older prototype wording still exists.
+          swaps = {
+            'Places':'Destination',
+            'Choose a destination.':'Where to next?',
+            'Select a glowing destination on the map. The party front affects the interface theme, while combat initiative will be driven by Agility and action priority.':'Choose a marked destination to continue the journey.',
+            'Prototype state saved on this device.':'Journey saved on this device.',
+            'Save Local Prototype':'Save Journey',
+            'Preserve Journey':'Save Journey',
+            'Front character and current local prototype state can be stored on this device.':'Save the current party lead and journey state on this device.',
+            'OW-HR2':'OW-HR3',
+            'OW-HR1':'OW-HR3'
+          }
+          for a,b in swaps.items(): html=html.replace(a,b)
+
+          out=Path('assets/ui/overworld/v1/hybrid-overworld.hr3.html.gz')
+          out.write_bytes(gzip.compress(html.encode('utf-8'),compresslevel=9))
+
+          loader=Path('hybrid-overworld.html').read_text()
+          loader=loader.replace('hybrid-overworld.hr2.html.gz?hr=2','hybrid-overworld.hr3.html.gz?hr=3').replace('HR2 payload','HR3 payload').replace('HR2 interface','HR3 interface').replace('OVERWORLD HR2 BOOT ERROR','OVERWORLD HR3 BOOT ERROR')
+          Path('hybrid-overworld.html').write_text(loader)
+          print('HR3 payload bytes:',out.stat().st_size)
+          PY
+
+      - name: Commit HR3
+        shell: bash
+        run: |
+          git config user.name "JR-Faulkner"
+          git config user.email "53619182+JR-Faulkner@users.noreply.github.com"
+          git add hybrid-overworld.html assets/ui/overworld/v1/hybrid-overworld.hr3.html.gz
+          if git diff --cached --quiet; then
+            echo "No HR3 changes"
+            exit 0
+          fi
+          git commit -m "LIVE29A HR3: wire Magical Awakening menu audio and stabilize UI"
+          git push origin HEAD:main
