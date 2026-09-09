@@ -1,0 +1,72 @@
+name: Finalize Prismel Refracted Reflections K26
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/ingest_prismel_k26/URL.txt'
+      - '.github/workflows/finalize-prismel-k26-from-url.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download exact K26 staging package
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_URL="$(sed -n 's/^SOURCE_URL=//p' .github/ingest_prismel_k26/URL.txt)"
+          EXPECTED="$(sed -n 's/^EXPECTED_ZIP_BYTES=//p' .github/ingest_prismel_k26/URL.txt)"
+          test -n "$SOURCE_URL"
+          curl -fL "$SOURCE_URL" -o /tmp/prismel-k26.zip
+          test "$(wc -c < /tmp/prismel-k26.zip)" -eq "$EXPECTED"
+          unzip -t /tmp/prismel-k26.zip
+
+      - name: Install K26 staging payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -oq /tmp/prismel-k26.zip -d /tmp/k26
+          echo 'K26 package files:'
+          find /tmp/k26 -type f -maxdepth 8 -print
+          VIDEO="$(find /tmp/k26 -type f -name 'Prismel_RefractedReflections_K26_MASTER.mp4' -print -quit)"
+          test -n "$VIDEO"
+          test "$(wc -c < "$VIDEO")" -eq 6270745
+          OUT='assets/characters/prismel/animations/refracted_reflections/cinematic'
+          mkdir -p "$OUT"
+          cp "$VIDEO" "$OUT/Prismel_RefractedReflections_K26_MASTER.mp4"
+          while IFS= read -r f; do
+            rel="${f#/tmp/k26/}"
+            case "$rel" in
+              *.mp4) ;;
+              *) mkdir -p "$(dirname "$rel")"; cp "$f" "$rel" ;;
+            esac
+          done < <(find /tmp/k26 -type f)
+
+      - name: Verify and preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          VIDEO='assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_K26_MASTER.mp4'
+          test "$(wc -c < "$VIDEO")" -eq 6270745
+          python tools/prizim/preflight_live28k.py
+          node --check src/prizim/Live28K2PartyBattleScene.js
+
+      - name: Commit K26 installed payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/ingest_prismel_k26/URL.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'LIVE28K26: install Prismel Refracted Reflections staging payload'
+          git push origin HEAD:main
