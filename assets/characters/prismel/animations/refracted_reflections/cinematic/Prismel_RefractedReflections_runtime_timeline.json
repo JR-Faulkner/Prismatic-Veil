@@ -17,5 +17,11 @@
   "shatter_ms": 520,
   "battlefield_damage_reveal_progress": 0.34,
   "presentation": "video -> exact staff/lens hold -> radial mirror crack -> captured-frame shard breakup -> live battlefield refracted damage",
-  "contact_hold_ms": 95
+  "contact_hold_ms": 95,
+  "presentation_revision": "LIVE28K27-reflected-blades",
+  "glass_shatter_sfx": "procedural-runtime-glass-crack",
+  "live_mirror_blade_volley": true,
+  "blade_impact_delay_ms": 240,
+  "blade_settle_ms": 420,
+  "landing_hold_ms": 520
 }

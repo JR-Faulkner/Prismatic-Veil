@@ -3,7 +3,7 @@
 // deterministic mirror crack/shatter -> live Hybrid battlefield damage.
 // This module does not own battle state; it receives the live K adapter scene.
 
-export const PRISMEL_RR_VIDEO_PATH = './assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4?pvasset=live28k26-prismel-rr';
+export const PRISMEL_RR_VIDEO_PATH = './assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4?pvasset=live28k27-prismel-rr';
 
 export const PRISMEL_RR_TIMELINE = Object.freeze({
   takeover: 9.35,
@@ -13,7 +13,10 @@ export const PRISMEL_RR_TIMELINE = Object.freeze({
   crackMs: 190,
   fractureHoldMs: 65,
   shatterMs: 520,
-  battlefieldRevealProgress: 0.34
+  battlefieldRevealProgress: 0.34,
+  bladeImpactDelayMs: 240,
+  bladeSettleMs: 420,
+  landingHoldMs: 520
 });
 
 const PRISMEL_RR_HIT_CHANCE = 0.92;
@@ -292,7 +295,7 @@ function drawShatterPhase(ctx, frame, shards, p) {
   ctx.restore();
 }
 
-export async function runPrismelScreenBreak(frame, onBattlefieldReveal) {
+export async function runPrismelScreenBreak(frame, onBattlefieldReveal, onShatterStart) {
   const overlay = makeOverlayCanvas(frame.cssW, frame.cssH, frame.dpr);
   document.body.appendChild(overlay);
   const ctx = overlay.getContext('2d');
@@ -316,6 +319,7 @@ export async function runPrismelScreenBreak(frame, onBattlefieldReveal) {
       drawCrackPhase(ctx, frame, cracks, 1);
       await new Promise(resolve => setTimeout(resolve, PRISMEL_RR_TIMELINE.fractureHoldMs));
     }
+    onShatterStart?.();
     await animate(PRISMEL_RR_TIMELINE.shatterMs, p => {
       drawShatterPhase(ctx, frame, shards, p);
       if (!revealed && p >= PRISMEL_RR_TIMELINE.battlefieldRevealProgress) {
@@ -383,6 +387,168 @@ function waitForVideoTime(video, target, timeoutMs = 14000) {
     };
     tick();
   });
+}
+
+
+function playPrismelGlassShatter(scene) {
+  const fallback = () => scene.audio?.attackRelease?.('prismel');
+  const ctx = scene?.sound?.context;
+  if (!ctx || typeof ctx.createOscillator !== 'function' || typeof ctx.createBufferSource !== 'function') {
+    fallback();
+    return;
+  }
+  try {
+    const now = ctx.currentTime;
+    const level = scene.audio?._effectiveVolume?.('sfx', 0.86) ?? 0.78;
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(Math.max(0.02, level * 0.54), now);
+    master.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
+    master.connect(ctx.destination);
+
+    const frames = Math.max(1, Math.floor(ctx.sampleRate * 0.22));
+    const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let seed = 0x47524c53;
+    for (let i = 0; i < frames; i++) {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      const white = (seed / 4294967296) * 2 - 1;
+      const env = Math.pow(1 - i / frames, 2.25);
+      data[i] = white * env;
+    }
+    const noise = ctx.createBufferSource();
+    const hp = ctx.createBiquadFilter();
+    const ng = ctx.createGain();
+    hp.type = 'highpass';
+    hp.frequency.setValueAtTime(1800, now);
+    ng.gain.setValueAtTime(0.001, now);
+    ng.gain.exponentialRampToValueAtTime(0.72, now + 0.006);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+    noise.buffer = buffer;
+    noise.connect(hp); hp.connect(ng); ng.connect(master);
+    noise.start(now); noise.stop(now + 0.225);
+
+    [1710, 2290, 3070, 4120, 5230].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = i % 2 ? 'sine' : 'triangle';
+      osc.frequency.setValueAtTime(freq, now + i * 0.008);
+      osc.frequency.exponentialRampToValueAtTime(freq * (1.12 + i * 0.025), now + 0.12 + i * 0.012);
+      gain.gain.setValueAtTime(0.001, now + i * 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.20 - i * 0.018, now + 0.012 + i * 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11 + i * 0.025);
+      osc.connect(gain); gain.connect(master);
+      osc.start(now + i * 0.008); osc.stop(now + 0.16 + i * 0.03);
+    });
+  } catch (err) {
+    console.warn('[PV] procedural glass shatter fallback:', err);
+    fallback();
+  }
+}
+
+function createReflectiveBlade(scene, x, y, size, tint, angle, alpha = 0.92) {
+  const blade = scene.add.triangle(
+    x, y,
+    -size * 0.60, size * 0.19,
+    size * 0.72, 0,
+    -size * 0.60, -size * 0.19,
+    0xeafaff, alpha
+  ).setStrokeStyle(Math.max(1, size * 0.055), tint, 0.96)
+    .setAngle(angle).setDepth(31.55).setBlendMode(Phaser.BlendModes.ADD);
+  const glint = scene.add.triangle(
+    x, y,
+    -size * 0.31, size * 0.055,
+    size * 0.48, 0,
+    -size * 0.31, -size * 0.055,
+    0xffffff, 0.88
+  ).setAngle(angle).setDepth(31.57).setBlendMode(Phaser.BlendModes.ADD);
+  return [blade, glint];
+}
+
+function spawnLandedMirrorShard(scene, x, y, size, tint, angle, delay = 0) {
+  const [blade, glint] = createReflectiveBlade(scene, x, y - 16, size * 0.72, tint, angle, 0.80);
+  blade.setDepth(30.92); glint.setDepth(30.94);
+  scene.tweens.add({
+    targets: [blade, glint], y, angle: angle + (angle < 0 ? -14 : 14),
+    duration: 105 + delay, ease: 'Cubic.easeIn',
+    onComplete: () => {
+      const spark = scene.add.circle(x, y, Math.max(2, size * 0.11), 0xffffff, 0.92)
+        .setDepth(30.96).setBlendMode(Phaser.BlendModes.ADD);
+      scene.tweens.add({ targets: spark, scale: 2.8, alpha: 0, duration: 150, ease: 'Cubic.easeOut', onComplete: () => spark.destroy() });
+      scene.time.delayedCall(PRISMEL_RR_TIMELINE.landingHoldMs, () => {
+        scene.tweens.add({
+          targets: [blade, glint], alpha: 0, y: y + 4, duration: 230, ease: 'Sine.easeIn',
+          onComplete: () => { blade.destroy(); glint.destroy(); }
+        });
+      });
+    }
+  });
+}
+
+function launchLiveMirrorBladeVolley(scene, onImpact) {
+  const view = scene.enemyView;
+  const anchor = view?.container;
+  const sprite = view?.sprite;
+  if (!anchor) { onImpact?.(); return; }
+
+  const targetX = anchor.x;
+  const bodyY = anchor.y - (sprite?.displayHeight || 140) * 0.48;
+  const groundY = anchor.y - 7;
+  const span = Math.max(120, Math.min(scene.scale.width, scene.scale.height) * 0.34);
+  const colors = [0x67c8ff, 0xc477ff, 0xffe8a0, 0xffffff];
+  const defs = [
+    { sx:-1.42, sy:-0.74, tx:-28, ty:-22, d:0,   ground:false },
+    { sx: 1.34, sy:-0.58, tx: 24, ty:-10, d:28,  ground:false },
+    { sx:-1.18, sy: 0.30, tx:-42, ty:  0, d:54,  ground:true  },
+    { sx: 1.24, sy: 0.18, tx: 38, ty:  0, d:78,  ground:true  },
+    { sx: 0.18, sy:-1.18, tx:  0, ty:  4, d:98,  ground:false },
+    { sx:-0.70, sy:-1.00, tx:-12, ty:  8, d:126, ground:false },
+    { sx: 0.78, sy:-0.96, tx: 16, ty:  5, d:150, ground:false },
+    { sx:-1.35, sy:-0.12, tx:-60, ty:  0, d:178, ground:true  },
+    { sx: 1.38, sy:-0.06, tx: 58, ty:  0, d:202, ground:true  }
+  ];
+
+  let impactDone = false;
+  const resolveImpact = () => {
+    if (impactDone) return;
+    impactDone = true;
+    onImpact?.();
+  };
+
+  defs.forEach((def, i) => {
+    const sx = targetX + def.sx * span;
+    const sy = bodyY + def.sy * span * 0.66;
+    const tx = targetX + def.tx;
+    const ty = (def.ground ? groundY : bodyY) + def.ty;
+    const angle = Phaser.Math.RadToDeg(Math.atan2(ty - sy, tx - sx));
+    const size = Math.max(15, Math.min(scene.scale.width, scene.scale.height) * (0.035 + (i % 3) * 0.004));
+    const tint = colors[i % colors.length];
+    const [blade, glint] = createReflectiveBlade(scene, sx, sy, size, tint, angle, 0.90);
+    blade.setScale(0.62); glint.setScale(0.62);
+
+    scene.time.delayedCall(def.d, () => {
+      scene.tweens.add({
+        targets: [blade, glint],
+        x: tx, y: ty, angle: angle + (i % 2 ? 105 : -105), scaleX: 1.08, scaleY: 1.08,
+        duration: 250 + (i % 3) * 32, ease: 'Cubic.easeIn',
+        onUpdate: (_tw, target) => {
+          const pulse = 0.72 + Math.abs(Math.sin((_tw.progress || 0) * Math.PI * 4)) * 0.28;
+          target.alpha = pulse;
+        },
+        onComplete: () => {
+          blade.destroy(); glint.destroy();
+          if (def.ground) {
+            spawnLandedMirrorShard(scene, tx, groundY + 2, size, tint, angle, i * 3);
+          } else {
+            const landingX = targetX + Phaser.Math.Clamp(def.tx * 1.35, -72, 72);
+            spawnLandedMirrorShard(scene, landingX, groundY + 2, size * 0.78, tint, angle + 28, i * 3);
+          }
+          if (i === 4) resolveImpact();
+        }
+      });
+    });
+  });
+
+  scene.time.delayedCall(PRISMEL_RR_TIMELINE.bladeImpactDelayMs + 170, resolveImpact);
 }
 
 function playLiveRefractedImpact(scene, hero, dmg, lethal) {
@@ -545,14 +711,17 @@ export async function playPrismelRefractedReflections(scene, hero) {
     await runPrismelScreenBreak(frame, () => {
       if (impactResolved) return;
       impactResolved = true;
-      if (hitRoll) {
-        scene.enemy.hp = Math.max(0, scene.enemy.hp - pendingDamage);
-        scene._updateTargetCard();
-        playLiveRefractedImpact(scene, hero, pendingDamage, scene.enemy.hp <= 0);
-      } else {
-        scene._setBanner(`${hero.name} uses ${hero.resonart.name} — missed!`);
-      }
-    });
+      launchLiveMirrorBladeVolley(scene, () => {
+        if (hitRoll) {
+          scene.enemy.hp = Math.max(0, scene.enemy.hp - pendingDamage);
+          scene._updateTargetCard();
+          playLiveRefractedImpact(scene, hero, pendingDamage, scene.enemy.hp <= 0);
+        } else {
+          scene._setBanner(`${hero.name} uses ${hero.resonart.name} — missed!`);
+        }
+      });
+    }, () => playPrismelGlassShatter(scene));
+    await scene._wait(PRISMEL_RR_TIMELINE.bladeSettleMs);
   } catch (err) {
     console.warn('[PV] Refracted-Reflections Hybrid playback fell back after media error:', err);
     try { video.pause(); } catch (e) { /* ignore */ }

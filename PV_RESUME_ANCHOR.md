@@ -246,3 +246,14 @@ For a new chat: read this file first, then `PRIZIM_LIVE_NOTEPAD.md`. Resume from
 Current witness: `main-20260909-live28k26`.
 
 Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Resonart lane: exact cinematic -> 9.35s staff/lens contact -> captured-frame mirror fracture -> deterministic shard breakup -> live battlefield enemy impact -> clean battle return. Current authority is PriZim + live witness + iPhone MAIN evidence. Do not revive retired handoff-process language. After phone acceptance, pivot to Overworld v1 with 2–3 reachable locations, then party/progression/XP loop.
+
+## LIVE28K27 Prismel reflected-blades presentation polish
+
+- Current promoted witness: `main-20260909-live28k27`.
+- Preserve the accepted K26 exact cinematic and captured-frame fracture.
+- New K27 shatter beat: procedural glass/crystal shatter fires exactly as the fractured mirror begins separating.
+- New live continuation: reflective cyan/violet/gold/white mirror blades cross into the real Hybrid battlefield, converge on the Wraith, visibly strike/land around it, and remain readable on the ground before fading.
+- Logical damage now resolves on the live blade impact instead of the first battlefield-reveal frame.
+- Preserve battle-BGM silence through the cinematic/shatter and preserve Aurora Pulse V2 + Thunder Tornado.
+- iPhone MAIN remains the final runtime/presentation gate.
+

@@ -238,3 +238,14 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Audio: embedded cinematic SFX only, no music/language; battle BGM fully silent until reconnect.
 - Preserve Aurora Pulse V2 and Thunder Tornado unchanged.
 - iPhone MAIN remains the final runtime/presentation gate.
+
+## LIVE28K27 Prismel reflected-blades presentation polish
+
+- Current promoted witness: `main-20260909-live28k27`.
+- Preserve the accepted K26 exact cinematic and captured-frame fracture.
+- New K27 shatter beat: procedural glass/crystal shatter fires exactly as the fractured mirror begins separating.
+- New live continuation: reflective cyan/violet/gold/white mirror blades cross into the real Hybrid battlefield, converge on the Wraith, visibly strike/land around it, and remain readable on the ground before fading.
+- Logical damage now resolves on the live blade impact instead of the first battlefield-reveal frame.
+- Preserve battle-BGM silence through the cinematic/shatter and preserve Aurora Pulse V2 + Thunder Tornado.
+- iPhone MAIN remains the final runtime/presentation gate.
+

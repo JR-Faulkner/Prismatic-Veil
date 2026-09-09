@@ -207,6 +207,9 @@ for key in [
     'prismel_refracted_reflections_live_enemy_handoff_required',
     'prismel_refracted_reflections_battle_bgm_silence_required',
     'prismel_refracted_reflections_embedded_sfx_only_no_music_or_language',
+    'prismel_refracted_reflections_glass_shatter_sfx_required',
+    'prismel_refracted_reflections_live_mirror_blade_volley_required',
+    'prismel_refracted_reflections_landed_shards_required',
 ]:
     if hard.get(key) is not True:
         errors.append(f'K26 hard gate missing: {key}')
@@ -219,6 +222,15 @@ rr_sync = p.get('refracted_reflections_sync', {})
 if abs(float(rr_sync.get('runtime_takeover_seconds', -99)) - 9.35) > 0.001: errors.append('K26 Prismel takeover authority drift')
 if abs(float(rr_timeline.get('runtime_takeover_seconds', -99)) - 9.35) > 0.001: errors.append('K26 Prismel timeline takeover drift')
 if rr_timeline.get('video_sha256') != p.get('refracted_reflections_video_sha256'): errors.append('K26 Prismel timeline/video authority mismatch')
+
+for token in ['playPrismelGlassShatter', 'launchLiveMirrorBladeVolley', 'spawnLandedMirrorShard', 'bladeImpactDelayMs: 240', 'bladeSettleMs: 420', 'landingHoldMs: 520']:
+    if token not in rr_runtime:
+        errors.append(f'K27 Prismel reflected-blade token missing: {token}')
+if rr_timeline.get('presentation_revision') != 'LIVE28K27-reflected-blades': errors.append('K27 Prismel timeline revision drift')
+if rr_timeline.get('live_mirror_blade_volley') is not True: errors.append('K27 Prismel live blade-volley timeline gate missing')
+for key, expected in {'blade_impact_delay_ms': 240, 'blade_settle_ms': 420, 'landing_hold_ms': 520}.items():
+    if int(rr_sync.get(key, -1)) != expected:
+        errors.append(f'K27 Prismel sync drift: {key}')
 
 if errors:
     print('PRIZIM LIVE28K PREFLIGHT FAILED')
