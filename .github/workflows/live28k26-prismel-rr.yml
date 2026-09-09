@@ -143,18 +143,6 @@ jobs:
               s = s.replace(final_anchor, checks + final_anchor, 1)
           pre.write_text(s)
 
-          guard = ROOT / '.github/workflows/prizim-hybrid-stack-guard.yml'
-          g = guard.read_text()
-          groups = [
-              ("      - 'src/PartyBattleScene.js'\n", "      - 'src/PartyBattleScene.js'\n      - 'src/BattleConfig.js'\n      - 'src/PartyBattleConfig.js'\n      - 'src/PartyBattleAudioController.js'\n", "      - 'src/BattleConfig.js'"),
-              ("      - 'src/prizim/Live28K2PartyBattleScene.js'\n", "      - 'src/prizim/Live28K2PartyBattleScene.js'\n      - 'src/prizim/PrismelRefractedReflectionsRuntime.js'\n", "      - 'src/prizim/PrismelRefractedReflectionsRuntime.js'"),
-              ("      - 'assets/music/Triumph of Light.m4a'\n", "      - 'assets/music/Triumph of Light.m4a'\n      - 'assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4'\n      - 'assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_runtime_timeline.json'\n", "Prismel_RefractedReflections_Resonart_MASTER.mp4"),
-          ]
-          for anchor, repl, marker in groups:
-              if g.count(marker) == 0:
-                  if g.count(anchor) != 2: raise SystemExit(f'K26 guard anchor drift: {anchor!r}')
-                  g = g.replace(anchor, repl)
-          guard.write_text(g)
           PY
 
       - name: Validate LIVE28K26 canonical stack
@@ -186,7 +174,7 @@ jobs:
             assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4 \
             assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_runtime_timeline.json \
             PV_LIVE_AUTHORITY.json live-build.json PV_PROMOTION_REQUEST.json PRIZIM_LIVE_NOTEPAD.md PV_RESUME_ANCHOR.md \
-            tools/prizim/preflight_live28k.py .github/workflows/prizim-hybrid-stack-guard.yml \
+            tools/prizim/preflight_live28k.py \
             .github/ingest_prismel_rr/URL.txt
           git commit -m 'LIVE28K26: wire Prismel Refracted-Reflections'
           git push origin main
