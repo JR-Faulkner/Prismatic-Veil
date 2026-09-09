@@ -1,0 +1,192 @@
+name: Promote LIVE28K26 Prismel Refracted-Reflections
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/ingest_prismel_rr/URL.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Preflight LIVE28K25 baseline
+        run: python tools/prizim/preflight_live28k.py
+
+      - name: Download exact K26 staging package once
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_URL="$(sed -n 's/^SOURCE_URL=//p' .github/ingest_prismel_rr/URL.txt)"
+          test -n "$SOURCE_URL"
+          curl -f --retry 0 "$SOURCE_URL" -o /tmp/prismel-rr-k26.zip
+          test "$(wc -c < /tmp/prismel-rr-k26.zip)" -eq 6284849
+          echo 'adbdc0ce74478f0c17b57a7d5163d7f1ab9ffec8a3d504d6dad34a521d2dd71a  /tmp/prismel-rr-k26.zip' | sha256sum -c -
+          unzip -q /tmp/prismel-rr-k26.zip -d /tmp/prismel-rr-k26
+
+      - name: Apply exact Prismel runtime candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python /tmp/prismel-rr-k26/PV_PRISMEL_RR_K26_STAGING/apply_prismel_rr_staging.py
+          test "$(wc -c < assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4)" -eq 6270745
+          echo '9d36b9ad4ad67c44ea7f12a1356ffb1e855511ac6496e840f0fe4f6398367fd8  assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4' | sha256sum -c -
+          node --check src/prizim/PrismelRefractedReflectionsRuntime.js
+          node --check src/prizim/Live28K2PartyBattleScene.js
+          node --check src/PartyBattleAudioController.js
+
+      - name: Synchronize PriZim LIVE28K26 authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          ROOT = Path('.')
+          W = 'main-20260909-live28k26'
+          VIDEO = 'assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4'
+          TIMELINE = 'assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_runtime_timeline.json'
+          RUNTIME = 'src/prizim/PrismelRefractedReflectionsRuntime.js'
+          SHA = '9d36b9ad4ad67c44ea7f12a1356ffb1e855511ac6496e840f0fe4f6398367fd8'
+
+          authp = ROOT / 'PV_LIVE_AUTHORITY.json'
+          auth = json.loads(authp.read_text())
+          auth['updated'] = '2026-09-09'
+          auth['witness'] = W
+          hard = auth.setdefault('hard_gates', {})
+          hard.update({
+              'prismel_refracted_reflections_exact_master_required': True,
+              'prismel_refracted_reflections_must_be_owned_by_k_adapter': True,
+              'prismel_refracted_reflections_screen_break_must_use_captured_cinematic_frame': True,
+              'prismel_refracted_reflections_live_enemy_handoff_required': True,
+              'prismel_refracted_reflections_battle_bgm_silence_required': True,
+              'prismel_refracted_reflections_embedded_sfx_only_no_music_or_language': True,
+          })
+          auth['prismel'] = {
+              'basic_attack': 'Refractive Burst',
+              'resonart': 'Refracted-Reflections',
+              'refracted_reflections_video': VIDEO,
+              'refracted_reflections_video_sha256': SHA,
+              'refracted_reflections_video_bytes': 6270745,
+              'refracted_reflections_resolution': '910x512',
+              'refracted_reflections_fps': 30,
+              'refracted_reflections_duration_seconds': 10.033333,
+              'refracted_reflections_timeline': TIMELINE,
+              'refracted_reflections_runtime': RUNTIME,
+              'refracted_reflections_sync': {
+                  'runtime_takeover_seconds': 9.35,
+                  'contact_hold_ms': 95,
+                  'impact_point_normalized_video': {'x': 0.62, 'y': 0.55},
+                  'crack_ms': 190,
+                  'fracture_hold_ms': 65,
+                  'shatter_ms': 520,
+                  'live_enemy_reveal_progress': 0.34,
+              },
+              'refracted_reflections_presentation': 'Exact cinematic in Hybrid/K -> 9.35s staff-to-lens hold -> captured displayed frame becomes the mirror -> radial crack -> 16 deterministic captured-frame shards -> real battlefield reveal -> live enemy refracted hit/recoil -> clean battle return.',
+              'refracted_reflections_audio_policy': 'Sound effects only. No music or language. Normal battle BGM is fully silent during the cinematic/shatter; embedded cinematic SFX remain audible, with only sparse nonverbal exertion permitted.',
+          }
+          dev = auth.setdefault('device_evidence', {})
+          dev['pending_witness'] = W
+          dev['pending_iphone_validation'] = True
+          dev['live28k26_pending_iphone_validation'] = True
+          dev['pending_gate_summary'] = 'LIVE28K26: verify Prismel Refracted-Reflections exact cinematic, 9.35s staff/lens takeover, readable mirror crack, captured-frame shards, live battlefield reveal beneath shards, live enemy refracted impact/damage, no music/language during cinematic, clean HUD/turn restore, and unchanged Aurora Pulse + Thunder Tornado.'
+          authp.write_text(json.dumps(auth, indent=2) + '\n')
+
+          buildp = ROOT / 'live-build.json'
+          build = json.loads(buildp.read_text())
+          build['id'] = W
+          buildp.write_text(json.dumps(build, indent=2) + '\n')
+
+          (ROOT / 'PV_PROMOTION_REQUEST.json').write_text(json.dumps({
+              'target_witness': W,
+              'date': '2026-09-09',
+              'reason': 'Promote LIVE28K26 Prismel Refracted-Reflections as the third cinematic Resonart proof. Preserve LIVE28K23 Aurora Pulse V2 and LIVE28K25 Thunder Tornado. Use the exact verified Prismel master, Hybrid/K ownership, 9.35s staff-to-lens takeover, captured-frame mirror fracture/shatter, live enemy damage/recoil during reveal, full battle-BGM silence during the cinematic, and iPhone MAIN as final runtime gate.'
+          }, indent=2) + '\n')
+
+          notepad = ROOT / 'PRIZIM_LIVE_NOTEPAD.md'
+          if W not in notepad.read_text():
+              with notepad.open('a') as f:
+                  f.write(f'''\n\n## LIVE28K26 Prismel Refracted-Reflections\n\n- Current promoted witness: `{W}`.\n- Prismel Resonart: **Refracted-Reflections**.\n- Exact cinematic authority: `{VIDEO}` · 6,270,745 bytes · SHA-256 `{SHA}`.\n- Hybrid/K takeover: 9.35s staff-to-lens contact.\n- Presentation: 95ms contact hold -> 190ms radial crack -> 65ms fractured hold -> 520ms 16-piece captured-frame shatter.\n- Real Hybrid battlefield is underneath; live enemy damage/recoil resolves at 34% shatter progress.\n- Audio: embedded cinematic SFX only, no music/language; battle BGM fully silent until reconnect.\n- Preserve Aurora Pulse V2 and Thunder Tornado unchanged.\n- iPhone MAIN remains the final runtime/presentation gate.\n''')
+
+          resume = ROOT / 'PV_RESUME_ANCHOR.md'
+          if W not in resume.read_text():
+              with resume.open('a') as f:
+                  f.write(f'''\n\n## LIVE28K26 Resume Anchor — Prismel Refracted-Reflections\n\nCurrent witness: `{W}`.\n\nResume from the live Hybrid/K battle route. Prismel owns the third cinematic Resonart lane: exact cinematic -> 9.35s staff/lens contact -> captured-frame mirror fracture -> deterministic shard breakup -> live battlefield enemy impact -> clean battle return. Current authority is PriZim + live witness + iPhone MAIN evidence. Do not revive retired handoff-process language. After phone acceptance, pivot to Overworld v1 with 2–3 reachable locations, then party/progression/XP loop.\n''')
+
+          pre = ROOT / 'tools/prizim/preflight_live28k.py'
+          s = pre.read_text()
+          read_anchor = "k_scene = read('src/prizim/Live28K2PartyBattleScene.js')\naudio = read('src/PartyBattleAudioController.js')"
+          if "rr_runtime = read('src/prizim/PrismelRefractedReflectionsRuntime.js')" not in s:
+              read_repl = "k_scene = read('src/prizim/Live28K2PartyBattleScene.js')\nrr_runtime = read('src/prizim/PrismelRefractedReflectionsRuntime.js')\nrr_timeline = json.loads(read('assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_runtime_timeline.json'))\nbattle_config = read('src/BattleConfig.js')\nparty_config = read('src/PartyBattleConfig.js')\naudio = read('src/PartyBattleAudioController.js')"
+              if read_anchor not in s: raise SystemExit('K26 preflight read anchor missing')
+              s = s.replace(read_anchor, read_repl, 1)
+
+          media_anchor = "    'assets/characters/kineza/animations/thunder_tornado/cinematic/Kineza_ThunderTornado_Resonart_MASTER.mp4': (6312497, '77e8fe6e9fcf430d013f0189355b0f725e150c850b240fd5b53060a4f94f9b93'),"
+          rr_media = "    'assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4': (6270745, '9d36b9ad4ad67c44ea7f12a1356ffb1e855511ac6496e840f0fe4f6398367fd8'),"
+          if rr_media not in s:
+              if media_anchor not in s: raise SystemExit('K26 preflight media anchor missing')
+              s = s.replace(media_anchor, media_anchor + '\n' + rr_media, 1)
+
+          if 'K26 Prismel Refracted-Reflections runtime token missing' not in s:
+              final_anchor = "if errors:\n    print('PRIZIM LIVE28K PREFLIGHT FAILED')"
+              checks = '''# LIVE28K26 Prismel Refracted-Reflections authority.\nfor token in [\n    "hero?.id === 'prismel' && command === 'Resonart'",\n    'PrismelRefractedReflectionsRuntime.js',\n    'preparePrismelRefractedVideo(this)',\n    '__PV_LIVE28K26_PRISMEL_REFRACTED_REFLECTIONS__',\n]:\n    if token not in k_scene:\n        errors.append(f'K26 Prismel Refracted-Reflections runtime token missing: {token}')\n\nfor token in [\n    'PRISMEL_RR_VIDEO_PATH', 'takeover: 9.35', 'impactX: 0.62', 'impactY: 0.55',\n    'contactHoldMs: 95', 'crackMs: 190', 'fractureHoldMs: 65', 'shatterMs: 520',\n    'capturePrismelVideoFrame', 'runPrismelScreenBreak', 'pendingDamage',\n]:\n    if token not in rr_runtime:\n        errors.append(f'K26 Prismel screen-break token missing: {token}')\n\nif "name: 'Refracted-Reflections'" not in battle_config:\n    errors.append('K26 Prismel Resonart data missing from BattleConfig')\nif "BattleConfig.js?v=live28k26-prismel-rr" not in party_config:\n    errors.append('K26 Prismel BattleConfig cache-bust missing from PartyBattleConfig')\nif 'beginSilentCinematicMix()' not in audio or 'endSilentCinematicMix()' not in audio:\n    errors.append('K26 shared silent cinematic mix alias missing')\n\nfor key in [\n    'prismel_refracted_reflections_exact_master_required',\n    'prismel_refracted_reflections_must_be_owned_by_k_adapter',\n    'prismel_refracted_reflections_screen_break_must_use_captured_cinematic_frame',\n    'prismel_refracted_reflections_live_enemy_handoff_required',\n    'prismel_refracted_reflections_battle_bgm_silence_required',\n    'prismel_refracted_reflections_embedded_sfx_only_no_music_or_language',\n]:\n    if hard.get(key) is not True:\n        errors.append(f'K26 hard gate missing: {key}')\n\np = auth.get('prismel', {})\nif p.get('resonart') != 'Refracted-Reflections': errors.append('K26 Prismel Resonart authority drift')\nif p.get('refracted_reflections_video_sha256') != '9d36b9ad4ad67c44ea7f12a1356ffb1e855511ac6496e840f0fe4f6398367fd8': errors.append('K26 Prismel video SHA authority drift')\nif int(p.get('refracted_reflections_video_bytes', -1)) != 6270745: errors.append('K26 Prismel video byte authority drift')\nrr_sync = p.get('refracted_reflections_sync', {})\nif abs(float(rr_sync.get('runtime_takeover_seconds', -99)) - 9.35) > 0.001: errors.append('K26 Prismel takeover authority drift')\nif abs(float(rr_timeline.get('runtime_takeover_seconds', -99)) - 9.35) > 0.001: errors.append('K26 Prismel timeline takeover drift')\nif rr_timeline.get('video_sha256') != p.get('refracted_reflections_video_sha256'): errors.append('K26 Prismel timeline/video authority mismatch')\n\n'''
+              if final_anchor not in s: raise SystemExit('K26 preflight final anchor missing')
+              s = s.replace(final_anchor, checks + final_anchor, 1)
+          pre.write_text(s)
+
+          guard = ROOT / '.github/workflows/prizim-hybrid-stack-guard.yml'
+          g = guard.read_text()
+          groups = [
+              ("      - 'src/PartyBattleScene.js'\n", "      - 'src/PartyBattleScene.js'\n      - 'src/BattleConfig.js'\n      - 'src/PartyBattleConfig.js'\n      - 'src/PartyBattleAudioController.js'\n", "      - 'src/BattleConfig.js'"),
+              ("      - 'src/prizim/Live28K2PartyBattleScene.js'\n", "      - 'src/prizim/Live28K2PartyBattleScene.js'\n      - 'src/prizim/PrismelRefractedReflectionsRuntime.js'\n", "      - 'src/prizim/PrismelRefractedReflectionsRuntime.js'"),
+              ("      - 'assets/music/Triumph of Light.m4a'\n", "      - 'assets/music/Triumph of Light.m4a'\n      - 'assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4'\n      - 'assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_runtime_timeline.json'\n", "Prismel_RefractedReflections_Resonart_MASTER.mp4"),
+          ]
+          for anchor, repl, marker in groups:
+              if g.count(marker) == 0:
+                  if g.count(anchor) != 2: raise SystemExit(f'K26 guard anchor drift: {anchor!r}')
+                  g = g.replace(anchor, repl)
+          guard.write_text(g)
+          PY
+
+      - name: Validate LIVE28K26 canonical stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/prizim/PrismelRefractedReflectionsRuntime.js
+          node --check src/prizim/Live28K2PartyBattleScene.js
+          node --check src/PartyBattleAudioController.js
+          python tools/prizim/preflight_live28k.py
+          grep -q 'main-20260909-live28k26' live-build.json
+          grep -q "name: 'Refracted-Reflections'" src/BattleConfig.js
+          grep -q '__PV_LIVE28K26_PRISMEL_REFRACTED_REFLECTIONS__' src/prizim/Live28K2PartyBattleScene.js
+          grep -q 'pendingDamage' src/prizim/PrismelRefractedReflectionsRuntime.js
+
+      - name: Commit LIVE28K26 promotion
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/ingest_prismel_rr/URL.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            src/BattleConfig.js \
+            src/PartyBattleConfig.js \
+            src/PartyBattleAudioController.js \
+            src/prizim/Live28K2PartyBattleScene.js \
+            src/prizim/PrismelRefractedReflectionsRuntime.js \
+            assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4 \
+            assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_runtime_timeline.json \
+            PV_LIVE_AUTHORITY.json live-build.json PV_PROMOTION_REQUEST.json PRIZIM_LIVE_NOTEPAD.md PV_RESUME_ANCHOR.md \
+            tools/prizim/preflight_live28k.py .github/workflows/prizim-hybrid-stack-guard.yml \
+            .github/ingest_prismel_rr/URL.txt
+          git commit -m 'LIVE28K26: wire Prismel Refracted-Reflections'
+          git push origin main
