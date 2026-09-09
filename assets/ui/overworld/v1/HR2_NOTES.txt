@@ -1,0 +1,5 @@
+LIVE29A HR2
+Portrait authority: exact approved Prismel/Kineza/Auryi references supplied by user.
+Scope: portrait crop correction + player-facing copy cleanup only.
+Layout authority: HR1 map-dominant visual lock preserved.
+Battle authority: LIVE28K27 unchanged.
