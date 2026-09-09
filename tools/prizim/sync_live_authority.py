@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# LIVE28K26: re-run ledger synchronization after Prismel Resonart promotion.
 import json
 import pathlib
 import re
