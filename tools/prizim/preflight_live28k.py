@@ -21,6 +21,10 @@ auth = json.loads(read('PV_LIVE_AUTHORITY.json'))
 build = json.loads(read('live-build.json'))
 witness = auth['witness']
 k_scene = read('src/prizim/Live28K2PartyBattleScene.js')
+rr_runtime = read('src/prizim/PrismelRefractedReflectionsRuntime.js')
+rr_timeline = json.loads(read('assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_runtime_timeline.json'))
+battle_config = read('src/BattleConfig.js')
+party_config = read('src/PartyBattleConfig.js')
 audio = read('src/PartyBattleAudioController.js')
 base = read('src/PartyBattleScene.js')
 hybrid_main = read('hybrid-main.html')
@@ -59,6 +63,7 @@ fixed = {
     'assets/music/Celestial Bloom.m4a': (113740, '0e8762907bf36650cbdebab8f6497079350054f9819c81e6cb1ba4f3b14cff3d'),
     'assets/music/Triumph of Light.m4a': (186602, '98c77e8bc536425b8da8ad4212ed26011335c5ac3b9dadbce0ec28c201cca437'),
     'assets/characters/kineza/animations/thunder_tornado/cinematic/Kineza_ThunderTornado_Resonart_MASTER.mp4': (6312497, '77e8fe6e9fcf430d013f0189355b0f725e150c850b240fd5b53060a4f94f9b93'),
+    'assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4': (6270745, '9d36b9ad4ad67c44ea7f12a1356ffb1e855511ac6496e840f0fe4f6398367fd8'),
 }
 for rel, (size, digest) in fixed.items():
     p = ROOT / rel
@@ -169,6 +174,51 @@ if hard.get('kineza_thunder_tornado_live_handoff_harmonized') is not True:
     errors.append('K25 Thunder Tornado harmonization hard gate missing')
 if auth.get('kineza', {}).get('thunder_tornado_live_pass_style') != 'structured-spiral-v2':
     errors.append('K25 Thunder Tornado live-pass authority drift')
+
+# LIVE28K26 Prismel Refracted-Reflections authority.
+for token in [
+    "hero?.id === 'prismel' && command === 'Resonart'",
+    'PrismelRefractedReflectionsRuntime.js',
+    'preparePrismelRefractedVideo(this)',
+    '__PV_LIVE28K26_PRISMEL_REFRACTED_REFLECTIONS__',
+]:
+    if token not in k_scene:
+        errors.append(f'K26 Prismel Refracted-Reflections runtime token missing: {token}')
+
+for token in [
+    'PRISMEL_RR_VIDEO_PATH', 'takeover: 9.35', 'impactX: 0.62', 'impactY: 0.55',
+    'contactHoldMs: 95', 'crackMs: 190', 'fractureHoldMs: 65', 'shatterMs: 520',
+    'capturePrismelVideoFrame', 'runPrismelScreenBreak', 'pendingDamage',
+]:
+    if token not in rr_runtime:
+        errors.append(f'K26 Prismel screen-break token missing: {token}')
+
+if "name: 'Refracted-Reflections'" not in battle_config:
+    errors.append('K26 Prismel Resonart data missing from BattleConfig')
+if "BattleConfig.js?v=live28k26-prismel-rr" not in party_config:
+    errors.append('K26 Prismel BattleConfig cache-bust missing from PartyBattleConfig')
+if 'beginSilentCinematicMix()' not in audio or 'endSilentCinematicMix()' not in audio:
+    errors.append('K26 shared silent cinematic mix alias missing')
+
+for key in [
+    'prismel_refracted_reflections_exact_master_required',
+    'prismel_refracted_reflections_must_be_owned_by_k_adapter',
+    'prismel_refracted_reflections_screen_break_must_use_captured_cinematic_frame',
+    'prismel_refracted_reflections_live_enemy_handoff_required',
+    'prismel_refracted_reflections_battle_bgm_silence_required',
+    'prismel_refracted_reflections_embedded_sfx_only_no_music_or_language',
+]:
+    if hard.get(key) is not True:
+        errors.append(f'K26 hard gate missing: {key}')
+
+p = auth.get('prismel', {})
+if p.get('resonart') != 'Refracted-Reflections': errors.append('K26 Prismel Resonart authority drift')
+if p.get('refracted_reflections_video_sha256') != '9d36b9ad4ad67c44ea7f12a1356ffb1e855511ac6496e840f0fe4f6398367fd8': errors.append('K26 Prismel video SHA authority drift')
+if int(p.get('refracted_reflections_video_bytes', -1)) != 6270745: errors.append('K26 Prismel video byte authority drift')
+rr_sync = p.get('refracted_reflections_sync', {})
+if abs(float(rr_sync.get('runtime_takeover_seconds', -99)) - 9.35) > 0.001: errors.append('K26 Prismel takeover authority drift')
+if abs(float(rr_timeline.get('runtime_takeover_seconds', -99)) - 9.35) > 0.001: errors.append('K26 Prismel timeline takeover drift')
+if rr_timeline.get('video_sha256') != p.get('refracted_reflections_video_sha256'): errors.append('K26 Prismel timeline/video authority mismatch')
 
 if errors:
     print('PRIZIM LIVE28K PREFLIGHT FAILED')

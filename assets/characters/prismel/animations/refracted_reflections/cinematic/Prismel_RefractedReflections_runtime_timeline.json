@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "resonart": "Refracted-Reflections",
+  "video": "Prismel_RefractedReflections_Resonart_MASTER.mp4",
+  "video_sha256": "9d36b9ad4ad67c44ea7f12a1356ffb1e855511ac6496e840f0fe4f6398367fd8",
+  "video_bytes": 6270745,
+  "resolution": "910x512",
+  "fps": 30,
+  "duration_seconds": 10.033333,
+  "runtime_takeover_seconds": 9.35,
+  "impact_point_normalized_video": {
+    "x": 0.62,
+    "y": 0.55
+  },
+  "crack_ms": 190,
+  "fracture_hold_ms": 65,
+  "shatter_ms": 520,
+  "battlefield_damage_reveal_progress": 0.34,
+  "presentation": "video -> exact staff/lens hold -> radial mirror crack -> captured-frame shard breakup -> live battlefield refracted damage",
+  "contact_hold_ms": 95
+}

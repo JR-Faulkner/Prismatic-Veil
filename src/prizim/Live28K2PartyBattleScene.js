@@ -2,6 +2,11 @@
 // Keeps LIVE28J battle behavior intact while using the approved LIVE28K full-resolution authorities.
 import Live28PartyBattleScene from './Live28PartyBattleScene.js?v=live28j';
 import Live28K7PartyFormationView from './Live28K7PartyFormationView.js?v=live28k7-halo';
+import {
+  preparePrismelRefractedVideo,
+  disposePrismelRefractedVideo,
+  playPrismelRefractedReflections
+} from './PrismelRefractedReflectionsRuntime.js?v=live28k26-prismel-rr';
 
 const PRISMEL_K2_PASSIVE_KEY = 'prismel_live28k2_passive';
 const PRISMEL_K2_PASSIVE_PATH = './assets/party_formation/PRISMEL_LIVE28K2_RIGHT_FACING.png?pvasset=live28k3';
@@ -96,9 +101,11 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     // cinematic camera/framing/reconnect; no move-title overlay is shown.
     this._prepareAuroraBeautyVideo();
     this._prepareKinezaThunderVideo();
+    preparePrismelRefractedVideo(this);
     this.events.once('shutdown', () => {
       this._disposeAuroraBeautyVideo();
       this._disposeKinezaThunderVideo();
+      disposePrismelRefractedVideo(this);
     });
 
     globalThis.__PV_LIVE28K2_RUNTIME__ = true;
@@ -111,6 +118,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
     globalThis.__PV_LIVE28K_AURORA_BEAUTY_VIDEO__ = true;
     globalThis.__PV_LIVE28K_AURORA_FRAME_LANE_READY__ = this._hasAuroraPulseFrames();
     globalThis.__PV_LIVE28K24_THUNDER_TORNADO__ = true;
+    globalThis.__PV_LIVE28K26_PRISMEL_REFRACTED_REFLECTIONS__ = true;
   }
 
   _onCommand(label) {
@@ -505,6 +513,10 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
   }
 
   async _resolveHeroAction(hero, command) {
+    if (hero?.id === 'prismel' && command === 'Resonart' && hero.resonart?.name === 'Refracted-Reflections') {
+      const handled = await playPrismelRefractedReflections(this, hero);
+      if (handled) return;
+    }
     if (hero?.id === 'auryi' && command === 'Resonart' && hero.resonart) {
       return this._playAuryiAuroraPulse(hero);
     }
@@ -994,7 +1006,7 @@ export default class Live28K2PartyBattleScene extends Live28PartyBattleScene {
 
   _setBanner(msg) {
     const hero = this._activeHero();
-    if (hero?.id === 'auryi' && hero.resonart && typeof msg === 'string' && msg.includes(hero.attack.name)) {
+    if ((hero?.id === 'auryi' || hero?.id === 'prismel') && hero.resonart && typeof msg === 'string' && msg.includes(hero.attack.name)) {
       msg = msg.replaceAll(hero.attack.name, hero.resonart.name);
     }
     super._setBanner(msg);

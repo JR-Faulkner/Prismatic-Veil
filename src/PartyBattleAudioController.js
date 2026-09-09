@@ -140,6 +140,9 @@ export default class PartyBattleAudioController {
     if (this.music) this.music.setVolume(this._musicTargetVolume());
   }
 
+  beginSilentCinematicMix() { this.beginAuroraVideoMix(); }
+  endSilentCinematicMix() { this.endAuroraVideoMix(); }
+
   beginAuroraVideoMix() {
     this._cinematicActive = true;
     this._cinematicBgmSilenced = true;

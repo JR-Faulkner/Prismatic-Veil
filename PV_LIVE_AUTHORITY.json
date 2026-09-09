@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "updated": "2026-09-08",
-  "witness": "main-20260908-live28k25",
+  "updated": "2026-09-09",
+  "witness": "main-20260909-live28k26",
   "production_route": [
     "index.html",
     "story-scroll.html",
@@ -53,7 +53,13 @@
     "kineza_thunder_tornado_must_be_owned_by_k_adapter": true,
     "kineza_thunder_tornado_live_enemy_handoff_required": true,
     "kineza_thunder_tornado_lethal_home_settle_required": true,
-    "kineza_thunder_tornado_live_handoff_harmonized": true
+    "kineza_thunder_tornado_live_handoff_harmonized": true,
+    "prismel_refracted_reflections_exact_master_required": true,
+    "prismel_refracted_reflections_must_be_owned_by_k_adapter": true,
+    "prismel_refracted_reflections_screen_break_must_use_captured_cinematic_frame": true,
+    "prismel_refracted_reflections_live_enemy_handoff_required": true,
+    "prismel_refracted_reflections_battle_bgm_silence_required": true,
+    "prismel_refracted_reflections_embedded_sfx_only_no_music_or_language": true
   },
   "auryi": {
     "basic_attack": "Aurorb Slice",
@@ -119,7 +125,7 @@
     "live28k11_triumph_of_light_played": true,
     "live28k11_visual_cinematic_missing": true,
     "live28k12_pending_iphone_validation": true,
-    "pending_witness": "main-20260908-live28k25",
+    "pending_witness": "main-20260909-live28k26",
     "pending_iphone_validation": true,
     "promotion_reason": "Promote LIVE28K22 after K21 passed the iPhone runtime gate. Fix only Kineza lethal-victory timing: await the full Duo-Hybrid Blitzer sequence, restore Kineza to his exact HC formation home, hold a 240ms readable settle beat, and only then allow the existing end-turn timer to schedule Victory. Preserve K21 runtime stability, K20 Aurora Pulse Hybrid presentation, K18 native M4A playback, exact Beauty V1 master/hash, Celestial Bloom watchdog, re-entry wave/Wraith reaction, crownless Aurora, Prismel/Auryi stable lanes, Kineza identity and attack frames, and existing damage markers/timing. Keep machine authority, PriZim notepad, resume anchor, canonical preflight, and iPhone pending gate synchronized to K22.",
     "aurora_beauty_v1_exact_master_installed": true,
@@ -141,7 +147,7 @@
     "live28k16_handoff_visual_result": "Not yet accepted/rejected; boot/audio regression must be removed first.",
     "latest_device_witness": "main-20260908-live28k23",
     "latest_device_result": "PASS iPhone MAIN gate: Aurora Pulse Beauty V2 cinematic played in the live Hybrid route with native V2 SFX, battle BGM silence during the video, Celestial Bloom choir-tail bridge into the battlefield reconnect, and live battle ownership restored cleanly.",
-    "pending_gate_summary": "LIVE28K25: Thunder Tornado handoff harmonization only. Verify cinematic-to-live tornado continuity, narrower spiral structure, reduced green wash, clear real-enemy pass, unchanged damage/death/recovery/Victory behavior, and preserved LIVE28K23 Aurora V2.",
+    "pending_gate_summary": "LIVE28K26: verify Prismel Refracted-Reflections exact cinematic, 9.35s staff/lens takeover, readable mirror crack, captured-frame shards, live battlefield reveal beneath shards, live enemy refracted impact/damage, no music/language during cinematic, clean HUD/turn restore, and unchanged Aurora Pulse + Thunder Tornado.",
     "live28k17_pending_iphone_validation": true,
     "live28k17_boot_decode_failed": true,
     "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR \u00b7 Decoding failed",
@@ -167,7 +173,8 @@
     "live28k23_runtime_passed": true,
     "live28k23_result": "PASS iPhone MAIN gate: Aurora Pulse Beauty V2 cinematic played in the live Hybrid route with native V2 SFX, battle BGM silence during the video, Celestial Bloom choir-tail bridge into the battlefield reconnect, and live battle ownership restored cleanly.",
     "live28k24_pending_iphone_validation": true,
-    "live28k25_pending_iphone_validation": true
+    "live28k25_pending_iphone_validation": true,
+    "live28k26_pending_iphone_validation": true
   },
   "hybrid_boot_policy": "hybrid-main must retry live-build.json and hybrid-battle-live.html no-store fetches with bounded exponential backoff before surfacing LIVE BOOT ERROR.",
   "kineza": {
@@ -191,5 +198,31 @@
     "thunder_tornado_handoff_policy": "Generated cinematic contains no enemy. Final launch crossfades into a live emerald tornado pass through the actual enemy; live runtime owns damage/death and Kineza returns home before Victory.",
     "thunder_tornado_live_pass_style": "structured-spiral-v2",
     "thunder_tornado_live_pass_visual_policy": "Live continuation must preserve the cinematic funnel read: narrow luminous core, separated emerald/white spiral bands, reduced opaque green fill, and fast forward travel through the real enemy. It must not read as a full-screen green wash."
+  },
+  "prismel": {
+    "basic_attack": "Refractive Burst",
+    "resonart": "Refracted-Reflections",
+    "refracted_reflections_video": "assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4",
+    "refracted_reflections_video_sha256": "9d36b9ad4ad67c44ea7f12a1356ffb1e855511ac6496e840f0fe4f6398367fd8",
+    "refracted_reflections_video_bytes": 6270745,
+    "refracted_reflections_resolution": "910x512",
+    "refracted_reflections_fps": 30,
+    "refracted_reflections_duration_seconds": 10.033333,
+    "refracted_reflections_timeline": "assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_runtime_timeline.json",
+    "refracted_reflections_runtime": "src/prizim/PrismelRefractedReflectionsRuntime.js",
+    "refracted_reflections_sync": {
+      "runtime_takeover_seconds": 9.35,
+      "contact_hold_ms": 95,
+      "impact_point_normalized_video": {
+        "x": 0.62,
+        "y": 0.55
+      },
+      "crack_ms": 190,
+      "fracture_hold_ms": 65,
+      "shatter_ms": 520,
+      "live_enemy_reveal_progress": 0.34
+    },
+    "refracted_reflections_presentation": "Exact cinematic in Hybrid/K -> 9.35s staff-to-lens hold -> captured displayed frame becomes the mirror -> radial crack -> 16 deterministic captured-frame shards -> real battlefield reveal -> live enemy refracted hit/recoil -> clean battle return.",
+    "refracted_reflections_audio_policy": "Sound effects only. No music or language. Normal battle BGM is fully silent during the cinematic/shatter; embedded cinematic SFX remain audible, with only sparse nonverbal exertion permitted."
   }
 }

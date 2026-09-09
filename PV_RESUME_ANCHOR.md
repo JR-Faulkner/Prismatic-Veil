@@ -239,3 +239,10 @@ For a new chat: read this file first, then `PRIZIM_LIVE_NOTEPAD.md`. Resume from
 - Narrow luminous core + separated emerald/white spiral bands + reduced opaque green wash + faster forward enemy pass.
 - Preserve K22 240ms lethal Kineza home settle and LIVE28K23 Aurora V2.
 - iPhone MAIN remains the final gate.
+
+
+## LIVE28K26 Resume Anchor — Prismel Refracted-Reflections
+
+Current witness: `main-20260909-live28k26`.
+
+Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Resonart lane: exact cinematic -> 9.35s staff/lens contact -> captured-frame mirror fracture -> deterministic shard breakup -> live battlefield enemy impact -> clean battle return. Current authority is PriZim + live witness + iPhone MAIN evidence. Do not revive retired handoff-process language. After phone acceptance, pivot to Overworld v1 with 2–3 reachable locations, then party/progression/XP loop.

@@ -57,6 +57,12 @@ export const HEROES = Object.freeze({
       critChance: 0.25,
       critMultiplier: 2
     }),
+    resonart: Object.freeze({
+      name: 'Refracted-Reflections',
+      damage: 24,
+      flavor: 'Prismel captures the visible battlefield in a frozen reflective prism, then pierces and shatters it from within.',
+      presentation: 'hybrid-video-runtime-shatter'
+    }),
     attackTiming: Object.freeze({ step: 340, gather: 560, hold: 220, release: 220 }),
     fxVersion: 'v2',
     frameColourway: 'blue',

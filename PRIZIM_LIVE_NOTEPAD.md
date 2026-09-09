@@ -225,3 +225,16 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Narrow luminous core + separated emerald/white spiral bands + reduced opaque green wash + faster forward enemy pass.
 - Preserve K22 240ms lethal Kineza home settle and LIVE28K23 Aurora V2.
 - iPhone MAIN remains the final gate.
+
+
+## LIVE28K26 Prismel Refracted-Reflections
+
+- Current promoted witness: `main-20260909-live28k26`.
+- Prismel Resonart: **Refracted-Reflections**.
+- Exact cinematic authority: `assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4` · 6,270,745 bytes · SHA-256 `9d36b9ad4ad67c44ea7f12a1356ffb1e855511ac6496e840f0fe4f6398367fd8`.
+- Hybrid/K takeover: 9.35s staff-to-lens contact.
+- Presentation: 95ms contact hold -> 190ms radial crack -> 65ms fractured hold -> 520ms 16-piece captured-frame shatter.
+- Real Hybrid battlefield is underneath; live enemy damage/recoil resolves at 34% shatter progress.
+- Audio: embedded cinematic SFX only, no music/language; battle BGM fully silent until reconnect.
+- Preserve Aurora Pulse V2 and Thunder Tornado unchanged.
+- iPhone MAIN remains the final runtime/presentation gate.

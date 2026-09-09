@@ -6,7 +6,7 @@
 // scene. Character stats/art/attack data still come from BattleConfig's
 // HEROES — no duplicated roster — this file only adds the party-specific
 // shape (formation slots, the 4-command rail, RP-gated Resonart) on top.
-import { HEROES } from './BattleConfig.js?v=live28k9';
+import { HEROES } from './BattleConfig.js?v=live28k26-prismel-rr';
 
 const LIVE_MODULE_VERSION = new URL(import.meta.url).searchParams.get('v') || 'main';
 const liveAsset = path => `${path}${path.includes('?') ? '&' : '?'}pvasset=${encodeURIComponent(LIVE_MODULE_VERSION)}`;
