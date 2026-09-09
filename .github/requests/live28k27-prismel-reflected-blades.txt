@@ -3,3 +3,4 @@ SCOPE=Prismel Refracted-Reflections presentation polish only
 GLASS_SHATTER=required
 LIVE_MIRROR_BLADES=required
 LANDED_SHARDS=required
+RETRY=2
