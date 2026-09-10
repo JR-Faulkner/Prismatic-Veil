@@ -1,0 +1,64 @@
+name: LIVE29A HR4 GUI
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/live29a-hr4-gui.yml'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build HR4 from HR3 payload
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import gzip, pathlib
+          src=pathlib.Path('assets/ui/overworld/v1/hybrid-overworld.hr3.html.gz')
+          out=pathlib.Path('assets/ui/overworld/v1/hybrid-overworld.hr4.html.gz')
+          html=gzip.decompress(src.read_bytes()).decode('utf-8')
+          css='''
+          /* LIVE29A HR4 iPhone landscape panel repair */
+          .shell{grid-template-columns:minmax(184px,22%) minmax(0,1fr) minmax(178px,19%)}
+          .right{grid-template-rows:auto auto minmax(0,1fr) auto;gap:5px;padding:7px 8px;overflow:hidden}
+          .right .brand{min-height:30px;padding:3px 34px 5px 4px;display:flex;align-items:center;justify-content:center;text-align:center}
+          .right .brand h1{font-size:clamp(11px,2.1vh,16px);line-height:1.05;margin:0;white-space:normal}
+          .objective{padding:5px 2px;min-height:0}
+          .objective .star{font-size:15px;line-height:1}
+          .objective small{margin:2px 0 3px;font-size:7px;line-height:1.05}
+          .objective strong{font-size:clamp(12px,2.15vh,16px);line-height:1.12;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+          .location-card{padding:5px 2px 4px;min-height:0;overflow:hidden;border-bottom:1px solid #d8b75d55}
+          .location-card h2{font-size:clamp(13px,2.35vh,18px);line-height:1.08;margin:0 0 2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+          .location-card .state{font-size:7px;line-height:1;margin-bottom:4px}
+          .location-card p{font-size:clamp(7px,1.18vh,9px);line-height:1.28;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+          .location-card .meta{gap:3px;margin-top:5px;flex-wrap:nowrap}
+          .location-card .meta span{font-size:6px;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .travel{align-self:end;display:grid;gap:4px;padding-top:2px}
+          .travel button{min-height:30px;padding:5px 4px;font-size:7px;line-height:1.05;white-space:normal}
+          .travel .ghost{min-height:26px}
+          @media (max-height:520px){
+            .shell{grid-template-columns:minmax(170px,21%) minmax(0,1fr) minmax(176px,20%);grid-template-rows:minmax(0,1fr) 58px}
+            .right{gap:3px;padding:5px 6px}.objective{padding:3px 1px}.objective .star{display:none}.objective small{margin:1px 0 2px}.objective strong{font-size:12px}
+            .location-card{padding:3px 1px}.location-card h2{font-size:13px}.location-card p{font-size:7px;line-height:1.18;-webkit-line-clamp:2}.location-card .meta{margin-top:3px}.travel button{min-height:26px;padding:3px 3px}
+          }
+          '''
+          html=html.replace('</style>',css+'\n</style>',1)
+          html=html.replace("Array.from({length:12},(_,i)=>`./assets/audio/overworld/magical_awakening_parts/part${String(i+1).padStart(2,'0')}.txt`)","Array.from({length:8},(_,i)=>`./assets/audio/overworld/hr4_test_parts/part${String(i+1).padStart(2,'0')}.b64`)")
+          html=html.replace("setAudioIcon();startBgm();","setAudioIcon();loadBgm();")
+          html=html.replace("liveWitness='main'","liveWitness='OW-HR4 · main-20260909-live28k27'")
+          out.write_bytes(gzip.compress(html.encode('utf-8'),compresslevel=9))
+          p=pathlib.Path('hybrid-overworld.html')
+          loader=p.read_text()
+          loader=loader.replace('hybrid-overworld.hr3.html.gz?hr=3','hybrid-overworld.hr4.html.gz?hr=4')
+          loader=loader.replace('HR3 payload','HR4 payload').replace('HR3 interface payload','HR4 interface payload').replace('OVERWORLD HR3 BOOT ERROR','OVERWORLD HR4 BOOT ERROR')
+          p.write_text(loader)
+          PY
+      - name: Commit HR4 GUI payload
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/ui/overworld/v1/hybrid-overworld.hr4.html.gz hybrid-overworld.html
+          git commit -m 'LIVE29A HR4: fix destination panel overlap and stage audio gesture path' || exit 0
+          git push
