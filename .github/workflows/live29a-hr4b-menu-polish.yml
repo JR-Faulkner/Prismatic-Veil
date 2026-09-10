@@ -1,0 +1,92 @@
+name: LIVE29A HR4B Menu Polish
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/live29a-hr4b-menu-polish.yml'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build HR4B from HR4 payload
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import gzip, pathlib
+          src=pathlib.Path('assets/ui/overworld/v1/hybrid-overworld.hr4.html.gz')
+          out=pathlib.Path('assets/ui/overworld/v1/hybrid-overworld.hr4b.html.gz')
+          html=gzip.decompress(src.read_bytes()).decode('utf-8')
+          css='''
+          /* LIVE29A HR4B iPhone menu polish */
+          .right{grid-template-rows:auto auto minmax(0,1fr) auto;}
+          .objective strong{font-size:clamp(11px,1.95vh,15px)!important;line-height:1.08!important;}
+          .location-card h2{font-size:clamp(12px,2.05vh,16px)!important;line-height:1.05!important;}
+          .location-card p{line-height:1.18!important;-webkit-line-clamp:2!important;}
+          .location-card .meta{margin-top:3px!important;}
+          .travel{gap:3px!important;}
+          .travel button{min-height:26px!important;}
+          .pv-front-glyph{display:inline-flex!important;align-items:center;justify-content:center;margin-left:5px!important;padding:0!important;border:0!important;background:transparent!important;color:#f2cf72!important;font-size:9px!important;line-height:1!important;vertical-align:middle!important;letter-spacing:0!important;text-shadow:0 0 7px rgba(242,207,114,.75)!important;transform:translateY(-1px);}
+          @media (max-height:520px){
+            .objective strong{font-size:11px!important}.location-card h2{font-size:12px!important}.location-card p{font-size:6.8px!important}.location-card .state{margin-bottom:2px!important}
+          }
+          '''
+          html=html.replace('</style>',css+'\n</style>',1)
+
+          js=r'''
+          <script>
+          (()=>{
+            const PARTS=Array.from({length:8},(_,i)=>`./assets/audio/overworld/hr4_test_parts/part${String(i+1).padStart(2,'0')}.b64?v=hr4b`);
+            let pvBgm=null,pvBlobUrl='',pvReady=false,pvWanted=true;
+            try{pvWanted=localStorage.getItem('pvAudioEnabled')!=='false'}catch(_){ }
+            async function prep(){
+              try{
+                const chunks=await Promise.all(PARTS.map(async p=>{const r=await fetch(p,{cache:'no-store'});if(!r.ok)throw new Error(`audio ${r.status}`);return (await r.text()).replace(/\s+/g,'')}));
+                const bin=atob(chunks.join('')), bytes=new Uint8Array(bin.length);
+                for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+                const blob=new Blob([bytes],{type:'audio/mp4'});
+                pvBlobUrl=URL.createObjectURL(blob);
+                pvBgm=new Audio();pvBgm.src=pvBlobUrl;pvBgm.loop=true;pvBgm.volume=.32;pvBgm.preload='auto';pvBgm.playsInline=true;pvBgm.load();pvReady=true;
+                document.documentElement.dataset.pvAudio='ready';
+              }catch(e){document.documentElement.dataset.pvAudio='error';console.warn('PV HR4B audio prep',e)}
+            }
+            function tryPlay(){
+              if(!pvWanted||!pvReady||!pvBgm||!pvBgm.paused)return;
+              const p=pvBgm.play(); if(p&&p.catch)p.catch(()=>{});
+            }
+            prep();
+            document.addEventListener('pointerdown',tryPlay,{capture:true});
+            document.addEventListener('touchend',tryPlay,{capture:true});
+            document.addEventListener('click',tryPlay,{capture:true});
+            document.addEventListener('visibilitychange',()=>{if(document.hidden&&pvBgm)pvBgm.pause()});
+
+            function fixFront(){
+              const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT);
+              const found=[];let n;
+              while(n=walker.nextNode()) if(n.children.length===0 && n.textContent.trim()==='FRONT') found.push(n);
+              found.forEach(el=>{el.textContent='◆';el.classList.add('pv-front-glyph');el.title='Front party member';});
+            }
+            if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fixFront); else fixFront();
+            setTimeout(fixFront,400);
+          })();
+          </script>
+          '''
+          html=html.replace('</body>',js+'\n</body>',1)
+          html=html.replace('OW-HR3 · main-20260909-live28k27','OW-HR4B · main-20260909-live28k27')
+          html=html.replace('OW-HR4 · main-20260909-live28k27','OW-HR4B · main-20260909-live28k27')
+          out.write_bytes(gzip.compress(html.encode('utf-8'),compresslevel=9))
+          p=pathlib.Path('hybrid-overworld.html')
+          loader=p.read_text()
+          loader=loader.replace('hybrid-overworld.hr4.html.gz?hr=4','hybrid-overworld.hr4b.html.gz?hr=4b')
+          loader=loader.replace('HR4 payload','HR4B payload').replace('HR4 interface payload','HR4B interface payload').replace('OVERWORLD HR4 BOOT ERROR','OVERWORLD HR4B BOOT ERROR')
+          p.write_text(loader)
+          PY
+      - name: Commit HR4B payload
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/ui/overworld/v1/hybrid-overworld.hr4b.html.gz hybrid-overworld.html
+          git commit -m 'LIVE29A HR4B: wire proven audio path and compact front marker' || exit 0
+          git push
