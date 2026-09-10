@@ -35,9 +35,7 @@ body.show-static .splash-video{opacity:0}
 </style>
 </head>
 <body>
-<video id="titleVideo" class="splash-video" muted autoplay loop playsinline webkit-playsinline preload="auto" poster="./title_screen.jpg" aria-hidden="true">
-  <source src="./assets/video/title_splash_loop.mp4?pvasset=live29b" type="video/mp4">
-</video>
+<video id="titleVideo" class="splash-video" muted autoplay loop playsinline webkit-playsinline preload="auto" poster="./title_screen.jpg" aria-hidden="true"></video>
 <main class="wrap">
   <div id="gate" class="gate">PRESS ANY BUTTON</div>
   <nav id="menu" class="menu" hidden aria-label="Main menu">
@@ -49,22 +47,55 @@ body.show-static .splash-video{opacity:0}
 <audio id="titleMusic" preload="auto" loop></audio>
 <script>
 const gate=document.getElementById('gate'),menu=document.getElementById('menu'),music=document.getElementById('titleMusic'),video=document.getElementById('titleVideo');
-let unlocked=false,lastPad={up:false,down:false,a:false},focusIndex=0,altTimer=null;
+let unlocked=false,lastPad={up:false,down:false,a:false},focusIndex=0,altTimer=null,titleVideoUrl='';
 music.volume=.62;
 const choices=()=>[...menu.querySelectorAll('.go')];
-// Preserve the established title-screen music. Overworld music is handled separately.
+
+// Title audio stays independent from the silent Kling motion layer.
 const TITLE_TRACKS=['./assets/music/Prism of Elders.mp3?pvasset=live28f','./assets/music/veil_clockwork_drift.mp3?pvasset=live28f'];
 let titleTrackIndex=0;
 function loadTitleTrack(i=0){titleTrackIndex=i;if(i>=TITLE_TRACKS.length)return;music.src=TITLE_TRACKS[i];music.load()}
 music.addEventListener('error',()=>{if(titleTrackIndex+1<TITLE_TRACKS.length)loadTitleTrack(titleTrackIndex+1)});
 loadTitleTrack();
+
+// Rebuild the verified 4-second muted H.264 splash from same-origin text fragments.
+const TITLE_VIDEO_PARTS=Array.from({length:11},(_,i)=>`./assets/video/title_splash_parts/part${String(i+1).padStart(2,'0')}.b64?pvasset=live29b2`);
+async function loadTitleVideo(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return false;
+  try{
+    const texts=await Promise.all(TITLE_VIDEO_PARTS.map(async url=>{
+      const r=await fetch(url,{cache:'no-store'});
+      if(!r.ok)throw new Error(`title video part ${r.status}`);
+      return (await r.text()).trim();
+    }));
+    const b64=texts.join('');
+    if(b64.length!==105492)throw new Error(`title video base64 length ${b64.length}`);
+    const raw=atob(b64),bytes=new Uint8Array(raw.length);
+    for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+    if(bytes.length!==79118)throw new Error(`title video byte length ${bytes.length}`);
+    const blob=new Blob([bytes],{type:'video/mp4'});
+    titleVideoUrl=URL.createObjectURL(blob);
+    video.src=titleVideoUrl;
+    video.muted=true;
+    video.load();
+    return true;
+  }catch(e){
+    console.warn('PV title video fallback',e);
+    document.body.classList.add('show-static');
+    return false;
+  }
+}
+const titleVideoReady=loadTitleVideo();
+video.addEventListener('error',()=>document.body.classList.add('show-static'));
+addEventListener('pagehide',()=>{if(titleVideoUrl)URL.revokeObjectURL(titleVideoUrl)},{once:true});
+
 async function syncLiveRoutes(){try{const r=await fetch(`./live-build.json?ts=${Date.now()}`,{cache:'no-store'});if(!r.ok)return;const build=await r.json(),a=choices();if(build.story&&a[0])a[0].href=`./${build.story}`;if(build.pza&&a[2])a[2].href=`./${build.pza}`;document.documentElement.dataset.pvbuild=build.id||'main'}catch(e){}}
 syncLiveRoutes();
 function focus(i){const a=choices();if(!a.length)return;focusIndex=(i+a.length)%a.length;a.forEach(x=>x.classList.remove('navfocus'));a[focusIndex].classList.add('navfocus');a[focusIndex].focus({preventScroll:true})}
 async function startTitleMusic(){try{if(music.paused)await music.play()}catch(e){}}
-async function startTitleVideo(){try{video.muted=true;if(video.paused)await video.play()}catch(e){}}
+async function startTitleVideo(){try{video.muted=true;const ready=await titleVideoReady;if(ready&&video.paused)await video.play()}catch(e){document.body.classList.add('show-static')}}
 function startSplashAlternation(){if(altTimer||matchMedia('(prefers-reduced-motion: reduce)').matches)return;altTimer=setInterval(()=>document.body.classList.toggle('show-static'),10000)}
-async function unlockTitle(){if(unlocked)return;unlocked=true;await Promise.allSettled([startTitleMusic(),startTitleVideo()]);gate.hidden=true;menu.hidden=false;focus(0);startSplashAlternation()}
+function unlockTitle(){if(unlocked)return;unlocked=true;startTitleMusic();startTitleVideo();gate.hidden=true;menu.hidden=false;focus(0);startSplashAlternation()}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&unlocked){startTitleMusic();startTitleVideo()}});
 addEventListener('pageshow',()=>{if(unlocked){startTitleMusic();startTitleVideo()}});
 addEventListener('pointerdown',unlockTitle,{once:true});
