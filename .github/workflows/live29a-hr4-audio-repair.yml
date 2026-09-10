@@ -11,20 +11,25 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch and validate Magical Awakening
+      - name: Reconstruct and validate Magical Awakening
         run: |
           set -euo pipefail
-          mkdir -p assets/audio/overworld
-          curl -fL --retry 3 'https://cdn1.suno.ai/1cf25965-8eee-4f3f-bf4c-96f8fed25bf9.mp3' -o /tmp/magical.mp3
-          test $(stat -c%s /tmp/magical.mp3) -gt 100000
-          ffprobe -v error -show_entries format=duration -of default=nw=1 /tmp/magical.mp3
-          ffmpeg -y -i /tmp/magical.mp3 -c:a aac -b:a 128k -movflags +faststart 'assets/audio/overworld/Magical Awakening.m4a'
-          test $(stat -c%s 'assets/audio/overworld/Magical Awakening.m4a') -gt 100000
-          ffprobe -v error -show_entries format=duration -of default=nw=1 'assets/audio/overworld/Magical Awakening.m4a'
+          PARTS='assets/audio/overworld/hr4_test_parts'
+          OUT='assets/audio/overworld/Magical Awakening.m4a'
+          test $(find "$PARTS" -maxdepth 1 -name 'part*.b64' | wc -l) -eq 8
+          cat "$PARTS"/part01.b64 "$PARTS"/part02.b64 "$PARTS"/part03.b64 "$PARTS"/part04.b64 "$PARTS"/part05.b64 "$PARTS"/part06.b64 "$PARTS"/part07.b64 "$PARTS"/part08.b64 > /tmp/magical.b64
+          base64 --decode /tmp/magical.b64 > /tmp/magical-source.m4a
+          echo "Reconstructed bytes: $(stat -c%s /tmp/magical-source.m4a)"
+          test $(stat -c%s /tmp/magical-source.m4a) -gt 30000
+          ffprobe -v error -show_entries stream=codec_name,sample_rate,channels -show_entries format=duration,size -of default=nw=1 /tmp/magical-source.m4a
+          ffmpeg -y -i /tmp/magical-source.m4a -vn -c:a aac -b:a 96k -ar 44100 -ac 2 -movflags +faststart "$OUT"
+          echo "Final bytes: $(stat -c%s "$OUT")"
+          test $(stat -c%s "$OUT") -gt 30000
+          ffprobe -v error -show_entries stream=codec_name,sample_rate,channels -show_entries format=duration,size -of default=nw=1 "$OUT"
       - name: Commit repaired binary
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add 'assets/audio/overworld/Magical Awakening.m4a'
-          git commit -m 'LIVE29A HR4: replace invalid 11-byte audio with validated AAC' || exit 0
+          git commit -m 'LIVE29A HR4: replace invalid audio with reconstructed AAC' || exit 0
           git push
