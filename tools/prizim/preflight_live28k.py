@@ -29,6 +29,7 @@ audio = read('src/PartyBattleAudioController.js')
 base = read('src/PartyBattleScene.js')
 hybrid_main = read('hybrid-main.html')
 hybrid_template = read('hybrid-battle-live.html')
+k27_guard = read('src/prizim/Live28K27BattleGuardScene.js')
 notepad = read('PRIZIM_LIVE_NOTEPAD.md')
 resume = read('PV_RESUME_ANCHOR.md')
 
@@ -41,7 +42,7 @@ if witness not in resume:
 
 for token in [
     "const live28kLineage=/live28k\\d+/i.test(id)",
-    'Live28K2PartyBattleScene.js',
+    'Live28K27BattleGuardScene.js',
     'Live28K7PartyFormationView.js',
 ]:
     if token not in hybrid_main:
@@ -49,6 +50,8 @@ for token in [
 
 if "h.resonart?.name" not in hybrid_template or "h.resonart?.flavor" not in hybrid_template:
     errors.append('Hybrid Resonart drawer authority drift')
+if "import Live28K2PartyBattleScene from './Live28K2PartyBattleScene.js?v=live28k27'" not in k27_guard:
+    errors.append('K27 guard no longer inherits locked LIVE28K2 battle authority')
 
 if "hero?.id === 'auryi' && command === 'Resonart'" not in k_scene or '_playAuryiAuroraPulseBeauty' not in k_scene:
     errors.append('Aurora Pulse K-adapter authority missing')

@@ -14,7 +14,7 @@
     const response=await fetch(`./hybrid-party.html?pvtemplate=${Date.now()}`,{cache:'no-store'});
     if(!response.ok) throw new Error(`Party template ${response.status}`);
     let text=await response.text();
-    const runtime=`<script id="pv-party-live-runtime">(()=>{
+    let runtime=`<script id="pv-party-live-runtime">(()=>{
       'use strict';
       const BGM='./assets/audio/overworld/Homecoming_Path.m4a?pvasset=live29d-authority';
       const RESUME_KEY='pv.homecomingResume';
@@ -68,6 +68,7 @@
       });
       window.PV_PARTY_HOMEcoming={bgm,storeResume,unlock};
     })();<\/script>`;
+    if(new URLSearchParams(location.search).get('embedded')==='1'){runtime=`<script id="pv-party-embedded">(()=>{const b=document.getElementById('returnBtn');b?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();window.parent.postMessage({type:'pv-close-party'},location.origin)},{capture:true});})();<\/script>`}
     text=text.replace('</body>',runtime+'</body>');
     document.open();document.write(text);document.close();
   }catch(err){
