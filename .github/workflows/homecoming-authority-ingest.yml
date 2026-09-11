@@ -1,0 +1,33 @@
+name: Homecoming authority ingest
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/homecoming-authority-ingest.yml'
+permissions:
+  contents: write
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Replace Homecoming Path with approved authority bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL 'https://uc92e869047932b78cc56b44dd09.dl.dropboxusercontent.com/cd/0/get/DH_CB-_7ivQanz3da48Lxqt4za5dHypjCwG1IKOb2pYA70YWDNKMDXpruYpg-wLNvaV_moT_869FMzw_rmkIFtudn_OVagIUhZSq7vyT0zte2SvSscJkPJiognW63XoDl_bP3xodKGns8CU3TOw1wQSkb6hxuyg0hjAwNvKb9Rvxwg/file?c_luid=9bd25e73' -o /tmp/Homecoming_Path.m4a
+          test "$(stat -c%s /tmp/Homecoming_Path.m4a)" = "3775529"
+          test "$(sha256sum /tmp/Homecoming_Path.m4a | awk '{print $1}')" = "1ad410f89d1a411e3a5f5a1d64939b6db31b62c8819ffed0222203b7dfff863d"
+          cp /tmp/Homecoming_Path.m4a assets/audio/overworld/Homecoming_Path.m4a
+      - name: Commit authority audio
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'JR-Faulkner'
+          git config user.email '53619182+JR-Faulkner@users.noreply.github.com'
+          git add assets/audio/overworld/Homecoming_Path.m4a
+          git commit -m 'AUDIO: install approved Homecoming Path authority bytes'
+          git push origin HEAD:main
