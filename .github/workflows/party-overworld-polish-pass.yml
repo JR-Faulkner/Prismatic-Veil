@@ -1,0 +1,57 @@
+name: PARTY + Overworld polish pass
+
+on:
+  push:
+    paths:
+      - '.github/workflows/party-overworld-polish-pass.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Patch iPhone audio unlock and Party stage scale
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          ow=Path('hybrid-overworld.html')
+          s=ow.read_text()
+          old="toggle.addEventListener('click',e=>{e.stopPropagation();if(!unlocked)unlocked=true;setMusic(!musicEnabled);play('confirm')},true);const first=()=>unlock();document.addEventListener('pointerdown',first,{once:true,capture:true});document.addEventListener('touchstart',first,{once:true,capture:true,passive:true});document.addEventListener('keydown',first,{once:true,capture:true});"
+          new="toggle.addEventListener('click',async e=>{e.stopPropagation();if(!unlocked){unlocked=true;if(!musicEnabled){musicEnabled=true;localStorage.setItem('pv.musicEnabled','1');syncToggle()}try{await bgm.play()}catch(err){unlocked=false}play('confirm');return}setMusic(!musicEnabled);play('confirm')},true);const first=e=>{if(e?.target?.closest&&e.target.closest('#pvMusicToggle'))return;unlock()};document.addEventListener('pointerdown',first,{once:true,capture:true});document.addEventListener('touchstart',first,{once:true,capture:true,passive:true});document.addEventListener('keydown',first,{once:true,capture:true});"
+          if old not in s:
+              raise SystemExit('Overworld audio patch target not found')
+          s=s.replace(old,new,1)
+          ow.write_text(s)
+
+          p=Path('hybrid-party.html')
+          t=p.read_text()
+          replacements={
+            '.party-stage{position:absolute;inset:34px 9px 78px;perspective:950px;overflow:hidden}':'.party-stage{position:absolute;inset:34px 9px 70px;perspective:950px;overflow:hidden}',
+            '.slot{position:absolute;z-index:5;width:28%;height:56%;min-width:110px;max-width:235px;transform:translateX(-50%);border:0;background:none;padding:0;cursor:pointer;touch-action:manipulation}':'.slot{position:absolute;z-index:5;width:30%;height:68%;min-width:120px;max-width:255px;transform:translateX(-50%);border:0;background:none;padding:0;cursor:pointer;touch-action:manipulation}',
+            '.slot[data-slot="support1"]{left:17%;top:3%;height:42%;width:22%;z-index:3}.slot[data-slot="support2"]{left:83%;top:3%;height:42%;width:22%;z-index:3}':'.slot[data-slot="support1"]{left:17%;top:1%;height:48%;width:24%;z-index:3}.slot[data-slot="support2"]{left:83%;top:1%;height:48%;width:24%;z-index:3}',
+            '.char-art{position:absolute;z-index:2;left:50%;bottom:9%;height:88%;max-width:92%;transform:translateX(-50%);object-fit:contain;object-position:center bottom;filter:drop-shadow(0 9px 8px rgba(0,0,0,.42));transition:transform .18s ease,filter .18s ease}.slot.support .char-art{height:82%;opacity:.94}':'.char-art{position:absolute;z-index:2;left:50%;bottom:5%;height:108%;max-width:118%;transform:translateX(-50%);object-fit:contain;object-position:center bottom;filter:drop-shadow(0 9px 8px rgba(0,0,0,.42));transition:transform .18s ease,filter .18s ease}.slot.support .char-art{height:98%;max-width:112%;opacity:.97}'
+          }
+          for old_css,new_css in replacements.items():
+              if old_css not in t:
+                  raise SystemExit(f'Party CSS patch target not found: {old_css[:55]}')
+              t=t.replace(old_css,new_css,1)
+          p.write_text(t)
+          PY
+
+      - name: Commit polish pass
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'JR-Faulkner'
+          git config user.email '53619182+JR-Faulkner@users.noreply.github.com'
+          git add hybrid-overworld.html hybrid-party.html
+          git commit -m 'PARTY: enlarge stage art and fix Overworld music unlock'
+          git push origin HEAD:main
