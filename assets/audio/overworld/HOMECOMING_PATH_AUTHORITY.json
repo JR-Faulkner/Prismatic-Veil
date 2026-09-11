@@ -1,0 +1,12 @@
+{
+  "authority": "The Prismatic Veil Overworld music",
+  "title": "Homecoming Path",
+  "source_upload_name": "Homecoming Path(2).m4a",
+  "duration_seconds": 202.014,
+  "sample_rate_hz": 48000,
+  "channels": 2,
+  "source_size_bytes": 3775529,
+  "sha256": "1ad410f89d1a411e3a5f5a1d64939b6db31b62c8819ffed0222203b7dfff863d",
+  "runtime_target": "assets/audio/overworld/Homecoming_Path.m4a",
+  "notes": "This exact uploaded audio is the approved Overworld music authority. Do not substitute older files, similarly named tracks, short tests, or remembered alternatives. The Party screen may inherit/continue this track unless a separate Party theme is explicitly approved later."
+}
