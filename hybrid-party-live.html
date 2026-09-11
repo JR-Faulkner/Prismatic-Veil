@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#050914">
+<title>The Prismatic Veil · Party</title>
+</head>
+<body style="margin:0;background:#030610;color:#eaf2ff;font-family:system-ui,sans-serif">
+<div id="boot" style="min-height:100dvh;display:grid;place-items:center;letter-spacing:.12em">OPENING PARTY…</div>
+<script>
+(async()=>{
+  try{
+    const response=await fetch(`./hybrid-party.html?pvtemplate=${Date.now()}`,{cache:'no-store'});
+    if(!response.ok) throw new Error(`Party template ${response.status}`);
+    let text=await response.text();
+    const runtime=`<script id="pv-party-live-runtime">(()=>{
+      'use strict';
+      const BGM='./assets/audio/overworld/Homecoming_Path.m4a?pvasset=live29d-authority';
+      const RESUME_KEY='pv.homecomingResume';
+      const musicEnabled=()=>localStorage.getItem('pv.musicEnabled')!=='0';
+      const bgm=new Audio(BGM);
+      bgm.loop=true;bgm.preload='auto';bgm.volume=.34;
+      let unlocked=false;
+
+      function readResume(){
+        try{
+          const r=JSON.parse(localStorage.getItem(RESUME_KEY)||'null');
+          if(!r||!Number.isFinite(Number(r.t))||!Number.isFinite(Number(r.at))) return null;
+          if(Date.now()-Number(r.at)>14400000) return null;
+          const elapsed=r.playing?Math.max(0,(Date.now()-Number(r.at))/1000):0;
+          return Math.max(0,Number(r.t)+elapsed);
+        }catch(_){return null}
+      }
+      const resumeAt=readResume();
+      function seekResume(){
+        if(resumeAt==null||!Number.isFinite(bgm.duration)||bgm.duration<=0)return;
+        try{bgm.currentTime=resumeAt%bgm.duration}catch(_){}
+      }
+      if(bgm.readyState>=1)seekResume();else bgm.addEventListener('loadedmetadata',seekResume,{once:true});
+      function storeResume(){
+        try{localStorage.setItem(RESUME_KEY,JSON.stringify({t:Number.isFinite(bgm.currentTime)?bgm.currentTime:0,at:Date.now(),playing:musicEnabled()&&!bgm.paused}))}catch(_){}
+      }
+      async function unlock(){
+        if(unlocked||!musicEnabled())return;
+        try{await bgm.play();unlocked=true}catch(_){}
+      }
+      unlock();
+      const first=()=>unlock();
+      document.addEventListener('pointerdown',first,{capture:true,once:true});
+      document.addEventListener('keydown',first,{capture:true,once:true});
+      document.addEventListener('click',first,{capture:true,once:true});
+
+      function xboxFullscreen(){
+        const xbox=/Xbox/i.test(navigator.userAgent||'');
+        if(!xbox||document.fullscreenElement||!document.documentElement.requestFullscreen)return;
+        if(navigator.userActivation&&!navigator.userActivation.isActive)return;
+        document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{});
+      }
+      ['pointerdown','keydown','click'].forEach(type=>document.addEventListener(type,xboxFullscreen,{capture:true}));
+
+      const returnBtn=document.getElementById('returnBtn');
+      returnBtn?.addEventListener('click',storeResume,{capture:true});
+      addEventListener('pagehide',()=>{storeResume();try{bgm.pause()}catch(_){}});
+      document.addEventListener('visibilitychange',()=>{
+        if(document.hidden){storeResume();bgm.pause()}
+        else if(musicEnabled())unlock();
+      });
+      window.PV_PARTY_HOMEcoming={bgm,storeResume,unlock};
+    })();<\/script>`;
+    text=text.replace('</body>',runtime+'</body>');
+    document.open();document.write(text);document.close();
+  }catch(err){
+    document.body.innerHTML='<pre style="white-space:pre-wrap;padding:24px;color:#f6d7a8">PARTY LIVE BOOT ERROR\n'+String(err?.stack||err)+'</pre>';
+  }
+})();
+</script>
+</body>
+</html>
