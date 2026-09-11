@@ -1,0 +1,45 @@
+name: LIVE29B3 Dropbox HQ ingest
+
+on:
+  push:
+    branches:
+      - live29b3-title-hq
+    paths:
+      - .github/workflows/live29b3-dropbox-ingest.yml
+
+permissions:
+  contents: write
+
+jobs:
+  ingest:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: live29b3-title-hq
+          fetch-depth: 0
+
+      - name: Fetch verified HQ splash from temporary Dropbox bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/video
+          curl --fail --location --silent --show-error --output assets/video/title_splash_loop.mp4 'https://uc96e9f6efd7f183660da5a893d1.dl.dropboxusercontent.com/cd/0/get/DH5EYk2VHPpRU3eArZoW9PnNLwqQH5jd1p7IQycjrxkRGvJPRaPjfickh9AnlGfvwYPjx1Sf_YkyFslMjYmeE1x75Xd9-5Z8EHqTp0f3NaLGRj9Mph1n6_sueeefo5-CtO7QDzJhkybZGgP_tETJF9UxcXE6GDYjW5dPZ3ETAiiUHQ/file?c_luid=9bd25e73'
+          test "$(wc -c < assets/video/title_splash_loop.mp4)" -eq 514980
+          echo '02f59bc20f723e426c4789b73960386fbb8b9a0141a7b533a78e64ba9c142438  assets/video/title_splash_loop.mp4' | sha256sum -c -
+
+      - name: Commit verified binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/video/title_splash_loop.mp4
+          if git diff --cached --quiet; then
+            echo 'HQ splash already matches.'
+            exit 0
+          fi
+          git commit -m 'LIVE29B3: ingest verified 515KB HQ title splash'
+          git push origin HEAD:live29b3-title-hq
