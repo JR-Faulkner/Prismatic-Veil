@@ -21,9 +21,9 @@ jobs:
           p=Path('hybrid-party.html')
           s=p.read_text()
           replacements={
-            './assets/party-formation/PRISMEL_JRPG_NORMALIZED_900x900.png':'./assets/ui/party/v1/characters/party_prismel_chibi.png',
-            './assets/party-formation/KINEZA_JRPG_NORMALIZED_900x900.png':'./assets/ui/party/v1/characters/party_kineza_chibi.png',
-            './assets/party-formation/AURYI_JRPG_NORMALIZED_900x900.png':'./assets/ui/party/v1/characters/party_auryi_chibi.png',
+            './assets/party_formation/PRISMEL_JRPG_NORMALIZED_900x900.png':'./assets/ui/party/v1/characters/party_prismel_chibi.png',
+            './assets/party_formation/KINEZA_JRPG_NORMALIZED_900x900.png':'./assets/ui/party/v1/characters/party_kineza_chibi.png',
+            './assets/party_formation/AURYI_JRPG_NORMALIZED_900x900.png':'./assets/ui/party/v1/characters/party_auryi_chibi.png',
             './assets/ui/party/v1/characters/sarallel_composite.png':'./assets/ui/party/v1/characters/party_sarallel_chibi.png',
             './assets/ui/party/v1/characters/vyan_party.webp':'./assets/ui/party/v1/characters/party_vyan_chibi.png',
           }
