@@ -1,0 +1,36 @@
+name: One-shot Homecoming authority ingest
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-homecoming-ingest.yml'
+permissions:
+  contents: write
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch exact Homecoming authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/audio/overworld
+          curl --fail --location --retry 2 --output /tmp/Homecoming_Path.m4a 'https://uc71730a8082228c8ecd58cfad2c.dl.dropboxusercontent.com/cd/0/get/DH_7E1gg698zryeet-9OeXJDLzM7nGK3EruuBCVhMwzeqwFvlDm9G3sEBxarJPPy4y8bJFmjTt5kCbz0WSeufLjypvhMlbm0K3EwC7l9ZPpLwhvHJ_s95ows7BhjHEo2vkCMIhUdESv-D9LeeQjkp6x5r6kFWfPjPkfM0POVNZ1Q1A/file?c_luid=9bd25e73'
+          test "$(stat -c%s /tmp/Homecoming_Path.m4a)" = "3775529"
+          echo '1ad410f89d1a411e3a5f5a1d64939b6db31b62c8819ffed0222203b7dfff863d  /tmp/Homecoming_Path.m4a' | sha256sum -c -
+          cp /tmp/Homecoming_Path.m4a assets/audio/overworld/Homecoming_Path.m4a
+      - name: Commit authority bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'JR-Faulkner'
+          git config user.email '53619182+JR-Faulkner@users.noreply.github.com'
+          git add assets/audio/overworld/Homecoming_Path.m4a
+          if git diff --cached --quiet; then
+            echo 'Exact authority already present.'
+            exit 0
+          fi
+          git commit -m 'AUDIO: ingest exact Homecoming Path authority bytes'
+          git push
