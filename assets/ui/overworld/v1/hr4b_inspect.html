@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#06142f">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>The Prismatic Veil · Overworld</title>
+<style>
+:root{
+  --night:#06142f;--night2:#0b234c;--panel:#071b3eea;--panel2:#0b2858ef;
+  --gold:#d8b75d;--gold-hi:#ffe59a;--ink:#fff5d6;--muted:#b9cae8;
+  --primary:#3d79ff;--secondary:#7258ff;--accent:#58e6ff;--leader-rgb:61,121,255;
+  --hp:#48df8f;--mp:#35d8ff;--danger:#ff5a71;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:var(--night);color:var(--ink);font-family:Georgia,"Times New Roman",serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+button,a{font:inherit}
+button{cursor:pointer}
+body{background:
+  radial-gradient(circle at 72% 14%,rgba(var(--leader-rgb),.18),transparent 28%),
+  linear-gradient(180deg,#06142f,#081a39 55%,#061126)}
+body:after{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(90deg,transparent 0 49.85%,#fff2 50%,transparent 50.15%);opacity:.04;mix-blend-mode:screen}
+.shell{position:fixed;inset:0;padding:max(4px,env(safe-area-inset-top)) max(5px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left));display:grid;grid-template-columns:minmax(190px,23%) minmax(0,1fr) minmax(138px,16%);grid-template-rows:minmax(0,1fr) clamp(58px,14.5vh,82px);gap:3px}
+.chrome{position:relative;background:linear-gradient(155deg,#08234bf2,#06152ff4 62%,#06122aef);border:1px solid var(--gold);box-shadow:inset 0 0 0 1px #ffe7a82d,0 0 0 1px #020916,0 8px 26px #0006;overflow:hidden}
+.chrome:before,.chrome:after{content:"";position:absolute;width:24px;height:24px;pointer-events:none;border-color:var(--gold-hi);opacity:.72}
+.chrome:before{left:4px;top:4px;border-left:1px solid;border-top:1px solid}
+.chrome:after{right:4px;bottom:4px;border-right:1px solid;border-bottom:1px solid}
+.left{grid-column:1;grid-row:1;display:grid;grid-template-rows:clamp(74px,17vh,104px) repeat(3,1fr);min-height:0}
+.brand{display:grid;place-items:center;text-align:center;padding:8px 10px;border-bottom:1px solid #d8b75d99;background:linear-gradient(180deg,#0a2a59e8,#071a3ce8);position:relative}
+.brand:after{content:"";position:absolute;left:10%;right:10%;bottom:7px;height:1px;background:linear-gradient(90deg,transparent,var(--primary),var(--accent),transparent);box-shadow:0 0 9px rgba(var(--leader-rgb),.8)}
+.brand .the{font-size:clamp(8px,1.35vh,11px);letter-spacing:.28em;color:#f8e8bf;margin-bottom:1px}
+.brand h1{margin:0;font-weight:500;font-size:clamp(20px,4.1vh,36px);line-height:.94;letter-spacing:.035em;text-shadow:0 1px #000,0 0 18px rgba(var(--leader-rgb),.24)}
+.brand h1 i{font-style:normal;color:var(--accent);text-shadow:0 0 15px var(--accent)}
+.brand .sub{margin-top:5px;font-size:clamp(8px,1.45vh,11px);letter-spacing:.36em;color:#f3d783}
+.hero-card{position:relative;display:grid;grid-template-columns:43% 1fr;min-height:0;border-bottom:1px solid #d8b75d8a;background:linear-gradient(135deg,rgba(var(--leader-rgb),.06),transparent 45%);transition:background .18s,box-shadow .18s}
+.hero-card:last-child{border-bottom:0}
+.hero-card button{all:unset;position:absolute;inset:0;z-index:5;cursor:pointer}
+.hero-card.front{background:linear-gradient(130deg,rgba(var(--leader-rgb),.26),rgba(var(--leader-rgb),.06) 45%,transparent);box-shadow:inset 5px 0 0 var(--primary),inset 0 0 20px rgba(var(--leader-rgb),.16)}
+.hero-card.front:after{content:"FRONT";position:absolute;right:7px;top:7px;z-index:4;font:700 7px system-ui;letter-spacing:.16em;color:var(--gold-hi)}
+.hero-portrait{position:relative;overflow:hidden;min-width:0;background:radial-gradient(circle at 50% 42%,rgba(var(--leader-rgb),.22),#05132d 72%)}
+.hero-portrait:after{content:"";position:absolute;inset:0;border-right:1px solid #d8b75d66;background:linear-gradient(90deg,transparent 68%,#05142f99)}
+.hero-portrait img{width:100%;height:100%;display:block;object-fit:cover;object-position:center center;transform:none}
+.hero-card[data-hero="prismel"] .hero-portrait img{object-position:center 44%}
+.hero-card[data-hero="kineza"] .hero-portrait img{object-position:center 46%}
+.hero-card[data-hero="auryi"] .hero-portrait img{object-position:center 42%}
+.hero-info{padding:clamp(8px,1.6vh,12px) 9px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.hero-name{font-size:clamp(16px,3.2vh,26px);line-height:1;color:#fff1c9;letter-spacing:.04em;white-space:nowrap}
+.hero-role{margin:4px 0 6px;font:700 clamp(7px,1.35vh,10px) system-ui;letter-spacing:.13em;text-transform:uppercase;color:var(--hero-accent,#b9d7ff)}
+.vital-row{display:grid;grid-template-columns:22px 1fr 28px;gap:5px;align-items:center;font:700 clamp(7px,1.35vh,10px) system-ui;color:#e7efff;margin:2px 0}
+.vital-row b{text-align:right;color:#fff0c2;font-weight:700}
+.bar{height:7px;background:#07122a;border:1px solid #7c9acb66;overflow:hidden;border-radius:1px}
+.bar i{display:block;height:100%;width:var(--w,75%);background:linear-gradient(90deg,#24d984,#72f4b2);box-shadow:0 0 8px #47e79d88}
+.vital-row.mp .bar i{background:linear-gradient(90deg,#25b9ff,#58f0ff);box-shadow:0 0 8px #52dfff88}
+.map-wrap{grid-column:2;grid-row:1;position:relative;min-width:0;min-height:0;border:1px solid var(--gold);background:#123;border-radius:1px;overflow:hidden;box-shadow:0 0 0 1px #020916,0 8px 30px #0007}
+.map-plate{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block;filter:saturate(1.03) contrast(1.015)}
+.map-tint{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 55% 45%,transparent 45%,rgba(0,9,30,.10) 82%,rgba(0,5,18,.30));box-shadow:inset 0 0 44px #02112a55}
+.map-wrap:after{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,transparent,var(--primary),var(--accent),transparent);box-shadow:0 0 14px rgba(var(--leader-rgb),.9);opacity:.78}
+.hotspot{position:absolute;z-index:5;width:clamp(54px,6vw,78px);aspect-ratio:1;border:0;background:transparent;transform:translate(-50%,-50%);border-radius:50%;padding:0;outline:none}
+.hotspot:before{content:"";position:absolute;inset:9%;border:2px solid #fff0;border-radius:50%;transition:.15s;box-shadow:none}
+.hotspot:hover:before,.hotspot:focus-visible:before{border-color:#fff8;box-shadow:0 0 20px #fff7}
+.hotspot.sel:before{border-color:var(--gold-hi);box-shadow:0 0 0 4px rgba(var(--leader-rgb),.32),0 0 28px rgba(var(--leader-rgb),.98);animation:nodePulse 1.25s ease-in-out infinite}
+.hotspot.locked.sel:before{border-color:#c4b7cf;box-shadow:0 0 0 4px #694a7c44,0 0 24px #9f67be88}
+@keyframes nodePulse{50%{transform:scale(1.13);opacity:.75}}
+#homeNode{left:18.3%;top:69.6%}
+#echoNode{left:36.7%;top:35.8%}
+#riftNode{left:85.1%;top:24.2%}
+.map-caption{position:absolute;left:10px;top:10px;z-index:3;padding:6px 9px;background:#05152bcf;border:1px solid #dec26d88;color:#f7e7b8;font:700 8px system-ui;letter-spacing:.16em;text-transform:uppercase;backdrop-filter:blur(4px)}
+.right{grid-column:3;grid-row:1;display:grid;grid-template-rows:auto auto 1fr auto;gap:9px;padding:10px;min-height:0}
+.side-kicker{display:flex;align-items:center;justify-content:center;gap:8px;color:#f7db88;font:700 clamp(7px,1.35vh,10px) system-ui;letter-spacing:.2em;text-transform:uppercase;padding:4px 0}
+.side-kicker:before,.side-kicker:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,#d8b75d88)}
+.side-kicker:after{transform:scaleX(-1)}
+.objective{border-top:1px solid #d8b75d99;border-bottom:1px solid #d8b75d99;padding:10px 2px;text-align:center}
+.objective .star{font-size:22px;color:var(--gold-hi);text-shadow:0 0 16px var(--gold-hi)}
+.objective small{display:block;margin:5px 0 7px;font:700 clamp(7px,1.25vh,9px) system-ui;letter-spacing:.19em;color:#f1d47b;text-transform:uppercase}
+.objective strong{display:block;font-size:clamp(15px,2.65vh,21px);font-weight:500;line-height:1.16;color:#fff2cf}
+.location-card{align-self:start;min-height:0;padding:10px 4px;border-bottom:1px solid #d8b75d55}
+.location-card h2{margin:0 0 4px;text-align:center;font-size:clamp(15px,2.9vh,23px);font-weight:500;color:#fff0c3}
+.location-card .state{display:block;text-align:center;margin-bottom:8px;font:700 clamp(7px,1.2vh,9px) system-ui;letter-spacing:.15em;color:var(--accent);text-transform:uppercase}
+.location-card p{margin:0;font:clamp(8px,1.45vh,11px)/1.45 system-ui;color:#c6d5ee;text-align:left}
+.location-card .meta{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin-top:9px}
+.location-card .meta span{border:1px solid #8ca9d655;background:#0b234acc;padding:3px 6px;color:#dce8fa;font:700 7px system-ui;letter-spacing:.07em;text-transform:uppercase}
+.travel{align-self:end;display:grid;gap:6px}.travel button{border:1px solid var(--gold);background:linear-gradient(180deg,#fff1c4,#d7b566);color:#25190b;padding:9px 7px;font:800 clamp(8px,1.45vh,11px) system-ui;letter-spacing:.09em;text-transform:uppercase;box-shadow:inset 0 0 0 1px #fff8,0 5px 14px #0005}.travel button:disabled{filter:grayscale(.7);opacity:.42}.travel .ghost{background:#0b244b;color:#f8e7b8}
+.bottom{grid-column:1/4;grid-row:2;display:grid;grid-template-columns:minmax(76px,9%) 1fr;align-items:stretch;min-height:0}
+.menu-home{display:grid;place-items:center;border-right:1px solid #d8b75d8a;color:#f4dfaa;text-decoration:none;font:700 clamp(7px,1.3vh,10px) system-ui;letter-spacing:.12em;text-transform:uppercase;gap:2px}.menu-home b{font-size:clamp(21px,4vh,32px);font-weight:400;line-height:.7}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding:5px 8px}.tab{position:relative;border:1px solid #7f9acb77;background:linear-gradient(180deg,#0e2c5b,#071b3c);color:#f7e6bb;display:grid;grid-template-columns:auto auto;gap:8px;align-items:center;justify-content:center;padding:5px 8px;min-width:0;overflow:hidden}.tab:after{content:"";position:absolute;left:10%;right:10%;bottom:0;height:2px;background:var(--primary);box-shadow:0 0 10px var(--primary);opacity:0}.tab.on{border-color:var(--gold);background:linear-gradient(180deg,rgba(var(--leader-rgb),.42),#0b2348 78%);box-shadow:inset 0 0 0 1px #ffe29c55,0 0 16px rgba(var(--leader-rgb),.32)}.tab.on:after{opacity:1}.tab .ico{font-size:clamp(19px,3.5vh,28px);line-height:1;color:#fff}.tab .txt{min-width:0}.tab strong{display:block;font-size:clamp(10px,2vh,16px);font-weight:500;white-space:nowrap}.tab small{display:block;margin-top:2px;font:700 clamp(6px,1vh,8px) system-ui;color:#b9c8e4;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.overlay{position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:#020818bc;backdrop-filter:blur(10px);padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}.overlay[hidden]{display:none}.modal{width:min(1040px,95vw);height:min(560px,88vh);display:grid;grid-template-rows:auto 1fr;background:linear-gradient(155deg,#0b2a59f8,#07162ff8);border:1px solid var(--gold);box-shadow:inset 0 0 0 1px #fff1a92f,0 20px 60px #000b;overflow:hidden}.modal-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #d8b75d77;background:#06172f}.modal-head h2{margin:0;font-size:clamp(18px,3.6vh,28px);font-weight:500;letter-spacing:.06em}.close{border:1px solid #d8b75d99;background:#0b244c;color:#f8e8bc;padding:8px 12px;font:800 9px system-ui;letter-spacing:.1em}.modal-body{padding:12px;overflow:auto;min-height:0}.party-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.party-sheet{border:1px solid #d8b75d66;background:linear-gradient(180deg,#0d2a58,#071a38);padding:10px;box-shadow:inset 0 0 22px rgba(var(--leader-rgb),.05)}.party-sheet.front{border-color:var(--gold-hi);box-shadow:inset 0 0 0 1px rgba(var(--leader-rgb),.4),0 0 18px rgba(var(--leader-rgb),.28)}.sheet-top{display:grid;grid-template-columns:62px 1fr;gap:9px;align-items:center}.sheet-top img{width:62px;height:62px;object-fit:cover;object-position:center 42%;border:1px solid #d8b75d88;background:#06142f}.sheet-top h3{margin:0;font-size:18px;font-weight:500}.sheet-top small{font:700 8px system-ui;letter-spacing:.13em;color:#b9cbea;text-transform:uppercase}.sheet-top button{margin-top:6px;border:1px solid #d8b75d88;background:#0a234a;color:#f8e7b6;padding:5px 8px;font:800 7px system-ui;letter-spacing:.08em}.core-stats{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:10px;padding-top:8px;border-top:1px solid #d8b75d44}.stat{display:flex;justify-content:space-between;gap:8px;font:700 9px system-ui;color:#c7d5ea;padding:4px 0;border-bottom:1px solid #ffffff0b}.stat b{color:#fff0c0}.initiative{margin-top:8px;padding:7px 8px;border:1px solid #6f94c555;background:#061a39;font:700 8px system-ui;color:#bcd0ee}.initiative b{color:var(--accent)}
+.grimoire-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grimoire-entry{position:relative;border:1px solid #d8b75d66;background:linear-gradient(145deg,#0d2a58,#07182f);padding:13px 14px;min-height:125px;overflow:hidden}.grimoire-entry:after{content:"";position:absolute;right:-24px;top:-30px;width:90px;height:90px;border:1px solid currentColor;transform:rotate(45deg);opacity:.12}.grimoire-entry h3{margin:0 0 4px;font-size:19px;font-weight:500}.grimoire-entry .type{font:800 8px system-ui;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}.grimoire-entry p{margin:0;font:10px/1.5 system-ui;color:#c1d0e7}.swatches{display:flex;gap:5px;margin-top:9px}.swatches i{width:16px;height:5px;background:currentColor;box-shadow:0 0 8px currentColor}.journal{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.log{border:1px solid #d8b75d55;background:#081d40;padding:12px}.log h3{margin:0 0 5px;font-size:16px;font-weight:500}.log p{margin:0;font:10px/1.5 system-ui;color:#bfd0e9}.save-panel{height:100%;display:grid;place-items:center;text-align:center}.save-panel .big{font-size:45px;color:var(--gold-hi);text-shadow:0 0 20px var(--gold-hi)}.save-panel h3{margin:8px 0 4px;font-size:22px;font-weight:500}.save-panel p{margin:0 0 12px;font:10px system-ui;color:#bfd0e8}.save-panel button{border:1px solid var(--gold);background:linear-gradient(#fff1c5,#d8b668);color:#25190b;padding:10px 18px;font:800 9px system-ui;letter-spacing:.1em}
+.toast{position:fixed;left:50%;bottom:calc(clamp(58px,14.5vh,82px) + 12px);z-index:60;transform:translateX(-50%) translateY(15px);padding:8px 13px;border:1px solid var(--gold);background:#061833e8;color:#fff0c2;font:800 9px system-ui;letter-spacing:.08em;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#buildWitness{position:fixed;right:8px;bottom:4px;z-index:70;color:#b5c7e988;font:7px ui-monospace,monospace;pointer-events:none}
+@media(max-width:900px){
+ .shell{grid-template-columns:minmax(180px,24%) minmax(0,1fr) minmax(126px,17%)}
+ .brand h1{font-size:clamp(18px,4vh,30px)}
+ .hero-card{grid-template-columns:42% 1fr}.hero-info{padding-left:7px;padding-right:6px}.hero-name{font-size:clamp(14px,3vh,22px)}
+ .location-card p{font-size:clamp(7px,1.35vh,10px)}
+ .tab{gap:5px;padding-left:5px;padding-right:5px}.tab small{display:none}
+}
+@media(max-height:430px){
+ .shell{grid-template-columns:minmax(170px,23%) minmax(0,1fr) minmax(125px,16.5%);grid-template-rows:minmax(0,1fr) 58px}
+ .brand{padding:5px 8px}.brand .the{display:none}.brand h1{font-size:21px}.brand .sub{font-size:7px;margin-top:3px}
+ .hero-info{padding-top:5px;padding-bottom:5px}.hero-role{margin:2px 0 3px}.vital-row{margin:1px 0}.bar{height:6px}
+ .right{gap:5px;padding:7px}.objective{padding:6px 1px}.objective .star{font-size:16px}.location-card{padding:5px 2px}.location-card .meta{margin-top:5px}.travel button{padding:6px 5px}
+ .tabs{padding-top:3px;padding-bottom:3px}.tab .ico{font-size:20px}.tab strong{font-size:11px}
+ .modal{height:92vh}.modal-body{padding:8px}.party-sheet{padding:7px}.core-stats{margin-top:6px;padding-top:5px}.stat{padding:2px 0}
+}
+@media(orientation:portrait){body:before{content:"ROTATE TO LANDSCAPE";position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:#06142ff7;color:#ffe7a5;font:700 13px system-ui;letter-spacing:.12em}.shell{visibility:hidden}}
+
+/* LIVE29A HR3 menu stabilization */
+.hero-card{grid-template-columns:minmax(78px,42%) minmax(0,1fr)!important}
+.hero-info{min-width:0!important;overflow:hidden!important}
+.hero-name,.hero-role,.vital-row{min-width:0!important}
+.hero-role{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.hero-portrait img{transform:none!important;object-fit:cover!important}
+.hero-card[data-hero="prismel"] .hero-portrait img{object-position:center 23%!important}
+.hero-card[data-hero="kineza"] .hero-portrait img{object-position:center 22%!important}
+.hero-card[data-hero="auryi"] .hero-portrait img{object-position:center 20%!important;transform:none!important}
+.tabs{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:4px!important}
+.tab{grid-template-columns:auto minmax(0,auto)!important;padding-inline:6px!important;min-width:0!important}
+.tab .txt{min-width:0!important;overflow:hidden!important}
+.tab strong,.tab small{overflow:hidden!important;text-overflow:ellipsis!important}
+.right{min-width:0!important}
+.location-card h2,.location-card p{overflow-wrap:anywhere}
+.travel button{min-height:34px}
+.audio-toggle{position:absolute;right:8px;top:7px;z-index:12;border:1px solid #d8b75d88;background:#061a39dd;color:#ffe9ad;width:31px;height:27px;border-radius:3px;font:700 14px system-ui;display:grid;place-items:center;box-shadow:inset 0 0 0 1px #ffffff12}
+.audio-toggle.off{opacity:.55;filter:grayscale(.65)}
+@media(max-height:430px){.tab small{display:none!important}.tabs{gap:3px!important;padding:3px 6px!important}.tab{padding:4px!important}.shell{grid-template-rows:minmax(0,1fr) clamp(52px,13vh,66px)!important}.brand{padding-block:4px!important}.brand h1{font-size:clamp(18px,3.8vh,27px)!important}}
+@media(max-width:760px){.shell{grid-template-columns:minmax(174px,24%) minmax(0,1fr) minmax(126px,16%)!important}.tab{gap:5px!important}.tab strong{font-size:clamp(9px,1.8vh,13px)!important}.hero-role{font-size:clamp(7px,1.15vh,9px)!important}}
+
+
+/* LIVE29A HR4 iPhone landscape panel repair */
+.shell{grid-template-columns:minmax(184px,22%) minmax(0,1fr) minmax(178px,19%)}
+.right{grid-template-rows:auto auto minmax(0,1fr) auto;gap:5px;padding:7px 8px;overflow:hidden}
+.right .brand{min-height:30px;padding:3px 34px 5px 4px;display:flex;align-items:center;justify-content:center;text-align:center}
+.right .brand h1{font-size:clamp(11px,2.1vh,16px);line-height:1.05;margin:0;white-space:normal}
+.objective{padding:5px 2px;min-height:0}
+.objective .star{font-size:15px;line-height:1}
+.objective small{margin:2px 0 3px;font-size:7px;line-height:1.05}
+.objective strong{font-size:clamp(12px,2.15vh,16px);line-height:1.12;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.location-card{padding:5px 2px 4px;min-height:0;overflow:hidden;border-bottom:1px solid #d8b75d55}
+.location-card h2{font-size:clamp(13px,2.35vh,18px);line-height:1.08;margin:0 0 2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.location-card .state{font-size:7px;line-height:1;margin-bottom:4px}
+.location-card p{font-size:clamp(7px,1.18vh,9px);line-height:1.28;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.location-card .meta{gap:3px;margin-top:5px;flex-wrap:nowrap}
+.location-card .meta span{font-size:6px;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.travel{align-self:end;display:grid;gap:4px;padding-top:2px}
+.travel button{min-height:30px;padding:5px 4px;font-size:7px;line-height:1.05;white-space:normal}
+.travel .ghost{min-height:26px}
+@media (max-height:520px){
+  .shell{grid-template-columns:minmax(170px,21%) minmax(0,1fr) minmax(176px,20%);grid-template-rows:minmax(0,1fr) 58px}
+  .right{gap:3px;padding:5px 6px}.objective{padding:3px 1px}.objective .star{display:none}.objective small{margin:1px 0 2px}.objective strong{font-size:12px}
+  .location-card{padding:3px 1px}.location-card h2{font-size:13px}.location-card p{font-size:7px;line-height:1.18;-webkit-line-clamp:2}.location-card .meta{margin-top:3px}.travel button{min-height:26px;padding:3px 3px}
+}
+
+
+/* LIVE29A HR4B iPhone menu polish */
+.right{grid-template-rows:auto auto minmax(0,1fr) auto;}
+.objective strong{font-size:clamp(11px,1.95vh,15px)!important;line-height:1.08!important;}
+.location-card h2{font-size:clamp(12px,2.05vh,16px)!important;line-height:1.05!important;}
+.location-card p{line-height:1.18!important;-webkit-line-clamp:2!important;}
+.location-card .meta{margin-top:3px!important;}
+.travel{gap:3px!important;}
+.travel button{min-height:26px!important;}
+.pv-front-glyph{display:inline-flex!important;align-items:center;justify-content:center;margin-left:5px!important;padding:0!important;border:0!important;background:transparent!important;color:#f2cf72!important;font-size:9px!important;line-height:1!important;vertical-align:middle!important;letter-spacing:0!important;text-shadow:0 0 7px rgba(242,207,114,.75)!important;transform:translateY(-1px);}
+@media (max-height:520px){
+  .objective strong{font-size:11px!important}.location-card h2{font-size:12px!important}.location-card p{font-size:6.8px!important}.location-card .state{margin-bottom:2px!important}
+}
+
+</style>
+</head>
+<body>
+<main class="shell" id="shell">
+  <section class="left chrome" id="leftRail">
+    <header class="brand"><div class="the">THE</div><h1>PRISM<i>◇</i>TIC VEIL</h1><div class="sub">OVERWORLD</div></header>
+
+    <article class="hero-card front" data-hero="prismel" style="--hero-accent:#60cfff">
+      <button aria-label="Set Prismel as front character" data-front="prismel"></button>
+      <div class="hero-portrait"><img src="./assets/ui/overworld/v1/portraits/prismel_hr2.jpg" alt="Prismel"></div>
+      <div class="hero-info"><div class="hero-name">PRISMEL</div><div class="hero-role">Prism Weaver · Lv. 12</div><div class="vital-row"><span>HP</span><div class="bar"><i style="--w:84%"></i></div><b>168</b></div><div class="vital-row mp"><span>MP</span><div class="bar"><i style="--w:72%"></i></div><b>92</b></div></div>
+    </article>
+
+    <article class="hero-card" data-hero="kineza" style="--hero-accent:#63ff7e">
+      <button aria-label="Set Kineza as front character" data-front="kineza"></button>
+      <div class="hero-portrait"><img src="./assets/ui/overworld/v1/portraits/kineza_hr2.jpg" alt="Kineza"></div>
+      <div class="hero-info"><div class="hero-name">KINEZA</div><div class="hero-role">Momentum Born · Lv. 12</div><div class="vital-row"><span>HP</span><div class="bar"><i style="--w:91%"></i></div><b>182</b></div><div class="vital-row mp"><span>MP</span><div class="bar"><i style="--w:61%"></i></div><b>78</b></div></div>
+    </article>
+
+    <article class="hero-card" data-hero="auryi" style="--hero-accent:#ffd66c">
+      <button aria-label="Set Auryi as front character" data-front="auryi"></button>
+      <div class="hero-portrait"><img src="./assets/ui/overworld/v1/portraits/auryi_hr2.jpg" alt="Auryi"></div>
+      <div class="hero-info"><div class="hero-name">AURYI</div><div class="hero-role">Aura Spoken · Lv. 12</div><div class="vital-row"><span>HP</span><div class="bar"><i style="--w:73%"></i></div><b>146</b></div><div class="vital-row mp"><span>MP</span><div class="bar"><i style="--w:86%"></i></div><b>110</b></div></div>
+    </article>
+  </section>
+
+  <section class="map-wrap" aria-label="Overworld map">
+    <img class="map-plate" alt="The Prismatic Veil overworld with Home, Echo Playground and the Veil Rift">
+    <div class="map-tint"></div><div class="map-caption">Destinations</div>
+    <button class="hotspot" id="homeNode" data-location="home" aria-label="Home"></button>
+    <button class="hotspot" id="echoNode" data-location="echo" aria-label="Echo Playground"></button>
+    <button class="hotspot locked" id="riftNode" data-location="rift" aria-label="Veil Rift, locked"></button>
+  </section>
+
+  <aside class="right chrome">
+    <div class="side-kicker">Destination</div>
+    <section class="objective"><div class="star">✦</div><small>Current Objective</small><strong id="objectiveText">Choose your next destination.</strong></section>
+    <section class="location-card" id="locationCard"><h2 id="locationName">The Veil-Touched World</h2><span class="state" id="locationState">Ready to Explore</span><p id="locationDesc">Familiar places now lead somewhere stranger. Choose a destination and follow the glowing route.</p><div class="meta" id="locationMeta"><span>Explore</span><span>Discover</span><span>Return</span></div></section>
+    <div class="travel"><button id="travelButton" disabled>Choose Destination</button><button class="ghost" id="clearButton">Clear Selection</button></div>
+  </aside>
+
+  <nav class="bottom chrome">
+    <a class="menu-home" href="./index.html"><b>☰</b><span>Menu</span></a>
+    <div class="tabs">
+      <button class="tab on" data-tab="explore"><span class="ico">✦</span><span class="txt"><strong>Explore</strong><small>Choose a route</small></span></button>
+      <button class="tab" data-tab="party"><span class="ico">♟</span><span class="txt"><strong>Party</strong><small>Stats & order</small></span></button>
+      <button class="tab" data-tab="grimoire"><span class="ico">◈</span><span class="txt"><strong>Grimoire</strong><small>Bearers & Veil lore</small></span></button>
+      <button class="tab" data-tab="journal"><span class="ico">▤</span><span class="txt"><strong>Journal</strong><small>Stories & discoveries</small></span></button>
+      <button class="tab" data-tab="save"><span class="ico">▣</span><span class="txt"><strong>Save</strong><small>Preserve your journey</small></span></button>
+    </div>
+  </nav>
+</main>
+
+<div class="overlay" id="overlay" hidden>
+  <section class="modal">
+    <header class="modal-head"><h2 id="modalTitle">Party</h2><button class="close" id="closeModal">CLOSE</button></header>
+    <div class="modal-body" id="modalBody"></div>
+  </section>
+</div>
+<div class="toast" id="toast">Saved.</div>
+<div id="buildWitness">OW-HR3</div>
+
+<script>
+(()=>{
+  const THEMES={
+    prismel:{primary:'#3d79ff',secondary:'#735cff',accent:'#59e8ff',rgb:'61,121,255'},
+    kineza:{primary:'#e44a48',secondary:'#8f2029',accent:'#63ff7e',rgb:'228,74,72'},
+    auryi:{primary:'#a970ff',secondary:'#7250cb',accent:'#ffd66c',rgb:'169,112,255'}
+  };
+  const HEROES={
+    prismel:{name:'Prismel',role:'Prism Weaver',portrait:'overworld/v1/portraits/prismel_hr2.jpg',stats:{Might:14,Mind:26,Spirit:18,Agility:16,Resilience:15,Harmony:17}},
+    kineza:{name:'Kineza',role:'Momentum Born',portrait:'overworld/v1/portraits/kineza_hr2.jpg',stats:{Might:20,Mind:12,Spirit:10,Agility:18,Resilience:19,Harmony:14}},
+    auryi:{name:'Auryi',role:'Aura Spoken',portrait:'overworld/v1/portraits/auryi_hr2.jpg',stats:{Might:12,Mind:28,Spirit:24,Agility:14,Resilience:16,Harmony:22}}
+  };
+  const LOCATIONS={
+    home:{name:'Home',state:'Safe Haven',objective:'Return home and prepare.',desc:'Rest, review the party, consult the Grimoire, and prepare for the next journey.',meta:['Rest','Party','Save'],action:'Return Home',enabled:true,type:'home'},
+    echo:{name:'Echo Playground',state:'Reachable',objective:'Explore Echo Playground.',desc:'A familiar playground touched by unstable Resonance. Something beyond the swings is pulling at the Veil.',meta:['Encounter','Veil Shards','XP'],action:'Enter Echo Playground',enabled:true,type:'battle'},
+    rift:{name:'Veil Rift',state:'Locked',objective:'Find a path to the Veil Rift.',desc:'The fracture is visible from here, but the route has not opened yet.',meta:['Unknown','Locked','Story'],action:'Path Locked',enabled:false,type:'locked'}
+  };
+  const root=document.documentElement;
+  const overlay=document.getElementById('overlay'),modalTitle=document.getElementById('modalTitle'),modalBody=document.getElementById('modalBody');
+  const objectiveText=document.getElementById('objectiveText'),locationName=document.getElementById('locationName'),locationState=document.getElementById('locationState'),locationDesc=document.getElementById('locationDesc'),locationMeta=document.getElementById('locationMeta'),travelButton=document.getElementById('travelButton');
+  const toast=document.getElementById('toast'),witness=document.getElementById('buildWitness');
+  
+// LIVE29A HR3 PV Option-1 audio: UI sounds are short slices of Magical Awakening.
+const PV_HR3_BGM='https://cdn1.suno.ai/1cf25965-8eee-4f3f-bf4c-96f8fed25bf9.mp3';
+const PV_HR3_BGM_FALLBACK='https://cdn2.suno.ai/1cf25965-8eee-4f3f-bf4c-96f8fed25bf9.mp3';
+let pvAudioEnabled=localStorage.getItem('pv.audioEnabled')!=='0',pvAudioUnlocked=false;
+const pvBgm=new Audio(PV_HR3_BGM);pvBgm.loop=true;pvBgm.preload='auto';pvBgm.volume=0;
+pvBgm.addEventListener('error',()=>{if(!pvBgm.dataset.fallback){pvBgm.dataset.fallback='1';pvBgm.src=PV_HR3_BGM_FALLBACK;pvBgm.load()}});
+const PV_HR3_SFX={move:{t:17.333,d:.095,v:.17,r:1},confirm:{t:13.205,d:.19,v:.29,r:1},back:{t:16.458,d:.155,v:.22,r:.92},tab:{t:21.312,d:.145,v:.20,r:1.03},locked:{t:31.253,d:.16,v:.22,r:.78}};
+const pvSfxPool=Object.fromEntries(Object.keys(PV_HR3_SFX).map(k=>{const a=new Audio(PV_HR3_BGM);a.preload='auto';a.addEventListener('error',()=>{if(!a.dataset.fallback){a.dataset.fallback='1';a.src=PV_HR3_BGM_FALLBACK;a.load()}});return[k,a]}));
+function pvSetAudioIcon(){const b=document.getElementById('audioToggle');if(!b)return;b.textContent=pvAudioEnabled?'♪':'×';b.classList.toggle('off',!pvAudioEnabled);b.setAttribute('aria-label',pvAudioEnabled?'Mute menu audio':'Enable menu audio')}
+function pvSfx(name){if(!pvAudioEnabled)return;const c=PV_HR3_SFX[name],a=pvSfxPool[name];if(!c||!a)return;try{clearTimeout(a._pvStop);a.pause();a.playbackRate=c.r;a.volume=c.v;a.currentTime=c.t;const p=a.play();if(p)p.catch(()=>{});a._pvStop=setTimeout(()=>a.pause(),Math.max(70,c.d*1000))}catch(e){}}
+async function pvStartBgm(){if(!pvAudioEnabled)return;try{await pvBgm.play();pvAudioUnlocked=true;clearInterval(pvBgm._pvFade);let v=pvBgm.volume;pvBgm._pvFade=setInterval(()=>{v=Math.min(.32,v+.032);pvBgm.volume=v;if(v>=.32)clearInterval(pvBgm._pvFade)},55)}catch(e){}}
+function pvFadeBgm(){clearInterval(pvBgm._pvFade);let v=pvBgm.volume;pvBgm._pvFade=setInterval(()=>{v=Math.max(0,v-.045);pvBgm.volume=v;if(v<=0){clearInterval(pvBgm._pvFade);pvBgm.pause()}},45)}
+function pvUnlockAudio(){if(!pvAudioUnlocked&&pvAudioEnabled)pvStartBgm()}
+addEventListener('pointerdown',pvUnlockAudio,{once:true,capture:true});
+addEventListener('click',e=>{
+  const t=e.target.closest?.('.tab,[data-front],.hotspot,#clearButton,#closeModal,#travelButton,#saveNow,#audioToggle');if(!t)return;
+  if(t.id==='audioToggle'){e.stopPropagation();pvAudioEnabled=!pvAudioEnabled;localStorage.setItem('pv.audioEnabled',pvAudioEnabled?'1':'0');pvSetAudioIcon();if(pvAudioEnabled){pvAudioUnlocked=false;pvStartBgm();pvSfx('confirm')}else pvFadeBgm();return}
+  if(t.matches('.tab'))pvSfx('tab');
+  else if(t.matches('[data-front]'))pvSfx('move');
+  else if(t.matches('.hotspot'))pvSfx(t.classList.contains('locked')?'locked':'move');
+  else if(t.id==='clearButton'||t.id==='closeModal')pvSfx('back');
+  else if(t.id==='travelButton'){pvSfx(t.disabled?'locked':'confirm');if(!t.disabled)pvFadeBgm()}
+  else if(t.id==='saveNow')pvSfx('confirm');
+},true);
+pvSetAudioIcon();pvStartBgm();
+
+  let leader=localStorage.getItem('pv.frontHero');if(!THEMES[leader])leader='prismel';
+  let selected=null,hybridEntry='./hybrid-main.html',liveWitness='OW-HR4B · main-20260909-live28k27';
+
+  function applyLeader(id){
+    leader=id;const t=THEMES[id];root.style.setProperty('--primary',t.primary);root.style.setProperty('--secondary',t.secondary);root.style.setProperty('--accent',t.accent);root.style.setProperty('--leader-rgb',t.rgb);localStorage.setItem('pv.frontHero',id);
+    document.querySelectorAll('.hero-card').forEach(c=>c.classList.toggle('front',c.dataset.hero===id));
+    if(!overlay.hidden&&modalTitle.textContent==='Party')renderParty();
+  }
+  document.querySelectorAll('[data-front]').forEach(b=>b.addEventListener('click',()=>applyLeader(b.dataset.front)));
+
+  function chooseLocation(id){
+    selected=id;document.querySelectorAll('.hotspot').forEach(n=>n.classList.toggle('sel',n.dataset.location===id));
+    const d=LOCATIONS[id];objectiveText.textContent=d.objective;locationName.textContent=d.name;locationState.textContent=d.state;locationDesc.textContent=d.desc;locationMeta.innerHTML=d.meta.map(x=>`<span>${x}</span>`).join('');travelButton.disabled=!d.enabled;travelButton.textContent=d.action;
+  }
+  document.querySelectorAll('.hotspot').forEach(n=>n.addEventListener('click',()=>chooseLocation(n.dataset.location)));
+  document.getElementById('clearButton').addEventListener('click',()=>{selected=null;document.querySelectorAll('.hotspot').forEach(n=>n.classList.remove('sel'));objectiveText.textContent='Choose your next destination.';locationName.textContent='The Veil-Touched World';locationState.textContent='Ready to Explore';locationDesc.textContent='Familiar places now lead somewhere stranger. Choose a destination and follow the glowing route.';locationMeta.innerHTML='<span>Explore</span><span>Discover</span><span>Return</span>';travelButton.disabled=true;travelButton.textContent='Choose Destination'});
+  travelButton.addEventListener('click',()=>{if(!selected)return;const d=LOCATIONS[selected];if(d.type==='battle')location.href=hybridEntry;else if(d.type==='home')showToast('Home selected.')});
+
+  function setActiveTab(id){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===id))}
+  function openModal(title,html){modalTitle.textContent=title;modalBody.innerHTML=html;overlay.hidden=false}
+  function closeModal(){overlay.hidden=true;setActiveTab('explore')}
+  document.getElementById('closeModal').addEventListener('click',closeModal);overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal()});
+
+  function renderParty(){
+    setActiveTab('party');const cards=Object.entries(HEROES).map(([id,h])=>{const stats=Object.entries(h.stats).map(([k,v])=>`<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');return `<article class="party-sheet ${id===leader?'front':''}"><div class="sheet-top"><img src="./assets/ui/${h.portrait}" alt="${h.name}"><div><h3>${h.name}</h3><small>${h.role}</small><button data-setfront="${id}" ${id===leader?'disabled':''}>${id===leader?'Front Character':'Set Front'}</button></div></div><div class="core-stats">${stats}</div><div class="initiative">Turn Priority: <b>Agility ${h.stats.Agility}</b> + action speed + effects</div></article>`}).join('');openModal('Party',`<div class="party-grid">${cards}</div>`);modalBody.querySelectorAll('[data-setfront]').forEach(b=>b.addEventListener('click',()=>{applyLeader(b.dataset.setfront);renderParty()}));
+  }
+  function renderGrimoire(){
+    setActiveTab('grimoire');openModal('Prismatic Veil Grimoire',`<div class="grimoire-grid"><article class="grimoire-entry" style="color:#54bfff"><h3>Prismel</h3><div class="type">Prism Weaver · Bearer</div><p>Blue and violet resonance. A Bearer whose bond with the Veil takes prismatic form through structure and reflection.</p><div class="swatches"><i style="color:#2f7fff"></i><i style="color:#7c5cff"></i></div></article><article class="grimoire-entry" style="color:#63ff7e"><h3>Kineza</h3><div class="type">Momentum Born · Bearer</div><p>Red and green resonance. A Bearer whose Veil expression is tied to momentum and kinetic force.</p><div class="swatches"><i style="color:#e54b49"></i><i style="color:#63ff7e"></i></div></article><article class="grimoire-entry" style="color:#ffd66c"><h3>Auryi</h3><div class="type">Aura Spoken · Bearer</div><p>Lavender and gold resonance. A Bearer whose connection to the Veil manifests through aura and luminous influence.</p><div class="swatches"><i style="color:#aa74ff"></i><i style="color:#ffd66c"></i></div></article><article class="grimoire-entry" style="color:#d8b75d"><h3>Bearers of the Spectrum</h3><div class="type">Grimoire Record</div><p>The Grimoire records Bearers by how they resonate with the Veil, including their color associations and the form that resonance takes.</p><div class="swatches"><i style="color:#ff4b55"></i><i style="color:#ff9d32"></i><i style="color:#ffd94f"></i><i style="color:#4fe06f"></i><i style="color:#3d79ff"></i><i style="color:#7058ff"></i><i style="color:#a66cff"></i></div></article></div>`)
+  }
+  function renderJournal(){setActiveTab('journal');openModal('Journal',`<div class="journal"><article class="log"><h3>Home</h3><p>The place the party returns to between journeys. Rest, prepare, read the Grimoire, and decide where to go next.</p></article><article class="log"><h3>Echo Playground</h3><p>A familiar neighborhood playground touched by the Veil. Its Resonance no longer feels ordinary.</p></article><article class="log"><h3>Veil Rift</h3><p>A distant fracture hanging beyond the familiar world. The party can see it, but cannot reach it yet.</p></article><article class="log"><h3>Field Notes</h3><p>New discoveries, Bearer records, locations, and changes in the Veil will be collected here as the journey continues.</p></article></div>`)}
+  function renderSave(){setActiveTab('save');openModal('Save',`<div class="save-panel"><div><div class="big">◇</div><h3>Save Journey</h3><p>Your current party front and journey state can be stored on this device.</p><button id="saveNow">Save Journey</button></div></div>`);document.getElementById('saveNow').addEventListener('click',()=>{localStorage.setItem('pv.prototypeSave',JSON.stringify({leader,selected,ts:Date.now(),witness:liveWitness}));showToast('Journey saved on this device.')})}
+  function showToast(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(showToast.t);showToast.t=setTimeout(()=>toast.classList.remove('show'),1800)}
+  document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{const id=b.dataset.tab;if(id==='explore'){if(!overlay.hidden)closeModal();else setActiveTab('explore')}else if(id==='party')renderParty();else if(id==='grimoire')renderGrimoire();else if(id==='journal')renderJournal();else if(id==='save')renderSave()}));
+
+
+  async function loadMapPlate(){
+    const plate=document.querySelector('.map-plate');
+    const parts=[1,2,3,4,5,6,7].map(n=>`./assets/ui/overworld/v1/map_avif_parts/part${String(n).padStart(2,'0')}.bin`);
+    try{
+      const chunks=await Promise.all(parts.map(async path=>{const r=await fetch(path,{cache:'force-cache'});if(!r.ok)throw new Error(`${r.status} ${path}`);return new Uint8Array(await r.arrayBuffer());}));
+      const total=chunks.reduce((sum,c)=>sum+c.length,0),joined=new Uint8Array(total);let offset=0;
+      for(const chunk of chunks){joined.set(chunk,offset);offset+=chunk.length;}
+      const objectUrl=URL.createObjectURL(new Blob([joined],{type:'image/avif'}));
+      plate.onload=()=>plate.classList.add('ready');
+      plate.src=objectUrl;
+    }catch(err){console.error('[PV] overworld map plate failed to load',err);}
+  }
+
+  async function syncLive(){try{const r=await fetch(`./live-build.json?ts=${Date.now()}`,{cache:'no-store'});if(!r.ok)return;const build=await r.json();liveWitness=build.id||'main';if(build.hybrid)hybridEntry=`./${build.hybrid}`;witness.textContent=`OW-HR3 · ${liveWitness}`}catch(e){witness.textContent='OW-HR3 · witness unavailable'}}
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&!overlay.hidden)closeModal()});
+  applyLeader(leader);loadMapPlate();syncLive();
+})();
+</script>
+
+<script>
+(()=>{
+  const PARTS=Array.from({length:8},(_,i)=>`./assets/audio/overworld/hr4_test_parts/part${String(i+1).padStart(2,'0')}.b64?v=hr4b`);
+  let pvBgm=null,pvBlobUrl='',pvReady=false,pvWanted=true;
+  try{pvWanted=localStorage.getItem('pvAudioEnabled')!=='false'}catch(_){ }
+  async function prep(){
+    try{
+      const chunks=await Promise.all(PARTS.map(async p=>{const r=await fetch(p,{cache:'no-store'});if(!r.ok)throw new Error(`audio ${r.status}`);return (await r.text()).replace(/\s+/g,'')}));
+      const bin=atob(chunks.join('')), bytes=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+      const blob=new Blob([bytes],{type:'audio/mp4'});
+      pvBlobUrl=URL.createObjectURL(blob);
+      pvBgm=new Audio();pvBgm.src=pvBlobUrl;pvBgm.loop=true;pvBgm.volume=.32;pvBgm.preload='auto';pvBgm.playsInline=true;pvBgm.load();pvReady=true;
+      document.documentElement.dataset.pvAudio='ready';
+    }catch(e){document.documentElement.dataset.pvAudio='error';console.warn('PV HR4B audio prep',e)}
+  }
+  function tryPlay(){
+    if(!pvWanted||!pvReady||!pvBgm||!pvBgm.paused)return;
+    const p=pvBgm.play(); if(p&&p.catch)p.catch(()=>{});
+  }
+  prep();
+  document.addEventListener('pointerdown',tryPlay,{capture:true});
+  document.addEventListener('touchend',tryPlay,{capture:true});
+  document.addEventListener('click',tryPlay,{capture:true});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&pvBgm)pvBgm.pause()});
+
+  function fixFront(){
+    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT);
+    const found=[];let n;
+    while(n=walker.nextNode()) if(n.children.length===0 && n.textContent.trim()==='FRONT') found.push(n);
+    found.forEach(el=>{el.textContent='◆';el.classList.add('pv-front-glyph');el.title='Front party member';});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fixFront); else fixFront();
+  setTimeout(fixFront,400);
+})();
+</script>
+
+</body>
+</html>
