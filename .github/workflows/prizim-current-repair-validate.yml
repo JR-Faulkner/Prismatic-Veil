@@ -28,3 +28,4 @@ jobs:
           git rm .github/workflows/prizim-current-repair-validate.yml
           git commit -m "CLEANUP: remove completed PriZim repair validator"
           git push
+# trigger
