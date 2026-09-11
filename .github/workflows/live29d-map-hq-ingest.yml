@@ -1,0 +1,34 @@
+name: LIVE29D HQ map ingest
+
+on:
+  push:
+    paths:
+      - '.github/workflows/live29d-map-hq-ingest.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Download exact HQ map once
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/ui/overworld/v1
+          curl --fail --location --silent --show-error 'https://ucc5e2da7ff691fa497b63bd24b8.dl.dropboxusercontent.com/cd/0/get/DH4kev_XxdhYqpMkIju6-XzQiqhGV-gOtWoJ5eKgNht_qCGIcSzvzzcBda_ryqnreiGujVIxRaiWrhdS6JLs96vIY9nv3mU2J4W_w9PR4oblSgmbQFyFsqiVeolxKIdAm6dS46F9Esq3sKB2SkchML5DiuLyZEU3nLtQ7x-YV2cNNA/file?c_luid=9bd25e73' -o assets/ui/overworld/v1/map_hq.png
+          test "$(wc -c < assets/ui/overworld/v1/map_hq.png)" -eq 1959411
+          echo 'bd07453672e2f1fea50d63a4ca11c278dd925b0e8418a8dcfe4ed466def3caa7  assets/ui/overworld/v1/map_hq.png' | sha256sum -c -
+      - name: Commit HQ map
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'JR-Faulkner'
+          git config user.email '53619182+JR-Faulkner@users.noreply.github.com'
+          git add assets/ui/overworld/v1/map_hq.png
+          git commit -m 'LIVE29D: ingest lossless HQ overworld map'
+          git push origin HEAD:main
