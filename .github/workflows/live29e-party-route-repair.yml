@@ -1,0 +1,43 @@
+name: LIVE29E Party Route Repair
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch Overworld Party handoff
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('hybrid-overworld.html')
+          s=p.read_text()
+          old="if(t.matches('.tab')){play('tab');if(t.dataset.tab==='party'){e.preventDefault();e.stopImmediatePropagation();bgm.pause();setTimeout(()=>{location.href='./hybrid-party.html'},70)}return}"
+          new="if(t.matches('.tab')){play('tab');if(t.dataset.tab==='party'){e.preventDefault();e.stopImmediatePropagation();try{localStorage.setItem('pv.homecomingResume',JSON.stringify({t:Number.isFinite(bgm.currentTime)?bgm.currentTime:0,at:Date.now(),playing:musicEnabled&&!bgm.paused}))}catch(_){}bgm.pause();setTimeout(()=>{location.href='./hybrid-party-live.html'},70)}return}"
+          if old not in s:
+              raise SystemExit('Expected Party tab handoff not found')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+      - name: Verify K27 guard and Party wrapper
+        run: |
+          grep -q "Live28K27BattleGuardScene.js" hybrid-main.html
+          grep -q "Live28K2PartyBattleScene" src/prizim/Live28K27BattleGuardScene.js
+          grep -q "Homecoming_Path.m4a" hybrid-party-live.html
+          grep -q "hybrid-party-live.html" hybrid-overworld.html
+      - name: PriZim preflight
+        run: python tools/prizim/preflight_live28k.py
+      - name: Commit repair and remove one-shot workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/live29e-party-route-repair.yml
+          git add hybrid-overworld.html
+          git commit -m "PARTY: preserve Homecoming handoff and validate K27"
+          git push
