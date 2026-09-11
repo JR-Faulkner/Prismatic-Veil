@@ -1,0 +1,72 @@
+{
+  "schema": "pv.party.v1",
+  "status": "staged_pending_character_ingest",
+  "runtime": "hybrid-party.html",
+  "authority": {
+    "battle": "main-20260909-live28k27",
+    "party_runtime_commit": "96a57f96387f4098e73860cc63baa7f572dcb3c3",
+    "prizim_validation": "not_yet_run_for_party_assets"
+  },
+  "formation": {
+    "field1": "auryi",
+    "field2": "prismel",
+    "field3": "kineza",
+    "support1": "sarallel",
+    "support2": "vyan"
+  },
+  "leader": {
+    "default": "prismel",
+    "shared_storage_key": "pv.frontHero",
+    "party_compatibility_key": "pv.leader"
+  },
+  "characters": {
+    "prismel": {
+      "path": "assets/ui/party/v1/characters/prismel_party.webp",
+      "role": "field",
+      "ingest": "pending"
+    },
+    "kineza": {
+      "path": "assets/ui/party/v1/characters/kineza_party.webp",
+      "role": "field",
+      "ingest": "pending"
+    },
+    "auryi": {
+      "path": "assets/ui/party/v1/characters/auryi_party.webp",
+      "role": "field",
+      "ingest": "pending"
+    },
+    "sarallel": {
+      "path": "assets/ui/party/v1/characters/sarallel_party.webp",
+      "role": "support",
+      "ingest": "pending"
+    },
+    "vyan": {
+      "path": "assets/ui/party/v1/characters/vyan_party.webp",
+      "role": "support",
+      "ingest": "pending"
+    }
+  },
+  "art_rules": {
+    "style": "PV Semi-Chibi 30",
+    "background": "transparent",
+    "baseline": "normalized",
+    "scale": "normalized_across_roster",
+    "identity": "canon_reference_locked",
+    "edge_cleanup": "required",
+    "background_bleed": "forbidden"
+  },
+  "validation_gate": [
+    "asset_provenance",
+    "alpha_edge_quality",
+    "identity_match",
+    "scale_and_baseline",
+    "mobile_landscape_readability",
+    "runtime_slot_rendering",
+    "formation_swap",
+    "leader_state_roundtrip",
+    "overworld_return",
+    "prizim_preflight",
+    "deployment",
+    "iphone_witness"
+  ]
+}
