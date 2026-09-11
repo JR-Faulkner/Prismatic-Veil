@@ -1,0 +1,63 @@
+OVERWORLD PACKED AUDIO AUDIT
+
+const PV_HR3_BGM='https://cdn1.suno.ai/1cf25965-8eee-4f3f-bf4c-96f8fed25bf9.mp3';
+
+---
+
+const PV_HR3_BGM_FALLBACK='https://cdn2.suno.ai/1cf25965-8eee-4f3f-bf4c-96f8fed25bf9.mp3';
+
+---
+
+const pvBgm=new Audio(PV_HR3_BGM);pvBgm.loop=true;pvBgm.preload='auto';pvBgm.volume=0;
+
+---
+
+pvBgm.addEventListener('error',()=>{if(!pvBgm.dataset.fallback){pvBgm.dataset.fallback='1';pvBgm.src=PV_HR3_BGM_FALLBACK;pvBgm.load()}});
+
+---
+
+const pvSfxPool=Object.fromEntries(Object.keys(PV_HR3_SFX).map(k=>{const a=new Audio(PV_HR3_BGM);a.preload='auto';a.addEventListener('error',()=>{if(!a.dataset.fallback){a.dataset.fallback='1';a.src=PV_HR3_BGM_FALLBACK;a.load()}});return[k,a]}));
+
+---
+
+async function pvStartBgm(){if(!pvAudioEnabled)return;try{await pvBgm.play();pvAudioUnlocked=true;clearInterval(pvBgm._pvFade);let v=pvBgm.volume;pvBgm._pvFade=setInterval(()=>{v=Math.min(.32,v+.032);pvBgm.volume=v;if(v>=.32)clearInterval(pvBgm._pvFade)},55)}catch(e){}}
+
+---
+
+function pvFadeBgm(){clearInterval(pvBgm._pvFade);let v=pvBgm.volume;pvBgm._pvFade=setInterval(()=>{v=Math.max(0,v-.045);pvBgm.volume=v;if(v<=0){clearInterval(pvBgm._pvFade);pvBgm.pause()}},45)}
+
+---
+
+function pvUnlockAudio(){if(!pvAudioUnlocked&&pvAudioEnabled)pvStartBgm()}
+
+---
+
+  if(t.id==='audioToggle'){e.stopPropagation();pvAudioEnabled=!pvAudioEnabled;localStorage.setItem('pv.audioEnabled',pvAudioEnabled?'1':'0');pvSetAudioIcon();if(pvAudioEnabled){pvAudioUnlocked=false;pvStartBgm();pvSfx('confirm')}else pvFadeBgm();return}
+
+---
+
+  else if(t.id==='travelButton'){pvSfx(t.disabled?'locked':'confirm');if(!t.disabled)pvFadeBgm()}
+
+---
+
+pvSetAudioIcon();pvStartBgm();
+
+---
+
+  let pvBgm=null,pvBlobUrl='',pvReady=false,pvWanted=true;
+
+---
+
+      pvBgm=new Audio();pvBgm.src=pvBlobUrl;pvBgm.loop=true;pvBgm.volume=.32;pvBgm.preload='auto';pvBgm.playsInline=true;pvBgm.load();pvReady=true;
+
+---
+
+    if(!pvWanted||!pvReady||!pvBgm||!pvBgm.paused)return;
+
+---
+
+    const p=pvBgm.play(); if(p&&p.catch)p.catch(()=>{});
+
+---
+
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&pvBgm)pvBgm.pause()});
