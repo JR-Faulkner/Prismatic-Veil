@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<title>The Prismatic Veil — Party Staging</title>
+<style>
+  :root{
+    --navy-0:#050914;
+    --navy-1:#091226;
+    --navy-2:#101d37;
+    --navy-3:#172a49;
+    --gold:#d7b66b;
+    --gold-soft:#8d7442;
+    --ink:#eaf2ff;
+    --muted:#9daeca;
+    --line:rgba(215,182,107,.42);
+    --glass:rgba(9,18,38,.82);
+    --leader:#8db7ff;
+    --select:#78d8ff;
+    --safe-top:max(10px,env(safe-area-inset-top));
+    --safe-right:max(10px,env(safe-area-inset-right));
+    --safe-bottom:max(10px,env(safe-area-inset-bottom));
+    --safe-left:max(10px,env(safe-area-inset-left));
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#030610;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  button{font:inherit;color:inherit}
+  button:focus-visible{outline:2px solid #8adfff;outline-offset:2px}
+
+  #app{
+    width:100%;height:100%;min-height:100svh;
+    padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+    background:
+      radial-gradient(circle at 47% 38%,rgba(64,118,176,.14),transparent 29%),
+      radial-gradient(circle at 77% 78%,rgba(114,62,155,.08),transparent 25%),
+      linear-gradient(145deg,var(--navy-1),var(--navy-0) 62%);
+    display:grid;
+    grid-template-rows:46px minmax(0,1fr);
+    gap:8px;
+  }
+
+  .topbar{
+    min-width:0;display:flex;align-items:center;gap:12px;
+    padding:0 12px;border:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(23,42,73,.86),rgba(8,16,34,.88));
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+    box-shadow:0 8px 28px rgba(0,0,0,.26);
+  }
+  .crest{width:25px;height:25px;position:relative;flex:0 0 auto;transform:rotate(45deg);border:1px solid var(--gold);background:linear-gradient(135deg,rgba(109,199,255,.52),rgba(119,89,197,.43) 48%,rgba(236,180,79,.48));box-shadow:0 0 16px rgba(98,172,255,.18)}
+  .crest:after{content:"";position:absolute;inset:5px;border:1px solid rgba(255,255,255,.55)}
+  .titleblock{min-width:0}
+  .eyebrow{font-size:9px;letter-spacing:.22em;color:var(--gold);text-transform:uppercase;white-space:nowrap}
+  .screen-title{font-size:19px;font-weight:850;letter-spacing:.08em;line-height:1}
+  .top-spacer{flex:1}
+  .formation-readout{font-size:10px;letter-spacing:.08em;color:var(--muted);white-space:nowrap}
+  .mode-chip{border:1px solid var(--line);padding:6px 9px;font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--gold);background:rgba(4,9,20,.62);clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+
+  .layout{min-height:0;display:grid;grid-template-columns:minmax(0,1fr) clamp(250px,28vw,340px);gap:8px}
+  .stage-shell{min-width:0;min-height:0;position:relative;overflow:hidden;border:1px solid var(--line);background:linear-gradient(180deg,rgba(14,26,48,.72),rgba(5,11,24,.86));clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px))}
+  .stage-shell:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 0 36%,rgba(255,255,255,.035) 45%,transparent 54% 100%)}
+  .stage-head{position:absolute;z-index:20;left:11px;top:9px;right:11px;display:flex;gap:7px;align-items:center;pointer-events:none}
+  .stage-head .label{font-size:10px;font-weight:850;letter-spacing:.14em;color:var(--gold)}
+  .stage-head .rule{height:1px;background:linear-gradient(90deg,var(--line),transparent);flex:1}
+  .stage-head .hint{font-size:9px;letter-spacing:.04em;color:var(--muted)}
+
+  .party-stage{position:absolute;inset:34px 9px 78px;perspective:950px;overflow:hidden}
+  .back-wall{position:absolute;left:4%;right:4%;top:2%;height:37%;border:1px solid rgba(92,139,188,.22);background:radial-gradient(circle at 50% 88%,rgba(78,132,180,.19),transparent 39%),linear-gradient(180deg,rgba(10,23,44,.4),rgba(7,15,30,.12));clip-path:polygon(3% 0,97% 0,100% 13%,100% 100%,0 100%,0 13%)}
+  .veil-lines{position:absolute;inset:0;opacity:.25;background:repeating-linear-gradient(115deg,transparent 0 73px,rgba(121,185,255,.08) 74px,transparent 76px)}
+  .floor{position:absolute;left:-5%;right:-5%;bottom:-8%;height:71%;transform:rotateX(62deg);transform-origin:bottom;background:
+      radial-gradient(circle at 25% 55%,rgba(120,186,230,.24) 0 1px,transparent 2px),
+      radial-gradient(circle at 66% 38%,rgba(206,147,255,.18) 0 1px,transparent 2px),
+      radial-gradient(circle at 78% 66%,rgba(235,199,105,.14) 0 1px,transparent 2px),
+      linear-gradient(145deg,#53687d,#27394c 38%,#41566a 65%,#26384a);
+    background-size:47px 43px,63px 59px,79px 73px,auto;
+    border-top:1px solid rgba(163,211,255,.55);box-shadow:inset 0 24px 60px rgba(255,255,255,.05),0 -8px 35px rgba(73,133,183,.11)}
+  .floor-reflect{position:absolute;left:9%;right:9%;bottom:3%;height:24%;filter:blur(13px);opacity:.16;background:radial-gradient(ellipse at center,rgba(157,222,255,.65),transparent 62%)}
+
+  .slot{position:absolute;z-index:5;width:28%;height:56%;min-width:110px;max-width:235px;transform:translateX(-50%);border:0;background:none;padding:0;cursor:pointer;touch-action:manipulation}
+  .slot[data-slot="field1"]{left:25%;bottom:3%}
+  .slot[data-slot="field2"]{left:50%;bottom:0%;z-index:8}
+  .slot[data-slot="field3"]{left:75%;bottom:3%}
+  .slot[data-slot="support1"]{left:17%;top:3%;height:42%;width:22%;z-index:3}
+  .slot[data-slot="support2"]{left:83%;top:3%;height:42%;width:22%;z-index:3}
+
+  .pad{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:84%;height:21%;border-radius:50%;border:1px solid rgba(149,210,255,.46);background:radial-gradient(ellipse,rgba(91,166,211,.25),rgba(34,70,103,.13) 52%,transparent 72%);box-shadow:0 0 21px rgba(64,149,213,.08),inset 0 0 12px rgba(142,216,255,.08);transition:.2s ease}
+  .slot.support .pad{width:72%;border-color:rgba(215,182,107,.4);background:radial-gradient(ellipse,rgba(151,135,102,.16),rgba(34,70,103,.08) 55%,transparent 73%)}
+  .slot.selected .pad{border-color:#8ce9ff;box-shadow:0 0 22px rgba(87,210,255,.42),inset 0 0 15px rgba(113,223,255,.24);background:radial-gradient(ellipse,rgba(72,194,235,.33),rgba(28,72,107,.18) 56%,transparent 74%)}
+  .slot.leader .pad:after{content:"";position:absolute;left:50%;top:50%;width:57%;aspect-ratio:1;transform:translate(-50%,-50%) rotate(45deg);border:1px solid rgba(215,182,107,.72);box-shadow:0 0 10px rgba(215,182,107,.18)}
+  .slot.swap-source .pad{animation:pulse 1s infinite alternate;border-color:#ffd98b}
+  .slot.swap-target .pad{border-style:dashed;border-color:#8ee6bd}
+  @keyframes pulse{to{box-shadow:0 0 27px rgba(255,211,120,.5),inset 0 0 18px rgba(255,211,120,.16)}}
+
+  .char-art{position:absolute;z-index:2;left:50%;bottom:9%;height:88%;max-width:92%;transform:translateX(-50%);object-fit:contain;object-position:center bottom;filter:drop-shadow(0 9px 8px rgba(0,0,0,.42));transition:transform .18s ease,filter .18s ease}
+  .slot.support .char-art{height:82%;opacity:.94}
+  .slot.selected .char-art{transform:translateX(-50%) translateY(-2px) scale(1.025);filter:drop-shadow(0 10px 9px rgba(0,0,0,.45)) drop-shadow(0 0 8px rgba(102,206,255,.24))}
+  .char-fallback{position:absolute;z-index:2;left:50%;bottom:17%;transform:translateX(-50%);width:clamp(58px,8vw,92px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(215,182,107,.65);background:radial-gradient(circle at 35% 28%,rgba(114,177,222,.25),rgba(12,25,45,.94) 66%);font-size:clamp(20px,3vw,32px);font-weight:900;color:var(--gold);box-shadow:0 8px 22px rgba(0,0,0,.32)}
+  .slot.support .char-fallback{width:clamp(48px,6.4vw,76px)}
+  .slot-label{position:absolute;z-index:6;left:50%;bottom:0;transform:translateX(-50%);min-width:76%;max-width:98%;padding:4px 7px 5px;text-align:center;background:rgba(5,11,24,.84);border:1px solid rgba(215,182,107,.38);clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+  .slot-label .slot-kind{display:block;font-size:7px;letter-spacing:.16em;color:var(--muted);font-weight:800;white-space:nowrap}
+  .slot-label .name{display:block;font-size:10px;letter-spacing:.06em;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .leader-badge{display:none;position:absolute;z-index:9;left:50%;bottom:22%;transform:translateX(-50%);padding:3px 7px;border:1px solid rgba(215,182,107,.8);background:rgba(7,15,30,.9);color:#f2d58f;font-size:7px;font-weight:900;letter-spacing:.13em;clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px)}
+  .slot.leader .leader-badge{display:block}
+
+  .stage-controls{position:absolute;z-index:30;left:9px;right:9px;bottom:9px;height:61px;display:grid;grid-template-columns:auto auto minmax(130px,1fr) auto;gap:7px;align-items:stretch}
+  .control-btn{min-width:84px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(23,42,73,.92),rgba(7,15,30,.94));font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;padding:0 11px;cursor:pointer;clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+  .control-btn.active{border-color:#8de5ff;color:#c7f6ff;background:linear-gradient(180deg,rgba(28,83,112,.94),rgba(7,25,40,.96))}
+  .control-btn.leader-action{border-color:rgba(215,182,107,.68);color:#f2d58f}
+  .status-strip{min-width:0;border:1px solid rgba(93,133,173,.34);background:rgba(4,9,20,.55);padding:7px 9px;display:flex;align-items:center;gap:8px;overflow:hidden}
+  .status-dot{width:6px;height:6px;transform:rotate(45deg);background:#73c9ff;box-shadow:0 0 7px rgba(115,201,255,.6);flex:0 0 auto}
+  #statusText{font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .reserve-btn{min-width:80px}
+
+  .panel{min-width:0;min-height:0;border:1px solid var(--line);background:linear-gradient(180deg,rgba(12,25,47,.95),rgba(5,11,24,.96));clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto;overflow:hidden}
+  .identity{padding:12px 13px 9px;border-bottom:1px solid rgba(215,182,107,.24);position:relative;overflow:hidden}
+  .identity:after{content:"";position:absolute;width:80px;height:80px;right:-28px;top:-32px;border:1px solid rgba(108,185,255,.14);transform:rotate(45deg)}
+  #charName{margin:0;font-size:22px;line-height:1;font-weight:900;letter-spacing:.06em}
+  #charTitle{margin-top:4px;font-size:10px;color:var(--gold);letter-spacing:.09em;min-height:12px}
+  .mini-line{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:8px 12px;border-bottom:1px solid rgba(215,182,107,.19)}
+  .mini-stat{padding:6px 7px;background:rgba(5,11,24,.5);border:1px solid rgba(103,140,176,.26)}
+  .mini-stat b{display:block;font-size:7px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+  .mini-stat span{display:block;margin-top:3px;font-size:11px;font-weight:800}
+  .affinity{padding:8px 12px;border-bottom:1px solid rgba(215,182,107,.19)}
+  .section-kicker{font-size:7px;font-weight:900;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+  #affinityText{font-size:11px;font-weight:800;margin-top:4px;color:#dce9ff}
+
+  .panel-scroll{min-height:0;overflow:auto;padding:9px 12px;-webkit-overflow-scrolling:touch}
+  .stats-title{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+  .stats-title .rule{height:1px;background:rgba(215,182,107,.25);flex:1}
+  .core-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .core{display:flex;justify-content:space-between;gap:7px;padding:5px 7px;background:rgba(4,9,20,.45);border-left:2px solid rgba(104,174,220,.35);font-size:9px}
+  .core b{font-weight:700;color:#b9c9df}.core span{font-weight:900}
+  .context-card{margin-top:8px;padding:8px;border:1px solid rgba(215,182,107,.3);background:linear-gradient(135deg,rgba(29,43,65,.58),rgba(8,16,31,.42));min-height:55px}
+  .context-title{font-size:8px;font-weight:900;letter-spacing:.13em;color:var(--gold);text-transform:uppercase}
+  .context-body{margin-top:4px;font-size:9px;line-height:1.35;color:#bccbe0}
+
+  .commands{padding:8px 10px 10px;display:grid;grid-template-columns:1fr 1fr;gap:5px;border-top:1px solid rgba(215,182,107,.2)}
+  .command{border:1px solid rgba(215,182,107,.34);background:rgba(12,24,43,.9);padding:8px 5px;font-size:9px;font-weight:850;letter-spacing:.06em;cursor:pointer;clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px)}
+
+  .drawer{position:absolute;z-index:80;left:18px;right:18px;bottom:80px;min-height:96px;border:1px solid rgba(215,182,107,.55);background:rgba(5,11,24,.97);box-shadow:0 18px 50px rgba(0,0,0,.5);padding:10px 12px;display:none;clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+  .drawer.open{display:block}
+  .drawer-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .drawer-title{font-size:11px;font-weight:900;letter-spacing:.11em;color:var(--gold)}
+  .drawer-close{border:1px solid rgba(215,182,107,.35);background:rgba(20,33,55,.72);padding:5px 8px;font-size:9px;cursor:pointer}
+  .reserve-empty{font-size:10px;color:var(--muted);padding:8px;border:1px dashed rgba(112,157,198,.28)}
+
+  .modal{position:fixed;z-index:120;inset:0;display:none;place-items:center;padding:20px;background:rgba(1,4,10,.7);backdrop-filter:blur(4px)}
+  .modal.open{display:grid}
+  .modal-card{width:min(460px,92vw);max-height:82vh;overflow:auto;border:1px solid rgba(215,182,107,.56);background:linear-gradient(180deg,#111f38,#070f20);padding:13px;box-shadow:0 22px 70px rgba(0,0,0,.58);clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.modal-title{font-size:14px;font-weight:900;letter-spacing:.08em}.modal-close{border:1px solid rgba(215,182,107,.35);background:#0d1a30;padding:6px 9px;cursor:pointer}
+  .modal-body{font-size:10px;color:#b9c8dc;line-height:1.45;margin-top:10px}
+  .leader-confirm{display:flex;gap:7px;margin-top:10px}.leader-confirm button{flex:1;border:1px solid rgba(215,182,107,.45);background:#14243e;padding:8px;cursor:pointer;font-weight:800}.leader-confirm .confirm{border-color:#88ddbd;color:#baf4dc}
+
+  @media (max-width:780px){
+    #app{grid-template-rows:40px minmax(0,1fr);gap:5px}
+    .topbar{padding:0 8px}.crest{width:21px;height:21px}.screen-title{font-size:15px}.eyebrow{display:none}.formation-readout{display:none}.mode-chip{padding:5px 7px;font-size:8px}
+    .layout{grid-template-columns:minmax(0,1fr) 230px;gap:5px}
+    .party-stage{inset:28px 5px 64px}.stage-head{left:7px;right:7px;top:6px}.stage-head .hint{display:none}
+    .stage-controls{left:5px;right:5px;bottom:5px;height:52px;gap:4px;grid-template-columns:auto auto minmax(80px,1fr) auto}
+    .control-btn{min-width:67px;padding:0 7px;font-size:8px}.status-strip{padding:5px 6px}#statusText{font-size:8px}
+    .panel{grid-template-rows:auto auto auto minmax(0,1fr) auto}.identity{padding:8px 9px 6px}#charName{font-size:17px}#charTitle{font-size:8px}.mini-line{padding:5px 8px;gap:3px}.mini-stat{padding:4px}.mini-stat b{font-size:6px}.mini-stat span{font-size:9px}.affinity{padding:5px 8px}.panel-scroll{padding:6px 8px}.core{padding:4px 5px;font-size:8px}.context-card{margin-top:5px;padding:6px;min-height:46px}.commands{padding:5px 7px 7px;gap:3px}.command{padding:6px 3px;font-size:8px}
+    .slot-label .slot-kind{font-size:6px}.slot-label .name{font-size:8px}.slot-label{padding:3px 4px 4px}.leader-badge{font-size:6px;padding:2px 5px}
+    .drawer{left:10px;right:10px;bottom:66px}
+  }
+  @media (max-height:430px){
+    .layout{grid-template-columns:minmax(0,1fr) 220px}.screen-title{font-size:14px}
+    .party-stage{inset:27px 4px 58px}.stage-controls{height:47px}.slot{height:58%}.slot[data-slot="support1"],.slot[data-slot="support2"]{height:43%}.char-art{height:90%}
+    .identity{padding-top:6px}.mini-line{padding-block:4px}.panel-scroll{padding-top:5px}.context-card{min-height:42px}.commands{padding-top:4px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="crest" aria-hidden="true"></div>
+    <div class="titleblock">
+      <div class="eyebrow">Bearers of the Spectrum</div>
+      <div class="screen-title">PARTY</div>
+    </div>
+    <div class="top-spacer"></div>
+    <div class="formation-readout">FIELD 3 · SUPPORT 2 · RESERVE READY</div>
+    <div class="mode-chip" id="modeChip">VIEW</div>
+  </header>
+
+  <main class="layout">
+    <section class="stage-shell" aria-label="Party formation stage">
+      <div class="stage-head">
+        <span class="label">TACTICAL FORMATION</span><span class="rule"></span><span class="hint">Select a Bearer</span>
+      </div>
+      <div class="party-stage" id="partyStage">
+        <div class="back-wall"><div class="veil-lines"></div></div>
+        <div class="floor"></div><div class="floor-reflect"></div>
+      </div>
+      <div class="stage-controls">
+        <button class="control-btn" id="formationBtn">Formation</button>
+        <button class="control-btn leader-action" id="leaderBtn">Leader</button>
+        <div class="status-strip"><span class="status-dot"></span><span id="statusText">Prismel selected.</span></div>
+        <button class="control-btn reserve-btn" id="reserveBtn">Reserve</button>
+      </div>
+      <div class="drawer" id="reserveDrawer">
+        <div class="drawer-head"><div class="drawer-title">RESERVE</div><button class="drawer-close" id="reserveClose">Close</button></div>
+        <div class="reserve-empty">No Reserve members are assigned yet. This lane is ready for roster expansion without crowding the tactical stage.</div>
+      </div>
+    </section>
+
+    <aside class="panel" aria-live="polite">
+      <div class="identity">
+        <h1 id="charName">PRISMEL</h1>
+        <div id="charTitle">Prism Weaver</div>
+      </div>
+      <div class="mini-line">
+        <div class="mini-stat"><b>Level</b><span id="levelValue">—</span></div>
+        <div class="mini-stat"><b>HP</b><span id="hpValue">—</span></div>
+        <div class="mini-stat"><b>Resource</b><span id="resourceValue">—</span></div>
+      </div>
+      <div class="affinity">
+        <div class="section-kicker">Prismatic Affinity</div>
+        <div id="affinityText">Blue • Violet</div>
+      </div>
+      <div class="panel-scroll">
+        <div class="stats-title"><span class="section-kicker">Core Stats</span><span class="rule"></span></div>
+        <div class="core-grid" id="coreGrid"></div>
+        <div class="context-card">
+          <div class="context-title" id="contextTitle">Leader Effect</div>
+          <div class="context-body" id="contextBody">Presentation theme active. Mechanical Leader bonus not assigned yet.</div>
+        </div>
+      </div>
+      <div class="commands">
+        <button class="command" data-command="Abilities">Abilities</button>
+        <button class="command" data-command="Growth">Growth</button>
+        <button class="command" data-command="Equipment">Equipment</button>
+        <button class="command" data-command="Details">Details</button>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-card">
+    <div class="modal-head"><div class="modal-title" id="modalTitle"></div><button class="modal-close" id="modalClose">Close</button></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+(()=>{
+  'use strict';
+
+  const STORAGE={formation:'pv.partyFormation',leader:'pv.leader',selected:'pv.partySelected'};
+  const SLOT_ORDER=['field1','field2','field3','support1','support2'];
+  const DEFAULT_FORMATION={field1:'auryi',field2:'prismel',field3:'kineza',support1:'sarallel',support2:'vyan'};
+  const CORE_STATS=['Might','Mind','Spirit','Agility','Resilience','Harmony'];
+
+  // Stage assets are intentionally configurable. Approved Semi-Chibi masters can be dropped
+  // into these paths without changing Party behavior. Existing Overworld portraits are only
+  // temporary visual fallbacks for the starting trio, not final Party character art.
+  const CHARACTERS={
+    prismel:{
+      name:'Prismel',title:'Prism Weaver',affinity:'Blue • Violet',
+      asset:'./assets/ui/party/v1/characters/prismel_party.webp',
+      fallback:'./assets/ui/overworld/v1/portraits/Prismel_hr2.jpg',initials:'P'
+    },
+    kineza:{
+      name:'Kineza',title:'Momentum Born',affinity:'Red • Green',
+      asset:'./assets/ui/party/v1/characters/kineza_party.webp',
+      fallback:'./assets/ui/overworld/v1/portraits/Kineza_hr2.jpg',initials:'K'
+    },
+    auryi:{
+      name:'Auryi',title:'Aura Spoken',affinity:'Lavender • Gold',
+      asset:'./assets/ui/party/v1/characters/auryi_party.webp',
+      fallback:'./assets/ui/overworld/v1/portraits/Auryi_hr2.jpg',initials:'A'
+    },
+    sarallel:{
+      name:'Sarallel',title:'',affinity:'Blue • Gold',
+      asset:'./assets/ui/party/v1/characters/sarallel_party.webp',fallback:'',initials:'S'
+    },
+    vyan:{
+      name:'Vyan',title:'',affinity:'Red • Gold',
+      asset:'./assets/ui/party/v1/characters/vyan_party.webp',fallback:'',initials:'V'
+    }
+  };
+
+  let formation=loadFormation();
+  let selected=validCharacter(localStorage.getItem(STORAGE.selected))?localStorage.getItem(STORAGE.selected):'prismel';
+  let leader=validCharacter((localStorage.getItem(STORAGE.leader)||'').toLowerCase())?(localStorage.getItem(STORAGE.leader)||'').toLowerCase():'prismel';
+  let formationMode=false;
+  let swapSource=null;
+
+  const stage=document.getElementById('partyStage');
+  const statusText=document.getElementById('statusText');
+  const modeChip=document.getElementById('modeChip');
+  const formationBtn=document.getElementById('formationBtn');
+  const leaderBtn=document.getElementById('leaderBtn');
+  const reserveDrawer=document.getElementById('reserveDrawer');
+  const modal=document.getElementById('modal');
+  const modalTitle=document.getElementById('modalTitle');
+  const modalBody=document.getElementById('modalBody');
+
+  function validCharacter(id){return !!id&&Object.prototype.hasOwnProperty.call(CHARACTERS,id)}
+  function cleanFormation(obj){
+    const out={...DEFAULT_FORMATION};
+    if(!obj||typeof obj!=='object')return out;
+    const seen=new Set();
+    for(const slot of SLOT_ORDER){
+      const id=obj[slot];
+      if(validCharacter(id)&&!seen.has(id)){out[slot]=id;seen.add(id)}
+    }
+    // Guarantee all five canonical starters remain represented exactly once.
+    const missing=Object.keys(CHARACTERS).filter(id=>!Object.values(out).includes(id));
+    const duplicateSlots=[];const used=new Set();
+    for(const slot of SLOT_ORDER){const id=out[slot];if(used.has(id))duplicateSlots.push(slot);else used.add(id)}
+    duplicateSlots.forEach((slot,i)=>{if(missing[i])out[slot]=missing[i]});
+    return out;
+  }
+  function loadFormation(){try{return cleanFormation(JSON.parse(localStorage.getItem(STORAGE.formation)||'null'))}catch(_){return {...DEFAULT_FORMATION}}}
+  function saveState(){localStorage.setItem(STORAGE.formation,JSON.stringify(formation));localStorage.setItem(STORAGE.leader,CHARACTERS[leader].name);localStorage.setItem(STORAGE.selected,selected)}
+  function slotOf(id){return SLOT_ORDER.find(slot=>formation[slot]===id)||null}
+  function slotLabel(slot){return slot.startsWith('field')?'FIELD '+slot.slice(-1):'SUPPORT '+slot.slice(-1)}
+  function isSupport(id){const slot=slotOf(id);return !!slot&&slot.startsWith('support')}
+
+  function makeArt(id){
+    const c=CHARACTERS[id];
+    const wrap=document.createDocumentFragment();
+    const img=document.createElement('img');
+    img.className='char-art';img.alt=c.name;img.draggable=false;
+    let fallbackTried=false;
+    img.addEventListener('error',()=>{
+      if(!fallbackTried&&c.fallback){fallbackTried=true;img.src=c.fallback;img.style.borderRadius='50%';img.style.height='54%';img.style.bottom='22%';img.style.aspectRatio='1';img.style.objectFit='cover';img.style.border='1px solid rgba(215,182,107,.55)';return}
+      img.remove();
+      const mono=document.createElement('div');mono.className='char-fallback';mono.textContent=c.initials;wrapHost.appendChild(mono);
+    });
+    const wrapHost=document.createElement('span');wrapHost.style.display='contents';wrapHost.appendChild(img);img.src=c.asset;return wrapHost;
+  }
+
+  function renderStage(){
+    stage.querySelectorAll('.slot').forEach(n=>n.remove());
+    for(const slotName of SLOT_ORDER){
+      const id=formation[slotName],c=CHARACTERS[id];
+      const btn=document.createElement('button');
+      btn.type='button';btn.className='slot '+(slotName.startsWith('support')?'support':'field');btn.dataset.slot=slotName;btn.dataset.character=id;
+      if(id===selected)btn.classList.add('selected');
+      if(id===leader)btn.classList.add('leader');
+      if(formationMode&&swapSource===slotName)btn.classList.add('swap-source');
+      if(formationMode&&swapSource&&swapSource!==slotName)btn.classList.add('swap-target');
+      btn.setAttribute('aria-label',slotLabel(slotName)+': '+c.name+(id===leader?', Leader':''));
+      btn.appendChild(makeArt(id));
+      const pad=document.createElement('span');pad.className='pad';btn.appendChild(pad);
+      const badge=document.createElement('span');badge.className='leader-badge';badge.textContent='LEADER';btn.appendChild(badge);
+      const label=document.createElement('span');label.className='slot-label';label.innerHTML='<span class="slot-kind">'+slotLabel(slotName)+'</span><span class="name">'+c.name+'</span>';btn.appendChild(label);
+      btn.addEventListener('click',()=>onSlotTap(slotName));
+      stage.appendChild(btn);
+    }
+    renderPanel();
+  }
+
+  function onSlotTap(slotName){
+    const id=formation[slotName];
+    if(!formationMode){selected=id;saveState();setStatus(CHARACTERS[id].name+' selected.');renderStage();return}
+    if(!swapSource){swapSource=slotName;selected=id;setStatus(slotLabel(slotName)+' selected. Choose destination slot.');renderStage();return}
+    if(swapSource===slotName){swapSource=null;setStatus('Swap cancelled. Choose a character.');renderStage();return}
+    const a=formation[swapSource],b=formation[slotName];
+    formation[swapSource]=b;formation[slotName]=a;selected=a;
+    const from=swapSource;swapSource=null;saveState();
+    setStatus(CHARACTERS[a].name+' moved from '+slotLabel(from)+' to '+slotLabel(slotName)+'.');renderStage();
+  }
+
+  function renderPanel(){
+    const c=CHARACTERS[selected];
+    document.getElementById('charName').textContent=c.name.toUpperCase();
+    document.getElementById('charTitle').textContent=c.title||' ';
+    document.getElementById('affinityText').textContent=c.affinity;
+    document.getElementById('levelValue').textContent='—';
+    document.getElementById('hpValue').textContent='—';
+    document.getElementById('resourceValue').textContent='—';
+    const grid=document.getElementById('coreGrid');grid.innerHTML='';
+    CORE_STATS.forEach(stat=>{const el=document.createElement('div');el.className='core';el.innerHTML='<b>'+stat+'</b><span>—</span>';grid.appendChild(el)});
+    const ct=document.getElementById('contextTitle'),cb=document.getElementById('contextBody');
+    if(selected===leader){ct.textContent='Leader Effect';cb.textContent='Presentation theme active. Mechanical Leader bonus not assigned yet.'}
+    else if(isSupport(selected)){ct.textContent='Support Role';cb.innerHTML='Passive: — &nbsp;·&nbsp; Assist Readiness: — &nbsp;·&nbsp; Swap Available: Yes'}
+    else{ct.textContent='Field Status';cb.textContent='Active Field Party member. Select Formation to change tactical slot.'}
+  }
+
+  function setStatus(msg){statusText.textContent=msg}
+  function setFormationMode(on){formationMode=on;swapSource=null;formationBtn.classList.toggle('active',on);modeChip.textContent=on?'FORMATION':'VIEW';setStatus(on?'Formation mode: choose a character, then choose its destination.':CHARACTERS[selected].name+' selected.');renderStage()}
+  formationBtn.addEventListener('click',()=>setFormationMode(!formationMode));
+
+  leaderBtn.addEventListener('click',()=>{
+    const c=CHARACTERS[selected];
+    if(selected===leader){setStatus(c.name+' is already Leader.');return}
+    openModal('ASSIGN LEADER','<div><b>'+c.name+'</b> will become presentation/theme Leader. Combat order remains independent.</div><div class="leader-confirm"><button id="leaderCancel">Cancel</button><button class="confirm" id="leaderConfirm">Confirm Leader</button></div>');
+    document.getElementById('leaderCancel').onclick=closeModal;
+    document.getElementById('leaderConfirm').onclick=()=>{leader=selected;saveState();closeModal();setStatus(CHARACTERS[leader].name+' assigned as Leader.');renderStage()};
+  });
+
+  document.getElementById('reserveBtn').addEventListener('click',()=>reserveDrawer.classList.toggle('open'));
+  document.getElementById('reserveClose').addEventListener('click',()=>reserveDrawer.classList.remove('open'));
+
+  document.querySelectorAll('.command').forEach(btn=>btn.addEventListener('click',()=>openCommand(btn.dataset.command)));
+  function openCommand(command){
+    const c=CHARACTERS[selected];
+    const bodies={
+      Abilities:'Ability runtime entry point is staged for <b>'+c.name+'</b>.<br><br>Production panel will expose Name, Resource Cost, Action Time, Power/Type, stat influences, and projected turn position. No unapproved ability data has been fabricated here.',
+      Growth:'Growth runtime entry point is staged for <b>'+c.name+'</b>.<br><br>Production panel will expose Level, XP progress, Natural Growth, unspent bonus points, and the six selectable core stats with meaningful +1 previews. Exact numeric values remain unset.',
+      Equipment:'Equipment / Resonart loadout entry point is staged for <b>'+c.name+'</b>. No equipment values are assigned in this staging shell.',
+      Details:'Detailed character entry point is staged for <b>'+c.name+'</b>.<br><br>Affinity: '+c.affinity+'<br>Formation: '+slotLabel(slotOf(selected))+'<br>Leader: '+(selected===leader?'Yes':'No')
+    };
+    openModal(command.toUpperCase(),bodies[command]);
+  }
+
+  function openModal(title,body){modalTitle.textContent=title;modalBody.innerHTML=body;modal.classList.add('open')}
+  function closeModal(){modal.classList.remove('open')}
+  document.getElementById('modalClose').addEventListener('click',closeModal);
+  modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(modal.classList.contains('open'))closeModal();else if(formationMode)setFormationMode(false)}});
+
+  saveState();renderStage();
+})();
+</script>
+</body>
+</html>
