@@ -1,0 +1,35 @@
+name: LIVE29C inspect overworld payload
+
+on:
+  push:
+    branches:
+      - live29c-overworld-audio-leader
+    paths:
+      - .github/workflows/live29c-inspect-overworld.yml
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect HR4B decompressed markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          gzip -dc assets/ui/overworld/v1/hybrid-overworld.hr4b.html.gz > /tmp/hr4b.html
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('/tmp/hr4b.html').read_text()
+          for needle in ['FRONT','PV_SFX','playSfx','audio','leader','portrait','front']:
+              print('\n===== '+needle+' =====')
+              start=0
+              found=False
+              while True:
+                  i=s.lower().find(needle.lower(),start)
+                  if i<0: break
+                  found=True
+                  print(s[max(0,i-500):min(len(s),i+1000)])
+                  print('\n---')
+                  start=i+len(needle)
+              if not found: print('(not found)')
+          PY
