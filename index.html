@@ -19,23 +19,49 @@
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:#070817;color:#f7e8c3;font-family:Georgia,serif}
 body{background:url("./title_screen.jpg") center/cover no-repeat;touch-action:manipulation;-webkit-user-select:none;user-select:none}
-.splash-video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;z-index:0;pointer-events:none;opacity:1;transition:opacity 1.15s ease;background:transparent}
+.splash-video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;z-index:0;pointer-events:none;opacity:1;transition:opacity 1.15s ease;background:#070817}
 body.show-static .splash-video{opacity:0}
-.wrap{position:fixed;inset:0;z-index:2;padding:max(16px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));pointer-events:none}
-.gate{position:absolute;left:50%;bottom:max(34px,calc(env(safe-area-inset-bottom) + 22px));transform:translateX(-50%);padding:7px 15px;border-radius:999px;color:#fff1c8;background:#0608187a;border:1px solid #e0c87a66;font:bold clamp(12px,2vw,17px) Georgia;letter-spacing:.16em;text-shadow:0 2px 12px #000;box-shadow:0 8px 24px #0007;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:pulse 1.55s ease-in-out infinite;pointer-events:auto;white-space:nowrap}
-.menu{position:absolute;left:50%;bottom:max(26px,calc(env(safe-area-inset-bottom) + 16px));transform:translateX(-50%);display:flex;gap:9px;align-items:center;justify-content:center;pointer-events:auto}
-.go{display:inline-block;padding:10px 16px;border:1px solid #d5b768;border-radius:999px;background:#070817d8;color:#f7e8c3;text-decoration:none;font:bold 11px Georgia;letter-spacing:.10em;box-shadow:0 8px 22px #0008;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
-.go.primary{background:linear-gradient(#fff0c8ee,#d7b86eee);color:#261a10}
+.wrap{position:fixed;inset:0;z-index:2;padding:max(16px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) 0 max(18px,env(safe-area-inset-left));pointer-events:none}
+.gate{position:absolute;left:50%;bottom:max(34px,calc(env(safe-area-inset-bottom) + 22px));transform:translateX(-50%);padding:7px 15px;border-radius:999px;color:#fff1c8;background:#060818c7;border:1px solid #e0c87a88;font:bold clamp(12px,2vw,17px) Georgia;letter-spacing:.16em;text-shadow:0 2px 12px #000;box-shadow:0 8px 24px #0009;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:pulse 1.55s ease-in-out infinite;pointer-events:auto;white-space:nowrap}
+.menu{
+  position:absolute;left:50%;bottom:0;transform:translateX(-50%);
+  width:min(72vw,720px);min-height:clamp(62px,12vh,82px);
+  display:flex;gap:10px;align-items:center;justify-content:center;
+  padding:9px 18px max(10px,env(safe-area-inset-bottom));
+  pointer-events:auto;
+  border:1px solid #d5b768a8;border-bottom:0;border-radius:18px 18px 0 0;
+  background:
+    linear-gradient(90deg,#6e42ff22,transparent 22%,transparent 78%,#49d8ff1c),
+    linear-gradient(180deg,#090b20fa,#03040ffc);
+  box-shadow:0 -10px 30px #000c,0 0 30px #8d4dff22 inset;
+  backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)
+}
+.menu:before{
+  content:"";position:absolute;left:10%;right:10%;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,#f1d48d,#9ceaff,#f1d48d,transparent);
+  opacity:.9;pointer-events:none
+}
+.go{position:relative;z-index:1;display:inline-block;padding:10px 16px;border:1px solid #d5b768;border-radius:999px;background:#070817f2;color:#f7e8c3;text-decoration:none;font:bold 11px Georgia;letter-spacing:.10em;box-shadow:0 6px 18px #0009;white-space:nowrap}
+.go.primary{background:linear-gradient(#fff0c8,#d7b86e);color:#261a10}
 .go:focus,.go.navfocus{outline:none;box-shadow:0 0 0 2px #8ee9ff,0 0 22px #8d4dff99}
 .menu[hidden],.gate[hidden]{display:none}
 @keyframes pulse{50%{opacity:.55}}
-@media(max-width:560px){.menu{gap:6px}.go{padding:9px 12px;font-size:10px}.gate{bottom:max(24px,calc(env(safe-area-inset-bottom) + 14px))}}
-@media(display-mode:standalone){.wrap{padding-top:max(10px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom))}}
+@media(max-width:700px){
+  .menu{width:min(82vw,680px);gap:7px;padding-left:12px;padding-right:12px;min-height:60px}
+  .go{padding:9px 12px;font-size:10px}
+}
+@media(max-height:430px) and (orientation:landscape){
+  .menu{min-height:58px;width:min(74vw,690px);padding-top:7px;padding-bottom:max(7px,env(safe-area-inset-bottom))}
+  .go{padding:8px 12px;font-size:10px}
+}
+@media(display-mode:standalone){.wrap{padding-top:max(10px,env(safe-area-inset-top))}}
 @media(prefers-reduced-motion:reduce){.splash-video{display:none}.gate{animation:none}}
 </style>
 </head>
 <body>
-<video id="titleVideo" class="splash-video" muted autoplay loop playsinline webkit-playsinline preload="auto" poster="./title_screen.jpg" aria-hidden="true"></video>
+<video id="titleVideo" class="splash-video" muted autoplay loop playsinline webkit-playsinline preload="auto" poster="./title_screen.jpg" aria-hidden="true">
+  <source src="./assets/video/title_splash_loop.mp4?pvasset=live29b3" type="video/mp4">
+</video>
 <main class="wrap">
   <div id="gate" class="gate">PRESS ANY BUTTON</div>
   <nav id="menu" class="menu" hidden aria-label="Main menu">
@@ -47,60 +73,78 @@ body.show-static .splash-video{opacity:0}
 <audio id="titleMusic" preload="auto" loop></audio>
 <script>
 const gate=document.getElementById('gate'),menu=document.getElementById('menu'),music=document.getElementById('titleMusic'),video=document.getElementById('titleVideo');
-let unlocked=false,lastPad={up:false,down:false,a:false},focusIndex=0,altTimer=null,titleVideoUrl='';
+let unlocked=false,lastPad={up:false,down:false,a:false},focusIndex=0,altTimer=null;
 music.volume=.62;
+video.muted=true;
 const choices=()=>[...menu.querySelectorAll('.go')];
 
-// Title audio stays independent from the silent Kling motion layer.
+// Title audio remains independent from the muted animated splash.
 const TITLE_TRACKS=['./assets/music/Prism of Elders.mp3?pvasset=live28f','./assets/music/veil_clockwork_drift.mp3?pvasset=live28f'];
 let titleTrackIndex=0;
 function loadTitleTrack(i=0){titleTrackIndex=i;if(i>=TITLE_TRACKS.length)return;music.src=TITLE_TRACKS[i];music.load()}
 music.addEventListener('error',()=>{if(titleTrackIndex+1<TITLE_TRACKS.length)loadTitleTrack(titleTrackIndex+1)});
 loadTitleTrack();
 
-// Rebuild the verified 4-second muted H.264 splash from same-origin text fragments.
-const TITLE_VIDEO_PARTS=Array.from({length:11},(_,i)=>`./assets/video/title_splash_parts/part${String(i+1).padStart(2,'0')}.b64?pvasset=live29b2`);
-async function loadTitleVideo(){
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return false;
+async function syncLiveRoutes(){
   try{
-    const texts=await Promise.all(TITLE_VIDEO_PARTS.map(async url=>{
-      const r=await fetch(url,{cache:'no-store'});
-      if(!r.ok)throw new Error(`title video part ${r.status}`);
-      return (await r.text()).trim();
-    }));
-    const b64=texts.join('');
-    if(b64.length!==105492)throw new Error(`title video base64 length ${b64.length}`);
-    const raw=atob(b64),bytes=new Uint8Array(raw.length);
-    for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
-    if(bytes.length!==79118)throw new Error(`title video byte length ${bytes.length}`);
-    const blob=new Blob([bytes],{type:'video/mp4'});
-    titleVideoUrl=URL.createObjectURL(blob);
-    video.src=titleVideoUrl;
-    video.muted=true;
-    video.load();
-    return true;
-  }catch(e){
-    console.warn('PV title video fallback',e);
-    document.body.classList.add('show-static');
-    return false;
-  }
+    const r=await fetch(`./live-build.json?ts=${Date.now()}`,{cache:'no-store'});
+    if(!r.ok)return;
+    const build=await r.json(),a=choices();
+    if(build.story&&a[0])a[0].href=`./${build.story}`;
+    if(build.pza&&a[2])a[2].href=`./${build.pza}`;
+    document.documentElement.dataset.pvbuild=build.id||'main'
+  }catch(e){}
 }
-const titleVideoReady=loadTitleVideo();
-video.addEventListener('error',()=>document.body.classList.add('show-static'));
-addEventListener('pagehide',()=>{if(titleVideoUrl)URL.revokeObjectURL(titleVideoUrl)},{once:true});
-
-async function syncLiveRoutes(){try{const r=await fetch(`./live-build.json?ts=${Date.now()}`,{cache:'no-store'});if(!r.ok)return;const build=await r.json(),a=choices();if(build.story&&a[0])a[0].href=`./${build.story}`;if(build.pza&&a[2])a[2].href=`./${build.pza}`;document.documentElement.dataset.pvbuild=build.id||'main'}catch(e){}}
 syncLiveRoutes();
-function focus(i){const a=choices();if(!a.length)return;focusIndex=(i+a.length)%a.length;a.forEach(x=>x.classList.remove('navfocus'));a[focusIndex].classList.add('navfocus');a[focusIndex].focus({preventScroll:true})}
+
+function focus(i){
+  const a=choices();if(!a.length)return;
+  focusIndex=(i+a.length)%a.length;
+  a.forEach(x=>x.classList.remove('navfocus'));
+  a[focusIndex].classList.add('navfocus');
+  a[focusIndex].focus({preventScroll:true})
+}
 async function startTitleMusic(){try{if(music.paused)await music.play()}catch(e){}}
-async function startTitleVideo(){try{video.muted=true;const ready=await titleVideoReady;if(ready&&video.paused)await video.play()}catch(e){document.body.classList.add('show-static')}}
-function startSplashAlternation(){if(altTimer||matchMedia('(prefers-reduced-motion: reduce)').matches)return;altTimer=setInterval(()=>document.body.classList.toggle('show-static'),10000)}
-function unlockTitle(){if(unlocked)return;unlocked=true;startTitleMusic();startTitleVideo();gate.hidden=true;menu.hidden=false;focus(0);startSplashAlternation()}
+async function startTitleVideo(){try{video.muted=true;if(video.paused)await video.play()}catch(e){document.body.classList.add('show-static')}}
+function startSplashAlternation(){
+  if(altTimer||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  altTimer=setInterval(()=>document.body.classList.toggle('show-static'),10000)
+}
+function unlockTitle(){
+  if(unlocked)return;
+  unlocked=true;
+  startTitleMusic();
+  startTitleVideo();
+  gate.hidden=true;
+  menu.hidden=false;
+  focus(0);
+  startSplashAlternation()
+}
+video.addEventListener('error',()=>document.body.classList.add('show-static'));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&unlocked){startTitleMusic();startTitleVideo()}});
 addEventListener('pageshow',()=>{if(unlocked){startTitleMusic();startTitleVideo()}});
 addEventListener('pointerdown',unlockTitle,{once:true});
-addEventListener('keydown',e=>{if(!unlocked){e.preventDefault();unlockTitle();return}if(e.key==='ArrowDown'||e.key==='ArrowRight'){e.preventDefault();focus(focusIndex+1)}else if(e.key==='ArrowUp'||e.key==='ArrowLeft'){e.preventDefault();focus(focusIndex-1)}else if((e.key==='Enter'||e.key===' ')&&document.activeElement?.href){e.preventDefault();location.href=document.activeElement.href}});
-function pads(){const p=navigator.getGamepads?.()[0];if(p){const st={up:p.buttons[12]?.pressed||p.axes?.[1]<-.55,down:p.buttons[13]?.pressed||p.axes?.[1]>.55,a:p.buttons[0]?.pressed};const any=p.buttons.some(b=>b.pressed);if(!unlocked&&any)unlockTitle();else if(unlocked){if(st.down&&!lastPad.down)focus(focusIndex+1);if(st.up&&!lastPad.up)focus(focusIndex-1);if(st.a&&!lastPad.a&&document.activeElement?.href)location.href=document.activeElement.href}lastPad=st}requestAnimationFrame(pads)}
+addEventListener('keydown',e=>{
+  if(!unlocked){e.preventDefault();unlockTitle();return}
+  if(e.key==='ArrowDown'||e.key==='ArrowRight'){e.preventDefault();focus(focusIndex+1)}
+  else if(e.key==='ArrowUp'||e.key==='ArrowLeft'){e.preventDefault();focus(focusIndex-1)}
+  else if((e.key==='Enter'||e.key===' ')&&document.activeElement?.href){e.preventDefault();location.href=document.activeElement.href}
+});
+function pads(){
+  const p=navigator.getGamepads?.()[0];
+  if(p){
+    const st={up:p.buttons[12]?.pressed||p.axes?.[1]<-.55,down:p.buttons[13]?.pressed||p.axes?.[1]>.55,a:p.buttons[0]?.pressed};
+    const any=p.buttons.some(b=>b.pressed);
+    if(!unlocked&&any)unlockTitle();
+    else if(unlocked){
+      if(st.down&&!lastPad.down)focus(focusIndex+1);
+      if(st.up&&!lastPad.up)focus(focusIndex-1);
+      if(st.a&&!lastPad.a&&document.activeElement?.href)location.href=document.activeElement.href
+    }
+    lastPad=st
+  }
+  requestAnimationFrame(pads)
+}
 pads();
 </script>
 </body>
