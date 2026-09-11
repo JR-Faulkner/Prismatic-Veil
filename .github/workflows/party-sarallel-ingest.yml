@@ -1,0 +1,37 @@
+name: PARTY Sarallel asset ingest
+
+on:
+  push:
+    paths:
+      - '.github/workflows/party-sarallel-ingest.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Download Sarallel Party assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/ui/party/v1/characters
+          curl --fail --location --silent --show-error 'https://uc5d09418971d0f2813480558246.dl.dropboxusercontent.com/cd/0/get/DH-s35lfC-gI8GLaqEFE5v80DE9tYlHfFm7_JoCfJ7GNF6OA3exOJ3DWtTj2p2CxVLZY5RT2YIyE1ZvxOte1UtX38dR2EY9aReFTgzrwdFXj_1yZirnm2yiDGlmqO_WUk7uEcN_clicpNooIaAG_7qJx7jukX6GuoY3l0bXw_ZdfVg/file?c_luid=9bd25e73' -o assets/ui/party/v1/characters/sarallel_prime.png
+          curl --fail --location --silent --show-error 'https://uc666cd5a0d48a7e0e0aeed39868.dl.dropboxusercontent.com/cd/0/get/DH8PvJdc0DmbnXCbmGeKA8ndvIsRRA_1x1TLrRFFGMI9RlswM3R9Y5tEbaYtwvLKTgXbY79fGJBfxn_AE9UqWSaNRyL3wfSw_DVdN98AgGmnnHTmZpuc5JtOnN7UjxiuL_CxFKehJpqs6wgDkEBlP8rufrgz1JK_Qo6dXJnfll5xSQ/file?c_luid=9bd25e73' -o assets/ui/party/v1/characters/sarallel_composite.png
+          test "$(wc -c < assets/ui/party/v1/characters/sarallel_prime.png)" -eq 1996244
+          test "$(wc -c < assets/ui/party/v1/characters/sarallel_composite.png)" -eq 2505550
+          echo '392ab5c5d8d8f9e25f0ba97c739440ea951a486b8dbcef57f2a7f6fbb1c8e53a  assets/ui/party/v1/characters/sarallel_prime.png' | sha256sum -c -
+          echo '128f0fde19f34898a5f3b674f4e7c836f2cfed7981adeedf27e1553b4dbcdfb0  assets/ui/party/v1/characters/sarallel_composite.png' | sha256sum -c -
+      - name: Commit Sarallel Party assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'JR-Faulkner'
+          git config user.email '53619182+JR-Faulkner@users.noreply.github.com'
+          git add assets/ui/party/v1/characters/sarallel_prime.png assets/ui/party/v1/characters/sarallel_composite.png
+          git commit -m 'PARTY: ingest Sarallel Prime and simulacra composite'
+          git push origin HEAD:main
