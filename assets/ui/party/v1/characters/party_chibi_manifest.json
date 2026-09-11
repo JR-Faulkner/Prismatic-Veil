@@ -1,0 +1,37 @@
+{
+  "project": "The Prismatic Veil",
+  "asset_set": "PV Semi-Chibi 30 Party Canon",
+  "status": "approved working canon",
+  "characters": {
+    "prismel": {
+      "file": "party_prismel_chibi.png",
+      "width": 981,
+      "height": 1388,
+      "sha256": "87172d1c7814835c9884a15895d1778af8548ec53b9a9c40855395f7351ea658"
+    },
+    "auryi": {
+      "file": "party_auryi_chibi.png",
+      "width": 777,
+      "height": 1058,
+      "sha256": "9639f583f16151bc5ae3f70778f00c429df8d78aceebfd7c4ff45e97640ee09b"
+    },
+    "kineza": {
+      "file": "party_kineza_chibi.png",
+      "width": 768,
+      "height": 931,
+      "sha256": "1304dfcbbca532c04571c501d88d2e8cd0f8a2a864d43070267c8106bf087982"
+    },
+    "sarallel": {
+      "file": "party_sarallel_chibi.png",
+      "width": 1086,
+      "height": 1448,
+      "sha256": "124eddad08a135ba829f9e0740c3ac80b4aa19b5833b73d3481e9904d68d6088"
+    },
+    "vyan": {
+      "file": "party_vyan_chibi.png",
+      "width": 1086,
+      "height": 1448,
+      "sha256": "59cc764032016a8cb9925114afe52cc514ca7ae5ff5483437200642dd9cc6136"
+    }
+  }
+}
