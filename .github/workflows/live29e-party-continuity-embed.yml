@@ -60,6 +60,25 @@ jobs:
           s=s.replace(anchor,replacement,1)
           p.write_text(s)
           PY
+      - name: Update PriZim route authority for K27 guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tools/prizim/preflight_live28k.py')
+          s=p.read_text()
+          s=s.replace("    'Live28K2PartyBattleScene.js',\n", "    'Live28K27BattleGuardScene.js',\n", 1)
+          anchor="hybrid_template = read('hybrid-battle-live.html')\n"
+          insert=anchor+"k27_guard = read('src/prizim/Live28K27BattleGuardScene.js')\n"
+          if anchor not in s:
+              raise SystemExit('PriZim hybrid-template anchor missing')
+          s=s.replace(anchor,insert,1)
+          anchor2="if \"h.resonart?.name\" not in hybrid_template or \"h.resonart?.flavor\" not in hybrid_template:\n    errors.append('Hybrid Resonart drawer authority drift')\n"
+          insert2=anchor2+"if \"import Live28K2PartyBattleScene from './Live28K2PartyBattleScene.js?v=live28k27'\" not in k27_guard:\n    errors.append('K27 guard no longer inherits locked LIVE28K2 battle authority')\n"
+          if anchor2 not in s:
+              raise SystemExit('PriZim drawer anchor missing')
+          s=s.replace(anchor2,insert2,1)
+          p.write_text(s)
+          PY
       - name: Verify continuity architecture
         run: |
           grep -q "hybrid-party-live.html?embedded=1" hybrid-overworld.html
@@ -74,6 +93,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm .github/workflows/live29e-party-continuity-embed.yml
-          git add hybrid-overworld.html hybrid-party.html hybrid-party-live.html
+          git add hybrid-overworld.html hybrid-party.html hybrid-party-live.html tools/prizim/preflight_live28k.py
           git commit -m "PARTY: keep Homecoming continuous in embedded Party shell"
           git push
