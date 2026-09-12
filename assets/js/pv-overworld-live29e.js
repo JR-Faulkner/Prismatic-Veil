@@ -47,14 +47,32 @@
   function visible(el){const s=getComputedStyle(el);const r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&s.pointerEvents!=='none'&&r.width>1&&r.height>1&&!el.disabled&&el.getAttribute('aria-disabled')!=='true'}
   function navTargets(){return [...document.querySelectorAll('.hotspot,.tab,#travelButton,#clearButton,#closeModal,.close,[data-front],[data-setfront],#saveNow,button')].filter(visible)}
   function navFocus(i=navIndex){const t=navTargets();document.querySelectorAll('.navfocus').forEach(x=>x.classList.remove('navfocus'));if(!t.length)return;navIndex=(i+t.length)%t.length;const el=t[navIndex];if(!el.hasAttribute('tabindex'))el.tabIndex=-1;el.classList.add('navfocus');try{el.focus({preventScroll:true})}catch(e){el.focus?.()}}
-  function navMove(d){navFocus(navIndex+d);window.PVMenuSFX?.play?.('move')}
+  function center(el){const r=el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2}}
+  function navMoveSpatial(dir){
+    const t=navTargets();if(!t.length)return;
+    navIndex=Math.max(0,Math.min(navIndex,t.length-1));
+    const from=t[navIndex]||t[0],a=center(from);
+    let best=-1,bestScore=Infinity;
+    for(let i=0;i<t.length;i++){
+      if(i===navIndex)continue;
+      const b=center(t[i]),dx=b.x-a.x,dy=b.y-a.y;
+      const primary=dir==='l'?-dx:dir==='r'?dx:dir==='u'?-dy:dy;
+      if(primary<=4)continue;
+      const cross=(dir==='l'||dir==='r')?Math.abs(dy):Math.abs(dx);
+      const score=primary+cross*2.35;
+      if(score<bestScore){bestScore=score;best=i}
+    }
+    if(best>=0){navFocus(best);window.PVMenuSFX?.play?.('move')}
+  }
   function navBack(){const x=document.querySelector('#closeModal:not([disabled]),.close:not([disabled])');if(x&&visible(x)){x.click();return}const ev=new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true});document.dispatchEvent(ev)}
   function pads(){
     const p=navigator.getGamepads?.()[0];
     if(p){
       const st={u:!!p.buttons[12]?.pressed||(p.axes?.[1]??0)<-.58,d:!!p.buttons[13]?.pressed||(p.axes?.[1]??0)>.58,l:!!p.buttons[14]?.pressed||(p.axes?.[0]??0)<-.58,r:!!p.buttons[15]?.pressed||(p.axes?.[0]??0)>.58,a:!!p.buttons[0]?.pressed,b:!!p.buttons[1]?.pressed};
-      if((st.r&&!lastPad.r)||(st.d&&!lastPad.d))navMove(1);
-      else if((st.l&&!lastPad.l)||(st.u&&!lastPad.u))navMove(-1);
+      if(st.r&&!lastPad.r)navMoveSpatial('r');
+      else if(st.l&&!lastPad.l)navMoveSpatial('l');
+      else if(st.d&&!lastPad.d)navMoveSpatial('d');
+      else if(st.u&&!lastPad.u)navMoveSpatial('u');
       else if(st.a&&!lastPad.a){const t=navTargets();navFocus(navIndex);t[navIndex]?.click?.()}
       else if(st.b&&!lastPad.b)navBack();
       lastPad=st;
