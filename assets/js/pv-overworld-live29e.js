@@ -63,3 +63,29 @@
   }
   addEventListener('gamepadconnected',()=>navFocus(0));pads();
 })();
+
+(()=>{
+  const EXTRA=`
+  body{background:#030815!important}
+  body:after{content:"";position:fixed;inset:7px;z-index:69;pointer-events:none;border:1px solid #d9bd6f42;clip-path:polygon(0 18px,18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px));box-shadow:inset 0 0 42px #7657ff18,0 0 20px #0008}
+  .map-plate{filter:saturate(1.08) contrast(1.03) brightness(.96)!important;box-shadow:0 0 0 1px #d8b95b55,0 0 38px #5f50cf22!important}
+  .hero-card{position:relative;overflow:hidden!important;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px))!important}
+  .hero-card:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,transparent 18%,#9ee8ff10 42%,transparent 64%);transform:translateX(-70%);transition:transform .28s ease}
+  .hero-card:hover:before,.hero-card.navfocus:before{transform:translateX(70%)}
+  .tab{position:relative;overflow:hidden;clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px)!important;text-transform:uppercase!important;letter-spacing:.12em!important}
+  .tab:before{content:"✦";margin-right:6px;color:#dfc472;opacity:.8;font-size:.8em}
+  #travelButton,#clearButton,#saveNow{clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)!important;text-transform:uppercase!important;letter-spacing:.1em!important}
+  .hotspot{transform-origin:center;transition:transform .16s ease,filter .16s ease!important}.hotspot.navfocus{transform:scale(1.08)!important}
+  .pv-spectrum-corners{position:fixed;inset:0;z-index:68;pointer-events:none}
+  .pv-spectrum-corners i{position:absolute;width:42px;height:42px;border-color:#dfc26d88;border-style:solid;filter:drop-shadow(0 0 8px #866dff44)}
+  .pv-spectrum-corners i:nth-child(1){left:9px;top:9px;border-width:1px 0 0 1px}.pv-spectrum-corners i:nth-child(2){right:9px;top:9px;border-width:1px 1px 0 0}.pv-spectrum-corners i:nth-child(3){right:9px;bottom:9px;border-width:0 1px 1px 0}.pv-spectrum-corners i:nth-child(4){left:9px;bottom:9px;border-width:0 0 1px 1px}
+  .pv-spectrum-mark{position:fixed;left:50%;top:9px;z-index:69;transform:translateX(-50%);pointer-events:none;padding:2px 11px 4px;border-left:1px solid #d8b75d55;border-right:1px solid #d8b75d55;color:#e8ce86cc;font:800 7px/1 system-ui;letter-spacing:.32em;text-transform:uppercase;text-shadow:0 0 8px #946bff66}
+  @media(max-width:800px),(max-height:500px){body:after{inset:4px}.pv-spectrum-corners i{width:28px;height:28px}.pv-spectrum-mark{top:5px;font-size:6px}}
+  `;
+  const s=document.createElement('style');s.id='pv-live29e-spectrum-frame';s.textContent=EXTRA;document.head.appendChild(s);
+  if(!document.querySelector('.pv-spectrum-corners')){
+    const corners=document.createElement('div');corners.className='pv-spectrum-corners';corners.innerHTML='<i></i><i></i><i></i><i></i>';
+    document.body.appendChild(corners);
+    const mark=document.createElement('div');mark.className='pv-spectrum-mark';mark.textContent='Bearers of the Spectrum';document.body.appendChild(mark);
+  }
+})();
