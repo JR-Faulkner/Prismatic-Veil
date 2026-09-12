@@ -1,0 +1,16 @@
+{
+  "authority": "LIVE30C clean Overworld map base",
+  "source_description": "Approved clean floating-islands regional map derived from the selected #3 Overworld direction; no labels, route highlights, locks, markers, or GUI baked into the image.",
+  "runtime_asset": "assets/ui/overworld/v2/map_world_base.jpg",
+  "dimensions": [1672, 941],
+  "runtime_sha256": "f351f5c10cdc90c7af7151725fa1177400876d484c0f5c8dcc387a8e2fb6136f",
+  "original_clean_source_sha256": "6cb65ecd98cb537e35b4fd28589fd86a07a5bcf92c6cb6e6c829bedbc1e22743",
+  "approved": true,
+  "rules": {
+    "baked_labels": false,
+    "baked_markers": false,
+    "baked_routes": false,
+    "baked_lock_states": false,
+    "coded_navigation_overlay_required": true
+  }
+}
