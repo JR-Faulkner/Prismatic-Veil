@@ -1,0 +1,38 @@
+name: PriZim LIVE30A Overworld
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prizim-live30a-overworld.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Syntax check Overworld modules
+        run: |
+          node --check assets/js/pv-overworld-live29e.js
+          node --check assets/js/pv-overworld-live29f.js
+          node --check assets/js/pv-overworld-live30a.js
+      - name: Verify LIVE30A route authority wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "pv-overworld-live30a.js?pvasset=live30a1" hybrid-overworld.html
+          grep -F "Old Water Tower" assets/js/pv-overworld-live30a.js
+          grep -F "Glassway Bridge" assets/js/pv-overworld-live30a.js
+          grep -F "Whispering Grove" assets/js/pv-overworld-live30a.js
+          grep -F "pv30-route" assets/js/pv-overworld-live30a.js
+          grep -F "shortestPath" assets/js/pv-overworld-live30a.js
+          grep -F "Veil Wraith" assets/js/pv-overworld-live30a.js
+          grep -F "Hushling" assets/js/pv-overworld-live30a.js
+      - name: Run canonical PriZim preflight
+        run: python tools/prizim/preflight_live28k.py
