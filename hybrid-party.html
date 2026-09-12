@@ -63,8 +63,8 @@
     prismel:{name:'Prismel',title:'Prism Weaver',affinity:'Blue • Violet',asset:'./assets/ui/party/v1/characters/party_prismel_chibi.png',fallback:'./assets/ui/overworld/v1/portraits/Prismel_hr2.jpg',initials:'P'},
     kineza:{name:'Kineza',title:'Momentum Born',affinity:'Red • Green',asset:'./assets/ui/party/v1/characters/party_kineza_chibi.png',fallback:'./assets/ui/overworld/v1/portraits/Kineza_hr2.jpg',initials:'K'},
     auryi:{name:'Auryi',title:'Aura Spoken',affinity:'Lavender • Gold',asset:'./assets/ui/party/v1/characters/party_auryi_chibi.png',fallback:'./assets/ui/overworld/v1/portraits/Auryi_hr2.jpg',initials:'A'},
-    sarallel:{name:'Sarallel',title:'',affinity:'Blue • Gold',asset:'./assets/ui/party/v1/characters/party_sarallel_chibi.png',fallback:'',initials:'S'},
-    vyan:{name:'Vyan',title:'',affinity:'Red • Gold',asset:'./assets/ui/party/v1/characters/party_vyan_chibi.png',fallback:'',initials:'V'}
+    sarallel:{name:'Sarallel',title:'Simulacrum Soul',affinity:'Blue • Gold',asset:'./assets/ui/party/v1/characters/party_sarallel_chibi.png',fallback:'',initials:'S'},
+    vyan:{name:'Vyan',title:'The Evolvant',affinity:'Red • Gold',asset:'./assets/ui/party/v1/characters/party_vyan_chibi.png',fallback:'',initials:'V'}
   };
   function validCharacter(id){return !!id&&Object.prototype.hasOwnProperty.call(CHARACTERS,id)}
   function normalizeLeader(raw){const id=String(raw||'').trim().toLowerCase();if(validCharacter(id))return id;return Object.keys(CHARACTERS).find(k=>CHARACTERS[k].name.toLowerCase()===id)||null}
