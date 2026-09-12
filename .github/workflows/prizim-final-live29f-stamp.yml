@@ -1,0 +1,36 @@
+name: PriZim Final LIVE29F Stamp
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prizim-final-live29f-stamp.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Syntax check current LIVE29 modules
+        run: |
+          node --check assets/js/pv-overworld-live29e.js
+          node --check assets/js/pv-overworld-live29f.js
+          node --check assets/js/pv-party-live29e.js
+          node --check src/prizim/Live29FEncounterBattleScene.js
+      - name: Verify final LIVE29F return-state wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "this._queueEncounterReturn('victory', 2300);" src/prizim/Live29FEncounterBattleScene.js
+          grep -F "this._queueEncounterReturn('defeat', 2300);" src/prizim/Live29FEncounterBattleScene.js
+          grep -F "if (victory) globalThis.localStorage?.setItem(clearKey, '1');" src/prizim/Live29FEncounterBattleScene.js
+          grep -F "result?.result==='defeat'" assets/js/pv-overworld-live29f.js
+          grep -F "pv-overworld-live29f.js?pvasset=live29f1" hybrid-overworld.html
+      - name: Run canonical PriZim LIVE28K authority preflight
+        run: python tools/prizim/preflight_live28k.py
