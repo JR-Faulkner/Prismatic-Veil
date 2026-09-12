@@ -1,0 +1,40 @@
+name: PriZim LIVE30C Map GUI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prizim-live30c-map-gui.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Verify clean map authority bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s assets/ui/overworld/v2/map_world_base.jpg
+          echo 'f351f5c10cdc90c7af7151725fa1177400876d484c0f5c8dcc387a8e2fb6136f  assets/ui/overworld/v2/map_world_base.jpg' | sha256sum -c -
+          grep -F '"baked_labels": false' assets/ui/overworld/v2/map_world_base.authority.json
+          grep -F '"coded_navigation_overlay_required": true' assets/ui/overworld/v2/map_world_base.authority.json
+      - name: Syntax check LIVE30C GUI
+        run: node --check assets/js/pv-overworld-live30c.js
+      - name: Verify LIVE30C runtime wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "assets/ui/overworld/v2/map_world_base.jpg?pvasset=live30c-authority1" hybrid-overworld.html
+          grep -F "pv-overworld-live30c.js?pvasset=live30c1" hybrid-overworld.html
+          grep -F "document.documentElement.dataset.pvOverworld='LIVE30C'" assets/js/pv-overworld-live30c.js
+          grep -F "echo|home" assets/js/pv-overworld-live30c.js
+          grep -F "Potential Rewards" assets/js/pv-overworld-live30c.js
+      - name: Run canonical PriZim preflight
+        run: python tools/prizim/preflight_live28k.py
