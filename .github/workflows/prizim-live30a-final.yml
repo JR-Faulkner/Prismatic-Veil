@@ -1,0 +1,32 @@
+name: PriZim LIVE30A Final
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prizim-live30a-final.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Syntax check LIVE30A
+        run: node --check assets/js/pv-overworld-live30a.js
+      - name: Verify route/controller integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "pv30-node.navfocus" assets/js/pv-overworld-live30a.js
+          grep -F "Route Revealed" assets/js/pv-overworld-live30a.js
+          grep -F "locked route" assets/js/pv-overworld-live30a.js
+          grep -F "localStorage.setItem(LAST_KEY,current)" assets/js/pv-overworld-live30a.js
+          grep -F "pv-overworld-live30a.js?pvasset=live30a1" hybrid-overworld.html
+      - name: Run canonical PriZim preflight
+        run: python tools/prizim/preflight_live28k.py
