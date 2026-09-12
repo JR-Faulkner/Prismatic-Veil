@@ -1,0 +1,36 @@
+name: PriZim LIVE29F Integration Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prizim-live29f-integration-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Syntax check LIVE29E and LIVE29F browser modules
+        run: |
+          node --check assets/js/pv-overworld-live29e.js
+          node --check assets/js/pv-overworld-live29f.js
+          node --check assets/js/pv-party-live29e.js
+          node --check src/prizim/Live29FEncounterBattleScene.js
+      - name: Verify isolated encounter wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "encounterMode?'Live29FEncounterBattleScene.js':'Live28K27BattleGuardScene.js'" hybrid-main.html
+          grep -F "pv-overworld-live29f.js?pvasset=live29f1" hybrid-overworld.html
+          grep -F "extends Live28K27BattleGuardScene" src/prizim/Live29FEncounterBattleScene.js
+          grep -F "super._onVictory();" src/prizim/Live29FEncounterBattleScene.js
+          grep -F "pv.locationClear." src/prizim/Live29FEncounterBattleScene.js
+      - name: Run canonical PriZim LIVE28K authority preflight
+        run: python tools/prizim/preflight_live28k.py
