@@ -43,9 +43,7 @@
     s.connect(hp).connect(lp).connect(g).connect(c.destination);s.start(t);
   }
 
-  function play(kind){
-    if(!enabled)return;
-    const c=getCtx();if(!c||c.state!=='running')return;
+  function emit(kind,c){
     const t=c.currentTime+.002;
     switch(kind){
       case 'move':
@@ -71,6 +69,15 @@
         tone(c,t,{freq:185,endFreq:145,dur:.16,vol:.027,type:'triangle'});
         tone(c,t+.018,{freq:278,endFreq:220,dur:.12,vol:.012,type:'sine'});
         break;
+    }
+  }
+
+  function play(kind){
+    if(!enabled)return;
+    const c=getCtx();if(!c)return;
+    if(c.state==='running'){emit(kind,c);return}
+    if(c.state==='suspended'){
+      c.resume().then(()=>{if(c.state==='running'&&enabled)emit(kind,c)}).catch(()=>{});
     }
   }
 
