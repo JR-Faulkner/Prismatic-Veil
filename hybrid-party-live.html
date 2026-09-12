@@ -69,7 +69,7 @@
       window.PV_PARTY_HOMEcoming={bgm,storeResume,unlock};
     })();<\/script>`;
     if(new URLSearchParams(location.search).get('embedded')==='1'){runtime=`<script id="pv-party-embedded">(()=>{const b=document.getElementById('returnBtn');b?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();window.parent.postMessage({type:'pv-close-party'},location.origin)},{capture:true});})();<\/script>`}
-    const liveScripts='<script src="./assets/js/pv-menu-sfx.js?pvasset=live29e-harvest1"><\/script><script src="./assets/js/pv-party-live29e.js?pvasset=live29e3"><\/script>';
+    const liveScripts='<script src="./assets/js/pv-menu-sfx.js?pvasset=live29e-harvest1"><\/script><script src="./assets/js/pv-party-live29e.js?pvasset=live29e3"><\/script><script src="./assets/js/pv-party-live30b.js?pvasset=live30b1"><\/script>';
     text=text.replace('</body>',runtime+liveScripts+'</body>');
     document.open();document.write(text);document.close();
   }catch(err){
