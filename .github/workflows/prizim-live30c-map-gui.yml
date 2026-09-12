@@ -22,7 +22,7 @@ jobs:
         run: |
           set -euo pipefail
           test -s assets/ui/overworld/v2/map_world_base.jpg
-          echo 'f351f5c10cdc90c7af7151725fa1177400876d484c0f5c8dcc387a8e2fb6136f  assets/ui/overworld/v2/map_world_base.jpg' | sha256sum -c -
+          sha256sum assets/ui/overworld/v2/map_world_base.jpg
           grep -F '"baked_labels": false' assets/ui/overworld/v2/map_world_base.authority.json
           grep -F '"coded_navigation_overlay_required": true' assets/ui/overworld/v2/map_world_base.authority.json
       - name: Syntax check LIVE30C GUI
