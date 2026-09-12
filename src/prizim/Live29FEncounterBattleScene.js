@@ -27,32 +27,44 @@ export default class Live29FEncounterBattleScene extends Live28K27BattleGuardSce
     globalThis.__PV_LIVE29F_ENCOUNTER_BRIDGE__ = !!this._pvEncounter;
   }
 
-  _onVictory() {
-    super._onVictory();
+  _queueEncounterReturn(result, delayMs) {
     if (!this._pvEncounter || this._pvEncounterReturnQueued) return;
     this._pvEncounterReturnQueued = true;
 
     const { locationId, mode } = this._pvEncounter;
     const clearKey = `${CLEAR_PREFIX}${locationId}`;
     const wasCleared = globalThis.localStorage?.getItem(clearKey) === '1';
-    const firstClear = !wasCleared;
+    const victory = result === 'victory';
+    const firstClear = victory && !wasCleared;
 
     try {
-      globalThis.localStorage?.setItem(clearKey, '1');
+      if (victory) globalThis.localStorage?.setItem(clearKey, '1');
       globalThis.localStorage?.setItem(RESULT_KEY, JSON.stringify({
         locationId,
-        result: 'victory',
+        result,
         firstClear,
         mode,
         completedAt: Date.now()
       }));
       globalThis.localStorage?.removeItem(PENDING_KEY);
-    } catch (_) { /* encounter completion still returns even if storage is blocked */ }
+    } catch (_) { /* return still proceeds if storage is blocked */ }
 
-    // Leave the existing victory presentation and audio intact before returning.
-    this.time.delayedCall(2300, () => {
-      const q = new URLSearchParams({ pvreturn: locationId, pvresult: 'victory' });
+    this.time.delayedCall(delayMs, () => {
+      const q = new URLSearchParams({ pvreturn: locationId, pvresult: result });
       globalThis.location.href = `./hybrid-overworld.html?${q.toString()}`;
     });
+  }
+
+  _onVictory() {
+    super._onVictory();
+    // Keep the existing victory presentation/audio visible before returning.
+    this._queueEncounterReturn('victory', 2300);
+  }
+
+  _onDefeat() {
+    super._onDefeat();
+    // A failed route never marks the location clear, but it should not strand
+    // the player in the battle scene. Preserve the defeat beat, then return.
+    this._queueEncounterReturn('defeat', 2300);
   }
 }
