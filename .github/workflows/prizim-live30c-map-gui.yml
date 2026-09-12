@@ -22,7 +22,8 @@ jobs:
         run: |
           set -euo pipefail
           test -s assets/ui/overworld/v2/map_world_base.jpg
-          sha256sum assets/ui/overworld/v2/map_world_base.jpg
+          echo '6a2f436d0eb40ea5a7b3b4f7cb9dbb3df19d96ea8dd66df6cda53d697a0f5bb4  assets/ui/overworld/v2/map_world_base.jpg' | sha256sum -c -
+          grep -F '"runtime_sha256": "6a2f436d0eb40ea5a7b3b4f7cb9dbb3df19d96ea8dd66df6cda53d697a0f5bb4"' assets/ui/overworld/v2/map_world_base.authority.json
           grep -F '"baked_labels": false' assets/ui/overworld/v2/map_world_base.authority.json
           grep -F '"coded_navigation_overlay_required": true' assets/ui/overworld/v2/map_world_base.authority.json
       - name: Syntax check LIVE30C GUI
