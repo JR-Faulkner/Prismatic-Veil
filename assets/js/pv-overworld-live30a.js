@@ -72,6 +72,7 @@
   .pv30-route.dim{opacity:.22}.pv30-route.active{stroke:url(#pv30RouteGlow);stroke-width:.72;opacity:1;filter:drop-shadow(0 0 3px #ffe79d) drop-shadow(0 0 8px #7ae9ff)}
   .pv30-route.current{stroke:#f6d983aa;stroke-width:.48;opacity:.82}
   .pv30-node{z-index:8!important;width:auto!important;height:auto!important;aspect-ratio:auto!important;border-radius:0!important;display:grid!important;place-items:center!important;transform:translate(-50%,-50%)!important;overflow:visible!important;min-width:0!important;outline:none!important}
+  .pv30-node.navfocus,.pv30-node:focus-visible{transform:translate(-50%,-50%) scale(1.06)!important;outline:none!important}
   .pv30-node:before{display:none!important}
   .pv30-node .pv30-glyph{display:grid;place-items:center;width:clamp(28px,3.7vw,42px);height:clamp(28px,3.7vw,42px);transform:rotate(45deg);border:1px solid #d7bf79aa;background:linear-gradient(145deg,#06162de8,#11163de8);box-shadow:0 5px 14px #000a,0 0 11px #6b5cff2b;transition:.16s ease}
   .pv30-node .pv30-glyph i{transform:rotate(-45deg);font:800 clamp(12px,1.7vw,18px) system-ui;color:#eef9ff;text-shadow:0 0 7px #75e9ff}
@@ -139,16 +140,19 @@
 
   function syncNodes(){
     Object.entries(nodeEls).forEach(([id,el])=>{
-      const isUnlocked=unlocked(id);el.classList.toggle('locked',!isUnlocked);el.classList.toggle('cleared',cleared(id));el.classList.toggle('current',id===current);el.classList.toggle('sel',id===selected);el.setAttribute('aria-current',id===current?'location':'false');el.setAttribute('aria-disabled',isUnlocked?'false':'true');
+      const isUnlocked=unlocked(id);
+      el.classList.toggle('locked',!isUnlocked);el.classList.toggle('cleared',cleared(id));el.classList.toggle('current',id===current);el.classList.toggle('sel',id===selected);
+      el.setAttribute('aria-current',id===current?'location':'false');
+      el.setAttribute('aria-disabled','false');
+      el.setAttribute('aria-label',LOCATIONS[id].name+(isUnlocked?'':', locked route'));
     });
   }
 
   function statusFor(id){
-    const d=LOCATIONS[id];
-    if(id===current)return id==='home'?'Current Location':'Current Location';
+    if(id===current)return 'Current Location';
     if(cleared(id))return 'Cleared · Route Stable';
-    if(unlocked(id))return d.state;
-    return d.state;
+    if(unlocked(id))return (id==='home'||id==='echo')?LOCATIONS[id].state:'Route Revealed';
+    return LOCATIONS[id].state;
   }
 
   function actionFor(id){
@@ -174,26 +178,22 @@
   }
 
   function select(id){
-    if(!LOCATIONS[id])return;selected=id;syncNodes();renderRoutes();renderPanel();
+    if(!LOCATIONS[id])return;
+    selected=id;
+    if(id==='echo'){try{localStorage.setItem(LAST_KEY,current)}catch(_){}}
+    syncNodes();renderRoutes();renderPanel();
   }
 
   function clearSelection(){selected=current;syncNodes();renderRoutes();renderPanel()}
 
-  // Replace the old generic selection behavior without touching the validated HR7 base.
   clear?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();clearSelection()},true);
   document.addEventListener('click',e=>{
     const b=e.target.closest?.('#travelButton');if(!b)return;
-    if(selected==='echo')return; // LIVE29F owns Echo encounter travel.
+    if(selected==='echo')return;
     e.preventDefault();e.stopImmediatePropagation();
     if(selected==='home'&&current!=='home'){
       localStorage.setItem(LAST_KEY,current);current='home';localStorage.setItem(CURRENT_KEY,current);select('home');window.PVMenuSFX?.play?.('confirm');
     }else if(!unlocked(selected))window.PVMenuSFX?.play?.('locked');
-  },true);
-
-  // Preserve the location we leave from so a defeat can retreat correctly.
-  document.addEventListener('click',e=>{
-    if(!e.target.closest?.('#travelButton')||selected!=='echo')return;
-    try{localStorage.setItem(LAST_KEY,current)}catch(_){}
   },true);
 
   select(returned&&LOCATIONS[returned]?returned:current);
