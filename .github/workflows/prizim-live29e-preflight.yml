@@ -1,0 +1,14 @@
+name: PriZim LIVE29E preflight
+on:
+  push:
+    paths:
+      - '.github/workflows/prizim-live29e-preflight.yml'
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run PriZim preflight
+        run: python tools/prizim/preflight_live28k.py
