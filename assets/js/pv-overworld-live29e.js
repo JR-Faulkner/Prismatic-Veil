@@ -107,3 +107,36 @@
     const mark=document.createElement('div');mark.className='pv-spectrum-mark';mark.textContent='Bearers of the Spectrum';document.body.appendChild(mark);
   }
 })();
+
+(()=>{
+  const DATA=Object.freeze({
+    prismel:{role:'Prism Weaver',affinity:'Blue • Violet',growth:'Mind ★★★★★'},
+    kineza:{role:'Momentum Born',affinity:'Red • Green',growth:'Might ★★★★★'},
+    auryi:{role:'Aura Spoken',affinity:'Lavender • Gold',growth:'Harmony ★★★★★ · Spirit ★★★★★'}
+  });
+  const HUD=`
+  .hero-info{padding:clamp(7px,1.35vh,10px) 9px!important;justify-content:center!important}
+  .hero-info .vital-row{display:none!important}
+  .hero-role{margin:4px 0 7px!important;color:var(--hero-accent,#b9d7ff)!important}
+  .pv-ow-meta{display:grid;gap:4px;min-width:0}
+  .pv-ow-row{display:grid;grid-template-columns:46px minmax(0,1fr);align-items:center;gap:5px;padding:3px 5px;border:1px solid #7891b82d;background:#06132988;min-width:0}
+  .pv-ow-row b{font:800 6px system-ui;letter-spacing:.12em;color:#8fa4c7;text-transform:uppercase}
+  .pv-ow-row span{font:800 clamp(7px,1.25vh,9px) system-ui;color:#f6e5ba;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hero-card.front .pv-ow-row{border-color:#d5bb6b55;background:linear-gradient(90deg,rgba(var(--leader-rgb),.18),#07142a88)}
+  .hero-card.front .pv-ow-row span{color:#fff0bf}
+  @media(max-height:500px){.pv-ow-meta{gap:2px}.pv-ow-row{padding:2px 4px}.hero-role{margin:2px 0 4px!important}.pv-ow-row b{font-size:5.5px}.pv-ow-row span{font-size:7px}}
+  `;
+  const st=document.createElement('style');st.id='pv-live29e-partyrail-data';st.textContent=HUD;document.head.appendChild(st);
+  function sync(){
+    document.querySelectorAll('.hero-card[data-hero]').forEach(card=>{
+      const id=card.dataset.hero,d=DATA[id];if(!d)return;
+      const role=card.querySelector('.hero-role');if(role)role.textContent=d.role;
+      let meta=card.querySelector('.pv-ow-meta');
+      if(!meta){meta=document.createElement('div');meta.className='pv-ow-meta';card.querySelector('.hero-info')?.appendChild(meta)}
+      meta.innerHTML=`<div class="pv-ow-row"><b>Affinity</b><span>${d.affinity}</span></div><div class="pv-ow-row"><b>Growth</b><span>${d.growth}</span></div>`;
+    });
+    const partyTab=document.querySelector('.tab[data-tab="party"] small');if(partyTab)partyTab.textContent='Formation & growth';
+  }
+  sync();
+  new MutationObserver(()=>{if(!document.querySelector('.pv-ow-meta'))sync()}).observe(document.body,{subtree:true,childList:true});
+})();
