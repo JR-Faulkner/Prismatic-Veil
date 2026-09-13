@@ -5,24 +5,24 @@
 
   const MAP='./assets/ui/overworld/v2/map_world_base.jpg?pvasset=live30f-exact1';
   const POS=Object.freeze({
-    home:[27.2,70.0],
+    home:[20.8,69.3],
     echo:[79.0,72.0],
     glassway:[50.5,69.3],
-    whisper:[34.8,43.2],
+    whisper:[27.8,43.2],
     oldwater:[72.0,50.5],
     rift:[50.0,18.7]
   });
   const ROUTES=Object.freeze({
-    'echo|home':'M27.2 70 C39 78,63 79,79 72',
-    'glassway|home':'M27.2 70 C35 73,43 72,50.5 69.3',
+    'echo|home':'M20.8 69.3 C35 77,61 79,79 72',
+    'glassway|home':'M20.8 69.3 C31 74,42 72,50.5 69.3',
     'echo|glassway':'M50.5 69.3 C61 70,70 74,79 72',
-    'echo|whisper':'M79 72 C68 61,53 49,34.8 43.2',
+    'echo|whisper':'M79 72 C66 61,48 49,27.8 43.2',
     'glassway|oldwater':'M50.5 69.3 C59 64,66 57,72 50.5',
-    'oldwater|whisper':'M34.8 43.2 C49 43,61 47,72 50.5',
+    'oldwater|whisper':'M27.8 43.2 C44 42,59 47,72 50.5',
     'oldwater|rift':'M72 50.5 C65 37,59 26,50 18.7'
   });
   const THUMB=Object.freeze({
-    home:'25% 75%',echo:'82% 76%',glassway:'51% 76%',whisper:'35% 47%',oldwater:'73% 54%',rift:'50% 20%'
+    home:'21% 74%',echo:'82% 76%',glassway:'51% 76%',whisper:'28% 47%',oldwater:'73% 54%',rift:'50% 20%'
   });
   const COPY=Object.freeze({
     home:{desc:'The Bearers’ anchor between journeys. Recover, reorganize, and choose the next route.'},
