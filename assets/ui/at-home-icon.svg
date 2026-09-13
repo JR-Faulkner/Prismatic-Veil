@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="t d">
+<title id="t">A+T</title><desc id="d">Alterations of Transformations home screen emblem</desc>
+<defs>
+  <radialGradient id="bg" cx="50%" cy="45%" r="72%"><stop offset="0" stop-color="#251151"/><stop offset=".45" stop-color="#151544"/><stop offset="1" stop-color="#07152f"/></radialGradient>
+  <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#45e8ff"/><stop offset=".28" stop-color="#a95cff"/><stop offset=".55" stop-color="#ff4fd8"/><stop offset=".78" stop-color="#ffd66e"/><stop offset="1" stop-color="#45e8ff"/></linearGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff8d8"/><stop offset=".38" stop-color="#ffd86b"/><stop offset=".72" stop-color="#fffdf1"/><stop offset="1" stop-color="#e6a943"/></linearGradient>
+  <filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+<rect width="1024" height="1024" rx="210" fill="url(#bg)"/>
+<g opacity=".65">
+  <circle cx="176" cy="180" r="4" fill="#59eaff"/><circle cx="840" cy="214" r="5" fill="#ff68dc"/><circle cx="210" cy="790" r="3" fill="#ffd96a"/><circle cx="790" cy="820" r="4" fill="#62dfff"/>
+  <circle cx="512" cy="512" r="382" fill="none" stroke="#654de5" stroke-width="34" opacity=".13"/>
+</g>
+<g fill="none" stroke-linecap="round" filter="url(#glow)">
+  <circle cx="512" cy="512" r="360" stroke="url(#ring)" stroke-width="18"/>
+  <circle cx="512" cy="512" r="318" stroke="#f6d376" stroke-width="7" opacity=".9"/>
+  <circle cx="512" cy="512" r="270" stroke="url(#ring)" stroke-width="9" opacity=".72" stroke-dasharray="135 35 55 22"/>
+  <path d="M512 110 L531 280 L512 352 L493 280 Z" fill="url(#gold)" stroke="#fff4bf" stroke-width="3"/>
+  <path d="M512 914 L531 744 L512 672 L493 744 Z" fill="url(#gold)" stroke="#fff4bf" stroke-width="3"/>
+  <path d="M110 512 L278 493 L350 512 L278 531 Z" fill="#72edff" stroke="#dffcff" stroke-width="2" opacity=".9"/>
+  <path d="M914 512 L746 493 L674 512 L746 531 Z" fill="#72edff" stroke="#dffcff" stroke-width="2" opacity=".9"/>
+</g>
+<g text-anchor="middle" fill="url(#gold)" filter="url(#glow)">
+  <text x="512" y="585" font-family="Georgia, 'Times New Roman', serif" font-size="250" font-weight="700" letter-spacing="-18">A+T</text>
+</g>
+<text x="512" y="666" text-anchor="middle" fill="#fffaf0" opacity=".92" font-family="Arial, Helvetica, sans-serif" font-size="32" letter-spacing="12">PURE-RPG</text>
+<rect x="18" y="18" width="988" height="988" rx="194" fill="none" stroke="url(#ring)" stroke-width="6" opacity=".72"/>
+</svg>
