@@ -1,10 +1,13 @@
 {
-  "authority": "LIVE30C clean Overworld map base",
-  "source_description": "Approved clean floating-islands regional map derived from the selected #3 Overworld direction; no labels, route highlights, locks, markers, or GUI baked into the image.",
+  "authority": "LIVE30F exact approved Overworld map base",
+  "source_description": "Exact user-approved 1536x864 floating-islands Overworld map supplied through verified Dropbox transport; no labels, route highlights, locks, markers, or GUI baked into the image.",
   "runtime_asset": "assets/ui/overworld/v2/map_world_base.jpg",
-  "dimensions": [1672, 941],
-  "runtime_sha256": "6a2f436d0eb40ea5a7b3b4f7cb9dbb3df19d96ea8dd66df6cda53d697a0f5bb4",
-  "original_clean_source_sha256": "6cb65ecd98cb537e35b4fd28589fd86a07a5bcf92c6cb6e6c829bedbc1e22743",
+  "dimensions": [
+    1536,
+    864
+  ],
+  "runtime_sha256": "5d2c123a5efdacf00122ca91eace9c2585884d7e692a26fd1fc17ae1fe3c760f",
+  "original_clean_source_sha256": "5d2c123a5efdacf00122ca91eace9c2585884d7e692a26fd1fc17ae1fe3c760f",
   "approved": true,
   "rules": {
     "baked_labels": false,
@@ -12,5 +15,6 @@
     "baked_routes": false,
     "baked_lock_states": false,
     "coded_navigation_overlay_required": true
-  }
+  },
+  "runtime_size_bytes": 833312
 }

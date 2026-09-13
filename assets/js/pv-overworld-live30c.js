@@ -3,7 +3,7 @@
   if(window.__PV_OVERWORLD30C__)return;
   window.__PV_OVERWORLD30C__=true;
 
-  const MAP='./assets/ui/overworld/v2/map_world_base.jpg?pvasset=live30c-authority1';
+  const MAP='./assets/ui/overworld/v2/map_world_base.jpg?pvasset=live30f-exact1';
   const POS=Object.freeze({
     home:[27.2,70.0],
     echo:[79.0,72.0],
