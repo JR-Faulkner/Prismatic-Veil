@@ -1,0 +1,57 @@
+name: LIVE30C Exact Map Guard
+
+on:
+  pull_request:
+    paths:
+      - 'assets/ui/overworld/v2/map_world_base.jpg'
+      - 'assets/ui/overworld/v2/map_world_base.authority.json'
+      - 'assets/js/pv-overworld-live30c.js'
+      - 'hybrid-overworld.html'
+      - '.github/workflows/live30c-exact-map-guard.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/ui/overworld/v2/map_world_base.jpg'
+      - 'assets/ui/overworld/v2/map_world_base.authority.json'
+      - 'assets/js/pv-overworld-live30c.js'
+      - 'hybrid-overworld.html'
+      - '.github/workflows/live30c-exact-map-guard.yml'
+
+jobs:
+  exact-map-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact map bytes and authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(wc -c < assets/ui/overworld/v2/map_world_base.jpg)" -eq 833312
+          echo '5d2c123a5efdacf00122ca91eace9c2585884d7e692a26fd1fc17ae1fe3c760f  assets/ui/overworld/v2/map_world_base.jpg' | sha256sum -c -
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          raw=Path('assets/ui/overworld/v2/map_world_base.jpg').read_bytes()
+          a=json.loads(Path('assets/ui/overworld/v2/map_world_base.authority.json').read_text())
+          errors=[]
+          if a.get('dimensions') != [1536,864]: errors.append('dimensions drift')
+          if a.get('runtime_size_bytes') != 833312: errors.append('byte count drift')
+          if a.get('runtime_sha256') != hashlib.sha256(raw).hexdigest(): errors.append('SHA drift')
+          rules=a.get('rules') or {}
+          for k in ('baked_labels','baked_markers','baked_routes','baked_lock_states'):
+              if rules.get(k) is not False: errors.append(k+' must remain false')
+          if rules.get('coded_navigation_overlay_required') is not True: errors.append('coded overlay authority missing')
+          if errors:
+              print('LIVE30C EXACT MAP GUARD FAILED'); [print(' -',e) for e in errors]; raise SystemExit(1)
+          print('LIVE30C exact map authority PASS')
+          PY
+      - name: Verify cache and coded-overlay wiring
+        run: |
+          grep -q "map_world_base.jpg?pvasset=live30c-exactmap1" assets/js/pv-overworld-live30c.js
+          grep -q "map_world_base.jpg?pvasset=live30c-exactmap1" hybrid-overworld.html
+          grep -q "pv-overworld-live30c.js?pvasset=live30c-exactmap1" hybrid-overworld.html
+          grep -q "const POS=Object.freeze" assets/js/pv-overworld-live30c.js
+          grep -q "const ROUTES=Object.freeze" assets/js/pv-overworld-live30c.js
+          node --check assets/js/pv-overworld-live30c.js
+      - name: Preserve PriZim battle authority
+        run: python tools/prizim/preflight_live28k.py
