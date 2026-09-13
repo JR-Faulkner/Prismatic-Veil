@@ -1,0 +1,78 @@
+name: LIVE30C Exact Map Assembler
+
+on:
+  push:
+    branches: [live30c-exact-overworld-map-b64]
+    paths: ['staging/exact-map/READY']
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: live30c-exact-overworld-map-b64
+      - name: Reconstruct exact approved Overworld map
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f staging/exact-map/READY
+          count=$(find staging/exact-map -maxdepth 1 -name 'chunk-*.b64' | wc -l)
+          test "$count" -eq 204
+          cat staging/exact-map/chunk-*.b64 | base64 --decode > assets/ui/overworld/v2/map_world_base.jpg
+          test "$(wc -c < assets/ui/overworld/v2/map_world_base.jpg)" -eq 833312
+          echo '5d2c123a5efdacf00122ca91eace9c2585884d7e692a26fd1fc17ae1fe3c760f  assets/ui/overworld/v2/map_world_base.jpg' | sha256sum -c -
+          python - <<'PY'
+          from pathlib import Path
+          b=Path('assets/ui/overworld/v2/map_world_base.jpg').read_bytes()
+          if b[:2] != b'\xff\xd8': raise SystemExit('not JPEG')
+          i=2; dims=None; sof={0xC0,0xC1,0xC2,0xC3,0xC5,0xC6,0xC7,0xC9,0xCA,0xCB,0xCD,0xCE,0xCF}
+          while i < len(b)-9:
+              if b[i] != 0xff: i += 1; continue
+              while i < len(b) and b[i] == 0xff: i += 1
+              marker=b[i]; i+=1
+              if marker in (0xD8,0xD9) or 0xD0 <= marker <= 0xD7: continue
+              seg=int.from_bytes(b[i:i+2],'big')
+              if marker in sof:
+                  dims=(int.from_bytes(b[i+5:i+7],'big'),int.from_bytes(b[i+3:i+5],'big')); break
+              if marker == 0xDA: break
+              i += seg
+          if dims != (1536,864): raise SystemExit(f'wrong dimensions: {dims}')
+          print('Exact map dimensions PASS', dims)
+          PY
+      - name: Promote authority and cache witnesses
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('assets/ui/overworld/v2/map_world_base.authority.json')
+          d=json.loads(p.read_text())
+          d.update(authority='LIVE30C exact uploaded Overworld map base',source_description='Exact user-approved 1536x864 floating-islands Overworld map; no labels, route highlights, locks, markers, or GUI baked into the image.',runtime_asset='assets/ui/overworld/v2/map_world_base.jpg',dimensions=[1536,864],runtime_size_bytes=833312,runtime_sha256='5d2c123a5efdacf00122ca91eace9c2585884d7e692a26fd1fc17ae1fe3c760f',original_clean_source_sha256='5d2c123a5efdacf00122ca91eace9c2585884d7e692a26fd1fc17ae1fe3c760f',approved=True)
+          p.write_text(json.dumps(d,indent=2)+'\n')
+          js=Path('assets/js/pv-overworld-live30c.js'); t=js.read_text()
+          if 'live30c-authority1' not in t: raise SystemExit('LIVE30C map token missing')
+          js.write_text(t.replace('live30c-authority1','live30c-exactmap1'))
+          h=Path('hybrid-overworld.html'); t=h.read_text()
+          if 'live30c-authority1' not in t or 'pv-overworld-live30c.js?pvasset=live30c1' not in t: raise SystemExit('shell token missing')
+          h.write_text(t.replace('live30c-authority1','live30c-exactmap1').replace('pv-overworld-live30c.js?pvasset=live30c1','pv-overworld-live30c.js?pvasset=live30c-exactmap1'))
+          PY
+      - name: Validate runtime boundaries
+        run: |
+          node --check assets/js/pv-overworld-live30c.js
+          python tools/prizim/preflight_live28k.py
+      - name: Remove transport staging and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf staging/exact-map
+          rm -f .github/workflows/live30c-exact-map-assembler.yml
+          git config user.name 'JR-Faulkner'
+          git config user.email '53619182+JR-Faulkner@users.noreply.github.com'
+          git add -A
+          git commit -m 'LIVE30C: promote exact approved Overworld map'
+          git push origin HEAD:live30c-exact-overworld-map-b64
