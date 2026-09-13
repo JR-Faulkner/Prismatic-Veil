@@ -1,3 +1,3 @@
-SOURCE_URL=https://www.dropbox.com/scl/fi/0hz784k1i3bev5l2fkgsn/Photo-Sep-12-2026-18-44-59.png?rlkey=69tkhy6kh3madoe2dd33t67p0&st=im4nfl9p&dl=1
+SOURCE_URL=https://ucc2200d91aba42213af34973a35.dl.dropboxusercontent.com/cd/0/get/DIFy17Ppf4T90ycJoy1m1t_ETPZfbWDPHOMPDxGYkBgDoaWZ1vb4nx0yw8BizgMm774eDKjy-f-3BPGkfunrzaM3IXzuvtg0seNJW1RAalnkktDXtKsoTPvzRyIiHFvREhPNtyWS37X9L1m_1r13sVG-mlQn-ing2sb1Opz_buCsxg/file?c_luid=9bd25e73
 EXPECTED_SIZE=3162573
 EXPECTED_DBX_HASH=90c1bc375237753ece823c40ae007c0d1d0536052334162b8142a57a6274a8c4
