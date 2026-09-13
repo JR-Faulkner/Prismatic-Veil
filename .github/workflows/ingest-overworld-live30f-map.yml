@@ -1,0 +1,123 @@
+name: LIVE30F Ingest Verified Overworld Map From URL
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/ingest_overworld_live30f/URL.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download exact Dropbox map bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_URL="$(sed -n 's/^SOURCE_URL=//p' .github/ingest_overworld_live30f/URL.txt)"
+          EXPECTED_SIZE="$(sed -n 's/^EXPECTED_SIZE=//p' .github/ingest_overworld_live30f/URL.txt)"
+          EXPECTED_DBX_HASH="$(sed -n 's/^EXPECTED_DBX_HASH=//p' .github/ingest_overworld_live30f/URL.txt)"
+          test -n "$SOURCE_URL"
+          test -n "$EXPECTED_SIZE"
+          test -n "$EXPECTED_DBX_HASH"
+          curl -fL --retry 3 --retry-delay 2 "$SOURCE_URL" -o /tmp/map_world_base.png
+          test "$(wc -c < /tmp/map_world_base.png)" -eq "$EXPECTED_SIZE"
+          echo "EXPECTED_DBX_HASH=$EXPECTED_DBX_HASH" >> "$GITHUB_ENV"
+
+      - name: Verify PNG identity, dimensions and Dropbox content hash
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, struct, os
+          p=Path('/tmp/map_world_base.png')
+          b=p.read_bytes()
+          assert b[:8] == b'\x89PNG\r\n\x1a\n', 'not a PNG'
+          w,h=struct.unpack('>II', b[16:24])
+          assert (w,h)==(1536,864), (w,h)
+          block_hashes=[]
+          for i in range(0,len(b),4*1024*1024):
+              block_hashes.append(hashlib.sha256(b[i:i+4*1024*1024]).digest())
+          dbx=hashlib.sha256(b''.join(block_hashes)).hexdigest()
+          expected=os.environ['EXPECTED_DBX_HASH']
+          assert dbx==expected, (dbx, expected)
+          sha=hashlib.sha256(b).hexdigest()
+          Path('/tmp/map.sha256').write_text(sha+'\n')
+          print('verified', len(b), w, h, sha, dbx)
+          PY
+
+      - name: Install verified LIVE30F map and update runtime authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT='assets/ui/overworld/v2'
+          mkdir -p "$OUT"
+          cp /tmp/map_world_base.png "$OUT/map_world_base.png"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          sha=Path('/tmp/map.sha256').read_text().strip()
+          auth=Path('assets/ui/overworld/v2/map_world_base.authority.json')
+          d=json.loads(auth.read_text())
+          d['authority']='LIVE30F clean Overworld map base'
+          d['source_description']='Approved clean floating-islands regional map supplied via verified Dropbox authority; no labels, route highlights, locks, markers, or GUI baked into the image.'
+          d['runtime_asset']='assets/ui/overworld/v2/map_world_base.png'
+          d['dimensions']=[1536,864]
+          d['runtime_sha256']=sha
+          d['approved']=True
+          d.setdefault('rules',{})['baked_labels']=False
+          d['rules']['baked_markers']=False
+          d['rules']['baked_routes']=False
+          d['rules']['baked_lock_states']=False
+          d['rules']['coded_navigation_overlay_required']=True
+          auth.write_text(json.dumps(d,indent=2)+"\n")
+
+          js=Path('assets/js/pv-overworld-live30c.js')
+          s=js.read_text()
+          old="const MAP='./assets/ui/overworld/v2/map_world_base.jpg?pvasset=live30c-authority1';"
+          new="const MAP='./assets/ui/overworld/v2/map_world_base.png?pvasset=live30f-authority1';"
+          if old not in s:
+              raise SystemExit('LIVE30C map authority string not found; refusing blind replacement')
+          js.write_text(s.replace(old,new,1))
+          PY
+
+      - name: Verify installed authority agrees with exact bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          p=Path('assets/ui/overworld/v2/map_world_base.png')
+          d=json.loads(Path('assets/ui/overworld/v2/map_world_base.authority.json').read_text())
+          assert d['runtime_asset']==str(p)
+          assert d['dimensions']==[1536,864]
+          assert d['runtime_sha256']==hashlib.sha256(p.read_bytes()).hexdigest()
+          js=Path('assets/js/pv-overworld-live30c.js').read_text()
+          assert 'map_world_base.png?pvasset=live30f-authority1' in js
+          assert d['rules']['coded_navigation_overlay_required'] is True
+          assert not d['rules']['baked_labels']
+          assert not d['rules']['baked_markers']
+          assert not d['rules']['baked_routes']
+          assert not d['rules']['baked_lock_states']
+          PY
+
+      - name: Commit verified LIVE30F map and retire URL manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/ingest_overworld_live30f/URL.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/ui/overworld/v2/map_world_base.png assets/ui/overworld/v2/map_world_base.authority.json assets/js/pv-overworld-live30c.js .github/ingest_overworld_live30f/URL.txt
+          git commit -m 'LIVE30F: install verified Overworld map authority'
+          git push origin HEAD:main
