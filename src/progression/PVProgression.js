@@ -91,12 +91,17 @@ export function applyEncounterReward(locationId, options = {}, storage = globalT
   const table = PROGRESSION_TUNING.encounters[locationId];
   if (!table) return { awarded: false, reason: 'no-reward-table', locationId };
 
-  const firstClear = !!options.firstClear;
   const encounterId = String(options.encounterId || `${locationId}:${options.enteredAt || now()}`);
   if (state.claims[encounterId]) {
     return { ...state.claims[encounterId].payout, awarded: false, duplicate: true };
   }
 
+  const encounter = state.encounters[locationId] && typeof state.encounters[locationId] === 'object'
+    ? { ...state.encounters[locationId] }
+    : { wins: 0, firstClearClaimed: false };
+  // The progression ledger is the final first-clear loot authority. Even if a map
+  // clear flag is lost or a query is replayed, unique loot cannot be claimed twice.
+  const firstClear = !!options.firstClear && encounter.firstClearClaimed !== true;
   const reward = firstClear ? table.firstClear : table.repeat;
   const xpEach = asInt(reward.xpEach, 0);
   const heroXp = {};
@@ -113,9 +118,6 @@ export function applyEncounterReward(locationId, options = {}, storage = globalT
     items[id] = qty;
   }
 
-  const encounter = state.encounters[locationId] && typeof state.encounters[locationId] === 'object'
-    ? { ...state.encounters[locationId] }
-    : { wins: 0, firstClearClaimed: false };
   encounter.wins = asInt(encounter.wins, 0) + 1;
   if (firstClear) encounter.firstClearClaimed = true;
   encounter.lastWinAt = now();
