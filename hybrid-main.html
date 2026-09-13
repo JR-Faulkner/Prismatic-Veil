@@ -31,10 +31,10 @@
   const id=String(build.id||'main');
   const live28kLineage=/live28k\d+/i.test(id);
   const encounterMode=new URLSearchParams(location.search).has('pvencounter');
-  // K27 remains the normal battle authority. LIVE29F is an isolated child adapter
-  // used only for an Overworld encounter so the locked K27 implementation stays intact.
-  const battleAdapter=live28kLineage?(encounterMode?'Live29FEncounterBattleScene.js':'Live28K27BattleGuardScene.js'):'Live28PartyBattleScene.js';
-  const battleTag=encounterMode?'encounter1':'guard1';
+  // K27 remains the normal battle authority. LIVE29G is an isolated child adapter
+  // layered over Live29FEncounterBattleScene.js so reward/return behavior stays intact.
+  const battleAdapter=live28kLineage?(encounterMode?'Live29GEncounterBattleScene.js':'Live28K27BattleGuardScene.js'):'Live28PartyBattleScene.js';
+  const battleTag=encounterMode?'encounter2':'guard1';
   const formationAdapter=live28kLineage?'Live28K7PartyFormationView.js':'Live28PartyFormationView.js';
   document.documentElement.dataset.pvbuild=id;
   if(encounterMode)document.documentElement.dataset.pvEncounter='1';
@@ -56,7 +56,7 @@
   const xboxFullscreen=`<script id="pvXboxFullscreen">(()=>{const go=()=>{if(!/Xbox/i.test(navigator.userAgent||'')||document.fullscreenElement||!document.documentElement.requestFullscreen)return;if(navigator.userActivation&&!navigator.userActivation.isActive)return;document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{})};['pointerdown','keydown','click'].forEach(t=>document.addEventListener(t,go,{capture:true}))})();<\/script>`;
   html=html.replace('</head>',`<script type="importmap">${importMap}<\/script>${portraitFocus}</head>`);
   html=html.replace("import('./src/PartyBattleScene.js?v=blitzer-2')",`import('./src/prizim/${battleAdapter}?v=${encodeURIComponent(id)}-${battleTag}')`);
-  html=html.replace('</body>',`${xboxFullscreen}<div id="pvBuildWitness" style="position:fixed;left:6px;bottom:5px;z-index:9999;padding:3px 6px;border:1px solid #8d6cac88;border-radius:5px;background:#070817cc;color:#bfa8dc;font:8px ui-monospace,monospace;pointer-events:none">${id}${encounterMode?' · LIVE29F':''}</div></body>`);
+  html=html.replace('</body>',`${xboxFullscreen}<div id="pvBuildWitness" style="position:fixed;left:6px;bottom:5px;z-index:9999;padding:3px 6px;border:1px solid #8d6cac88;border-radius:5px;background:#070817cc;color:#bfa8dc;font:8px ui-monospace,monospace;pointer-events:none">${id}${encounterMode?' · LIVE29G':''}</div></body>`);
   document.open();document.write(html);document.close();
 })().catch(err=>{
   document.body.innerHTML=`<pre style="white-space:pre-wrap;padding:24px">LIVE BOOT ERROR\n${String(err?.stack||err)}</pre>`;
