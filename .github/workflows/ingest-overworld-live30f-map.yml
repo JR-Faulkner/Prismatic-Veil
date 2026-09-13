@@ -32,12 +32,14 @@ jobs:
           test "$(wc -c < /tmp/map_world_base.png)" -eq "$EXPECTED_SIZE"
           echo "EXPECTED_DBX_HASH=$EXPECTED_DBX_HASH" >> "$GITHUB_ENV"
 
-      - name: Verify PNG identity, dimensions and Dropbox content hash
+      - name: Verify PNG identity, dimensions, Dropbox hash and approved visual fingerprint
         shell: bash
         run: |
           set -euo pipefail
+          python -m pip install --quiet pillow
           python - <<'PY'
           from pathlib import Path
+          from PIL import Image
           import hashlib, struct, os
           p=Path('/tmp/map_world_base.png')
           b=p.read_bytes()
@@ -50,9 +52,25 @@ jobs:
           dbx=hashlib.sha256(b''.join(block_hashes)).hexdigest()
           expected=os.environ['EXPECTED_DBX_HASH']
           assert dbx==expected, (dbx, expected)
+
+          # Robust visual witness derived from the exact user-approved 1536x864 JPEG.
+          # This permits a lossless PNG source of the same artwork while rejecting old/wrong maps.
+          im=Image.open(p).convert('L').resize((33,18),Image.Resampling.LANCZOS)
+          px=list(im.getdata()); bits=[]
+          for y in range(18):
+              row=px[y*33:(y+1)*33]
+              bits.extend(1 if row[x] > row[x+1] else 0 for x in range(32))
+          v=0
+          for bit in bits: v=(v<<1)|bit
+          dh=f'{v:0144x}'
+          approved='e6347666d0892d6cc2969d9a493ec2a666d8a73c318e99cf9f129aa76f70edcbcc346d18eda676e23ba0b4d63329b927e3c4df5bc0e4d61869856db22c9ba7181cb1ab980ce6cbcd'
+          distance=(int(dh,16)^int(approved,16)).bit_count()
+          print('approved visual dHash distance',distance,'of',len(bits))
+          assert distance <= 20, ('wrong visual map',distance)
+
           sha=hashlib.sha256(b).hexdigest()
           Path('/tmp/map.sha256').write_text(sha+'\n')
-          print('verified', len(b), w, h, sha, dbx)
+          print('verified', len(b), w, h, sha, dbx, 'visual_distance', distance)
           PY
 
       - name: Install verified LIVE30F map and update runtime authority
@@ -69,7 +87,7 @@ jobs:
           auth=Path('assets/ui/overworld/v2/map_world_base.authority.json')
           d=json.loads(auth.read_text())
           d['authority']='LIVE30F clean Overworld map base'
-          d['source_description']='Approved clean floating-islands regional map supplied via verified Dropbox authority; no labels, route highlights, locks, markers, or GUI baked into the image.'
+          d['source_description']='Approved 1536x864 floating-islands regional map supplied via verified Dropbox source and matched against the exact user-approved visual fingerprint; no labels, route highlights, locks, markers, or GUI baked into the image.'
           d['runtime_asset']='assets/ui/overworld/v2/map_world_base.png'
           d['dimensions']=[1536,864]
           d['runtime_sha256']=sha
@@ -110,6 +128,13 @@ jobs:
           assert not d['rules']['baked_routes']
           assert not d['rules']['baked_lock_states']
           PY
+
+      - name: Validate runtime boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/js/pv-overworld-live30c.js
+          python tools/prizim/preflight_live28k.py
 
       - name: Commit verified LIVE30F map and retire URL manifest
         shell: bash
