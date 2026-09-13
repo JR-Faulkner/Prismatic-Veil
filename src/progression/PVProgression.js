@@ -50,8 +50,9 @@ function normalize(raw) {
   const src = raw && typeof raw === 'object' ? raw : {};
   for (const id of ALL_BEARERS) {
     const h = src.heroes?.[id];
+    const rawLevel = h?.level;
     base.heroes[id] = {
-      level: Number.isFinite(Number(h?.level)) ? Math.max(1, Math.floor(Number(h.level))) : null,
+      level: rawLevel == null || rawLevel === '' ? null : (Number.isFinite(Number(rawLevel)) ? Math.max(1, Math.floor(Number(rawLevel))) : null),
       xp: asInt(h?.xp, 0)
     };
   }
@@ -139,12 +140,15 @@ export function applyEncounterReward(locationId, options = {}, storage = globalT
 
 export function progressionSummary(storage = globalThis.localStorage) {
   const state = loadProgression(storage);
+  const clone = value => typeof globalThis.structuredClone === 'function'
+    ? globalThis.structuredClone(value)
+    : JSON.parse(JSON.stringify(value));
   return {
     schema: state.schema,
     tuningRevision: state.tuningRevision,
     levelCurveLocked: state.levelCurveLocked,
-    heroes: structuredClone ? structuredClone(state.heroes) : JSON.parse(JSON.stringify(state.heroes)),
+    heroes: clone(state.heroes),
     inventory: { ...state.inventory },
-    encounters: JSON.parse(JSON.stringify(state.encounters || {}))
+    encounters: clone(state.encounters || {})
   };
 }
