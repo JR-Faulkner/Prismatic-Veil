@@ -1,0 +1,107 @@
+name: LIVE29G Encounter Guard
+
+on:
+  pull_request:
+    paths:
+      - 'src/prizim/Live29GEncounterBattleScene.js'
+      - 'src/prizim/Live29FEncounterBattleScene.js'
+      - 'src/EnemyCatalog.js'
+      - 'src/EnemyHushlingView.js'
+      - 'assets/enemy/hushling/**'
+      - 'assets/ui/portrait_hushling_v34.png'
+      - 'hybrid-main.html'
+      - '.github/workflows/live29g-encounter-guard.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/prizim/Live29GEncounterBattleScene.js'
+      - 'src/prizim/Live29FEncounterBattleScene.js'
+      - 'src/EnemyCatalog.js'
+      - 'src/EnemyHushlingView.js'
+      - 'assets/enemy/hushling/**'
+      - 'assets/ui/portrait_hushling_v34.png'
+      - 'hybrid-main.html'
+      - '.github/workflows/live29g-encounter-guard.yml'
+
+jobs:
+  encounter-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Syntax checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module --check < src/prizim/Live29GEncounterBattleScene.js
+          node --input-type=module --check < src/EnemyCatalog.js
+          node --input-type=module --check < src/EnemyHushlingView.js
+
+      - name: Exercise canonical enemy catalog
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp src/EnemyCatalog.js /tmp/EnemyCatalog.mjs
+          node --input-type=module <<'JS'
+          const e=await import('file:///tmp/EnemyCatalog.mjs');
+          const base={name:'Veil Wraith',hp:30,maxHp:30,attack:{name:'Veil Lash',damage:9}};
+          const hush=e.selectEnemy(base,'',e.ENEMY_IDS.hushling);
+          if(hush.id!=='hushling'||hush.viewId!=='hushling'||hush.audioBank!=='hushling')throw new Error('Hushling identity drift');
+          if(hush.name!=='Hushling'||hush.hp!==52||hush.maxHp!==52)throw new Error('Hushling stat authority drift');
+          if(hush.portrait!=='portrait_hushling'||hush.attack?.name!=='Hush Crush'||hush.attack?.damage!==12)throw new Error('Hushling presentation/attack authority drift');
+          const wraith=e.selectEnemy(base,'',e.ENEMY_IDS.wraith);
+          if(wraith.id!=='wraith'||wraith.name!=='Veil Wraith')throw new Error('Wraith fallback drift');
+          console.log('LIVE29G enemy catalog exercise PASS');
+          JS
+
+      - name: Validate location encounter integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f assets/enemy/hushling/Hushling_v34_Idle.png
+          test -f assets/enemy/hushling/Hushling_v34_Attack.png
+          test -f assets/enemy/hushling/Hushling_v34_Hit.png
+          test -f assets/enemy/hushling/Hushling_v34_Shatter.png
+          test -f assets/ui/portrait_hushling_v34.png
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          errors=[]
+          def read(p): return Path(p).read_text(encoding='utf-8')
+
+          live29g=read('src/prizim/Live29GEncounterBattleScene.js')
+          live29f=read('src/prizim/Live29FEncounterBattleScene.js')
+          hybrid=read('hybrid-main.html')
+          catalog=read('src/EnemyCatalog.js')
+          build=json.loads(read('live-build.json'))
+
+          if build.get('id')!='main-20260909-live28k27': errors.append('K27 witness drift')
+          if "extends Live29FEncounterBattleScene" not in live29g: errors.append('LIVE29G no longer extends LIVE29F')
+          if "echo: ENEMY_IDS.hushling" not in live29g: errors.append('Echo Playground Hushling assignment missing')
+          if "ENEMY_IDS.wraith" not in live29g: errors.append('Wraith fallback missing')
+          if "assets/enemy/hushling/${texture}.png" not in live29g: errors.append('Hushling visual preload missing')
+          if "portrait_hushling_v34.png" not in live29g: errors.append('Hushling portrait preload missing')
+          if "EnemyAudioDirector" not in live29g or "enemyDirector.startIdle()" not in live29g: errors.append('Hushling audio director rebind missing')
+          if "import Live28K27BattleGuardScene from './Live28K27BattleGuardScene.js?v=live29f1'" not in live29f: errors.append('LIVE29F no longer inherits K27')
+          if "applyEncounterReward" not in live29f or "_onVictory" not in live29f or "_onDefeat" not in live29f: errors.append('LIVE29F progression/return bridge drift')
+          if "encounterMode?'Live29GEncounterBattleScene.js':'Live28K27BattleGuardScene.js'" not in hybrid: errors.append('Hybrid encounter routing not on LIVE29G/K27 split')
+          if "LIVE29G" not in hybrid: errors.append('LIVE29G build witness missing')
+          if "name: 'Hushling'" not in catalog or "name: 'Hush Crush'" not in catalog: errors.append('Canonical Hushling catalog drift')
+
+          if errors:
+              print('LIVE29G ENCOUNTER GUARD FAILED')
+              for e in errors: print(' -',e)
+              raise SystemExit(1)
+          print('LIVE29G INTEGRATION CONTRACT PASS')
+          PY
+
+      - name: Preserve PriZim battle authority
+        run: python tools/prizim/preflight_live28k.py
+
+      - name: Record result
+        if: success()
+        run: |
+          echo '## LIVE29G Encounter Guard ✅' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Echo Playground enemy identity, canonical Hushling art/data/audio, LIVE29F reward/return inheritance, K27 routing, and PriZim battle authority all passed.' >> "$GITHUB_STEP_SUMMARY"
