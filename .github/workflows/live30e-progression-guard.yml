@@ -42,7 +42,7 @@ jobs:
           const mem=new Map();
           const storage={getItem:k=>mem.has(k)?mem.get(k):null,setItem:(k,v)=>mem.set(k,String(v))};
           const first=p.applyEncounterReward('echo',{firstClear:true,encounterId:'echo:test:first'},storage);
-          if(!first.awarded||first.xpEach!==50)throw new Error('first-clear XP payout drift');
+          if(!first.awarded||!first.firstClear||first.xpEach!==50)throw new Error('first-clear XP payout drift');
           let s=p.loadProgression(storage);
           for(const id of p.CORE_BATTLE_BEARERS)if(s.heroes[id].xp!==50)throw new Error(`first-clear XP missing for ${id}`);
           if(s.inventory.veilShard!==1||s.inventory.memoryFragment!==1)throw new Error('first-clear item payout drift');
@@ -50,10 +50,14 @@ jobs:
           if(!duplicate.duplicate||duplicate.awarded)throw new Error('duplicate claim guard failed');
           s=p.loadProgression(storage);
           for(const id of p.CORE_BATTLE_BEARERS)if(s.heroes[id].xp!==50)throw new Error(`duplicate XP awarded to ${id}`);
+          const replayFirst=p.applyEncounterReward('echo',{firstClear:true,encounterId:'echo:test:false-first'},storage);
+          if(!replayFirst.awarded||replayFirst.firstClear||replayFirst.xpEach!==20)throw new Error('first-clear ledger replay guard failed');
+          s=p.loadProgression(storage);
+          if(s.inventory.veilShard!==1||s.inventory.memoryFragment!==1)throw new Error('unique first-clear loot was duplicated');
           const repeat=p.applyEncounterReward('echo',{firstClear:false,encounterId:'echo:test:repeat'},storage);
           if(!repeat.awarded||repeat.xpEach!==20)throw new Error('repeat XP payout drift');
           s=p.loadProgression(storage);
-          for(const id of p.CORE_BATTLE_BEARERS)if(s.heroes[id].xp!==70)throw new Error(`repeat XP missing for ${id}`);
+          for(const id of p.CORE_BATTLE_BEARERS)if(s.heroes[id].xp!==90)throw new Error(`repeat XP missing for ${id}`);
           if(s.inventory.veilShard!==1||s.inventory.memoryFragment!==1)throw new Error('repeat incorrectly duplicated first-clear items');
           if(s.levelCurveLocked!==false)throw new Error('level curve was accidentally locked');
           console.log('LIVE30E progression exercise PASS');
@@ -78,6 +82,7 @@ jobs:
           if "applyEncounterReward" not in bridge or "payout" not in bridge: errors.append('LIVE30E payout bridge missing')
           if "PROGRESSION_STORAGE_KEY = 'pv.progression.v1'" not in progression: errors.append('progression storage authority drift')
           if "levelCurveLocked: false" not in progression: errors.append('unlocked level-curve contract drift')
+          if "firstClearClaimed !== true" not in progression: errors.append('one-time first-clear ledger guard missing')
           if "pv-party-live30e.js" not in party: errors.append('Party progression UI not loaded')
           if "pv.progression.v1" not in party_ui: errors.append('Party progression refresh key missing')
           if 'NO REWARDS AWARDED' not in overworld: errors.append('defeat reward presentation missing')
@@ -96,4 +101,4 @@ jobs:
         run: |
           echo '## LIVE30E Progression Guard ✅' >> "$GITHUB_STEP_SUMMARY"
           echo '' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Persistence, first-clear/rematch payout, duplicate prevention, Party readout, LIVE29F inheritance, and PriZim K27 authority all passed.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Persistence, one-time first-clear loot, rematch payout, duplicate prevention, Party readout, LIVE29F inheritance, and PriZim K27 authority all passed.' >> "$GITHUB_STEP_SUMMARY"
