@@ -3,6 +3,7 @@
 // Overworld encounter completion/return behavior when the battle was entered
 // from a location route.
 import Live28K27BattleGuardScene from './Live28K27BattleGuardScene.js?v=live29f1';
+import { applyEncounterReward } from '../progression/PVProgression.js?v=live30e1';
 
 const CLEAR_PREFIX = 'pv.locationClear.';
 const RESULT_KEY = 'pv.encounterResult';
@@ -31,11 +32,27 @@ export default class Live29FEncounterBattleScene extends Live28K27BattleGuardSce
     if (!this._pvEncounter || this._pvEncounterReturnQueued) return;
     this._pvEncounterReturnQueued = true;
 
-    const { locationId, mode } = this._pvEncounter;
+    const { locationId, mode, enteredAt } = this._pvEncounter;
     const clearKey = `${CLEAR_PREFIX}${locationId}`;
     const wasCleared = globalThis.localStorage?.getItem(clearKey) === '1';
     const victory = result === 'victory';
     const firstClear = victory && !wasCleared;
+    let payout = null;
+
+    // LIVE30E owns persistence/reward bookkeeping only. K27 still owns every
+    // combat frame, damage decision, cinematic, result beat, and audio handoff.
+    if (victory) {
+      try {
+        payout = applyEncounterReward(locationId, {
+          firstClear,
+          mode,
+          enteredAt,
+          encounterId: `${locationId}:${enteredAt}`
+        });
+      } catch (err) {
+        console.warn('[PV] progression payout failed; encounter return will continue', err);
+      }
+    }
 
     try {
       if (victory) globalThis.localStorage?.setItem(clearKey, '1');
@@ -44,6 +61,7 @@ export default class Live29FEncounterBattleScene extends Live28K27BattleGuardSce
         result,
         firstClear,
         mode,
+        payout,
         completedAt: Date.now()
       }));
       globalThis.localStorage?.removeItem(PENDING_KEY);
@@ -63,8 +81,8 @@ export default class Live29FEncounterBattleScene extends Live28K27BattleGuardSce
 
   _onDefeat() {
     super._onDefeat();
-    // A failed route never marks the location clear, but it should not strand
-    // the player in the battle scene. Preserve the defeat beat, then return.
+    // A failed route never marks the location clear, never awards progression,
+    // and never strands the player in battle. Preserve the defeat beat, return.
     this._queueEncounterReturn('defeat', 2300);
   }
 }

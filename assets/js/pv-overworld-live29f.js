@@ -14,8 +14,9 @@
     .pv-encounter-curtain.show{opacity:1}
     .pv-encounter-card{min-width:min(460px,72vw);padding:18px 28px;border:1px solid #e1c46f99;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);background:linear-gradient(150deg,#101d3cf2,#080c1df5);text-align:center;box-shadow:0 18px 50px #000c,0 0 35px #805dff33}
     .pv-encounter-card b{display:block;color:#f4d77d;font:900 clamp(15px,2.5vw,24px) Georgia,serif;letter-spacing:.15em}.pv-encounter-card span{display:block;margin-top:7px;color:#b9cae8;font:800 8px system-ui;letter-spacing:.2em;text-transform:uppercase}
-    .pv-return-toast{position:fixed;left:50%;top:10%;z-index:9997;transform:translate(-50%,-14px);opacity:0;transition:.24s ease;min-width:min(420px,72vw);padding:10px 18px;border:1px solid #e3c77288;background:#081127ee;color:#f6df99;text-align:center;font:900 10px system-ui;letter-spacing:.14em;box-shadow:0 12px 30px #000a,0 0 22px #6e5cff33;pointer-events:none}.pv-return-toast.show{opacity:1;transform:translate(-50%,0)}
-    .pv-return-toast.defeat{border-color:#a283c688;color:#d9c7ed;box-shadow:0 12px 30px #000a,0 0 22px #8b5cff2e}
+    .pv-return-toast{position:fixed;left:50%;top:10%;z-index:9997;transform:translate(-50%,-14px);opacity:0;transition:.24s ease;min-width:min(440px,78vw);padding:11px 18px;border:1px solid #e3c77288;background:#081127f3;color:#f6df99;text-align:center;box-shadow:0 12px 30px #000a,0 0 22px #6e5cff33;pointer-events:none;clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px)}.pv-return-toast.show{opacity:1;transform:translate(-50%,0)}
+    .pv-return-toast b{display:block;color:#f6df99;font:900 10px system-ui;letter-spacing:.14em}.pv-return-toast span{display:block;margin-top:5px;color:#b9d7ee;font:800 7px system-ui;letter-spacing:.10em}
+    .pv-return-toast.defeat{border-color:#a283c688;color:#d9c7ed;box-shadow:0 12px 30px #000a,0 0 22px #8b5cff2e}.pv-return-toast.defeat b{color:#d9c7ed}
   `;
   document.head.appendChild(style);
 
@@ -43,16 +44,30 @@
     el.innerHTML=`<div class="pv-encounter-card"><b>ECHO PLAYGROUND</b><span>${mode==='first-clear'?'First-Clear Encounter':'Resonance Rematch'}</span></div>`;
     document.body.appendChild(el);requestAnimationFrame(()=>el.classList.add('show'));return el;
   }
+  function rewardLine(result){
+    const p=result?.payout;if(!p?.awarded)return '';
+    const bits=[];
+    if(Number(p.xpEach)>0)bits.push(`+${Number(p.xpEach)} XP × ${(p.bearers||[]).length||3} BEARERS`);
+    const items=p.items||{};
+    if(Number(items.veilShard)>0)bits.push(`VEIL SHARD ×${Number(items.veilShard)}`);
+    if(Number(items.memoryFragment)>0)bits.push(`MEMORY FRAGMENT ×${Number(items.memoryFragment)}`);
+    return bits.join('  ·  ');
+  }
   function toast(result){
     const el=document.createElement('div');el.className='pv-return-toast';
+    const headline=document.createElement('b');
+    const detail=document.createElement('span');
     if(result?.result==='defeat'){
       el.classList.add('defeat');
-      el.textContent='ROUTE RETREAT · ECHO PLAYGROUND REMAINS UNSTABLE';
+      headline.textContent='ROUTE RETREAT · ECHO PLAYGROUND REMAINS UNSTABLE';
+      detail.textContent='NO REWARDS AWARDED';
     }else{
-      el.textContent=result?.firstClear?'FIRST CLEAR COMPLETE · ECHO PLAYGROUND STABILIZED':'ENCOUNTER CLEARED · ECHO PLAYGROUND';
+      headline.textContent=result?.firstClear?'FIRST CLEAR COMPLETE · ECHO PLAYGROUND STABILIZED':'ENCOUNTER CLEARED · ECHO PLAYGROUND';
+      detail.textContent=rewardLine(result)||'PROGRESSION RECORDED';
     }
+    el.append(headline,detail);
     document.body.appendChild(el);requestAnimationFrame(()=>el.classList.add('show'));
-    setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),300)},2200);
+    setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),300)},2800);
   }
 
   async function enterEcho(){
