@@ -1,0 +1,45 @@
+name: Inspect Overworld Dropbox Candidate
+on:
+  push:
+    branches: [main]
+    paths: ['.github/inspect_overworld_candidate/URL.txt']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and compare visual fingerprint
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_URL="$(sed -n 's/^SOURCE_URL=//p' .github/inspect_overworld_candidate/URL.txt)"
+          curl -fL --retry 2 "$SOURCE_URL" -o /tmp/candidate
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          import hashlib
+          p=Path('/tmp/candidate'); b=p.read_bytes()
+          im=Image.open(p)
+          print('BYTES',len(b))
+          print('FORMAT',im.format)
+          print('DIMENSIONS',im.size)
+          print('SHA256',hashlib.sha256(b).hexdigest())
+          g=im.convert('L').resize((33,18),Image.Resampling.LANCZOS)
+          px=list(g.getdata()); bits=[]
+          for y in range(18):
+              row=px[y*33:(y+1)*33]
+              bits.extend(1 if row[x] > row[x+1] else 0 for x in range(32))
+          v=0
+          for bit in bits: v=(v<<1)|bit
+          hx=f'{v:0144x}'
+          expected='e6347666d0892d6cc2969d9a493ec2a666d8a73c318e99cf9f129aa76f70edcbcc346d18eda676e23ba0b4d63329b927e3c4df5bc0e4d61869856db22c9ba7181cb1ab980ce6cbcd'
+          dist=(int(hx,16)^int(expected,16)).bit_count()
+          print('DHASH',hx)
+          print('DHASH_DISTANCE_TO_APPROVED',dist,'OF',len(bits))
+          if im.size != (1536,864): raise SystemExit('candidate dimensions differ from approved')
+          if dist > 20: raise SystemExit('candidate visual fingerprint differs from approved')
+          print('VISUAL_MATCH_PASS')
+          PY
