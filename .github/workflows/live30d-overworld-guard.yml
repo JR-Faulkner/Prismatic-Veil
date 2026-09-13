@@ -1,0 +1,87 @@
+name: LIVE30D Overworld Guard
+
+on:
+  pull_request:
+    paths:
+      - 'hybrid-overworld.html'
+      - 'assets/js/pv-overworld-live30d.js'
+      - '.github/workflows/live30d-overworld-guard.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'hybrid-overworld.html'
+      - 'assets/js/pv-overworld-live30d.js'
+      - '.github/workflows/live30d-overworld-guard.yml'
+
+jobs:
+  overworld-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: JavaScript syntax check
+        run: node --check assets/js/pv-overworld-live30d.js
+      - name: Validate LIVE30D production boundaries
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          errors=[]
+          def read(path): return Path(path).read_text(encoding='utf-8')
+
+          overworld=read('hybrid-overworld.html')
+          live30c=read('assets/js/pv-overworld-live30c.js')
+          live30d=read('assets/js/pv-overworld-live30d.js')
+          hybrid_main=read('hybrid-main.html')
+          build=json.loads(read('live-build.json'))
+
+          # Locked battle authority must remain untouched by an Overworld presentation pass.
+          if build.get('id') != 'main-20260909-live28k27':
+              errors.append('K27 live-build witness drift')
+          for token in ['Live28K27BattleGuardScene.js','Live29FEncounterBattleScene.js','Live28K7PartyFormationView.js']:
+              if token not in hybrid_main:
+                  errors.append(f'battle route authority missing: {token}')
+
+          # Overworld audio and map authority.
+          if 'Homecoming_Path.m4a' not in overworld:
+              errors.append('Homecoming Path Overworld authority missing')
+          map_token='assets/ui/overworld/v2/map_world_base.jpg'
+          if map_token not in overworld or map_token not in live30c:
+              errors.append('clean v2 map authority missing')
+
+          # Layer order is deliberate: 30D decorates the already-proven 30C structure.
+          c='pv-overworld-live30c.js'
+          d='pv-overworld-live30d.js'
+          if c not in overworld or d not in overworld or overworld.index(c) > overworld.index(d):
+              errors.append('LIVE30C -> LIVE30D script order drift')
+
+          # LIVE30D contract.
+          for token in [
+              "window.__PV_OVERWORLD30D__",
+              "document.documentElement.dataset.pvOverworld='LIVE30D'",
+              'pv30dRoute',
+              'pv30dSigil',
+              'pv30d-flavor',
+              'prefers-reduced-motion',
+              'RESONANCE PROFILE',
+          ]:
+              if token not in live30d:
+                  errors.append(f'LIVE30D presentation token missing: {token}')
+          if '<audio' in live30d.lower() or 'new Audio(' in live30d:
+              errors.append('LIVE30D must not create a competing music/audio lane')
+          if 'location.href' in live30d or 'hybrid-main.html' in live30d:
+              errors.append('LIVE30D presentation layer must not own travel/battle routing')
+
+          if errors:
+              print('LIVE30D OVERWORLD GUARD FAILED')
+              for err in errors: print(' -',err)
+              raise SystemExit(1)
+          print('LIVE30D OVERWORLD GUARD PASS')
+          PY
+      - name: Record result
+        if: success()
+        run: |
+          echo '## LIVE30D Overworld Guard ✅' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo 'LIVE30D syntax, layer order, v2 map authority, Homecoming Path, and locked K27/LIVE29F battle boundaries are intact.' >> "$GITHUB_STEP_SUMMARY"
