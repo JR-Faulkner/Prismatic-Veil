@@ -1,0 +1,78 @@
+name: LIVE30F Exact Map Alignment Applicator
+
+on:
+  push:
+    branches: [work/live30f-map-alignment]
+    paths:
+      - '.github/live30f_map_alignment/READY'
+
+permissions:
+  contents: write
+
+jobs:
+  align:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/live30f-map-alignment
+          fetch-depth: 0
+
+      - name: Align coded navigation to exact approved map
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('assets/js/pv-overworld-live30c.js')
+          s=p.read_text()
+          replacements={
+            "home:[27.2,70.0]":"home:[20.8,69.3]",
+            "whisper:[34.8,43.2]":"whisper:[27.8,43.2]",
+            "'echo|home':'M27.2 70 C39 78,63 79,79 72'":"'echo|home':'M20.8 69.3 C35 77,61 79,79 72'",
+            "'glassway|home':'M27.2 70 C35 73,43 72,50.5 69.3'":"'glassway|home':'M20.8 69.3 C31 74,42 72,50.5 69.3'",
+            "'echo|whisper':'M79 72 C68 61,53 49,34.8 43.2'":"'echo|whisper':'M79 72 C66 61,48 49,27.8 43.2'",
+            "'oldwater|whisper':'M34.8 43.2 C49 43,61 47,72 50.5'":"'oldwater|whisper':'M27.8 43.2 C44 42,59 47,72 50.5'",
+            "home:'25% 75%'":"home:'21% 74%'",
+            "whisper:'35% 47%'":"whisper:'28% 47%'"
+          }
+          for old,new in replacements.items():
+              if old not in s:
+                  raise SystemExit(f'missing expected alignment token: {old}')
+              s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+
+      - name: Validate exact-map authority and runtime boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/js/pv-overworld-live30c.js
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('assets/ui/overworld/v2/map_world_base.authority.json').read_text())
+          assert d['dimensions']==[1536,864]
+          assert d['runtime_size_bytes']==833312
+          assert d['runtime_sha256']=='5d2c123a5efdacf00122ca91eace9c2585884d7e692a26fd1fc17ae1fe3c760f'
+          s=Path('assets/js/pv-overworld-live30c.js').read_text()
+          for token in [
+            "home:[20.8,69.3]",
+            "whisper:[27.8,43.2]",
+            "map_world_base.jpg?pvasset=live30f-exact1"
+          ]:
+              assert token in s, token
+          PY
+          python tools/prizim/preflight_live28k.py
+
+      - name: Commit aligned coded overlay and retire applicator
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/live30f_map_alignment/READY
+          rm -f .github/workflows/live30f-map-alignment-apply.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'LIVE30F: align navigation overlay to exact map landmarks'
+          git push origin HEAD:work/live30f-map-alignment
