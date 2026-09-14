@@ -1,0 +1,90 @@
+name: Patch Rig F F6.2 Controls
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-rigf-f62.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add mobile controller to Rig F
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('mugen-lab/rig-f.html')
+          s=p.read_text()
+          if 'MOBMUGEN · RIG F · F6.1' not in s:
+              raise SystemExit('Expected F6.1 base not found')
+          s=s.replace('MobMugen · Rig F · F6.1.1','MobMugen · Rig F · F6.2')
+          s=s.replace('MobMugen · Rig F · F6.1','MobMugen · Rig F · F6.2')
+          s=s.replace('MOBMUGEN · RIG F · F6.1','MOBMUGEN · RIG F · F6.2')
+          s=s.replace('Rig F · F6.1','Rig F · F6.2')
+          s=s.replace('F6.1 witness log','F6.2 witness log')
+          s=s.replace("F6.1 ERROR", "F6.2 ERROR")
+          s=s.replace("F6.1 LEAN", "F6.2 LEAN")
+          s=s.replace("RIGF F6.1", "RIGF F6.2")
+          s=s.replace("F6.1 XHR", "F6.2 XHR")
+          s=s.replace("F6.1 ROOT", "F6.2 ROOT")
+          s=s.replace("F6.1 MODULE", "F6.2 MODULE")
+          s=s.replace("F6.1 POST", "F6.2 POST")
+          # Add controller CSS before hidden BoxedWine utility block.
+          css='''
+.ctrl-toggle{margin-left:8px;border:1px solid #6d5722;background:#151208;color:var(--gold);border-radius:999px;padding:8px 11px;font:900 10px ui-monospace;letter-spacing:.05em}
+.controls{position:relative;margin-top:8px;border:1px solid #273750;border-radius:18px;background:linear-gradient(180deg,#111827,#070b13);height:228px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}.controls.hidden{display:none}.controls:before{content:'MOBMUGEN CONTROLLER';position:absolute;left:50%;top:6px;transform:translateX(-50%);color:#ffffff40;font:900 7px ui-monospace;letter-spacing:.18em}.cz{position:absolute;top:18px;bottom:42px;width:50%;display:flex;align-items:center;justify-content:center}.cz.left{left:0}.cz.right{right:0}.dpad{width:min(36vw,150px);height:min(36vw,150px);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:7px;border-radius:50%;border:2px solid #619fff99;background:radial-gradient(circle,#0a0f19 0 25%,#121c31 26% 50%,#080c14 51%);box-shadow:0 0 22px #368aff33,inset 0 0 20px #6a45d733}.dir{border:0;background:transparent;color:#e8f3ff;font:950 23px ui-monospace;touch-action:none}.dir.center{pointer-events:none;font-size:8px;color:#8292aa;border:1px solid #619fff44;border-radius:50%;margin:12%;background:#0b111c}.dir.on{background:radial-gradient(circle,#328dff88,transparent 68%);transform:scale(.92)}.acts{position:relative;width:min(44vw,190px);height:154px}.act{position:absolute;width:min(13vw,55px);height:min(13vw,55px);border-radius:50%;background:radial-gradient(circle at 35% 28%,#ffffff55,#182137 48%,#070a12 100%);color:white;font:950 12px ui-monospace;touch-action:none;box-shadow:0 6px 13px #000a}.act.on{transform:scale(.9);filter:brightness(1.5)}.lp,.lk{border:2px solid #229cff}.mp,.mk{border:2px solid #f2b94f}.hp,.hk{border:2px solid #ff5050}.lp{left:0;top:15px}.mp{left:35%;top:0}.hp{right:0;top:15px}.lk{left:0;bottom:0}.mk{left:35%;bottom:14px}.hk{right:0;bottom:0}.util{position:absolute;left:50%;bottom:7px;transform:translateX(-50%);width:94%;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.util button{height:29px;border:1px solid #f1bf5555;background:#16130d;color:#f6d894;border-radius:9px;font:900 9px ui-monospace;touch-action:none}.util button.on{background:#76551d;transform:scale(.96)}.gamepad-note{display:none;margin:5px 2px 0;color:#7ee8b8;font:900 9px ui-monospace;letter-spacing:.05em}.gamepad-note.show{display:block}@media(max-width:520px){.stage,#canvas{height:50vh;min-height:0}.diag{max-height:180px}.controls{height:220px}}
+'''
+          s=s.replace('#bw-hidden{display:none!important}',css+'#bw-hidden{display:none!important}')
+          # Add toggle button in top bar.
+          bar='<div class="pill">LEAN APP FS · BOXEDWINE</div>'
+          if bar not in s: raise SystemExit('top pill marker missing')
+          s=s.replace(bar,bar+'<button id="ctrlToggle" class="ctrl-toggle" type="button">HIDE</button>',1)
+          # Add controller deck between status and diagnostic panel.
+          marker='<div class="statusline">INPUT <b>READY</b> · RUNTIME <b id="runtimeState">WAITING FOR ZIP</b></div><div id="diag" class="diag">'
+          if marker not in s: raise SystemExit('status marker missing')
+          controller='''<div class="statusline">INPUT <b>READY</b> · RUNTIME <b id="runtimeState">WAITING FOR ZIP</b></div>
+<div id="controls" class="controls"><div class="cz left"><div class="dpad"><button class="dir" data-k="ArrowUp" data-key="ArrowUp">↑</button><button class="dir" data-k="ArrowUp" data-key="ArrowUp">↑</button><button class="dir" data-k="ArrowRight" data-key="ArrowRight">↗</button><button class="dir" data-k="ArrowLeft" data-key="ArrowLeft">←</button><div class="dir center">P1</div><button class="dir" data-k="ArrowRight" data-key="ArrowRight">→</button><button class="dir" data-k="ArrowLeft" data-key="ArrowLeft">↙</button><button class="dir" data-k="ArrowDown" data-key="ArrowDown">↓</button><button class="dir" data-k="ArrowDown" data-key="ArrowDown">↘</button></div></div><div class="cz right"><div class="acts"><button class="act lp" data-k="KeyA" data-key="a">LP</button><button class="act mp" data-k="KeyS" data-key="s">MP</button><button class="act hp" data-k="KeyD" data-key="d">HP</button><button class="act lk" data-k="KeyZ" data-key="z">LK</button><button class="act mk" data-k="KeyX" data-key="x">MK</button><button class="act hk" data-k="KeyC" data-key="c">HK</button></div></div><div class="util"><button data-macro="2P">2P</button><button data-macro="2K">2K</button><button data-k="Enter" data-key="Enter">START</button><button data-k="Escape" data-key="Escape">BACK</button></div></div><div id="gamepadNote" class="gamepad-note">GAMEPAD CONNECTED · TOUCH CONTROLS AUTO-HIDDEN</div><div id="diag" class="diag">'''
+          s=s.replace(marker,controller,1)
+          # Add input bridge immediately after primary DOM refs are declared.
+          dom="const zipInput=document.getElementById('zipInput'),setup=document.getElementById('setup'),prep=document.getElementById('prepDiag'),diag=document.getElementById('diag'),state=document.getElementById('runtimeState'),canvas=document.getElementById('canvas'),bwStatus=document.getElementById('status'),copyBtn=document.getElementById('copyTrace');"
+          if dom not in s: raise SystemExit('DOM refs marker missing')
+          bridge=r'''
+const controls=document.getElementById('controls'),ctrlToggle=document.getElementById('ctrlToggle'),gamepadNote=document.getElementById('gamepadNote');
+const keyMeta={ArrowUp:[38,'ArrowUp'],ArrowDown:[40,'ArrowDown'],ArrowLeft:[37,'ArrowLeft'],ArrowRight:[39,'ArrowRight'],KeyA:[65,'a'],KeyS:[83,'s'],KeyD:[68,'d'],KeyZ:[90,'z'],KeyX:[88,'x'],KeyC:[67,'c'],Enter:[13,'Enter'],Escape:[27,'Escape']};
+function emitKey(code,key,down){const meta=keyMeta[code]||[0,key||''];const opts={key:key||meta[1],code:code,keyCode:meta[0],which:meta[0],bubbles:true,cancelable:true};const type=down?'keydown':'keyup';let ev;try{ev=new KeyboardEvent(type,opts);Object.defineProperty(ev,'keyCode',{get:()=>meta[0]});Object.defineProperty(ev,'which',{get:()=>meta[0]})}catch(e){ev=document.createEvent('Event');ev.initEvent(type,true,true);ev.key=opts.key;ev.code=code;ev.keyCode=meta[0];ev.which=meta[0]}canvas.focus();canvas.dispatchEvent(ev);document.dispatchEvent(new KeyboardEvent(type,opts));window.dispatchEvent(new KeyboardEvent(type,opts));}
+function bindPress(el,code,key){let held=false;const down=e=>{e.preventDefault();if(held)return;held=true;el.classList.add('on');emitKey(code,key,true)};const up=e=>{e.preventDefault();if(!held)return;held=false;el.classList.remove('on');emitKey(code,key,false)};el.addEventListener('pointerdown',down);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',e=>{if(held)up(e)});}
+document.querySelectorAll('#controls [data-k]').forEach(el=>bindPress(el,el.dataset.k,el.dataset.key));
+function macro(el,codes){let held=false;const down=e=>{e.preventDefault();if(held)return;held=true;el.classList.add('on');codes.forEach(x=>emitKey(x[0],x[1],true))};const up=e=>{e.preventDefault();if(!held)return;held=false;el.classList.remove('on');[...codes].reverse().forEach(x=>emitKey(x[0],x[1],false))};el.addEventListener('pointerdown',down);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',e=>{if(held)up(e)});}
+const m2p=document.querySelector('[data-macro="2P"]'),m2k=document.querySelector('[data-macro="2K"]');if(m2p)macro(m2p,[['KeyA','a'],['KeyS','s']]);if(m2k)macro(m2k,[['KeyZ','z'],['KeyX','x']]);
+ctrlToggle.addEventListener('click',()=>{const hidden=controls.classList.toggle('hidden');ctrlToggle.textContent=hidden?'SHOW':'HIDE'});
+let gpPrev={};function gamepadLoop(){const pads=navigator.getGamepads?navigator.getGamepads():[];const gp=[...pads].find(Boolean);if(gp){if(!controls.classList.contains('hidden')){controls.classList.add('hidden');ctrlToggle.textContent='SHOW'}gamepadNote.classList.add('show');const map={12:['ArrowUp','ArrowUp'],13:['ArrowDown','ArrowDown'],14:['ArrowLeft','ArrowLeft'],15:['ArrowRight','ArrowRight'],2:['KeyA','a'],3:['KeyS','s'],5:['KeyD','d'],0:['KeyZ','z'],1:['KeyX','x'],7:['KeyC','c'],9:['Enter','Enter'],8:['Escape','Escape']};for(const [i,k] of Object.entries(map)){const on=!!(gp.buttons[+i]&&gp.buttons[+i].pressed),was=!!gpPrev[i];if(on!==was){emitKey(k[0],k[1],on);gpPrev[i]=on}}}else{gamepadNote.classList.remove('show');gpPrev={}}requestAnimationFrame(gamepadLoop)}requestAnimationFrame(gamepadLoop);
+'''
+          s=s.replace(dom,dom+bridge,1)
+          # Fix dpad diagonal labels into true multi-key macros after markup insertion.
+          s=s.replace('<button class="dir" data-k="ArrowUp" data-key="ArrowUp">↑</button><button class="dir" data-k="ArrowUp" data-key="ArrowUp">↑</button><button class="dir" data-k="ArrowRight" data-key="ArrowRight">↗</button>', '<button class="dir" data-macro="UL">↖</button><button class="dir" data-k="ArrowUp" data-key="ArrowUp">↑</button><button class="dir" data-macro="UR">↗</button>',1)
+          s=s.replace('<button class="dir" data-k="ArrowLeft" data-key="ArrowLeft">↙</button><button class="dir" data-k="ArrowDown" data-key="ArrowDown">↓</button><button class="dir" data-k="ArrowDown" data-key="ArrowDown">↘</button>', '<button class="dir" data-macro="DL">↙</button><button class="dir" data-k="ArrowDown" data-key="ArrowDown">↓</button><button class="dir" data-macro="DR">↘</button>',1)
+          # Wire diagonal macros after 2P/2K macro setup.
+          diagwire="if(m2p)macro(m2p,[['KeyA','a'],['KeyS','s']]);if(m2k)macro(m2k,[['KeyZ','z'],['KeyX','x']]);"
+          s=s.replace(diagwire,diagwire+"[['UL',[['ArrowUp','ArrowUp'],['ArrowLeft','ArrowLeft']]],['UR',[['ArrowUp','ArrowUp'],['ArrowRight','ArrowRight']]],['DL',[['ArrowDown','ArrowDown'],['ArrowLeft','ArrowLeft']]],['DR',[['ArrowDown','ArrowDown'],['ArrowRight','ArrowRight']]]].forEach(([n,c])=>{const el=document.querySelector('[data-macro=\"'+n+'\"]');if(el)macro(el,c)});",1)
+          p.write_text(s)
+          PY
+      - name: Update continuity
+        run: |
+          cat >> docs/MOBMUGEN_LIVE.md <<'EOF'
+
+## Rig F F6.2 - controller integration
+- Phone witness on F6.1 produced real WinMUGEN video and confirmed the same-origin late-root rewrite works.
+- F6.2 restores the portrait controller deck: D-pad, LP/MP/HP, LK/MK/HK, 2P/2K, START/BACK, HIDE/SHOW.
+- Touch input dispatches keyboard-compatible events directly on the BoxedWine canvas/document/window path.
+- Xbox browser Gamepad API mapping is restored with automatic touch-control hiding when a physical gamepad is detected.
+EOF
+      - name: Remove one-shot workflow
+        run: rm -f .github/workflows/patch-rigf-f62.yml
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add mugen-lab/rig-f.html docs/MOBMUGEN_LIVE.md .github/workflows/patch-rigf-f62.yml
+          git commit -m "Rig F F6.2 restore touch and gamepad controls"
+          git push
