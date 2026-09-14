@@ -31,97 +31,66 @@ crtdll=MISS
 E8 DIAGNOSIS: INCOMPLETE 32-BIT WINE PAYLOAD
 ```
 
-The old `c0000135` loader failure was therefore traced to an incomplete Wine payload, not simply a bad search path.
-
 ### E9
-Runtime commit: `294938559752015f320043a92c53ab951805e593`
-UI commit: `a6de94703fccb3bae77993673f878b85939be013`
+Runtime: `294938559752015f320043a92c53ab951805e593`
+UI: `a6de94703fccb3bae77993673f878b85939be013`
 
-E9 added full 32-bit Wine filesystem fallback candidates and stopped launching until a payload passed the `wineboot / dinput / crtdll` gate.
-
-Phone witness at 11:15:
-- shell visibly E9
-- old DLL crash no longer surfaced
-- Wine engine remained alive
-- gameplay canvas stayed black
+Added full 32-bit Wine filesystem fallbacks. Phone witness cleared the immediate E8 DLL crash but left a black canvas with Wine engine alive.
 
 ### E9.1
-Runtime commit: `dd60a19d1bc9377627553d02f5e71f2e45c8a5bf`
+Runtime: `dd60a19d1bc9377627553d02f5e71f2e45c8a5bf`
 
-Added video-stage telemetry.
-
-Phone witness at 11:25:
+Phone witness:
 
 ```text
 ENGINE LOADED · WAITING FOR WINMUGEN VIDEO
-→
-ENGINE ALIVE · BLACK/UNCHANGED VIDEO
+→ ENGINE ALIVE · BLACK/UNCHANGED VIDEO
 ```
-
-No WinMUGEN window/title evidence appeared.
 
 ### E9.2
-Runtime commit: `bb8e8f97852c869abfc2ddfddda741ee3540b27c`
+Runtime: `bb8e8f97852c869abfc2ddfddda741ee3540b27c`
 
-Added process-stage telemetry:
-- confirms mounted `Winmugen.exe`
-- records Wine + WinMUGEN argv
-- watches Wine stdout/stderr for WinMUGEN process evidence
-- watches host/window title events
-- distinguishes process/no-process/window/video states
-
-Phone screen recording witness at 12:07 confirmed:
+Added mounted EXE/process/window telemetry. Phone recording confirmed:
 
 ```text
 ENGINE ALIVE · NO WINMUGEN PROCESS EVIDENCE
 ```
 
-Meaning:
-- Wine engine is alive
-- old missing-DLL crash has not returned
-- WinMUGEN process/window evidence is still absent
-- black canvas is downstream of the handoff not occurring
+### E9.3
+Runtime: `65fa85d8c0051e985e385863c0fd475208b0dba5`
 
-## 2026-09-14 12:32 — E9.3 explicit WinMUGEN handoff pushed
+Tried shell-assisted / absolute EXE handoff with Wine process tracing.
 
-Runtime commit:
-`65fa85d8c0051e985e385863c0fd475208b0dba5`
+#### 2026-09-14 12:42 phone witness
+Visible title: `MOBMUGEN · RIG E · E9.3`
 
-### E9.3 change
-E9.3 stops treating the old relative `Winmugen.exe` handoff as sufficient.
-
-It now:
-1. verifies `/root/home/username/files/Winmugen.exe` after mount
-2. derives whether the selected full filesystem contains `/bin/sh`
-3. prefers a shell-assisted launch when available:
+Result:
 
 ```text
-/bin/sh -lc "cd /home/username/files && exec <wineBinary> ./Winmugen.exe"
-```
-
-4. falls back to direct absolute launch when `/bin/sh` is unavailable:
-
-```text
-<wineBinary> /home/username/files/Winmugen.exe
-```
-
-5. enables Wine `+process,+module,+loaddll,+file` tracing
-6. reports launch mode and exact argv to the phone witness
-7. preserves process/window/video detection from E9.2
-8. updates the visible shell marker to `E9.3`
-
-### E9.3 witness targets
-Useful phone statuses now include:
-
-```text
-DISPATCHING WINMUGEN.EXE · SHELL EXEC
-DISPATCHING WINMUGEN.EXE · DIRECT ABSOLUTE
-WINMUGEN PROCESS EVIDENCE · WAITING FOR VIDEO
-WINDOW EXISTS · BLACK/UNCHANGED VIDEO
-WINMUGEN VIDEO ✓
 ENGINE ALIVE · NO WINMUGEN PROCESS EVIDENCE
-LAUNCH RETURNED · NO WINMUGEN PROCESS EVIDENCE
 ```
+
+Therefore shell/absolute-path handoff did not improve process creation.
+
+## E9.4 canonical WinAppRunner handoff
+Runtime commit: `d0e2fb9df0ebeabf6b4df3447c563edc38f6b9b9`
+
+Upstream `lrusso/WinAppRunner` was checked directly. Its native launch contract is:
+
+```text
+-root /root -m 64 -w /home/username/files/ /usr/bin/wine <exeFilename>
+```
+
+E9.4 restores that contract instead of shell/absolute-path launching while preserving:
+- full 32-bit Wine payload fallback
+- exact selected payload identity (`LEGACY`, `FULL1`, `FULL2`, `FULL3`)
+- selected Wine binary path
+- `+process,+module,+loaddll,+file` tracing
+- process/window/video watchdogs
+- current E9 controller/Xbox/browser UI
+
+### E9.4 decision point
+If canonical handoff still yields no WinMUGEN process evidence, the leading suspect becomes compatibility between the legacy `WinAppRunnerSystem.js/.wasm` engine and the newer replacement Wine filesystem payload rather than the EXE path itself.
 
 ### Current status
-**E9.3 pushed to main. Waiting on Pages deployment + iPhone witness.**
+**E9.4 pushed to main. Waiting on Pages deployment + iPhone witness.**
