@@ -1,0 +1,45 @@
+name: Patch Rig F F5.4
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/patch-rigf-f54.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch Wine root and patch Rig F
+        run: |
+          set -euo pipefail
+          mkdir -p mugen-lab/assets
+          curl -L --fail --retry 3 --retry-delay 2 \
+            https://exebrowser.com/api/fs/fullWine1.7.55-v8.zip \
+            -o mugen-lab/assets/fullWine1.7.55-v8.zip
+          test -s mugen-lab/assets/fullWine1.7.55-v8.zip
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('mugen-lab/rig-f.html')
+          s=p.read_text()
+          s=s.replace('MobMugen · Rig F · F5.3','MobMugen · Rig F · F5.4')
+          s=s.replace('MOBMUGEN · RIG F · F5.3','MOBMUGEN · RIG F · F5.4')
+          s=s.replace('Rig F · F5.3','Rig F · F5.4')
+          s=s.replace('F5.3','F5.4')
+          s=s.replace('NETWORK TRACE · BOXEDWINE','SAME-ORIGIN ROOT · BOXEDWINE')
+          s=s.replace("const ROOT_BASE='https://boxedwine-assets.exebrowser.workers.dev/fs/'","const ROOT_BASE='./assets/'")
+          s=s.replace('F5.4 keeps the zero-copy app mount and traces every BoxedWine root/overlay XHR so the remaining filesystem failure identifies its exact URL and HTTP status.','F5.4 keeps the zero-copy app mount and serves the Wine root from this same GitHub Pages origin, removing the failing external root request while preserving XHR tracing.')
+          p.write_text(s)
+          PY
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/patch-rigf-f54.yml
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Rig F F5.4 host Wine root same-origin"
+          git push
