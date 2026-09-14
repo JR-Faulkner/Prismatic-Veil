@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>MUGEN Lab Runtime</title>
+<title>MobMugen Runtime</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font-family:system-ui,-apple-system,sans-serif;touch-action:none}body{position:fixed;inset:0}#canvas{position:absolute;inset:0;width:100%;height:100%;background:#000;outline:none;image-rendering:auto}.status{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:#05070b;color:#dce7f8;text-align:center;padding:18px;font-size:11px;line-height:1.45;letter-spacing:.05em}.status b{display:block;color:#f2c45d;margin-bottom:7px;font-size:13px}.status.hide{display:none}.err{color:#ff8f95;font-size:9px;margin-top:8px;overflow-wrap:anywhere}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/browserfs@1.4.3/dist/browserfs.min.js"></script>
 </head>
 <body>
-<div id="runtimeStatus" class="status"><div><b>WINE RUNTIME · RIG E3</b><span id="runtimeText">Preparing browser Windows layer…</span><div id="runtimeErr" class="err"></div></div></div>
+<div id="runtimeStatus" class="status"><div><b>MOBMUGEN · RIG E4</b><span id="runtimeText">Preparing browser Windows layer…</span><div id="runtimeErr" class="err"></div></div></div>
 <canvas class="emscripten" id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
 <script>
 (function(){
@@ -25,10 +25,34 @@ const statusText=document.getElementById('runtimeText');
 const statusErr=document.getElementById('runtimeErr');
 const canvas=document.getElementById('canvas');
 let systemFileData=null,memoryImageData=null;
-function clean(v){return String(v==null?'':v).replace(/^Uncaught\s*/i,'').slice(0,320)}
+function clean(v){return String(v==null?'':v).replace(/^Uncaught\s*/i,'').slice(0,420)}
 function notify(type,detail){try{parent.postMessage({source:'mugen-lab-runtime',type,detail:clean(detail)},location.origin)}catch(e){}}
 function setStatus(text){statusText.textContent=clean(text);notify('status',text)}
-function fail(detail){const d=clean(detail)||'Unknown runtime failure';status.classList.remove('hide');statusText.textContent='Runtime stopped';statusErr.textContent=d;notify('error',d);console.error('[MUGEN Lab]',d)}
+function fail(detail){const d=clean(detail)||'Unknown runtime failure';status.classList.remove('hide');statusText.textContent='Runtime stopped';statusErr.textContent=d;notify('error',d);console.error('[MobMugen]',d)}
+function installLegacyHostShim(engineText){
+ const p=parent;
+ const knownStrings={STRING_BOOTING:'Booting…',STRING_DOWNLOADFILE:'Download file',STRING_SELECTFOLDER:'Select folder',STRING_UPLOADFILE:'Upload file'};
+ Object.keys(knownStrings).forEach(k=>{try{if(p[k]==null)p[k]=knownStrings[k]}catch(e){}});
+ try{p.exeFilename=p.mugenExeFilename||p.exeFilename||'Winmugen.exe'}catch(e){}
+ try{p.zipFileData=p.mugenZipData||p.zipFileData||null}catch(e){}
+ try{p.systemFileData=systemFileData}catch(e){}
+ const special={
+  updateTitle:function(title){notify('host','Wine title: '+clean(title));},
+  handleError:function(){fail('Legacy Wine host reported main EXE initialization failure.');},
+  closeWindow:function(){notify('host','Legacy runtime requested window close.');},
+  hideTitle:function(){},showTitle:function(){},updateOptionsButton:function(){},showMenu:function(){},hideMenu:function(){},
+  noSleepMode:function(){},enableDisableSound:function(){},toggleMouse:function(){},toggleJoystick:function(){},toggleFullscreen:function(){},
+  downloadFile:function(){notify('host','Legacy download callback ignored in MobMugen.');},
+  uploadFile:function(){notify('host','Legacy upload callback ignored in MobMugen.');},
+  displayShareAbout:function(){},getWindowSelectionMenu:function(){return null;},frame_Launch:function(){}
+ };
+ Object.keys(special).forEach(k=>{try{if(typeof p[k]!=='function')p[k]=special[k]}catch(e){}});
+ const calls=new Set();
+ const re=/parent\.([A-Za-z_$][\w$]*)\s*\(/g;let m;
+ while((m=re.exec(engineText))!==null)calls.add(m[1]);
+ calls.forEach(k=>{try{if(typeof p[k]!=='function')p[k]=function(){notify('host','Auto-shim: '+k);return null}}catch(e){}});
+ notify('diag','Legacy host shim ready: '+Array.from(calls).sort().join(', '));
+}
 function hardenGameConfig(){
  try{
   const p='/root/home/username/files/data/mugen.cfg';
@@ -58,7 +82,7 @@ function makeModule(){
   logReadFiles:false,
   memoryInitializerRequest:{status:200,response:memoryImageData.slice(0)},
   preRun:[function(){setStatus('Mounting private MUGEN package…');buildFileSystem(new BrowserFS.FileSystem.InMemory())}],
-  arguments:['-root','/root','-m','160','-w','/home/username/files/','/usr/bin/wine',parent.mugenExeFilename||'Winmugen.exe'],
+  arguments:['-root','/root','-m','160','-w','/home/username/files/','/usr/bin/wine',parent.mugenExeFilename||parent.exeFilename||'Winmugen.exe'],
   postRun:[function(){notify('postrun','Wine process returned.')}],
   print:function(text){text=clean(text);console.log(text);if(/main exe initialization.*failed|failed to initialize|wine:.*error/i.test(text))fail(text);else if(/initialization|wine|mugen|main exe/i.test(text))notify('log',text)},
   printErr:function(text){text=clean(text);console.warn(text);notify('diag',text);if(/abort|exception|failed|fatal|out of memory|cannot|could not/i.test(text))notify('log',text)},
@@ -69,7 +93,7 @@ function makeModule(){
  };
  notify('diag','Memory initializer preloaded: '+memoryImageData.byteLength+' bytes.');
 }
-window.injectKey=function(code,isDown){const map={ArrowUp:['ArrowUp','ArrowUp',38],ArrowDown:['ArrowDown','ArrowDown',40],ArrowLeft:['ArrowLeft','ArrowLeft',37],ArrowRight:['ArrowRight','ArrowRight',39],KeyA:['a','KeyA',65],KeyS:['s','KeyS',83],KeyD:['d','KeyD',68],KeyZ:['z','KeyZ',90],KeyX:['x','KeyX',88],KeyC:['c','KeyC',67],Enter:['Enter','Enter',13],Escape:['Escape','Escape',27]},m=map[code];if(!m)return;const type=isDown?'keydown':'keyup';let ev;try{ev=new KeyboardEvent(type,{key:m[0],code:m[1],keyCode:m[2],which:m[2],bubbles:true,cancelable:true});Object.defineProperty(ev,'keyCode',{get:()=>m[2]});Object.defineProperty(ev,'which',{get:()=>m[2]})}catch(e){return}canvas.focus();canvas.dispatchEvent(ev);document.dispatchEvent(ev);window.dispatchEvent(ev)};
+window.injectKey=function(code,isDown){const map={ArrowUp:['ArrowUp','ArrowUp',38],ArrowDown:['ArrowDown','ArrowDown',40],ArrowLeft:['ArrowLeft','ArrowLeft',37],ArrowRight:['ArrowRight','ArrowRight',39],KeyA:['a','KeyA',65],KeyS:['s','KeyS',83],KeyD:['d','KeyD',68],KeyZ:['z','KeyZ',90],KeyX:['x','KeyX',88],KeyC:['c','KeyC',67],Enter:['Enter','Enter',13],Escape:['Escape','Escape',27]},m=map[code];if(!m)return;const type=isDown?'keydown':'keyup';let ev;try{ev=new KeyboardEvent(type,{key:m[0],code:m[1],keyCode:m[2],keyCode:m[2],which:m[2],bubbles:true,cancelable:true});Object.defineProperty(ev,'keyCode',{get:()=>m[2]});Object.defineProperty(ev,'which',{get:()=>m[2]})}catch(e){return}canvas.focus();canvas.dispatchEvent(ev);document.dispatchEvent(ev);window.dispatchEvent(ev)};
 window.addEventListener('error',function(e){fail((e&&e.message)||'JavaScript runtime error')});
 window.addEventListener('unhandledrejection',function(e){const r=e&&e.reason;fail('Promise: '+(r&&r.message?r.message:r||'unknown'))});
 async function get(url,label,type){setStatus('Loading '+label+'…');const r=await fetch(url,{mode:'cors',cache:'force-cache'});if(!r.ok)throw new Error(label+' download failed ('+r.status+').');return type==='text'?r.text():r.arrayBuffer()}
@@ -80,10 +104,11 @@ async function boot(){
   memoryImageData=await get(MEMORY_IMAGE,'legacy Wine memory image','buffer');
   if(memoryImageData.byteLength<100000)throw new Error('Memory image download was incomplete ('+memoryImageData.byteLength+' bytes).');
   const engineText=await get(ENGINE_JS,'Wine JavaScript core','text');
-  setStatus('Memory image ready · starting Wine…');makeModule();
+  installLegacyHostShim(engineText);
+  setStatus('Host bridge ready · starting Wine…');makeModule();
   const script=document.createElement('script');script.text=engineText;document.body.appendChild(script);
-  notify('boot','Wine engine executing with preloaded memory image.');
-  setTimeout(()=>{if(!statusErr.textContent){status.classList.add('hide');notify('engine','Wine engine loaded')}} ,1200);
+  notify('boot','MobMugen E4 executing Wine with auto-shimmed host API.');
+  setTimeout(()=>{if(!statusErr.textContent){status.classList.add('hide');notify('engine','Wine engine loaded')}} ,1400);
  }catch(err){fail(err&&err.message?err.message:String(err))}
 }
 boot();
