@@ -2,205 +2,126 @@
 
 **Authority:** phone witness first, repo state second.
 
-## 2026-09-14 — E8 pushed to main
-
-### Live route
+## Live route
 - PV homepage route: `./mugen-lab/`
 - MobMugen page: `mugen-lab/index.html`
 - Runtime: `mugen-lab/runtime.html`
 
-### E8 commits
-- UI/input/spacing: `d18e68262602f9c93de03ba69c4ac3156ff9d385`
-- Wine loader-path runtime: `d1943ec188a73a99ae1d067d1abd75c0263e26ca`
+## Current shell
+- Portrait MOBMUGEN controller shell
+- HIDE/SHOW controls
+- Physical gamepad auto-hide
+- Shared touch / keyboard / browser Gamepad API path
+- Xbox-style mapping preserved
+- Dedicated `2P / 2K / START / BACK` utility row
 
-### E8 UI/input changes
-- Visible build label: `MobMugen · Rig E · E8`
-- Tighter portrait spacing and larger gameplay viewport
-- HIDE/SHOW on-screen controls
-- Auto-hide controls when browser Gamepad API reports a physical controller
-- Shared touch / keyboard / gamepad input route
-- Xbox-style mapping:
-  - D-pad / left stick = movement
-  - X = LP
-  - Y = MP
-  - RB = HP
-  - A = LK
-  - B = MK
-  - RT = HK
-  - View = BACK
-  - Menu = START
+## Runtime history
 
-## 2026-09-14 11:04 — E8 phone witness CONFIRMED LIVE
+### E8
+Commits:
+- UI/input: `d18e68262602f9c93de03ba69c4ac3156ff9d385`
+- runtime: `d1943ec188a73a99ae1d067d1abd75c0263e26ca`
 
-### Witness result
-E8 is visibly live on the iPhone and the new controls/UI are active.
-
-Runtime output:
+Phone witness proved the mounted legacy runtime lacked the required 32-bit Wine builtin family:
 
 ```text
-E8 env: WINEPREFIX=/home/username/.wine WINEARCH=win32
-WINEDLLPATH=/usr/lib/wine/fakedlls:/usr/lib/i386-linux-gnu/wine/fakedlls:/usr/lib32/wine/fakedlls:/usr/lib/wine
-E8 loader map: wineboot=MISS dinput=MISS crtdll=MISS moduleDirs=
-E8 gates: wineboot ✗ · dinput ✗ · crtdll ✗ · sys32 ✓
+wineboot=MISS
+dinput=MISS
+crtdll=MISS
 E8 DIAGNOSIS: INCOMPLETE 32-BIT WINE PAYLOAD
 ```
 
-Launch then still fails with:
+The old `c0000135` loader failure was therefore traced to an incomplete Wine payload, not simply a bad search path.
+
+### E9
+Runtime commit: `294938559752015f320043a92c53ab951805e593`
+UI commit: `a6de94703fccb3bae77993673f878b85939be013`
+
+E9 added full 32-bit Wine filesystem fallback candidates and stopped launching until a payload passed the `wineboot / dinput / crtdll` gate.
+
+Phone witness at 11:15:
+- shell visibly E9
+- old DLL crash no longer surfaced
+- Wine engine remained alive
+- gameplay canvas stayed black
+
+### E9.1
+Runtime commit: `dd60a19d1bc9377627553d02f5e71f2e45c8a5bf`
+
+Added video-stage telemetry.
+
+Phone witness at 11:25:
 
 ```text
-wine: cannot find L"C:\\windows\\system32\\wineboot.exe"
-err:process:start_wineboot failed to start wineboot, err 2
-err:module:import_dll Library DINPUT.dll ... not found
-err:module:import_dll Library CRTDLL.dll ... not found
-err:module:LdrInitializeThunk ... status c0000135
+ENGINE LOADED · WAITING FOR WINMUGEN VIDEO
+→
+ENGINE ALIVE · BLACK/UNCHANGED VIDEO
 ```
 
-### What E8 proves
-- This is no longer a generic path-mismatch theory.
-- The mounted WinAppRunner system image simply does not expose the required 32-bit Wine builtin payload in any of the candidate locations E8 searched.
-- `system32` exists, but the actual builtin modules are absent from the mounted payload.
-- `WINEDLLPATH` cannot fix files that are not present in the mounted runtime image.
+No WinMUGEN window/title evidence appeared.
 
-### Strongest diagnosis
-**Current WinAppRunnerSystem.zip / BoxedWine-era runtime payload is incomplete for WinMUGEN's 32-bit dependency chain.**
+### E9.2
+Runtime commit: `bb8e8f97852c869abfc2ddfddda741ee3540b27c`
 
-## 2026-09-14 — E9 pushed to main
+Added process-stage telemetry:
+- confirms mounted `Winmugen.exe`
+- records Wine + WinMUGEN argv
+- watches Wine stdout/stderr for WinMUGEN process evidence
+- watches host/window title events
+- distinguishes process/no-process/window/video states
 
-### E9 runtime commit
-`294938559752015f320043a92c53ab951805e593`
+Phone screen recording witness at 12:07 confirmed:
 
-E9 no longer assumes the legacy WinAppRunner filesystem is sufficient.
+```text
+ENGINE ALIVE · NO WINMUGEN PROCESS EVIDENCE
+```
 
-Runtime behavior:
-1. download and inspect the legacy filesystem
-2. verify `wineboot.exe`, `dinput.dll`, and `crtdll.dll` before launching
-3. if legacy payload is incomplete, escalate automatically to a complete 32-bit Wine filesystem candidate
-4. inspect every replacement payload before selecting it
-5. derive the Wine executable path and builtin module directories from the selected filesystem
-6. launch WinMUGEN only after a payload passes the required-module gate
+Meaning:
+- Wine engine is alive
+- old missing-DLL crash has not returned
+- WinMUGEN process/window evidence is still absent
+- black canvas is downstream of the handoff not occurring
 
-Current E9 full-payload candidates:
-- BoxedWine 26R1 / Wine 6 web filesystem candidate paths
-- BoxedWine Debian10 / Wine 5 full filesystem fallback
-
-Important: these are runtime download candidates, not loose DLL downloads. E9 preserves the coherent filesystem/package approach.
-
-Useful E9 witness lines:
-- `E9 FS LEGACY:`
-- `E9 ESCALATION: FULL 32-BIT WINE PAYLOAD`
-- `E9 FS FULL1:` / `FULL2:` / `FULL3:`
-- `E9 PAYLOAD PASS:`
-- `E9 mounted map:`
-- `E9 env:`
-
-If cross-origin hosting prevents one candidate from loading, E9 records the exact candidate failure and continues to the next source.
-
-### E9 UI / controls commit
-`a6de94703fccb3bae77993673f878b85939be013`
-
-Visible label is now:
-`MOBMUGEN · RIG E · E9`
-
-Control spacing correction:
-- six attack buttons remain a separate compact fight cluster
-- `2P`, `2K`, `START`, `BACK` now occupy a dedicated four-column utility strip at the bottom of the controller deck
-- utility buttons no longer sit on top of `LK/MK/HK`
-- D-pad and attack cluster are vertically centered above the utility strip
-- controller deck is slightly shorter, returning more portrait height to the gameplay viewport
-- HIDE/SHOW retained
-- physical gamepad auto-hide retained
-- touch, keyboard, and browser Gamepad API still share one input path
-
-## 2026-09-14 11:15 — E9 PHONE WITNESS: BLACK CANVAS / ENGINE ALIVE
-
-### Witness
-The phone visibly shows:
-- `MOBMUGEN · RIG E · E9`
-- corrected control spacing and dedicated utility strip
-- `INPUT READY`
-- `RUNTIME Running...`
-- black gameplay canvas
-- no immediate `c0000135`, `wineboot`, `DINPUT`, or `CRTDLL` error overlay
-
-### Important interpretation
-This is meaningful progress versus E8 because the prior immediate loader-failure screen did not appear.
-
-However, `Running...` is **not yet proof that WinMUGEN rendered or reached its title screen**.
-
-Current E9 runtime code hides the status overlay and emits `engine: Wine engine loaded` after ~1700 ms if no error text has appeared yet. Therefore the parent can show `Running...` even while the canvas remains black and WinMUGEN has not produced a visible frame.
-
-### What E9 proves so far
-- E9 is live on phone.
-- New controller layout is successful and materially cleaner.
-- The runtime gets farther than the E8 immediate loader crash, or at minimum no longer surfaces that crash within the initial witness window.
-- The next blocker has moved from obvious missing-DLL startup failure to **black-screen / no-frame startup telemetry**.
-
-## 2026-09-14 — E9.1 runtime witness probe pushed
+## 2026-09-14 12:32 — E9.3 explicit WinMUGEN handoff pushed
 
 Runtime commit:
-`dd60a19d1bc9377627553d02f5e71f2e45c8a5bf`
+`65fa85d8c0051e985e385863c0fd475208b0dba5`
 
-E9.1 is a runtime-only diagnostic subrevision. The outer shell remains E9 so the control/input layer does not churn unnecessarily.
+### E9.3 change
+E9.3 stops treating the old relative `Winmugen.exe` handoff as sufficient.
 
-New witness stages:
-- `ENGINE LOADED · WAITING FOR WINMUGEN VIDEO`
-- `WINMUGEN WINDOW · <title>` if the Wine host reports a window title
-- `WINMUGEN VIDEO ✓` when the runtime canvas changes from its post-engine baseline
-- `ENGINE ALIVE · BLACK/UNCHANGED VIDEO` if the canvas remains unchanged through the witness window
-- `PROCESS RETURNED · NO VIDEO CONFIRMED` if Wine exits before video is confirmed
+It now:
+1. verifies `/root/home/username/files/Winmugen.exe` after mount
+2. derives whether the selected full filesystem contains `/bin/sh`
+3. prefers a shell-assisted launch when available:
 
-The probe captures a post-engine canvas baseline and checks for actual visual change instead of treating the JS/Wine engine merely loading as proof of gameplay.
+```text
+/bin/sh -lc "cd /home/username/files && exec <wineBinary> ./Winmugen.exe"
+```
 
-E9.1 preserves:
-- E9 full Wine payload fallback
-- current portrait control layout
-- HIDE/SHOW
-- touch / keyboard / browser Gamepad API shared input path
-- gamepad auto-hide
+4. falls back to direct absolute launch when `/bin/sh` is unavailable:
 
-## 2026-09-14 11:25 — E9.1 PHONE WITNESS: ENGINE ALIVE, VIDEO UNCHANGED
+```text
+<wineBinary> /home/username/files/Winmugen.exe
+```
 
-Phone status advanced from:
+5. enables Wine `+process,+module,+loaddll,+file` tracing
+6. reports launch mode and exact argv to the phone witness
+7. preserves process/window/video detection from E9.2
+8. updates the visible shell marker to `E9.3`
 
-`ENGINE LOADED · WAITING FOR WINMUGEN VIDEO`
+### E9.3 witness targets
+Useful phone statuses now include:
 
-to:
-
-`ENGINE ALIVE · BLACK/UNCHANGED VIDEO`
-
-### Meaning
-- E9.1 watchdog is live and functioning.
-- The Wine/JS engine remains alive through the witness window.
-- The canvas does not produce a detectable frame change.
-- No `WINMUGEN WINDOW` event was observed in the phone witness.
-- No immediate loader error overlay returned.
-
-### Next target
-Focus the next probe on **process/window creation**, not generic Wine startup:
-- confirm whether `Winmugen.exe` process actually begins execution
-- capture first executable/module line after handoff
-- capture any title/window creation event
-- distinguish "process alive but no window" from "engine alive but WinMUGEN never actually started"
-
-## 2026-09-14 — E9.2 process-stage telemetry pushed
-
-Runtime commit:
-`bb8e8f97852c869abfc2ddfddda741ee3540b27c`
-
-E9.2 adds process-stage evidence without changing the working E9 control shell.
-
-New checks:
-- verifies mounted `/home/username/files/Winmugen.exe` exists before treating launch as valid
-- records the exact Wine + WinMUGEN launch argv
-- marks process evidence if Wine stdout/stderr references `Winmugen.exe`
-- marks process evidence if host `frame_Launch` fires
-- marks window evidence if Wine reports a title
-- distinguishes timeout states:
-  - `ENGINE ALIVE · NO WINMUGEN PROCESS EVIDENCE`
-  - `WINMUGEN PROCESS EVIDENCE · BLACK/UNCHANGED VIDEO`
-  - `WINDOW EXISTS · BLACK/UNCHANGED VIDEO`
-  - `WINMUGEN VIDEO ✓`
-- runtime updates the visible shell build marker to `E9.2` when loaded, so phone screenshots identify the actual subrevision
+```text
+DISPATCHING WINMUGEN.EXE · SHELL EXEC
+DISPATCHING WINMUGEN.EXE · DIRECT ABSOLUTE
+WINMUGEN PROCESS EVIDENCE · WAITING FOR VIDEO
+WINDOW EXISTS · BLACK/UNCHANGED VIDEO
+WINMUGEN VIDEO ✓
+ENGINE ALIVE · NO WINMUGEN PROCESS EVIDENCE
+LAUNCH RETURNED · NO WINMUGEN PROCESS EVIDENCE
+```
 
 ### Current status
-**E9.2 pushed. Waiting on Pages deployment + iPhone witness. Next decision depends on whether process evidence appears before the black-screen timeout.**
+**E9.3 pushed to main. Waiting on Pages deployment + iPhone witness.**
