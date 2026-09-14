@@ -10,113 +10,81 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:
 <script src="https://cdn.jsdelivr.net/npm/browserfs@1.4.3/dist/browserfs.min.js"></script>
 </head>
 <body>
-<div id="runtimeStatus" class="status"><div><b>WINE RUNTIME · RIG E2</b><span id="runtimeText">Preparing browser Windows layer…</span><div id="runtimeErr" class="err"></div></div></div>
+<div id="runtimeStatus" class="status"><div><b>WINE RUNTIME · RIG E3</b><span id="runtimeText">Preparing browser Windows layer…</span><div id="runtimeErr" class="err"></div></div></div>
 <canvas class="emscripten" id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
 <script>
 (function(){
 'use strict';
-const BASE='https://cdn.jsdelivr.net/gh/lrusso/WinAppRunner@main/';
+const BASE='https://cdn.jsdelivr.net/gh/lrusso/WinAppRunner@0c5b654a50cda92f3bb6f8f37080bf8a7eab785b/';
 const SYSTEM_ZIP=BASE+'WinAppRunnerSystem.zip';
 const ENGINE_JS=BASE+'WinAppRunnerSystem.js';
-const ENGINE_WASM=BASE+'WinAppRunnerSystem.wasm';
+const MEMORY_IMAGE=BASE+'WinAppRunnerSystem.wasm';
 const HOME_DIRECTORY='/root/home/username/files/';
 const status=document.getElementById('runtimeStatus');
 const statusText=document.getElementById('runtimeText');
 const statusErr=document.getElementById('runtimeErr');
 const canvas=document.getElementById('canvas');
-let systemFileData=null,wasmFileData=null;
-
-function clean(v){return String(v==null?'':v).replace(/^Uncaught\s*/i,'').slice(0,280)}
+let systemFileData=null,memoryImageData=null;
+function clean(v){return String(v==null?'':v).replace(/^Uncaught\s*/i,'').slice(0,320)}
 function notify(type,detail){try{parent.postMessage({source:'mugen-lab-runtime',type,detail:clean(detail)},location.origin)}catch(e){}}
 function setStatus(text){statusText.textContent=clean(text);notify('status',text)}
 function fail(detail){const d=clean(detail)||'Unknown runtime failure';status.classList.remove('hide');statusText.textContent='Runtime stopped';statusErr.textContent=d;notify('error',d);console.error('[MUGEN Lab]',d)}
 function hardenGameConfig(){
-  try{
-    const p='/root/home/username/files/data/mugen.cfg';
-    let t=FS.readFile(p,{encoding:'utf8'});
-    t=t.replace(/^(\s*Width\s*=).*/gmi,'$1 320')
-      .replace(/^(\s*Height\s*=).*/gmi,'$1 240')
-      .replace(/^(\s*Depth\s*=).*/gmi,'$1 16')
-      .replace(/^(\s*Stretch\s*=).*/gmi,'$1 0')
-      .replace(/^(\s*DoubleRes\s*=).*/gmi,'$1 0')
-      .replace(/^(\s*DXmode\s*=).*/gmi,'$1 None')
-      .replace(/^(\s*VRetrace\s*=).*/gmi,'$1 0')
-      .replace(/^(\s*BlitMode\s*=).*/gmi,'$1 Normal')
-      .replace(/^(\s*DrawShadows\s*=).*/gmi,'$1 0')
-      .replace(/^(\s*Sound\s*=).*/gmi,'$1 0')
-      .replace(/^(\s*Play(?:MIDI|MP3|MOD|CDA)\s*=).*/gmi,'$1 0')
-      .replace(/^(\s*plugin\s*=.*)$/gmi,'; $1')
-      .replace(/^(\s*FirstRun\s*=).*/gmi,'$1 0');
-    FS.writeFile(p,t,{encoding:'utf8'});
-    notify('diag','Applied safe WinMUGEN GDI/no-audio profile.');
-  }catch(e){notify('diag','Safe config patch skipped: '+clean(e&&e.message?e.message:e))}
+ try{
+  const p='/root/home/username/files/data/mugen.cfg';
+  let t=FS.readFile(p,{encoding:'utf8'});
+  t=t.replace(/^(\s*Width\s*=).*/gmi,'$1 320').replace(/^(\s*Height\s*=).*/gmi,'$1 240').replace(/^(\s*Depth\s*=).*/gmi,'$1 16').replace(/^(\s*Stretch\s*=).*/gmi,'$1 0').replace(/^(\s*DoubleRes\s*=).*/gmi,'$1 0').replace(/^(\s*DXmode\s*=).*/gmi,'$1 None').replace(/^(\s*VRetrace\s*=).*/gmi,'$1 0').replace(/^(\s*BlitMode\s*=).*/gmi,'$1 Normal').replace(/^(\s*DrawShadows\s*=).*/gmi,'$1 0').replace(/^(\s*Sound\s*=).*/gmi,'$1 0').replace(/^(\s*Play(?:MIDI|MP3|MOD|CDA)\s*=).*/gmi,'$1 0').replace(/^(\s*plugin\s*=.*)$/gmi,'; $1').replace(/^(\s*FirstRun\s*=).*/gmi,'$1 0');
+  FS.writeFile(p,t,{encoding:'utf8'});notify('diag','Applied safe WinMUGEN GDI/no-audio profile.');
+ }catch(e){notify('diag','Safe config patch skipped: '+clean(e&&e.message?e.message:e))}
 }
 function postBuildFileSystem(rootFS,homeFS){
-  const mountPoint=HOME_DIRECTORY.slice(0,-1);
-  const systemData=new BrowserFS.FileSystem.MountableFileSystem();
-  systemData.mount('/',rootFS);
-  systemData.mount(mountPoint,homeFS);
-  const BFS=new BrowserFS.EmscriptenFS();
-  BrowserFS.initialize(systemData);
-  FS.mount(BFS,{root:'/root'},'/root');
-  hardenGameConfig();
+ const mountPoint=HOME_DIRECTORY.slice(0,-1),systemData=new BrowserFS.FileSystem.MountableFileSystem();
+ systemData.mount('/',rootFS);systemData.mount(mountPoint,homeFS);
+ const BFS=new BrowserFS.EmscriptenFS();BrowserFS.initialize(systemData);FS.mount(BFS,{root:'/root'},'/root');hardenGameConfig();
 }
 function buildBrowserFileSystem(writableStorage,zipfs,homeAdapter){
-  FS.createFolder(FS.root,'root',true,true);
-  const rootOverlay=new BrowserFS.FileSystem.OverlayFS(new BrowserFS.FileSystem.InMemory(),zipfs);
-  rootOverlay.initialize(function(e3){
-    if(e3){fail('Root filesystem: '+e3);return}
-    homeAdapter.initialize(function(e){
-      if(e){fail('Game package mount: '+e);return}
-      const homeOverlay=new BrowserFS.FileSystem.OverlayFS(writableStorage,homeAdapter);
-      homeOverlay.initialize(function(e2){if(e2){fail('Writable game overlay: '+e2);return}postBuildFileSystem(rootOverlay,homeOverlay)});
-    });
-  });
+ FS.createFolder(FS.root,'root',true,true);
+ const rootOverlay=new BrowserFS.FileSystem.OverlayFS(new BrowserFS.FileSystem.InMemory(),zipfs);
+ rootOverlay.initialize(function(e3){if(e3){fail('Root filesystem: '+e3);return}homeAdapter.initialize(function(e){if(e){fail('Game package mount: '+e);return}const homeOverlay=new BrowserFS.FileSystem.OverlayFS(writableStorage,homeAdapter);homeOverlay.initialize(function(e2){if(e2){fail('Writable game overlay: '+e2);return}postBuildFileSystem(rootOverlay,homeOverlay)})})});
 }
 function buildFileSystem(writableStorage){
-  const Buffer=BrowserFS.BFSRequire('buffer').Buffer;
-  if(!systemFileData)throw new Error('Windows system ZIP was not loaded.');
-  const gameData=parent.mugenZipData;
-  if(!gameData)throw new Error('No MUGEN mini-pack supplied by parent page.');
-  const zipfs=new BrowserFS.FileSystem.ZipFS(new Buffer(new Uint8Array(systemFileData)));
-  const additionalZipfs=new BrowserFS.FileSystem.ZipFS(new Buffer(new Uint8Array(gameData)));
-  const homeAdapter=new BrowserFS.FileSystem.FolderAdapter('/',additionalZipfs);
-  buildBrowserFileSystem(writableStorage,zipfs,homeAdapter);
+ const Buffer=BrowserFS.BFSRequire('buffer').Buffer;if(!systemFileData)throw new Error('Windows system ZIP was not loaded.');
+ const gameData=parent.mugenZipData;if(!gameData)throw new Error('No MUGEN mini-pack supplied by parent page.');
+ const zipfs=new BrowserFS.FileSystem.ZipFS(new Buffer(new Uint8Array(systemFileData))),additionalZipfs=new BrowserFS.FileSystem.ZipFS(new Buffer(new Uint8Array(gameData))),homeAdapter=new BrowserFS.FileSystem.FolderAdapter('/',additionalZipfs);buildBrowserFileSystem(writableStorage,zipfs,homeAdapter);
 }
 function makeModule(){
-  window.Module={
-    logReadFiles:false,
-    wasmBinary:wasmFileData,
-    preRun:[function(){setStatus('Mounting private MUGEN package…');buildFileSystem(new BrowserFS.FileSystem.InMemory())}],
-    arguments:['-root','/root','-m','160','-w','/home/username/files/','/usr/bin/wine',parent.mugenExeFilename||'Winmugen.exe'],
-    postRun:[function(){notify('postrun','Wine process returned.')}],
-    print:function(text){text=clean(text);console.log(text);if(/main exe initialization.*failed|failed to initialize|wine:.*error/i.test(text))fail(text);else if(/initialization|wine|mugen|main exe/i.test(text))notify('log',text)},
-    printErr:function(text){text=clean(text);console.warn(text);notify('diag',text);if(/abort|exception|failed|fatal|out of memory|cannot|could not/i.test(text))notify('log',text)},
-    canvas:(function(){canvas.width=640;canvas.height=480;return canvas})(),
-    setStatus:function(text){if(text)setStatus(text)},
-    monitorRunDependencies:function(left){if(left)setStatus('Loading Windows layer… '+left);},
-    onAbort:function(reason){fail('Wine aborted: '+clean(reason))},
-    locateFile:function(path){return path;}
-  };
+ if(!memoryImageData||!memoryImageData.byteLength)throw new Error('Legacy Wine memory image is empty.');
+ window.Module={
+  logReadFiles:false,
+  memoryInitializerRequest:{status:200,response:memoryImageData.slice(0)},
+  preRun:[function(){setStatus('Mounting private MUGEN package…');buildFileSystem(new BrowserFS.FileSystem.InMemory())}],
+  arguments:['-root','/root','-m','160','-w','/home/username/files/','/usr/bin/wine',parent.mugenExeFilename||'Winmugen.exe'],
+  postRun:[function(){notify('postrun','Wine process returned.')}],
+  print:function(text){text=clean(text);console.log(text);if(/main exe initialization.*failed|failed to initialize|wine:.*error/i.test(text))fail(text);else if(/initialization|wine|mugen|main exe/i.test(text))notify('log',text)},
+  printErr:function(text){text=clean(text);console.warn(text);notify('diag',text);if(/abort|exception|failed|fatal|out of memory|cannot|could not/i.test(text))notify('log',text)},
+  canvas:(function(){canvas.width=640;canvas.height=480;return canvas})(),
+  setStatus:function(text){if(text)setStatus(text)},
+  monitorRunDependencies:function(left){if(left)setStatus('Loading Windows layer… '+left)},
+  onAbort:function(reason){fail('Wine aborted: '+clean(reason))}
+ };
+ notify('diag','Memory initializer preloaded: '+memoryImageData.byteLength+' bytes.');
 }
-window.injectKey=function(code,isDown){
-  const map={ArrowUp:['ArrowUp','ArrowUp',38],ArrowDown:['ArrowDown','ArrowDown',40],ArrowLeft:['ArrowLeft','ArrowLeft',37],ArrowRight:['ArrowRight','ArrowRight',39],KeyA:['a','KeyA',65],KeyS:['s','KeyS',83],KeyD:['d','KeyD',68],KeyZ:['z','KeyZ',90],KeyX:['x','KeyX',88],KeyC:['c','KeyC',67],Enter:['Enter','Enter',13],Escape:['Escape','Escape',27]};
-  const m=map[code];if(!m)return;const type=isDown?'keydown':'keyup';let ev;try{ev=new KeyboardEvent(type,{key:m[0],code:m[1],keyCode:m[2],which:m[2],bubbles:true,cancelable:true});Object.defineProperty(ev,'keyCode',{get:()=>m[2]});Object.defineProperty(ev,'which',{get:()=>m[2]})}catch(e){return}canvas.focus();canvas.dispatchEvent(ev);document.dispatchEvent(ev);window.dispatchEvent(ev)
-};
+window.injectKey=function(code,isDown){const map={ArrowUp:['ArrowUp','ArrowUp',38],ArrowDown:['ArrowDown','ArrowDown',40],ArrowLeft:['ArrowLeft','ArrowLeft',37],ArrowRight:['ArrowRight','ArrowRight',39],KeyA:['a','KeyA',65],KeyS:['s','KeyS',83],KeyD:['d','KeyD',68],KeyZ:['z','KeyZ',90],KeyX:['x','KeyX',88],KeyC:['c','KeyC',67],Enter:['Enter','Enter',13],Escape:['Escape','Escape',27]},m=map[code];if(!m)return;const type=isDown?'keydown':'keyup';let ev;try{ev=new KeyboardEvent(type,{key:m[0],code:m[1],keyCode:m[2],which:m[2],bubbles:true,cancelable:true});Object.defineProperty(ev,'keyCode',{get:()=>m[2]});Object.defineProperty(ev,'which',{get:()=>m[2]})}catch(e){return}canvas.focus();canvas.dispatchEvent(ev);document.dispatchEvent(ev);window.dispatchEvent(ev)};
 window.addEventListener('error',function(e){fail((e&&e.message)||'JavaScript runtime error')});
 window.addEventListener('unhandledrejection',function(e){const r=e&&e.reason;fail('Promise: '+(r&&r.message?r.message:r||'unknown'))});
 async function get(url,label,type){setStatus('Loading '+label+'…');const r=await fetch(url,{mode:'cors',cache:'force-cache'});if(!r.ok)throw new Error(label+' download failed ('+r.status+').');return type==='text'?r.text():r.arrayBuffer()}
 async function boot(){
-  try{
-    if(!parent.mugenZipData){setStatus('Choose the extracted WinMugen folder in MUGEN Lab first.');return}
-    systemFileData=await get(SYSTEM_ZIP,'Windows filesystem','buffer');
-    wasmFileData=await get(ENGINE_WASM,'Wine WASM core','buffer');
-    const engineText=await get(ENGINE_JS,'Wine JavaScript core','text');
-    setStatus('Starting Wine + WinMUGEN…');makeModule();
-    const script=document.createElement('script');script.text=engineText;document.body.appendChild(script);
-    notify('boot','Wine engine executing.');
-    setTimeout(()=>{if(!statusErr.textContent){status.classList.add('hide');notify('engine','Wine engine loaded')}} ,900);
-  }catch(err){fail(err&&err.message?err.message:String(err))}
+ try{
+  if(!parent.mugenZipData){setStatus('Choose the extracted WinMugen folder in MUGEN Lab first.');return}
+  systemFileData=await get(SYSTEM_ZIP,'Windows filesystem','buffer');
+  memoryImageData=await get(MEMORY_IMAGE,'legacy Wine memory image','buffer');
+  if(memoryImageData.byteLength<100000)throw new Error('Memory image download was incomplete ('+memoryImageData.byteLength+' bytes).');
+  const engineText=await get(ENGINE_JS,'Wine JavaScript core','text');
+  setStatus('Memory image ready · starting Wine…');makeModule();
+  const script=document.createElement('script');script.text=engineText;document.body.appendChild(script);
+  notify('boot','Wine engine executing with preloaded memory image.');
+  setTimeout(()=>{if(!statusErr.textContent){status.classList.add('hide');notify('engine','Wine engine loaded')}} ,1200);
+ }catch(err){fail(err&&err.message?err.message:String(err))}
 }
 boot();
 })();
