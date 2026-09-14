@@ -1,0 +1,61 @@
+name: Rig F F6.3 Performance
+on:
+  push:
+    paths:
+      - '.github/workflows/rigf-f63-performance.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Patch Rig F F6.3
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('mugen-lab/rig-f.html')
+          s=p.read_text()
+          if 'F6.2' not in s:
+              raise SystemExit('Expected F6.2 source not found')
+          s=s.replace('F6.2','F6.3')
+          s=s.replace("<div class=\"pill\">LEAN APP FS · BOXEDWINE</div>","<div class=\"pill\">PERFORMANCE · RAF + LOCAL ROOT</div><div id=\"fpsBadge\" class=\"pill\">FPS --</div>")
+          s=s.replace("F6.1 keeps the lean WinMUGEN filesystem and rewrites BoxedWine's patched /api/fs/ on-demand requests to the same-origin ./assets/ Wine root so late DLL/wineboot reads cannot fall back to a missing API route.","F6.3 keeps the lean WinMUGEN app filesystem, loads the Wine root locally up front, and patches BoxedWine to requestAnimationFrame timing for smoother gameplay.")
+          old="function buildParams(){const work=exeDir?'d:/'+exeDir:'d:/';return ['ondemand=root','root=fullWine1.7.55-v8','inline-default-ondemand-root-overlay=wine1.7.55-v8-min-online','app=userapp.zip','p=Winmugen.exe','work='+work,'auto=true','sound=false','bpp=16'].join('&')}"
+          new="function buildParams(){const work=exeDir?'d:/'+exeDir:'d:/';return ['root=fullWine1.7.55-v8','inline-default-ondemand-root-overlay=wine1.7.55-v8-min-online','app=userapp.zip','p=Winmugen.exe','work='+work,'auto=true','sound=false','bpp=16'].join('&')}"
+          if old not in s:
+              raise SystemExit('buildParams needle not found')
+          s=s.replace(old,new,1)
+          old="status('LOADING BOXEDWINE WASM · ON-DEMAND ROOT');await scriptURL(ENGINE);status('BOXEDWINE ENGINE STARTED');"
+          new="status('FETCHING BOXEDWINE ENGINE · RAF PATCH');const er=await fetch(ENGINE,{cache:'no-store'});if(!er.ok)throw new Error('Engine HTTP '+er.status);let es=await er.text();const rafNeedle='if(fps&&fps>0)_emscripten_set_main_loop_timing(0,1e3/fps);else _emscripten_set_main_loop_timing(1,1);';if(!es.includes(rafNeedle))throw new Error('RAF patch point not found');es=es.replace(rafNeedle,'_emscripten_set_main_loop_timing(1,1);console.log(\\\"RIGF F6.3: RAF main loop forced\\\");');es=es.replace('function _eglSwapBuffers(){','function _eglSwapBuffers(){window.RIGF_FRAME_COUNT=(window.RIGF_FRAME_COUNT||0)+1;');es=es.replace('SDL2.ctx.putImageData(SDL2.image,0,0);return 0','window.RIGF_FRAME_COUNT=(window.RIGF_FRAME_COUNT||0)+1;SDL2.ctx.putImageData(SDL2.image,0,0);return 0');log('F6.3 RAF PATCH APPLIED');status('LOADING BOXEDWINE WASM · FULL LOCAL ROOT');await scriptText(es);status('BOXEDWINE ENGINE STARTED');"
+          if old not in s:
+              raise SystemExit('engine loader needle not found')
+          s=s.replace(old,new,1)
+          anchor="const controls=document.getElementById('controls'),ctrlToggle=document.getElementById('ctrlToggle'),debugToggle=document.getElementById('debugToggle'),diagInlineToggle=document.getElementById('diagInlineToggle'),diagWrap=document.getElementById('diagWrap'),gamepadNote=document.getElementById('gamepadNote');"
+          repl=anchor+"\nconst fpsBadge=document.getElementById('fpsBadge');let fpsLast=0;setInterval(()=>{const n=window.RIGF_FRAME_COUNT||0,delta=n-fpsLast;fpsLast=n;if(fpsBadge)fpsBadge.textContent='FPS '+delta},1000);"
+          if anchor not in s:
+              raise SystemExit('fps anchor not found')
+          s=s.replace(anchor,repl,1)
+          p.write_text(s)
+
+          # Point the PV shortcut at the cache-busted performance build.
+          ip=Path('index.html')
+          idx=ip.read_text()
+          import re
+          idx=re.sub(r'href="\./mugen-lab/rig-f\.html(?:\?v=[^"]*)?"', 'href="./mugen-lab/rig-f.html?v=f63"', idx)
+          ip.write_text(idx)
+
+          dp=Path('docs/MOBMUGEN_LIVE.md')
+          d=dp.read_text()
+          d += "\n## Rig F F6.3 - performance pass\n- Keeps the F6 lean app filesystem and F6.2 controller/debug shell.\n- Removes `ondemand=root` so the same-origin Wine root is loaded up front, eliminating synchronous DLL range fetches during gameplay.\n- Runtime-patches the pinned Emscripten main-loop setup to force requestAnimationFrame timing.\n- Adds an on-screen frame presentation counter for phone witness comparison.\n- Audio remains disabled during this performance isolation pass.\n- PV Rig F shortcut points to `rig-f.html?v=f63`.\n"
+          dp.write_text(d)
+          PY
+      - name: Commit F6.3
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f.html index.html docs/MOBMUGEN_LIVE.md
+          git commit -m 'Rig F F6.3 force RAF and localize Wine root'
+          git push
