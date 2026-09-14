@@ -64,37 +64,59 @@ err:module:LdrInitializeThunk ... status c0000135
 ### Strongest diagnosis
 **Current WinAppRunnerSystem.zip / BoxedWine-era runtime payload is incomplete for WinMUGEN's 32-bit dependency chain.**
 
-E8 did its job: it converted uncertainty into a concrete missing-runtime-payload result.
+## 2026-09-14 — E9 pushed to main
 
-### UI witness notes
-The portrait layout is improved, but the action-button cluster still wastes space and crowds the macro row.
+### E9 runtime commit
+`294938559752015f320043a92c53ab951805e593`
 
-Next UI pass should:
-- move the six attack buttons into a cleaner compact hex/arc with more even spacing
-- move `2P`, `2K`, `START`, `BACK` into a dedicated lower utility strip
-- reduce overlap between `MK/LK/HK` and utility controls
-- keep D-pad and attacks vertically centered against each other
-- preserve HIDE/SHOW and gamepad auto-hide behavior
+E9 no longer assumes the legacy WinAppRunner filesystem is sufficient.
 
-## E9 direction
+Runtime behavior:
+1. download and inspect the legacy filesystem
+2. verify `wineboot.exe`, `dinput.dll`, and `crtdll.dll` before launching
+3. if legacy payload is incomplete, escalate automatically to a complete 32-bit Wine filesystem candidate
+4. inspect every replacement payload before selecting it
+5. derive the Wine executable path and builtin module directories from the selected filesystem
+6. launch WinMUGEN only after a payload passes the required-module gate
 
-### Runtime
-Do **not** spend E9 searching the same missing paths again.
+Current E9 full-payload candidates:
+- BoxedWine 26R1 / Wine 6 web filesystem candidate paths
+- BoxedWine Debian10 / Wine 5 full filesystem fallback
 
-E9 should investigate replacing or augmenting the old WinAppRunner system payload with a browser-compatible BoxedWine/Wine image that actually contains the 32-bit builtin module family required by WinMUGEN.
+Important: these are runtime download candidates, not loose DLL downloads. E9 preserves the coherent filesystem/package approach.
 
-Minimum payload requirement includes coherent 32-bit equivalents of:
-- `wineboot.exe`
-- `dinput.dll`
-- `crtdll.dll`
-- core Wine PE/builtin support needed by those modules
+Useful E9 witness lines:
+- `E9 FS LEGACY:`
+- `E9 ESCALATION: FULL 32-BIT WINE PAYLOAD`
+- `E9 FS FULL1:` / `FULL2:` / `FULL3:`
+- `E9 PAYLOAD PASS:`
+- `E9 mounted map:`
+- `E9 env:`
 
-The next runtime witness should either:
-1. load those modules successfully and advance into graphics/input/audio initialization, or
-2. explicitly prove the replacement runtime image still lacks them.
+If cross-origin hosting prevents one candidate from loading, E9 records the exact candidate failure and continues to the next source.
 
-### Controls
-Preserve the shared touch / keyboard / Gamepad API architecture. Xbox/browser support remains part of MOBMUGEN itself, not PV-only behavior.
+### E9 UI / controls commit
+`a6de94703fccb3bae77993673f878b85939be013`
+
+Visible label is now:
+`MOBMUGEN · RIG E · E9`
+
+Control spacing correction:
+- six attack buttons remain a separate compact fight cluster
+- `2P`, `2K`, `START`, `BACK` now occupy a dedicated four-column utility strip at the bottom of the controller deck
+- utility buttons no longer sit on top of `LK/MK/HK`
+- D-pad and attack cluster are vertically centered above the utility strip
+- controller deck is slightly shorter, returning more portrait height to the gameplay viewport
+- HIDE/SHOW retained
+- physical gamepad auto-hide retained
+- touch, keyboard, and browser Gamepad API still share one input path
+
+### E9 witness gate
+Do not infer success from the commit alone. The next authority is the phone witness.
+
+Expected next result is one of:
+1. a full Wine filesystem candidate passes and WinMUGEN reaches a deeper startup layer, or
+2. E9 tells us exactly why the replacement payload could not be fetched/used.
 
 ### Current status
-**E8 live and witnessed. Runtime blocker narrowed to incomplete 32-bit Wine payload. UI needs one more spacing/presentation pass.**
+**E9 pushed. Waiting on Pages deployment + iPhone witness.**
