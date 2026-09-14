@@ -117,11 +117,44 @@ Architecture:
 - working directory: `D:\`
 - 16-bit video first-pass, sound disabled for boot isolation
 
-F1 witness goal is not polish. It is to answer four questions quickly:
-1. does the modern BoxedWine WASM initialize on iPhone?
-2. does the range-fetched Wine root mount successfully?
-3. does the in-memory MUGEN drive mount successfully?
-4. does `Winmugen.exe` create process/window/video evidence?
+### F1 phone witness
+On iPhone, Rig F loaded and displayed:
+
+```text
+WAITING FOR FOLDER
+```
+
+The page itself loaded, but the mobile directory-picker path did not advance the runtime. This is treated as an input-package handoff issue, not a BoxedWine failure.
+
+## F2 iPhone ZIP loader
+Commit:
+`582946715c2b38c11315cbf42641a1423579fa3e`
+
+F2 keeps folder support but adds a dedicated iPhone-friendly ZIP path.
+
+F2 behavior:
+- visible title `MOBMUGEN · RIG F · F2`
+- primary button: `CHOOSE WINMUGEN ZIP`
+- secondary button: `CHOOSE FOLDER`
+- ZIP is parsed in-browser with JSZip
+- finds `Winmugen.exe` at archive root or inside one enclosing directory
+- strips that enclosing directory when needed
+- rebuilds a normalized in-memory app ZIP with `Winmugen.exe` at drive-D root
+- hands the normalized package to the same modern BoxedWine launch path
+- keeps Wine root range-fetching, overlays, 16-bit first-pass video, and sound-off isolation
+
+### F2 witness target
+Useful next states:
+
+```text
+READING WINMUGEN ZIP
+F2 ZIP ROOT · <path>
+F2 APP ZIP READY
+FETCHING MODERN BOXEDWINE SHELL
+LOADING BOXEDWINE SHELL
+LOADING BOXEDWINE WASM
+BOXEDWINE ENGINE STARTED
+```
 
 ### Current status
-**Rig F F1 pushed to main. Waiting on Pages deployment + first iPhone witness.**
+**Rig F F2 pushed to main. Waiting on Pages deployment + iPhone ZIP witness.**
