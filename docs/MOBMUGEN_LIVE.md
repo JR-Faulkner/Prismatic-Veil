@@ -179,3 +179,11 @@ BOXEDWINE ENGINE STARTED
 - Debug trace area is independently collapsible via HIDE/SHOW DEBUG or its inline COLLAPSE/EXPAND button.
 - Browser Gamepad API/Xbox mapping restored with touch controls auto-hidden while a physical gamepad is connected.
 - PV title/Home Screen MobMugen and Rig F shortcuts now point directly to `rig-f.html?v=f62`.
+
+## Rig F F6.3 - performance pass
+- Keeps the F6 lean app filesystem and F6.2 controller/debug shell.
+- Removes `ondemand=root` so the same-origin Wine root is loaded up front, eliminating synchronous DLL range fetches during gameplay.
+- Runtime-patches the pinned Emscripten main-loop setup to force requestAnimationFrame timing.
+- Adds an on-screen frame presentation counter for phone witness comparison.
+- Audio remains disabled during this performance isolation pass.
+- PV Rig F shortcut points to `rig-f.html?v=f63`.
