@@ -30,27 +30,71 @@
   - View = BACK
   - Menu = START
 
-### E8 runtime changes
-E7 proved the seed/probe could see `wineboot.exe`, `dinput.dll`, and `crtdll.dll` while Wine itself could not resolve them.
+## 2026-09-14 11:04 — E8 phone witness CONFIRMED LIVE
 
-E8 now:
-- searches Wine `i386-windows` and `fakedlls` candidate trees
-- records exact module paths
-- derives `WINEDLLPATH` from the directories actually containing the modules
-- sets `WINEARCH=win32`
-- keeps `WINEPREFIX=/home/username/.wine`
-- enables Wine loader tracing for module/file resolution
-- reports E8 loader-map and gate diagnostics in the phone witness
+### Witness result
+E8 is visibly live on the iPhone and the new controls/UI are active.
 
-### Current witness status
-Last confirmed phone witness was E7 with `c0000135` after unresolved `wineboot.exe`, `DINPUT.dll`, and `CRTDLL.dll`.
+Runtime output:
 
-### Next witness
-Run the normal Home Screen / PV MobMugen route. The page should visibly identify itself as **E8** after GitHub Pages updates. If the phone still shows E7, use a cache-busted route once, then re-open the normal route/Home Screen app.
+```text
+E8 env: WINEPREFIX=/home/username/.wine WINEARCH=win32
+WINEDLLPATH=/usr/lib/wine/fakedlls:/usr/lib/i386-linux-gnu/wine/fakedlls:/usr/lib32/wine/fakedlls:/usr/lib/wine
+E8 loader map: wineboot=MISS dinput=MISS crtdll=MISS moduleDirs=
+E8 gates: wineboot ✗ · dinput ✗ · crtdll ✗ · sys32 ✓
+E8 DIAGNOSIS: INCOMPLETE 32-BIT WINE PAYLOAD
+```
 
-Expected useful E8 output includes lines beginning with:
-- `E8 loader map:`
-- `E8 gates:`
-- `E8 env:`
+Launch then still fails with:
 
-Do not regress to forced landscape or remove the shared gamepad/touch input architecture.
+```text
+wine: cannot find L"C:\\windows\\system32\\wineboot.exe"
+err:process:start_wineboot failed to start wineboot, err 2
+err:module:import_dll Library DINPUT.dll ... not found
+err:module:import_dll Library CRTDLL.dll ... not found
+err:module:LdrInitializeThunk ... status c0000135
+```
+
+### What E8 proves
+- This is no longer a generic path-mismatch theory.
+- The mounted WinAppRunner system image simply does not expose the required 32-bit Wine builtin payload in any of the candidate locations E8 searched.
+- `system32` exists, but the actual builtin modules are absent from the mounted payload.
+- `WINEDLLPATH` cannot fix files that are not present in the mounted runtime image.
+
+### Strongest diagnosis
+**Current WinAppRunnerSystem.zip / BoxedWine-era runtime payload is incomplete for WinMUGEN's 32-bit dependency chain.**
+
+E8 did its job: it converted uncertainty into a concrete missing-runtime-payload result.
+
+### UI witness notes
+The portrait layout is improved, but the action-button cluster still wastes space and crowds the macro row.
+
+Next UI pass should:
+- move the six attack buttons into a cleaner compact hex/arc with more even spacing
+- move `2P`, `2K`, `START`, `BACK` into a dedicated lower utility strip
+- reduce overlap between `MK/LK/HK` and utility controls
+- keep D-pad and attacks vertically centered against each other
+- preserve HIDE/SHOW and gamepad auto-hide behavior
+
+## E9 direction
+
+### Runtime
+Do **not** spend E9 searching the same missing paths again.
+
+E9 should investigate replacing or augmenting the old WinAppRunner system payload with a browser-compatible BoxedWine/Wine image that actually contains the 32-bit builtin module family required by WinMUGEN.
+
+Minimum payload requirement includes coherent 32-bit equivalents of:
+- `wineboot.exe`
+- `dinput.dll`
+- `crtdll.dll`
+- core Wine PE/builtin support needed by those modules
+
+The next runtime witness should either:
+1. load those modules successfully and advance into graphics/input/audio initialization, or
+2. explicitly prove the replacement runtime image still lacks them.
+
+### Controls
+Preserve the shared touch / keyboard / Gamepad API architecture. Xbox/browser support remains part of MOBMUGEN itself, not PV-only behavior.
+
+### Current status
+**E8 live and witnessed. Runtime blocker narrowed to incomplete 32-bit Wine payload. UI needs one more spacing/presentation pass.**
