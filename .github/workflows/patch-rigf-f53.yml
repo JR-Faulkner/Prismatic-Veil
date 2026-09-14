@@ -27,12 +27,12 @@ jobs:
           s=s.replace('F5.3 removes the second 1.7 GB ZIP copy during BrowserFS mounting and continuously saves the trace so a Safari memory crash can be recovered after reload.','F5.3 keeps the zero-copy app mount and traces every BoxedWine root/overlay XHR so the remaining filesystem failure identifies its exact URL and HTTP status.')
           needle="function scriptText(t){return new Promise((res,rej)=>{const s=document.createElement('script');s.text=t;s.onerror=rej;document.head.appendChild(s);res()})}"
           inject="""function installNetTrace(){
-const X=window.XMLHttpRequest;if(!X||X.prototype.__rigf53)return;X.prototype.__rigf53=true;
-const o=X.prototype.open,send=X.prototype.send;
-X.prototype.open=function(method,url,async,user,pass){this.__rigf53url=String(url);this.__rigf53method=String(method);log('F5.3 XHR OPEN · '+this.__rigf53method+' · '+this.__rigf53url+' · async='+(async!==false));return o.call(this,method,url,async,user,pass)};
-X.prototype.send=function(body){const xhr=this,u=this.__rigf53url||'?';const done=()=>{try{log('F5.3 XHR DONE · '+(xhr.__rigf53method||'?')+' · '+u+' · status='+xhr.status+' · ready='+xhr.readyState)}catch(e){}};this.addEventListener('load',done);this.addEventListener('error',()=>log('F5.3 XHR ERROR · '+u+' · status='+(xhr.status||0)));this.addEventListener('abort',()=>log('F5.3 XHR ABORT · '+u));this.addEventListener('timeout',()=>log('F5.3 XHR TIMEOUT · '+u));return send.call(this,body)};
-log('F5.3 XHR TRACE ARMED')}
-"""+needle
+          const X=window.XMLHttpRequest;if(!X||X.prototype.__rigf53)return;X.prototype.__rigf53=true;
+          const o=X.prototype.open,send=X.prototype.send;
+          X.prototype.open=function(method,url,async,user,pass){this.__rigf53url=String(url);this.__rigf53method=String(method);log('F5.3 XHR OPEN · '+this.__rigf53method+' · '+this.__rigf53url+' · async='+(async!==false));return o.call(this,method,url,async,user,pass)};
+          X.prototype.send=function(body){const xhr=this,u=this.__rigf53url||'?';const done=()=>{try{log('F5.3 XHR DONE · '+(xhr.__rigf53method||'?')+' · '+u+' · status='+xhr.status+' · ready='+xhr.readyState)}catch(e){}};this.addEventListener('load',done);this.addEventListener('error',()=>log('F5.3 XHR ERROR · '+u+' · status='+(xhr.status||0)));this.addEventListener('abort',()=>log('F5.3 XHR ABORT · '+u));this.addEventListener('timeout',()=>log('F5.3 XHR TIMEOUT · '+u));return send.call(this,body)};
+          log('F5.3 XHR TRACE ARMED')}
+          """+needle
           if needle not in s: raise SystemExit('scriptText needle missing')
           s=s.replace(needle,inject)
           needle2="setup.classList.add('hide');status('LOADING BOXEDWINE WASM · WHOLE ROOT');await scriptURL(ENGINE);"
