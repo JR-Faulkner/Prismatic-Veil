@@ -1,0 +1,37 @@
+name: Patch PV Rig F Link
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-pv-rigf-link.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add BoxedWine Rig F link under MobMugen
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          css=".rigf-link{position:absolute;top:calc(max(10px,env(safe-area-inset-top)) + 104px);left:max(10px,env(safe-area-inset-left));z-index:4;pointer-events:auto;width:84px;text-decoration:none;color:#bfffd8;text-align:center;padding:5px 7px;border:1px solid #69e6a066;border-radius:999px;background:#07130fd9;font:bold 8px Georgia;letter-spacing:.08em;white-space:nowrap;box-shadow:0 5px 16px #0008}.rigf-link:focus{outline:none;box-shadow:0 0 0 2px #8ee9ff,0 0 18px #69e6a088}@media(max-width:700px){.rigf-link{top:calc(max(10px,env(safe-area-inset-top)) + 91px);width:72px;font-size:7px;padding:4px 5px}}@media(max-height:430px) and (orientation:landscape){.rigf-link{top:calc(max(10px,env(safe-area-inset-top)) + 86px);width:68px;font-size:7px}}"
+          marker='@media(prefers-reduced-motion:reduce){.splash-video{display:none}}'
+          if css not in s:
+              s=s.replace(marker,css+marker)
+          anchor='<a class="mobmugen-link" href="./mugen-lab/" aria-label="Open MobMugen Lab"><span class="mobmugen-icon" aria-hidden="true"></span><span class="mobmugen-label">MOBMUGEN · LAB</span></a>'
+          add=anchor+'<a class="rigf-link" href="./mugen-lab/rig-f.html" aria-label="Open BoxedWine Rig F">BOXEDWINE · RIG F</a>'
+          if 'class="rigf-link"' not in s:
+              if anchor not in s: raise SystemExit('MobMugen anchor not found')
+              s=s.replace(anchor,add,1)
+          p.write_text(s)
+          PY
+      - name: Commit patch and remove one-shot workflow
+        run: |
+          git config user.name 'JR-Faulkner'
+          git config user.email '53619182+JR-Faulkner@users.noreply.github.com'
+          git rm .github/workflows/patch-pv-rigf-link.yml
+          git add index.html
+          git commit -m 'Add BoxedWine Rig F link to PV title screen'
+          git push
