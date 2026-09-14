@@ -156,5 +156,28 @@ Add a black-screen watchdog and keep a compact diagnostic path available so the 
 - whether the canvas changed from an all-black frame
 - whether the process returned or remained active
 
+## 2026-09-14 — E9.1 runtime witness probe pushed
+
+Runtime commit:
+`dd60a19d1bc9377627553d02f5e71f2e45c8a5bf`
+
+E9.1 is a runtime-only diagnostic subrevision. The outer shell remains E9 so the control/input layer does not churn unnecessarily.
+
+New witness stages:
+- `ENGINE LOADED · WAITING FOR WINMUGEN VIDEO`
+- `WINMUGEN WINDOW · <title>` if the Wine host reports a window title
+- `WINMUGEN VIDEO ✓` when the runtime canvas changes from its post-engine baseline
+- `ENGINE ALIVE · BLACK/UNCHANGED VIDEO` if the canvas remains unchanged through the witness window
+- `PROCESS RETURNED · NO VIDEO CONFIRMED` if Wine exits before video is confirmed
+
+The probe captures a post-engine canvas baseline and checks for actual visual change instead of treating the JS/Wine engine merely loading as proof of gameplay.
+
+E9.1 preserves:
+- E9 full Wine payload fallback
+- current portrait control layout
+- HIDE/SHOW
+- touch / keyboard / browser Gamepad API shared input path
+- gamepad auto-hide
+
 ### Current status
-**E9 live. Immediate E8 loader crash no longer visible. Current witness is black canvas with Wine engine alive, not yet confirmed WinMUGEN rendering.**
+**E9 shell live. E9.1 runtime probe pushed. Waiting on Pages deployment + iPhone witness to determine whether WinMUGEN creates a window/frame or stalls after Wine engine load.**
