@@ -3,35 +3,36 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>MobMugen · Rig F · F1</title>
+<title>MobMugen · Rig F · F2</title>
 <style>
 :root{--bg:#070b13;--panel:#0c1421;--line:#28384c;--gold:#f1bf55;--text:#eef4ff;--muted:#8390a4;--good:#6ce0a0;--bad:#ff7f8b}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}body{padding:max(env(safe-area-inset-top),12px) 10px max(env(safe-area-inset-bottom),12px)}
 .wrap{max-width:900px;margin:auto}.bar{display:flex;align-items:center;gap:8px;height:52px}.brand{font-weight:900;letter-spacing:.12em;color:var(--gold);font-size:13px}.pill{margin-left:auto;border:1px solid #6d5722;background:#151208;color:var(--gold);border-radius:999px;padding:8px 12px;font-weight:900}.stage{position:relative;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#000;min-height:58vh}.tag{position:absolute;z-index:5;left:12px;top:10px;border:1px solid #564725;border-radius:10px;padding:6px 9px;color:var(--gold);font-size:11px;font-weight:900;background:#090c12d9}.statusline{padding:10px 4px;font-size:11px;letter-spacing:.08em;color:var(--muted)}.statusline b{color:var(--text)}
-#canvas{display:block;width:100%;height:58vh;background:#000;outline:none}.setup{position:absolute;inset:0;z-index:4;display:grid;place-items:center;padding:24px;background:#070b13}.card{max-width:520px;text-align:center}.card h2{margin:0 0 8px;color:var(--gold);font-size:20px}.card p{color:#aab7c9;line-height:1.5;font-size:13px}.pick{display:inline-block;margin-top:10px;padding:12px 18px;border-radius:12px;border:1px solid #7a6227;background:#181307;color:var(--gold);font-weight:900;cursor:pointer}.hide{display:none!important}.diag{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:#090f18;padding:10px;max-height:160px;overflow:auto;white-space:pre-wrap;font-size:10px;color:#a9b7c9}.good{color:var(--good)}.bad{color:var(--bad)}
-/* BoxedWine shell compatibility nodes */
-#bw-hidden{display:none!important}
+#canvas{display:block;width:100%;height:58vh;background:#000;outline:none}.setup{position:absolute;inset:0;z-index:4;display:grid;place-items:center;padding:24px;background:#070b13}.card{max-width:560px;text-align:center}.card h2{margin:0 0 8px;color:var(--gold);font-size:20px}.card p{color:#aab7c9;line-height:1.5;font-size:13px}.picks{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}.pick{display:inline-block;padding:12px 16px;border-radius:12px;border:1px solid #7a6227;background:#181307;color:var(--gold);font-weight:900;cursor:pointer}.pick.alt{border-color:#3b536f;background:#0c1522;color:#c8d8ee}.hint{margin-top:8px;font-size:10px;color:#738195}.hide{display:none!important}.diag{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:#090f18;padding:10px;max-height:160px;overflow:auto;white-space:pre-wrap;font-size:10px;color:#a9b7c9}.good{color:var(--good)}.bad{color:var(--bad)}#bw-hidden{display:none!important}
 </style>
 <script src="https://cdn.jsdelivr.net/gh/andrewnakas/exebrowser@c6049f9684f3c6895c8f31f361a0a29462793f41/public/boxedwine/build/default/browserfs.boxedwine.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/andrewnakas/exebrowser@c6049f9684f3c6895c8f31f361a0a29462793f41/public/boxedwine/build/default/jszip.min.js"></script>
 </head>
 <body>
 <div class="wrap">
-  <div class="bar"><div class="brand">MOBMUGEN · RIG F · F1</div><div class="pill">MODERN BOXEDWINE</div></div>
+  <div class="bar"><div class="brand">MOBMUGEN · RIG F · F2</div><div class="pill">MODERN BOXEDWINE</div></div>
   <div class="stage">
     <div class="tag">GAMEPLAY VIEWPORT</div>
     <div id="setup" class="setup"><div class="card">
-      <h2>Rig F · F1</h2>
-      <p>Modern BoxedWine boot path. Pick the extracted WinMUGEN folder. F1 builds an in-memory app ZIP, mounts it as drive D:, then launches Winmugen.exe through the current BoxedWine browser runtime.</p>
-      <label class="pick">CHOOSE WINMUGEN FOLDER<input id="folder" type="file" webkitdirectory multiple hidden></label>
-      <div id="prepDiag" class="diag">Waiting for folder…</div>
+      <h2>Rig F · F2</h2>
+      <p>Modern BoxedWine boot path. On iPhone, choose your WinMUGEN ZIP. Folder mode remains available on browsers that hand directory selections through correctly.</p>
+      <div class="picks">
+        <label class="pick">CHOOSE WINMUGEN ZIP<input id="zipInput" type="file" accept=".zip,application/zip" hidden></label>
+        <label class="pick alt">CHOOSE FOLDER<input id="folder" type="file" webkitdirectory multiple hidden></label>
+      </div>
+      <div class="hint">iPhone: ZIP is the preferred F2 path.</div>
+      <div id="prepDiag" class="diag">Waiting for ZIP or folder…</div>
     </div></div>
     <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
   </div>
-  <div class="statusline">INPUT <b>READY</b> · RUNTIME <b id="runtimeState">WAITING FOR FOLDER</b></div>
-  <div id="diag" class="diag">F1 witness log</div>
+  <div class="statusline">INPUT <b>READY</b> · RUNTIME <b id="runtimeState">WAITING FOR PACKAGE</b></div>
+  <div id="diag" class="diag">F2 witness log</div>
 </div>
-
 <div id="bw-hidden">
   <div id="status"></div><progress id="progress"></progress><div id="spinner"></div><div id="dropzone"></div>
   <textarea id="output"></textarea><button id="startbtn"></button><input id="soundToggle" type="checkbox"><div id="sound-checkbox"></div>
@@ -47,84 +48,83 @@ const SHELL=CDN+'build/default/boxedwine-shell.js';
 const ENGINE=CDN+'build/default/boxedwine.js';
 const ROOT_BASE='https://boxedwine-assets.exebrowser.workers.dev/fs/';
 const OVERLAY_BASE=CDN+'apps/';
-const folder=document.getElementById('folder'),setup=document.getElementById('setup'),prep=document.getElementById('prepDiag'),diag=document.getElementById('diag'),state=document.getElementById('runtimeState'),canvas=document.getElementById('canvas');
-let logLines=[];
-function log(s){s=String(s);logLines.push(s);while(logLines.length>60)logLines.shift();diag.textContent=logLines.join('\n');console.log('[Rig F]',s)}
+const folder=document.getElementById('folder'),zipInput=document.getElementById('zipInput'),setup=document.getElementById('setup'),prep=document.getElementById('prepDiag'),diag=document.getElementById('diag'),state=document.getElementById('runtimeState'),canvas=document.getElementById('canvas');
+let logLines=[],bootStarted=false;
+function log(s){s=String(s);logLines.push(s);while(logLines.length>70)logLines.shift();diag.textContent=logLines.join('\n');console.log('[Rig F F2]',s)}
 function status(s){state.textContent=s;log(s)}
-function fail(e){const s=(e&&e.message)||String(e);state.textContent='STOPPED';state.className='bad';prep.textContent=s;log('F1 ERROR: '+s)}
+function fail(e){const s=(e&&e.message)||String(e);state.textContent='STOPPED';state.className='bad';prep.textContent=s;log('F2 ERROR: '+s);bootStarted=false}
 window.addEventListener('error',e=>{if(e.message)log('JS: '+e.message)});
 window.addEventListener('unhandledrejection',e=>log('PROMISE: '+((e.reason&&e.reason.message)||e.reason||'unknown')));
 
-async function makeZip(files){
-  const zip=new JSZip(); let count=0,total=0,hasExe=false;
-  for(const f of files){
-    const rel=(f.webkitRelativePath||f.name).split('/').slice(1).join('/') || f.name;
-    if(!rel) continue;
-    const buf=await f.arrayBuffer(); zip.file(rel,buf); count++; total+=f.size;
-    if(rel.toLowerCase()==='winmugen.exe') hasExe=true;
+function stripRoot(name,root){if(!root)return name;return name.startsWith(root+'/')?name.slice(root.length+1):name}
+async function normalizeZipFile(file){
+  status('READING WINMUGEN ZIP');
+  prep.textContent='Reading '+file.name+'…';
+  const raw=await file.arrayBuffer();
+  const src=await JSZip.loadAsync(raw);
+  const names=Object.keys(src.files).filter(n=>!src.files[n].dir&&!n.startsWith('__MACOSX/'));
+  if(!names.length)throw new Error('ZIP contains no files.');
+  let exe=names.find(n=>n.toLowerCase()==='winmugen.exe')||names.find(n=>n.toLowerCase().endsWith('/winmugen.exe'));
+  if(!exe)throw new Error('Winmugen.exe was not found in this ZIP.');
+  const root=exe.includes('/')?exe.slice(0,exe.toLowerCase().lastIndexOf('/winmugen.exe')):'';
+  log('F2 ZIP ROOT · '+(root||'(archive root)'));
+  const out=new JSZip();let count=0,total=0;
+  for(const name of names){
+    if(root && !(name===root || name.startsWith(root+'/')))continue;
+    const rel=stripRoot(name,root);if(!rel)continue;
+    const data=await src.files[name].async('uint8array');out.file(rel,data);count++;total+=data.byteLength;
   }
-  if(!hasExe) throw new Error('Winmugen.exe was not found at the selected folder root.');
+  if(!out.file(/(^|\/)Winmugen\.exe$/i).length)throw new Error('ZIP normalization lost Winmugen.exe.');
+  prep.textContent='Preparing '+count+' files · '+(total/1048576).toFixed(1)+' MB…';
+  const blob=await out.generateAsync({type:'uint8array',compression:'STORE'},m=>{prep.textContent='Preparing MUGEN… '+Math.round(m.percent)+'%';});
+  log('F2 APP ZIP READY · source=ZIP files='+count+' bytes='+blob.byteLength);
+  return blob.buffer;
+}
+
+async function makeZipFromFolder(files){
+  const zip=new JSZip();let count=0,total=0,hasExe=false;
+  for(const f of files){
+    const parts=(f.webkitRelativePath||f.name).split('/');const rel=parts.length>1?parts.slice(1).join('/'):f.name;if(!rel)continue;
+    const buf=await f.arrayBuffer();zip.file(rel,buf);count++;total+=f.size;if(rel.toLowerCase()==='winmugen.exe')hasExe=true;
+  }
+  if(!hasExe)throw new Error('Winmugen.exe was not found at the selected folder root.');
   prep.textContent='Packing '+count+' files · '+(total/1048576).toFixed(1)+' MB…';
   const blob=await zip.generateAsync({type:'uint8array',compression:'STORE'},m=>{prep.textContent='Packing MUGEN… '+Math.round(m.percent)+'%';});
-  log('F1 APP ZIP READY · files='+count+' bytes='+blob.byteLength);
+  log('F2 APP ZIP READY · source=FOLDER files='+count+' bytes='+blob.byteLength);
   return blob.buffer;
 }
 
 function ensureQuery(){
-  const q=new URLSearchParams();
-  q.set('auto','true');q.set('sound','false');q.set('bpp','16');q.set('ondemand','root');
-  q.set('root','fullWine1.7.55-v8.zip');
-  q.set('overlay','wine1.7.55-v8-min-online.zip;wine1.7.55-v8-min-online-patch.zip');
-  q.set('app','userapp.zip');q.set('program','Winmugen.exe');q.set('work','d:/');
+  const q=new URLSearchParams();q.set('auto','true');q.set('sound','false');q.set('bpp','16');q.set('ondemand','root');
+  q.set('root','fullWine1.7.55-v8.zip');q.set('overlay','wine1.7.55-v8-min-online.zip;wine1.7.55-v8-min-online-patch.zip');
+  q.set('app','userapp.zip');q.set('program','Winmugen.exe');q.set('work','d:/');q.set('rig','f2');
   history.replaceState(null,'',location.pathname+'?'+q.toString());
 }
 
 function patchShell(src){
   src=src.replace('Config.locateRootBaseUrl = "";','Config.locateRootBaseUrl = "'+ROOT_BASE+'";');
   src=src.replace('Config.locateOverlayBaseUrl = "";','Config.locateOverlayBaseUrl = "'+OVERLAY_BASE+'";');
-  const needle='function buildAppFileSystems(adapterCallback)\\n        {\\n            var Buffer = BrowserFS.BFSRequire(\'buffer\').Buffer;';
-  const inject="function buildAppFileSystems(adapterCallback)\\n        {\\n            var Buffer = BrowserFS.BFSRequire('buffer').Buffer;\\n            if(window.RIGF_APP_ZIP_DATA){\\n                console.log('RIGF F1: using in-memory MUGEN app ZIP');\\n                BrowserFS.FileSystem.ZipFS.Create({zipData:new Buffer(new Uint8Array(window.RIGF_APP_ZIP_DATA))}, function(rigErr, rigZip){\\n                    if(rigErr){ console.error(rigErr); throw rigErr; }\\n                    adapterCallback(new BrowserFS.FileSystem.FolderAdapter('/', rigZip));\\n                });\\n                return;\\n            }";
-  if(!src.includes(needle)) throw new Error('BoxedWine shell patch point changed.');
-  src=src.replace(needle,inject);
-  src += "\\n;try{window.__BoxedwineConfig=Config;}catch(e){}\\n";
-  return src;
+  const needle="function buildAppFileSystems(adapterCallback)\n        {\n            var Buffer = BrowserFS.BFSRequire('buffer').Buffer;";
+  const inject="function buildAppFileSystems(adapterCallback)\n        {\n            var Buffer = BrowserFS.BFSRequire('buffer').Buffer;\n            if(window.RIGF_APP_ZIP_DATA){\n                console.log('RIGF F2: using in-memory MUGEN app ZIP');\n                BrowserFS.FileSystem.ZipFS.Create({zipData:new Buffer(new Uint8Array(window.RIGF_APP_ZIP_DATA))}, function(rigErr, rigZip){\n                    if(rigErr){ console.error(rigErr); throw rigErr; }\n                    adapterCallback(new BrowserFS.FileSystem.FolderAdapter('/', rigZip));\n                });\n                return;\n            }";
+  if(!src.includes(needle))throw new Error('BoxedWine shell patch point changed.');
+  src=src.replace(needle,inject);src+="\n;try{window.__BoxedwineConfig=Config;}catch(e){}\n";return src;
 }
-
-function scriptText(text){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.text=text;s.onload=resolve;s.onerror=reject;document.body.appendChild(s);resolve();});}
+function scriptText(text){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.text=text;s.onerror=reject;document.body.appendChild(s);resolve();});}
 function scriptURL(url){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=url;s.onload=resolve;s.onerror=()=>reject(new Error('Failed to load '+url));document.body.appendChild(s);});}
 
 async function boot(appBuffer){
+  if(bootStarted)return;bootStarted=true;
   try{
-    window.RIGF_APP_ZIP_DATA=appBuffer;
-    ensureQuery();
-    status('FETCHING MODERN BOXEDWINE SHELL');
-    const r=await fetch(SHELL,{cache:'no-store'}); if(!r.ok)throw new Error('Shell HTTP '+r.status);
-    let src=await r.text(); src=patchShell(src);
-    log('F1 SHELL PATCHED · root='+ROOT_BASE);
-    status('LOADING BOXEDWINE SHELL');
-    await scriptText(src);
-    setup.classList.add('hide');
-    status('LOADING BOXEDWINE WASM');
-    await scriptURL(ENGINE);
-    status('BOXEDWINE ENGINE STARTED');
-    setTimeout(()=>{
-      try{
-        const gl=canvas.getContext('webgl')||canvas.getContext('experimental-webgl');
-        log('F1 CANVAS · '+canvas.width+'x'+canvas.height+' · webgl='+(!!gl));
-      }catch(e){log('F1 canvas probe failed: '+e.message)}
-    },2500);
+    window.RIGF_APP_ZIP_DATA=appBuffer;ensureQuery();status('FETCHING MODERN BOXEDWINE SHELL');
+    const r=await fetch(SHELL,{cache:'no-store'});if(!r.ok)throw new Error('Shell HTTP '+r.status);
+    let src=patchShell(await r.text());log('F2 SHELL PATCHED · modern BoxedWine');status('LOADING BOXEDWINE SHELL');
+    await scriptText(src);setup.classList.add('hide');status('LOADING BOXEDWINE WASM');await scriptURL(ENGINE);status('BOXEDWINE ENGINE STARTED');
+    setTimeout(()=>{try{const gl=canvas.getContext('webgl')||canvas.getContext('experimental-webgl');log('F2 CANVAS · '+canvas.width+'x'+canvas.height+' · webgl='+(!!gl))}catch(e){log('F2 canvas probe failed: '+e.message)}},2500);
   }catch(e){fail(e)}
 }
 
-folder.addEventListener('change',async()=>{
-  try{
-    const files=[...folder.files]; if(!files.length)return;
-    prep.textContent='Reading '+files.length+' files…';
-    status('PACKING WINMUGEN');
-    const app=await makeZip(files);
-    await boot(app);
-  }catch(e){fail(e)}
-});
+zipInput.addEventListener('change',async()=>{try{const f=zipInput.files&&zipInput.files[0];if(!f)return;const app=await normalizeZipFile(f);await boot(app)}catch(e){fail(e)}});
+folder.addEventListener('change',async()=>{try{const files=[...folder.files];if(!files.length)return;prep.textContent='Reading '+files.length+' files…';status('PACKING WINMUGEN FOLDER');const app=await makeZipFromFolder(files);await boot(app)}catch(e){fail(e)}});
 })();
 </script>
 </body></html>
