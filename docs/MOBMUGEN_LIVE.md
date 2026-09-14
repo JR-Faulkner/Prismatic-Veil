@@ -171,3 +171,11 @@ BOXEDWINE ENGINE STARTED
 - Wine then requested `dinput.dll` through ExeBrowser BrowserFS' hardcoded `/api/fs/fullWine1.7.55-v8.zip` path and got 404.
 - F6.1 rewrites any `/api/fs/*` XHR to `./assets/*`, preserving Range headers and the proven same-origin 206 path.
 - Goal: allow late wineboot/DLL reads to continue past the first real Wine process launch.
+
+## Rig F F6.2 - playable shell integration
+- F6.1 phone witness produced real WinMUGEN video on iPhone.
+- Restores the prior portrait touch-controller layout: D-pad, LP/MP/HP, LK/MK/HK, 2P/2K, START/BACK.
+- Controls are independently collapsible via HIDE/SHOW CTRL.
+- Debug trace area is independently collapsible via HIDE/SHOW DEBUG or its inline COLLAPSE/EXPAND button.
+- Browser Gamepad API/Xbox mapping restored with touch controls auto-hidden while a physical gamepad is connected.
+- PV title/Home Screen MobMugen and Rig F shortcuts now point directly to `rig-f.html?v=f62`.
