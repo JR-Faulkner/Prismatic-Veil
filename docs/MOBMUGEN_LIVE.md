@@ -6,6 +6,7 @@
 - PV homepage route: `./mugen-lab/`
 - MobMugen page: `mugen-lab/index.html`
 - Runtime: `mugen-lab/runtime.html`
+- Rig F prototype: `mugen-lab/rig-f.html`
 
 ## Current shell
 - Portrait MOBMUGEN controller shell
@@ -81,16 +82,46 @@ Upstream `lrusso/WinAppRunner` was checked directly. Its native launch contract 
 -root /root -m 64 -w /home/username/files/ /usr/bin/wine <exeFilename>
 ```
 
-E9.4 restores that contract instead of shell/absolute-path launching while preserving:
-- full 32-bit Wine payload fallback
-- exact selected payload identity (`LEGACY`, `FULL1`, `FULL2`, `FULL3`)
-- selected Wine binary path
-- `+process,+module,+loaddll,+file` tracing
-- process/window/video watchdogs
-- current E9 controller/Xbox/browser UI
+E9.4 restored that contract while preserving the full 32-bit Wine payload fallback and runtime telemetry.
 
-### E9.4 decision point
-If canonical handoff still yields no WinMUGEN process evidence, the leading suspect becomes compatibility between the legacy `WinAppRunnerSystem.js/.wasm` engine and the newer replacement Wine filesystem payload rather than the EXE path itself.
+#### 2026-09-14 12:51 phone witness
+Visible title: `MOBMUGEN · RIG E · E9.4`
+
+Result:
+
+```text
+ENGINE ALIVE · NO WINMUGEN PROCESS EVIDENCE
+```
+
+Decision: stop spending primary effort on the legacy WinAppRunner engine. Rig E remains available as a reference/fallback, but the active path moves to modern BoxedWine.
+
+# RIG F — MODERN BOXEDWINE
+
+## F1 prototype
+Prototype commit:
+`c97251db1b1c6597b8a3e4fdfaf0055d1f92876a`
+
+Route:
+`mugen-lab/rig-f.html`
+
+F1 is intentionally isolated from Rig E so a failed experiment cannot break the known shell.
+
+Architecture:
+- current ExeBrowser/BoxedWine browser runtime pinned to upstream commit `c6049f9684f3c6895c8f31f361a0a29462793f41`
+- runtime JS/WASM served from pinned jsDelivr GitHub assets
+- 50 MB Wine root range-fetched from ExeBrowser's BoxedWine asset worker
+- `wine1.7.55-v8-min-online.zip` + patch overlay from pinned upstream assets
+- user-selected WinMUGEN folder packed into an in-memory ZIP
+- BoxedWine shell patched at runtime so the in-memory MUGEN ZIP mounts directly as drive D:
+- launch target: `Winmugen.exe`
+- working directory: `D:\`
+- 16-bit video first-pass, sound disabled for boot isolation
+
+F1 witness goal is not polish. It is to answer four questions quickly:
+1. does the modern BoxedWine WASM initialize on iPhone?
+2. does the range-fetched Wine root mount successfully?
+3. does the in-memory MUGEN drive mount successfully?
+4. does `Winmugen.exe` create process/window/video evidence?
 
 ### Current status
-**E9.4 pushed to main. Waiting on Pages deployment + iPhone witness.**
+**Rig F F1 pushed to main. Waiting on Pages deployment + first iPhone witness.**
