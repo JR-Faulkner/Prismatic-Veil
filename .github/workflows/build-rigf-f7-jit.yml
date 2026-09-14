@@ -35,6 +35,20 @@ jobs:
           cd /tmp/Boxedwine
           git checkout 940cb6fe2c771c2275d57d4fbb5a8f77bfa7b167
           cd project/emscripten
+          # Upstream currently links the final WASM target with emcc even though
+          # the object graph contains C++ runtime symbols. Emscripten 6 rejects
+          # that link. Keep C compilation on emcc, but use em++ only for the
+          # final link step.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('makefile')
+          s = p.read_text()
+          old = '\t@$(CC) $(ALL) -o $@ $(LDFLAGS)'
+          new = '\t@$(CXX) $(ALL) -o $@ $(LDFLAGS)'
+          if old not in s:
+              raise SystemExit('BoxedWine final link rule changed')
+          p.write_text(s.replace(old, new, 1))
+          PY
           make jit
           mkdir -p "$GITHUB_WORKSPACE/mugen-lab/boxedwine-f7"
           cp -av Build/Jit/. "$GITHUB_WORKSPACE/mugen-lab/boxedwine-f7/"
