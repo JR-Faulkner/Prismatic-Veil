@@ -187,3 +187,9 @@ BOXEDWINE ENGINE STARTED
 - Adds an on-screen frame presentation counter for phone witness comparison.
 - Audio remains disabled during this performance isolation pass.
 - PV Rig F shortcut points to `rig-f.html?v=f63`.
+
+
+## Rig F F6.4 - inline engine WASM path fix
+- F6.3 phone witness failed before BoxedWine startup because the fetched-and-inline-patched engine resolved `boxedwine.wasm` relative to the GitHub Pages document instead of the pinned ExeBrowser engine directory.
+- F6.4 rewrites BoxedWine's `wasmBinaryFile` to the absolute pinned jsDelivr `boxedwine.wasm` URL before executing the patched engine text.
+- Keeps the F6.3 performance experiment intact: lean 223.6 MB app FS, full same-origin Wine root, forced requestAnimationFrame main loop, FPS witness, sound off.
