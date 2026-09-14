@@ -1,0 +1,78 @@
+name: Rig F F6.5 RAF lock
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/patch-rigf-f65.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch Rig F F6.5
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p=Path('mugen-lab/rig-f.html')
+          s=p.read_text()
+          if 'MOBMUGEN · RIG F · F6.4' not in s:
+              raise SystemExit('expected F6.4 base not found')
+
+          s=s.replace('F6.4','F6.5').replace('f64','f65')
+          s=s.replace('RAF + LOCAL ROOT · WASM PATH FIX','RAF LOCK · LOCAL ROOT')
+          s=s.replace('F6.5 preserves the F6.3 performance path and fixes the inline-patched BoxedWine engine so boxedwine.wasm resolves from the pinned ExeBrowser CDN instead of the GitHub Pages document path.',
+                      'F6.5 keeps the full local Wine root and pinned WASM path, then locks EGL swap timing to requestAnimationFrame so a later swapInterval(0) cannot kick the main loop back to timeout mode.')
+
+          old_counter="const fpsBadge=document.getElementById('fpsBadge');let fpsLast=0;setInterval(()=>{const n=window.RIGF_FRAME_COUNT||0,delta=n-fpsLast;fpsLast=n;if(fpsBadge)fpsBadge.textContent='FPS '+delta},1000);"
+          new_counter="const fpsBadge=document.getElementById('fpsBadge');let drawLast=0,loopLast=0;setInterval(()=>{const d=window.RIGF_FRAME_COUNT||0,l=window.RIGF_LOOP_COUNT||0,dd=d-drawLast,ld=l-loopLast;drawLast=d;loopLast=l;if(fpsBadge)fpsBadge.textContent='L '+ld+' · D '+dd},1000);"
+          if old_counter not in s:
+              raise SystemExit('counter patch point not found')
+          s=s.replace(old_counter,new_counter,1)
+          s=s.replace('>FPS --</div>','>L -- · D --</div>',1)
+
+          marker="es=es.replace(rafNeedle,'_emscripten_set_main_loop_timing(1,1);console.log(\\\"RIGF F6.5: RAF main loop forced\\\");');"
+          if marker not in s:
+              raise SystemExit('RAF replacement marker not found')
+          inject=(marker+
+            "const swapNeedle='function _eglSwapInterval(display,interval){if(display!=62e3){EGL.setErrorCode(12296);return 0}if(interval==0)_emscripten_set_main_loop_timing(0,0);else _emscripten_set_main_loop_timing(1,interval);EGL.setErrorCode(12288);return 1}';"
+            "if(!es.includes(swapNeedle))throw new Error('eglSwapInterval patch point not found');"
+            "const swapPatch='function _eglSwapInterval(display,interval){if(display!=62e3){EGL.setErrorCode(12296);return 0}if(interval<=0)_emscripten_set_main_loop_timing(1,1);else _emscripten_set_main_loop_timing(1,interval);console.log(\\\"RIGF F6.5: eglSwapInterval \\\"+interval+\\\" -> RAF\\\");EGL.setErrorCode(12288);return 1}';"
+            "es=es.replace(swapNeedle,swapPatch);"
+            "const timingNeedle='function _emscripten_set_main_loop_timing(mode,value){';"
+            "if(!es.includes(timingNeedle))throw new Error('timing instrumentation point not found');"
+            "es=es.replace(timingNeedle,'function _emscripten_set_main_loop_timing(mode,value){if(window.RIGF_TIMING_MODE!==mode||window.RIGF_TIMING_VALUE!==value){console.log(\\\"RIGF F6.5 TIMING · mode=\\\"+mode+\\\" value=\\\"+value);window.RIGF_TIMING_MODE=mode;window.RIGF_TIMING_VALUE=value;}');"
+            "const loopNeedle='Browser.mainLoop.runner=function Browser_mainLoop_runner(){';"
+            "if(!es.includes(loopNeedle))throw new Error('main loop counter point not found');"
+            "es=es.replace(loopNeedle,'Browser.mainLoop.runner=function Browser_mainLoop_runner(){window.RIGF_LOOP_COUNT=(window.RIGF_LOOP_COUNT||0)+1;');"
+          )
+          s=s.replace(marker,inject,1)
+          s=s.replace("log('F6.5 RAF + WASM PATH PATCH APPLIED')","log('F6.5 RAF LOCK + WASM PATH PATCH APPLIED')")
+          s=s.replace("status('FETCHING BOXEDWINE ENGINE · RAF + WASM PATH PATCH')","status('FETCHING BOXEDWINE ENGINE · RAF LOCK + WASM PATH')")
+          p.write_text(s)
+
+          idx=Path('index.html')
+          x=idx.read_text()
+          x=re.sub(r'\.\/mugen-lab\/rig-f\.html\?v=f[0-9]+', './mugen-lab/rig-f.html?v=f65', x)
+          x=re.sub(r'MOBMUGEN · F6\.[0-9]+', 'MOBMUGEN · F6.5', x)
+          idx.write_text(x)
+
+          d=Path('docs/MOBMUGEN_LIVE.md')
+          t=d.read_text()
+          if '## Rig F F6.5 - EGL RAF lock' not in t:
+              t += '''\n\n## Rig F F6.5 - EGL RAF lock\n- F6.4 phone witness proved the full Wine root now loads once with an async HTTP 200 and WinMUGEN video still renders, but measured draw cadence remained about 1 FPS.\n- The pinned Emscripten engine shows `_eglSwapInterval(0)` explicitly changes the main loop back to timeout timing after the initial RAF force, matching the repeated runtime warning.\n- F6.5 patches `_eglSwapInterval` so interval 0 stays on requestAnimationFrame instead of timeout mode.\n- Adds timing transition telemetry plus separate main-loop (`L`) and draw/present (`D`) per-second counters.\n- Keeps the lean app FS, full local Wine root, pinned WASM URL, controls, collapsible debug, 16-bit video, and sound-off isolation.\n- PV MobMugen shortcut targets `rig-f.html?v=f65`.\n'''
+          d.write_text(t)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f.html index.html docs/MOBMUGEN_LIVE.md
+          git commit -m 'Rig F F6.5 lock EGL timing to RAF'
+          git push
