@@ -1,0 +1,52 @@
+name: Rig F F6.4 engine wasm path fix
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/patch-rigf-f64.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch Rig F F6.4
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('mugen-lab/rig-f.html')
+          s=p.read_text()
+          s=s.replace('MobMugen · Rig F · F6.3','MobMugen · Rig F · F6.4')
+          s=s.replace('MOBMUGEN · RIG F · F6.3','MOBMUGEN · RIG F · F6.4')
+          s=s.replace('Rig F · F6.3','Rig F · F6.4')
+          s=s.replace('F6.3 keeps the lean WinMUGEN app filesystem, loads the Wine root locally up front, and patches BoxedWine to requestAnimationFrame timing for smoother gameplay.','F6.4 preserves the F6.3 performance path and fixes the inline-patched BoxedWine engine so boxedwine.wasm resolves from the pinned ExeBrowser CDN instead of the GitHub Pages document path.')
+          s=s.replace('PERFORMANCE · RAF + LOCAL ROOT','RAF + LOCAL ROOT · WASM PATH FIX')
+          s=s.replace("let es=await er.text();const rafNeedle=", "let es=await er.text();const wasmUrl=CDN+'build/default/boxedwine.wasm';const wasmNeedle='var wasmBinaryFile=\"boxedwine.wasm\";';if(!es.includes(wasmNeedle))throw new Error('WASM path patch point not found');es=es.replace(wasmNeedle,'var wasmBinaryFile=\"'+wasmUrl+'\";');log('F6.4 WASM URL · '+wasmUrl);const rafNeedle=")
+          s=s.replace("console.log(\\\"RIGF F6.3: RAF main loop forced\\\")", "console.log(\\\"RIGF F6.4: RAF main loop forced\\\")")
+          s=s.replace("log('F6.3 RAF PATCH APPLIED')", "log('F6.4 RAF + WASM PATH PATCH APPLIED')")
+          s=s.replace("status('FETCHING BOXEDWINE ENGINE · RAF PATCH')", "status('FETCHING BOXEDWINE ENGINE · RAF + WASM PATH PATCH')")
+          s=s.replace("status('LOADING BOXEDWINE WASM · FULL LOCAL ROOT')", "status('LOADING BOXEDWINE WASM · PINNED CDN · FULL LOCAL ROOT')")
+          s=s.replace("F6.3 witness log", "F6.4 witness log")
+          s=s.replace("F6.3 XHR", "F6.4 XHR")
+          s=s.replace("F6.3 MODULE", "F6.4 MODULE")
+          s=s.replace("F6.3 POST-LAUNCH", "F6.4 POST-LAUNCH")
+          s=s.replace("MOBMUGEN · RIG F · F6.3\\nRUNTIME STATUS", "MOBMUGEN · RIG F · F6.4\\nRUNTIME STATUS")
+          p.write_text(s)
+
+          d=Path('docs/MOBMUGEN_LIVE.md')
+          t=d.read_text()
+          if '## Rig F F6.4 - inline engine WASM path fix' not in t:
+              t += '''\n\n## Rig F F6.4 - inline engine WASM path fix\n- F6.3 phone witness failed before BoxedWine startup because the fetched-and-inline-patched engine resolved `boxedwine.wasm` relative to the GitHub Pages document instead of the pinned ExeBrowser engine directory.\n- F6.4 rewrites BoxedWine's `wasmBinaryFile` to the absolute pinned jsDelivr `boxedwine.wasm` URL before executing the patched engine text.\n- Keeps the F6.3 performance experiment intact: lean 223.6 MB app FS, full same-origin Wine root, forced requestAnimationFrame main loop, FPS witness, sound off.\n'''
+          d.write_text(t)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f.html docs/MOBMUGEN_LIVE.md
+          git commit -m 'Rig F F6.4 fix inline BoxedWine wasm path'
+          git push
