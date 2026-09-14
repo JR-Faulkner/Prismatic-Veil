@@ -158,3 +158,10 @@ BOXEDWINE ENGINE STARTED
 
 ### Current status
 **Rig F F2 pushed to main. Waiting on Pages deployment + iPhone ZIP witness.**
+
+## Rig F F6 - lean streamed app filesystem
+- Removes the 1.72 GB full `file.arrayBuffer()` app mount.
+- Selectively extracts WinMUGEN executable, root DLL/config files, data, font, sound, and plugins.
+- Uses per-entry ZIP slicing + fflate so the whole archive is never resident as one ArrayBuffer.
+- Builds a BrowserFS in-memory D: drive and preserves the nested WinMugen path.
+- Keeps the proven same-origin on-demand Wine root.
