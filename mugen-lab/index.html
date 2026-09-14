@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="theme-color" content="#090b10" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>MUGEN Lab · Touch Rig A</title>
+  <style>
+    :root{
+      --ink:#eef3ff;
+      --muted:#9aa7bf;
+      --panel:rgba(8,11,18,.58);
+      --panel2:rgba(15,21,33,.78);
+      --line:rgba(224,234,255,.19);
+      --gold:#f6c65b;
+      --red:#ef4b52;
+      --blue:#61b7ff;
+      --green:#66e7b1;
+      --control-size:min(11.2vw,74px);
+      --pad-size:min(30vw,226px);
+      --control-opacity:.76;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07090d;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+    body{position:fixed;inset:0}
+    button,input{font:inherit}
+
+    #app{position:absolute;inset:0;background:
+      radial-gradient(circle at 54% 20%,rgba(87,52,148,.22),transparent 30%),
+      linear-gradient(180deg,#151824 0%,#0d1118 58%,#080a0f 100%);overflow:hidden}
+
+    .arena{position:absolute;inset:0;overflow:hidden}
+    .arena:before{content:"";position:absolute;left:-8%;right:-8%;bottom:-18%;height:50%;background:
+      linear-gradient(rgba(96,183,255,.10) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(96,183,255,.10) 1px,transparent 1px);background-size:46px 32px;transform:perspective(380px) rotateX(58deg);transform-origin:bottom;opacity:.55}
+    .arena:after{content:"";position:absolute;left:8%;right:8%;bottom:24%;height:2px;background:linear-gradient(90deg,transparent,rgba(246,198,91,.24),transparent);box-shadow:0 0 40px rgba(246,198,91,.15)}
+    .moon{position:absolute;width:17vw;height:17vw;max-width:150px;max-height:150px;border-radius:50%;left:43%;top:9%;background:radial-gradient(circle at 40% 36%,#eef4ff,#a6bad7 42%,#6d7890 70%,#343a48 100%);opacity:.25;filter:blur(.3px);box-shadow:0 0 60px rgba(175,204,255,.14)}
+    .fighter{position:absolute;bottom:22%;width:5.6vw;min-width:42px;max-width:68px;height:19vw;min-height:112px;max-height:210px;filter:drop-shadow(0 14px 18px #0009)}
+    .fighter:before{content:"";position:absolute;left:24%;top:0;width:52%;height:24%;border-radius:50%;background:#0e1119;border:2px solid rgba(238,243,255,.16)}
+    .fighter:after{content:"";position:absolute;left:5%;right:5%;top:21%;bottom:0;border-radius:42% 42% 15% 15% / 24% 24% 12% 12%;background:linear-gradient(90deg,#10151f,#28364a 45%,#111620);border:2px solid rgba(97,183,255,.18)}
+    .fighter.p1{left:35%;transform:skew(-3deg)}
+    .fighter.p2{right:35%;transform:scaleX(-1) skew(-3deg)}
+    .fighter.p1:after{box-shadow:inset 0 0 0 2px rgba(97,183,255,.08),0 0 34px rgba(97,183,255,.08)}
+    .fighter.p2:after{border-color:rgba(239,75,82,.20);box-shadow:inset 0 0 0 2px rgba(239,75,82,.06),0 0 34px rgba(239,75,82,.06)}
+
+    .hud{position:absolute;top:max(9px,env(safe-area-inset-top));left:max(14px,env(safe-area-inset-left));right:max(14px,env(safe-area-inset-right));height:54px;display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;pointer-events:none}
+    .life{height:13px;border:1px solid rgba(238,243,255,.24);background:#080a0f;box-shadow:0 2px 0 #0008;position:relative;overflow:hidden;transform:skew(-12deg)}
+    .life span{position:absolute;inset:2px;background:linear-gradient(90deg,#65e9b3,#d5ec6a);box-shadow:0 0 14px rgba(102,231,177,.28)}
+    .life.right span{background:linear-gradient(90deg,#f2d065,#ef555b)}
+    .round{font-weight:900;font-size:clamp(10px,1.7vw,17px);letter-spacing:.16em;text-transform:uppercase;color:#dbe6ff;text-shadow:0 2px 8px #000}
+    .name{margin-top:4px;font-size:clamp(8px,1.15vw,12px);letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+    .p2name{text-align:right}
+
+    .brand{position:absolute;top:max(68px,calc(env(safe-area-inset-top) + 59px));left:50%;transform:translateX(-50%);font-size:clamp(8px,1.15vw,11px);font-weight:800;letter-spacing:.28em;color:rgba(238,243,255,.42);text-transform:uppercase;white-space:nowrap;pointer-events:none}
+
+    .debug-strip{position:absolute;left:50%;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:6px 9px;border:1px solid var(--line);border-radius:10px;background:rgba(5,8,13,.48);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:10px;letter-spacing:.09em;color:#b8c5db;z-index:20;max-width:44vw;white-space:nowrap}
+    #inputReadout{font-weight:900;color:#fff;min-width:120px;text-align:center;overflow:hidden;text-overflow:ellipsis}
+    #pointerCount{color:var(--blue)}
+
+    .controls{position:absolute;inset:0;z-index:10;pointer-events:none}
+    .dpad{position:absolute;left:max(18px,calc(env(safe-area-inset-left) + 10px));bottom:max(19px,calc(env(safe-area-inset-bottom) + 9px));width:var(--pad-size);height:var(--pad-size);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:4px;pointer-events:auto;opacity:var(--control-opacity);filter:drop-shadow(0 9px 18px #0007)}
+    .dir{appearance:none;border:1px solid rgba(238,243,255,.17);background:linear-gradient(180deg,rgba(60,72,94,.62),rgba(20,26,38,.78));color:#dce7fb;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:clamp(17px,3.7vw,31px);font-weight:900;line-height:1;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 2px 0 rgba(0,0,0,.45);touch-action:none;transition:transform .035s linear,background .035s linear,border-color .035s linear,filter .035s linear}
+    .dir.center{border-radius:50%;margin:9%;background:radial-gradient(circle at 38% 34%,rgba(88,105,136,.8),rgba(20,25,35,.95));pointer-events:none;color:rgba(255,255,255,.22);font-size:12px;letter-spacing:.05em}
+    .dir.active{transform:translateY(2px) scale(.97);background:linear-gradient(180deg,rgba(97,183,255,.85),rgba(28,82,129,.92));border-color:rgba(188,224,255,.85);filter:brightness(1.13);box-shadow:0 0 18px rgba(97,183,255,.24),inset 0 1px 0 rgba(255,255,255,.28)}
+
+    .actions{position:absolute;right:max(20px,calc(env(safe-area-inset-right) + 12px));bottom:max(22px,calc(env(safe-area-inset-bottom) + 12px));width:min(39vw,330px);height:min(31vw,240px);pointer-events:auto;opacity:var(--control-opacity)}
+    .action{position:absolute;width:var(--control-size);height:var(--control-size);border-radius:50%;border:1px solid rgba(255,255,255,.25);background:radial-gradient(circle at 35% 29%,rgba(255,255,255,.24),rgba(69,81,105,.72) 43%,rgba(15,20,31,.92) 100%);color:#fff;font-weight:950;font-size:clamp(11px,2vw,17px);text-shadow:0 2px 4px #000;box-shadow:inset 0 2px 0 rgba(255,255,255,.08),0 7px 13px rgba(0,0,0,.42);touch-action:none;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+    .action small{font-size:.52em;opacity:.58;margin-top:4px;letter-spacing:.08em}
+    .action.punch{border-color:rgba(97,183,255,.48)}
+    .action.kick{border-color:rgba(239,75,82,.45)}
+    .action.active{transform:translateY(2px) scale(.94);filter:brightness(1.32);box-shadow:0 0 24px rgba(246,198,91,.23),inset 0 0 18px rgba(255,255,255,.08)}
+    .lp{left:2%;top:19%}.mp{left:34%;top:2%}.hp{right:2%;top:19%}
+    .lk{left:2%;bottom:5%}.mk{left:34%;bottom:18%}.hk{right:2%;bottom:5%}
+
+    .macro{position:absolute;top:50%;width:min(7vw,48px);height:min(5.8vw,36px);min-width:38px;min-height:28px;transform:translateY(-50%);border-radius:9px;border:1px solid rgba(246,198,91,.35);background:rgba(20,18,12,.66);color:#f7dfa6;font-weight:900;font-size:10px;letter-spacing:.07em;pointer-events:auto;opacity:.78;touch-action:none}
+    .macro.active{background:rgba(150,102,20,.7);transform:translateY(-50%) scale(.95)}
+    #macro2p{right:calc(max(20px, env(safe-area-inset-right) + 12px) + min(39vw,330px) + 5px);top:63%}
+    #macro2k{right:calc(max(20px, env(safe-area-inset-right) + 12px) + min(39vw,330px) + 5px);top:75%}
+
+    .menu-btn{position:absolute;top:max(12px,calc(env(safe-area-inset-top) + 2px));left:50%;transform:translateX(-50%);z-index:30;border:1px solid rgba(246,198,91,.28);background:rgba(14,17,24,.68);color:#f6d788;padding:7px 11px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+    .menu-btn:active{transform:translateX(-50%) scale(.96)}
+
+    #portraitGate{display:none;position:absolute;inset:0;z-index:1000;background:radial-gradient(circle at 50% 35%,#182238,#07090d 68%);align-items:center;justify-content:center;padding:28px;text-align:center}
+    #portraitGate .card{max-width:360px;border:1px solid rgba(238,243,255,.16);border-radius:22px;background:rgba(8,11,18,.75);padding:24px 22px;box-shadow:0 18px 60px #0008}
+    #portraitGate .phone{font-size:48px;display:block;transform:rotate(90deg);margin:4px auto 22px}
+    #portraitGate h1{margin:0 0 8px;font-size:22px;letter-spacing:.04em}
+    #portraitGate p{margin:0;color:#aab7cc;line-height:1.45;font-size:14px}
+
+    #panel{position:absolute;right:max(12px,env(safe-area-inset-right));top:max(64px,calc(env(safe-area-inset-top) + 54px));z-index:40;width:min(290px,46vw);padding:12px;border-radius:15px;border:1px solid var(--line);background:var(--panel2);backdrop-filter:blur(13px);-webkit-backdrop-filter:blur(13px);box-shadow:0 20px 50px #0009;display:none}
+    #panel.open{display:block}
+    #panel h2{font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin:0 0 12px;color:#f3d17f}
+    .setting{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;margin:9px 0;font-size:11px;color:#bdc8da}
+    .setting input[type="range"]{width:120px;accent-color:#e8bd58}
+    .setting button{border:1px solid var(--line);background:#121824;color:#dbe6fb;border-radius:8px;padding:6px 9px;font-size:10px;font-weight:800}
+
+    @media (orientation:portrait){#portraitGate{display:flex}}
+    @media (max-height:430px){
+      :root{--pad-size:min(29vw,205px);--control-size:min(10.5vw,68px)}
+      .hud{height:46px}.brand{top:max(58px,calc(env(safe-area-inset-top) + 48px))}
+      .actions{height:min(30vw,205px)}
+      .debug-strip{bottom:max(5px,env(safe-area-inset-bottom));padding:4px 7px}
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="arena" aria-hidden="true">
+      <div class="moon"></div>
+      <div class="fighter p1"></div>
+      <div class="fighter p2"></div>
+    </div>
+
+    <div class="hud" aria-hidden="true">
+      <div><div class="life"><span></span></div><div class="name">P1 · RYU TEST</div></div>
+      <div class="round">MUGEN LAB</div>
+      <div><div class="life right"><span></span></div><div class="name p2name">P2 · DUMMY</div></div>
+    </div>
+    <div class="brand">Touch Rig A · Landscape Input Prototype</div>
+
+    <button class="menu-btn" id="menuBtn" type="button">Controls</button>
+
+    <div id="panel" aria-label="Control settings">
+      <h2>Touch Rig A</h2>
+      <div class="setting"><span>Opacity</span><input id="opacity" type="range" min="35" max="100" value="76" /></div>
+      <div class="setting"><span>Input history</span><button id="clearHistory" type="button">Clear</button></div>
+      <div class="setting"><span>Fullscreen</span><button id="fullscreenBtn" type="button">Try</button></div>
+      <div class="setting"><span>Keyboard</span><span>Arrows + QWE / ASD</span></div>
+    </div>
+
+    <div class="controls">
+      <div class="dpad" id="dpad" aria-label="8-way directional pad">
+        <button class="dir" data-input="UL" aria-label="up left">↖</button>
+        <button class="dir" data-input="U" aria-label="up">↑</button>
+        <button class="dir" data-input="UR" aria-label="up right">↗</button>
+        <button class="dir" data-input="L" aria-label="left">←</button>
+        <div class="dir center">8W</div>
+        <button class="dir" data-input="R" aria-label="right">→</button>
+        <button class="dir" data-input="DL" aria-label="down left">↙</button>
+        <button class="dir" data-input="D" aria-label="down">↓</button>
+        <button class="dir" data-input="DR" aria-label="down right">↘</button>
+      </div>
+
+      <div class="actions" aria-label="six button fighting controls">
+        <button class="action punch lp" data-input="LP"><span>LP</span><small>X</small></button>
+        <button class="action punch mp" data-input="MP"><span>MP</span><small>Y</small></button>
+        <button class="action punch hp" data-input="HP"><span>HP</span><small>Z</small></button>
+        <button class="action kick lk" data-input="LK"><span>LK</span><small>A</small></button>
+        <button class="action kick mk" data-input="MK"><span>MK</span><small>B</small></button>
+        <button class="action kick hk" data-input="HK"><span>HK</span><small>C</small></button>
+      </div>
+      <button class="macro" id="macro2p" data-input="2P" type="button">2P</button>
+      <button class="macro" id="macro2k" data-input="2K" type="button">2K</button>
+    </div>
+
+    <div class="debug-strip" aria-live="polite">
+      <span>INPUT</span><span id="inputReadout">READY</span><span>TOUCH</span><span id="pointerCount">0</span>
+    </div>
+
+    <div id="portraitGate">
+      <div class="card"><span class="phone">▯</span><h1>Rotate to landscape</h1><p>MUGEN Lab is being designed landscape-first so the fight canvas keeps its space and your thumbs get proper arcade controls.</p></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const readout = document.getElementById('inputReadout');
+  const pointerCount = document.getElementById('pointerCount');
+  const menuBtn = document.getElementById('menuBtn');
+  const panel = document.getElementById('panel');
+  const opacity = document.getElementById('opacity');
+  const active = new Map();
+  const history = [];
+  const dpad = document.getElementById('dpad');
+  let dpadPointer = null;
+  let dpadCurrent = null;
+
+  const pushHistory = (token) => {
+    if (!token) return;
+    const now = performance.now();
+    const last = history[history.length - 1];
+    if (!last || last.token !== token || now - last.time > 70) {
+      history.push({ token, time: now });
+      while (history.length > 9) history.shift();
+    }
+    readout.textContent = history.map(x => x.token).join(' · ') || 'READY';
+  };
+
+  const syncCount = () => pointerCount.textContent = String(active.size);
+  const setVisual = (el, on) => el && el.classList.toggle('active', on);
+
+  const press = (el, pointerId, token) => {
+    active.set(pointerId, { el, token });
+    setVisual(el, true);
+    pushHistory(token);
+    syncCount();
+    if (navigator.vibrate) navigator.vibrate(7);
+  };
+
+  const release = (pointerId) => {
+    const item = active.get(pointerId);
+    if (item) setVisual(item.el, false);
+    active.delete(pointerId);
+    syncCount();
+  };
+
+  const bindSimple = (el) => {
+    el.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      el.setPointerCapture?.(e.pointerId);
+      press(el, e.pointerId, el.dataset.input);
+    });
+    ['pointerup','pointercancel','lostpointercapture'].forEach(type => el.addEventListener(type, e => release(e.pointerId)));
+  };
+
+  document.querySelectorAll('.action,.macro').forEach(bindSimple);
+
+  const dirAt = (x, y) => {
+    const el = document.elementFromPoint(x, y);
+    return el?.closest?.('.dir[data-input]') || null;
+  };
+
+  const changeDpad = (el) => {
+    if (el === dpadCurrent) return;
+    setVisual(dpadCurrent, false);
+    dpadCurrent = el;
+    if (el) {
+      setVisual(el, true);
+      pushHistory(el.dataset.input);
+      if (dpadPointer !== null) active.set(dpadPointer, { el, token: el.dataset.input });
+    } else if (dpadPointer !== null) active.delete(dpadPointer);
+    syncCount();
+  };
+
+  dpad.addEventListener('pointerdown', e => {
+    const el = e.target.closest('.dir[data-input]');
+    if (!el) return;
+    e.preventDefault();
+    dpadPointer = e.pointerId;
+    dpad.setPointerCapture?.(e.pointerId);
+    changeDpad(el);
+  });
+  dpad.addEventListener('pointermove', e => {
+    if (e.pointerId !== dpadPointer) return;
+    e.preventDefault();
+    changeDpad(dirAt(e.clientX, e.clientY));
+  });
+  const endDpad = (e) => {
+    if (e.pointerId !== dpadPointer) return;
+    changeDpad(null);
+    active.delete(e.pointerId);
+    dpadPointer = null;
+    dpadCurrent = null;
+    syncCount();
+  };
+  ['pointerup','pointercancel','lostpointercapture'].forEach(type => dpad.addEventListener(type, endDpad));
+
+  const keyMap = {
+    ArrowUp:'U', ArrowDown:'D', ArrowLeft:'L', ArrowRight:'R',
+    q:'LP', w:'MP', e:'HP', a:'LK', s:'MK', d:'HK'
+  };
+  const keyHeld = new Set();
+  window.addEventListener('keydown', e => {
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    const token = keyMap[key];
+    if (!token || keyHeld.has(key)) return;
+    keyHeld.add(key);
+    pushHistory(token);
+    const el = document.querySelector(`[data-input="${token}"]`);
+    setVisual(el, true);
+    e.preventDefault();
+  });
+  window.addEventListener('keyup', e => {
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    const token = keyMap[key];
+    keyHeld.delete(key);
+    if (token) setVisual(document.querySelector(`[data-input="${token}"]`), false);
+  });
+
+  menuBtn.addEventListener('click', () => panel.classList.toggle('open'));
+  opacity.addEventListener('input', () => root.style.setProperty('--control-opacity', String(Number(opacity.value) / 100)));
+  document.getElementById('clearHistory').addEventListener('click', () => { history.length = 0; readout.textContent = 'READY'; });
+  document.getElementById('fullscreenBtn').addEventListener('click', async () => {
+    try {
+      if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
+      else await document.exitFullscreen?.();
+    } catch (_) {}
+    try { await screen.orientation?.lock?.('landscape'); } catch (_) {}
+  });
+
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('gesturestart', e => e.preventDefault(), { passive:false });
+})();
+</script>
+</body>
+</html>
