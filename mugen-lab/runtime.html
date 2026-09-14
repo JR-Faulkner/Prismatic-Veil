@@ -30,8 +30,27 @@ function clean(v){return String(v==null?'':v).replace(/^Uncaught\s*/i,'').slice(
 function notify(type,detail){try{parent.postMessage({source:'mugen-lab-runtime',type,detail:clean(detail)},location.origin)}catch(e){}}
 function setStatus(text){statusText.textContent=clean(text);notify('status',text)}
 function fail(detail){const d=clean(detail)||'Unknown runtime failure';status.classList.remove('hide');statusText.textContent='Runtime stopped';statusErr.textContent=d;notify('error',d);console.error('[MUGEN Lab]',d)}
-function parentDir(childDir){if(childDir.endsWith('/'))childDir=childDir.slice(0,-1);return childDir.substring(0,childDir.lastIndexOf('/')+1)}
-
+function hardenGameConfig(){
+  try{
+    const p='/root/home/username/files/data/mugen.cfg';
+    let t=FS.readFile(p,{encoding:'utf8'});
+    t=t.replace(/^(\s*Width\s*=).*/gmi,'$1 320')
+      .replace(/^(\s*Height\s*=).*/gmi,'$1 240')
+      .replace(/^(\s*Depth\s*=).*/gmi,'$1 16')
+      .replace(/^(\s*Stretch\s*=).*/gmi,'$1 0')
+      .replace(/^(\s*DoubleRes\s*=).*/gmi,'$1 0')
+      .replace(/^(\s*DXmode\s*=).*/gmi,'$1 None')
+      .replace(/^(\s*VRetrace\s*=).*/gmi,'$1 0')
+      .replace(/^(\s*BlitMode\s*=).*/gmi,'$1 Normal')
+      .replace(/^(\s*DrawShadows\s*=).*/gmi,'$1 0')
+      .replace(/^(\s*Sound\s*=).*/gmi,'$1 0')
+      .replace(/^(\s*Play(?:MIDI|MP3|MOD|CDA)\s*=).*/gmi,'$1 0')
+      .replace(/^(\s*plugin\s*=.*)$/gmi,'; $1')
+      .replace(/^(\s*FirstRun\s*=).*/gmi,'$1 0');
+    FS.writeFile(p,t,{encoding:'utf8'});
+    notify('diag','Applied safe WinMUGEN GDI/no-audio profile.');
+  }catch(e){notify('diag','Safe config patch skipped: '+clean(e&&e.message?e.message:e))}
+}
 function postBuildFileSystem(rootFS,homeFS){
   const mountPoint=HOME_DIRECTORY.slice(0,-1);
   const systemData=new BrowserFS.FileSystem.MountableFileSystem();
@@ -40,6 +59,7 @@ function postBuildFileSystem(rootFS,homeFS){
   const BFS=new BrowserFS.EmscriptenFS();
   BrowserFS.initialize(systemData);
   FS.mount(BFS,{root:'/root'},'/root');
+  hardenGameConfig();
 }
 function buildBrowserFileSystem(writableStorage,zipfs,homeAdapter){
   FS.createFolder(FS.root,'root',true,true);
@@ -63,7 +83,6 @@ function buildFileSystem(writableStorage){
   const homeAdapter=new BrowserFS.FileSystem.FolderAdapter('/',additionalZipfs);
   buildBrowserFileSystem(writableStorage,zipfs,homeAdapter);
 }
-
 function makeModule(){
   window.Module={
     logReadFiles:false,
@@ -80,15 +99,12 @@ function makeModule(){
     locateFile:function(path){return path;}
   };
 }
-
 window.injectKey=function(code,isDown){
   const map={ArrowUp:['ArrowUp','ArrowUp',38],ArrowDown:['ArrowDown','ArrowDown',40],ArrowLeft:['ArrowLeft','ArrowLeft',37],ArrowRight:['ArrowRight','ArrowRight',39],KeyA:['a','KeyA',65],KeyS:['s','KeyS',83],KeyD:['d','KeyD',68],KeyZ:['z','KeyZ',90],KeyX:['x','KeyX',88],KeyC:['c','KeyC',67],Enter:['Enter','Enter',13],Escape:['Escape','Escape',27]};
   const m=map[code];if(!m)return;const type=isDown?'keydown':'keyup';let ev;try{ev=new KeyboardEvent(type,{key:m[0],code:m[1],keyCode:m[2],which:m[2],bubbles:true,cancelable:true});Object.defineProperty(ev,'keyCode',{get:()=>m[2]});Object.defineProperty(ev,'which',{get:()=>m[2]})}catch(e){return}canvas.focus();canvas.dispatchEvent(ev);document.dispatchEvent(ev);window.dispatchEvent(ev)
 };
-
 window.addEventListener('error',function(e){fail((e&&e.message)||'JavaScript runtime error')});
 window.addEventListener('unhandledrejection',function(e){const r=e&&e.reason;fail('Promise: '+(r&&r.message?r.message:r||'unknown'))});
-
 async function get(url,label,type){setStatus('Loading '+label+'…');const r=await fetch(url,{mode:'cors',cache:'force-cache'});if(!r.ok)throw new Error(label+' download failed ('+r.status+').');return type==='text'?r.text():r.arrayBuffer()}
 async function boot(){
   try{
