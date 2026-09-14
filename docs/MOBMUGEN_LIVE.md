@@ -111,12 +111,50 @@ Control spacing correction:
 - physical gamepad auto-hide retained
 - touch, keyboard, and browser Gamepad API still share one input path
 
-### E9 witness gate
-Do not infer success from the commit alone. The next authority is the phone witness.
+## 2026-09-14 11:15 — E9 PHONE WITNESS: BLACK CANVAS / ENGINE ALIVE
 
-Expected next result is one of:
-1. a full Wine filesystem candidate passes and WinMUGEN reaches a deeper startup layer, or
-2. E9 tells us exactly why the replacement payload could not be fetched/used.
+### Witness
+The phone visibly shows:
+- `MOBMUGEN · RIG E · E9`
+- corrected control spacing and dedicated utility strip
+- `INPUT READY`
+- `RUNTIME Running...`
+- black gameplay canvas
+- no immediate `c0000135`, `wineboot`, `DINPUT`, or `CRTDLL` error overlay
+
+### Important interpretation
+This is meaningful progress versus E8 because the prior immediate loader-failure screen did not appear.
+
+However, `Running...` is **not yet proof that WinMUGEN rendered or reached its title screen**.
+
+Current E9 runtime code hides the status overlay and emits `engine: Wine engine loaded` after ~1700 ms if no error text has appeared yet. Therefore the parent can show `Running...` even while the canvas remains black and WinMUGEN has not produced a visible frame.
+
+### What E9 proves so far
+- E9 is live on phone.
+- New controller layout is successful and materially cleaner.
+- The runtime gets farther than the E8 immediate loader crash, or at minimum no longer surfaces that crash within the initial witness window.
+- The next blocker has moved from obvious missing-DLL startup failure to **black-screen / no-frame startup telemetry**.
+
+### E10 instrumentation target
+Do not call the runtime fully running merely because the Wine JS engine loaded.
+
+E10 should split runtime state into explicit phases:
+1. `FILESYSTEM READY`
+2. `WINE ENGINE LOADED`
+3. `WINMUGEN PROCESS STARTED`
+4. `FIRST FRAME / WINDOW DETECTED`
+5. `PLAYABLE`
+
+Until phase 4, the phone status should remain amber and say something like:
+`ENGINE LOADED · WAITING FOR WINMUGEN VIDEO`
+
+Add a black-screen watchdog and keep a compact diagnostic path available so the next witness can answer:
+- which full Wine candidate actually passed
+- whether `wineboot/dinput/crtdll` were present in the selected image
+- whether `Winmugen.exe` emitted loader/runtime output after launch
+- whether a Wine title/window event occurred
+- whether the canvas changed from an all-black frame
+- whether the process returned or remained active
 
 ### Current status
-**E9 pushed. Waiting on Pages deployment + iPhone witness.**
+**E9 live. Immediate E8 loader crash no longer visible. Current witness is black canvas with Wine engine alive, not yet confirmed WinMUGEN rendering.**
