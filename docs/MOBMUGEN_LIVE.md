@@ -193,3 +193,12 @@ BOXEDWINE ENGINE STARTED
 - F6.3 phone witness failed before BoxedWine startup because the fetched-and-inline-patched engine resolved `boxedwine.wasm` relative to the GitHub Pages document instead of the pinned ExeBrowser engine directory.
 - F6.4 rewrites BoxedWine's `wasmBinaryFile` to the absolute pinned jsDelivr `boxedwine.wasm` URL before executing the patched engine text.
 - Keeps the F6.3 performance experiment intact: lean 223.6 MB app FS, full same-origin Wine root, forced requestAnimationFrame main loop, FPS witness, sound off.
+
+
+## Rig F F6.5 - EGL RAF lock
+- F6.4 phone witness proved the full Wine root now loads once with an async HTTP 200 and WinMUGEN video still renders, but measured draw cadence remained about 1 FPS.
+- The pinned Emscripten engine shows `_eglSwapInterval(0)` explicitly changes the main loop back to timeout timing after the initial RAF force, matching the repeated runtime warning.
+- F6.5 patches `_eglSwapInterval` so interval 0 stays on requestAnimationFrame instead of timeout mode.
+- Adds timing transition telemetry plus separate main-loop (`L`) and draw/present (`D`) per-second counters.
+- Keeps the lean app FS, full local Wine root, pinned WASM URL, controls, collapsible debug, 16-bit video, and sound-off isolation.
+- PV MobMugen shortcut targets `rig-f.html?v=f65`.
