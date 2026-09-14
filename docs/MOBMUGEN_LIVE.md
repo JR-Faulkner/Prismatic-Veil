@@ -182,5 +182,25 @@ Focus the next probe on **process/window creation**, not generic Wine startup:
 - capture any title/window creation event
 - distinguish "process alive but no window" from "engine alive but WinMUGEN never actually started"
 
+## 2026-09-14 — E9.2 process-stage telemetry pushed
+
+Runtime commit:
+`bb8e8f97852c869abfc2ddfddda741ee3540b27c`
+
+E9.2 adds process-stage evidence without changing the working E9 control shell.
+
+New checks:
+- verifies mounted `/home/username/files/Winmugen.exe` exists before treating launch as valid
+- records the exact Wine + WinMUGEN launch argv
+- marks process evidence if Wine stdout/stderr references `Winmugen.exe`
+- marks process evidence if host `frame_Launch` fires
+- marks window evidence if Wine reports a title
+- distinguishes timeout states:
+  - `ENGINE ALIVE · NO WINMUGEN PROCESS EVIDENCE`
+  - `WINMUGEN PROCESS EVIDENCE · BLACK/UNCHANGED VIDEO`
+  - `WINDOW EXISTS · BLACK/UNCHANGED VIDEO`
+  - `WINMUGEN VIDEO ✓`
+- runtime updates the visible shell build marker to `E9.2` when loaded, so phone screenshots identify the actual subrevision
+
 ### Current status
-**E9 shell live. E9.1 confirms Wine engine alive but no WinMUGEN video/window evidence yet. Next blocker: process/window creation telemetry.**
+**E9.2 pushed. Waiting on Pages deployment + iPhone witness. Next decision depends on whether process evidence appears before the black-screen timeout.**
