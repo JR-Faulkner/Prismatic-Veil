@@ -135,27 +135,6 @@ Current E9 runtime code hides the status overlay and emits `engine: Wine engine 
 - The runtime gets farther than the E8 immediate loader crash, or at minimum no longer surfaces that crash within the initial witness window.
 - The next blocker has moved from obvious missing-DLL startup failure to **black-screen / no-frame startup telemetry**.
 
-### E10 instrumentation target
-Do not call the runtime fully running merely because the Wine JS engine loaded.
-
-E10 should split runtime state into explicit phases:
-1. `FILESYSTEM READY`
-2. `WINE ENGINE LOADED`
-3. `WINMUGEN PROCESS STARTED`
-4. `FIRST FRAME / WINDOW DETECTED`
-5. `PLAYABLE`
-
-Until phase 4, the phone status should remain amber and say something like:
-`ENGINE LOADED · WAITING FOR WINMUGEN VIDEO`
-
-Add a black-screen watchdog and keep a compact diagnostic path available so the next witness can answer:
-- which full Wine candidate actually passed
-- whether `wineboot/dinput/crtdll` were present in the selected image
-- whether `Winmugen.exe` emitted loader/runtime output after launch
-- whether a Wine title/window event occurred
-- whether the canvas changed from an all-black frame
-- whether the process returned or remained active
-
 ## 2026-09-14 — E9.1 runtime witness probe pushed
 
 Runtime commit:
@@ -179,5 +158,29 @@ E9.1 preserves:
 - touch / keyboard / browser Gamepad API shared input path
 - gamepad auto-hide
 
+## 2026-09-14 11:25 — E9.1 PHONE WITNESS: ENGINE ALIVE, VIDEO UNCHANGED
+
+Phone status advanced from:
+
+`ENGINE LOADED · WAITING FOR WINMUGEN VIDEO`
+
+to:
+
+`ENGINE ALIVE · BLACK/UNCHANGED VIDEO`
+
+### Meaning
+- E9.1 watchdog is live and functioning.
+- The Wine/JS engine remains alive through the witness window.
+- The canvas does not produce a detectable frame change.
+- No `WINMUGEN WINDOW` event was observed in the phone witness.
+- No immediate loader error overlay returned.
+
+### Next target
+Focus the next probe on **process/window creation**, not generic Wine startup:
+- confirm whether `Winmugen.exe` process actually begins execution
+- capture first executable/module line after handoff
+- capture any title/window creation event
+- distinguish "process alive but no window" from "engine alive but WinMUGEN never actually started"
+
 ### Current status
-**E9 shell live. E9.1 runtime probe pushed. Waiting on Pages deployment + iPhone witness to determine whether WinMUGEN creates a window/frame or stalls after Wine engine load.**
+**E9 shell live. E9.1 confirms Wine engine alive but no WinMUGEN video/window evidence yet. Next blocker: process/window creation telemetry.**
