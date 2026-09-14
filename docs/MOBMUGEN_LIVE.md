@@ -165,3 +165,9 @@ BOXEDWINE ENGINE STARTED
 - Uses per-entry ZIP slicing + fflate so the whole archive is never resident as one ArrayBuffer.
 - Builds a BrowserFS in-memory D: drive and preserves the nested WinMugen path.
 - Keeps the proven same-origin on-demand Wine root.
+
+## Rig F F6.1 - same-origin late root rewrite
+- F6 phone witness reached `Launching "/bin/wine" "Winmugen.exe"`.
+- Wine then requested `dinput.dll` through ExeBrowser BrowserFS' hardcoded `/api/fs/fullWine1.7.55-v8.zip` path and got 404.
+- F6.1 rewrites any `/api/fs/*` XHR to `./assets/*`, preserving Range headers and the proven same-origin 206 path.
+- Goal: allow late wineboot/DLL reads to continue past the first real Wine process launch.
