@@ -248,3 +248,10 @@ BOXEDWINE ENGINE STARTED
 - Button immediately changes to START CLICKED before main boot code runs.
 - Main boot handoff waits 250 ms so iOS Safari can paint the state change before ZIP indexing.
 - If the button changes but boot does not advance, the failure is inside main JS/boot rather than the native tap itself.
+
+
+## Rig F F7.6 - main JavaScript syntax repair
+- Phone F7.5 proved the dependency-free inline START witness fired while the main application listener did not.
+- CI Node syntax validation found the exact blocker at the patchShell `src+=` line: an unescaped literal newline inside a single-quoted JavaScript string.
+- F7.6 encodes those newlines correctly, then validates the extracted inline script with `node --check` before commit.
+- Direct ZIP streaming and the modern BoxedWine WASM JIT architecture remain unchanged.
