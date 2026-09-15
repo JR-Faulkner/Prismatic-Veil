@@ -255,3 +255,11 @@ BOXEDWINE ENGINE STARTED
 - CI Node syntax validation found the exact blocker at the patchShell `src+=` line: an unescaped literal newline inside a single-quoted JavaScript string.
 - F7.6 encodes those newlines correctly, then validates the extracted inline script with `node --check` before commit.
 - Direct ZIP streaming and the modern BoxedWine WASM JIT architecture remain unchanged.
+
+
+## Rig F F7.7 - ZIP central directory fix
+- F7.6 phone witness reached boot and stopped at buildLeanAppFS line 62.
+- Root cause: F7.2 metadata-only planner referenced `entries` even though `entries` existed only as a local count in `inspectZip`, not as the central-directory entry array.
+- F7.7 rebuilds the complete central-directory metadata array inside `buildLeanAppFS`, matching the proven F6 parser, then filters it without extracting payload bytes.
+- Adds central-directory entry-count witness before lean selection.
+- JS syntax validation is mandatory before commit.
