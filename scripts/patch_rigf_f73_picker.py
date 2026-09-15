@@ -19,3 +19,4 @@ t=d.read_text()
 if '## Rig F F7.3 - picker witness' not in t:
     t += '\n\n## Rig F F7.3 - picker witness\n- Adds immediate visible telemetry when iOS returns a selected ZIP.\n- Clears file-input value before opening so reselecting the same ZIP still fires.\n- Listens to both input and change.\n- Does not alter the F7.2 direct-stream or modern JIT architecture.\n'
     d.write_text(t)
+# trigger one-shot workflow
