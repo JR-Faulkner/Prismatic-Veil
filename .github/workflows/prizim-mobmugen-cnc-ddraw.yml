@@ -31,58 +31,64 @@ jobs:
             -lddraw -ldxguid -lgdi32 -luser32
           file /tmp/Winmugen-colorkey96.exe
 
-      - name: Fetch pinned cnc-ddraw 7.1
+      - name: Fetch pinned cnc-ddraw 7.1 normal and legacy
         run: |
-          curl -fL --retry 4 \
-            -o /tmp/cnc-ddraw.zip \
+          curl -fL --retry 4 -o /tmp/cnc-normal.zip \
             https://github.com/FunkyFr3sh/cnc-ddraw/releases/download/v7.1.0.0/cnc-ddraw.zip
-          rm -rf /tmp/cnc-release
-          mkdir -p /tmp/cnc-release
-          unzip -q /tmp/cnc-ddraw.zip -d /tmp/cnc-release
-          find /tmp/cnc-release -maxdepth 3 -type f -printf '%P %s bytes\n' | sort | head -80
-          DLL="$(find /tmp/cnc-release -type f -iname ddraw.dll -print -quit)"
-          INI="$(find /tmp/cnc-release -type f -iname ddraw.ini -print -quit)"
-          test -n "$DLL" -a -f "$DLL"
-          test -n "$INI" -a -f "$INI"
-          echo "CNC_SOURCE_DIR=$(dirname "$DLL")" >> "$GITHUB_ENV"
-          sha256sum "$DLL" "$INI"
-          grep -inE '^(renderer|vsync|maxfps|windowed|fullscreen)[[:space:]]*=' "$INI" || true
+          curl -fL --retry 4 -o /tmp/cnc-legacy.zip \
+            https://github.com/FunkyFr3sh/cnc-ddraw/releases/download/v7.1.0.0/cnc-ddraw_legacy_WindowsME.zip
+          rm -rf /tmp/cnc-normal-src /tmp/cnc-legacy-src
+          mkdir -p /tmp/cnc-normal-src /tmp/cnc-legacy-src
+          unzip -q /tmp/cnc-normal.zip -d /tmp/cnc-normal-src
+          unzip -q /tmp/cnc-legacy.zip -d /tmp/cnc-legacy-src
+          for kind in normal legacy; do
+            DLL="$(find "/tmp/cnc-${kind}-src" -type f -iname ddraw.dll -print -quit)"
+            INI="$(find "/tmp/cnc-${kind}-src" -type f -iname ddraw.ini -print -quit)"
+            test -n "$DLL" -a -f "$DLL"
+            test -n "$INI" -a -f "$INI"
+            echo "CNC_${kind^^}_DIR=$(dirname "$DLL")" >> "$GITHUB_ENV"
+            echo "=== $kind ==="
+            file "$DLL"
+            sha256sum "$DLL" "$INI"
+            grep -inE '^(renderer|vsync|maxfps|windowed|fullscreen)[[:space:]]*=' "$INI" | head -12 || true
+          done
 
-      - name: Prepare cnc-ddraw renderer variants
+      - name: Prepare wrapper variants
         run: |
-          rm -rf /tmp/cnc-default /tmp/cnc-gdi /tmp/cnc-opengl
-          cp -a "$CNC_SOURCE_DIR" /tmp/cnc-default
-          cp -a "$CNC_SOURCE_DIR" /tmp/cnc-gdi
-          cp -a "$CNC_SOURCE_DIR" /tmp/cnc-opengl
+          rm -rf /tmp/cnc-default /tmp/cnc-gdi /tmp/cnc-opengl /tmp/cnc-legacy /tmp/cnc-legacy-gdi
+          cp -a "$CNC_NORMAL_DIR" /tmp/cnc-default
+          cp -a "$CNC_NORMAL_DIR" /tmp/cnc-gdi
+          cp -a "$CNC_NORMAL_DIR" /tmp/cnc-opengl
+          cp -a "$CNC_LEGACY_DIR" /tmp/cnc-legacy
+          cp -a "$CNC_LEGACY_DIR" /tmp/cnc-legacy-gdi
           python3 - <<'PY'
           from pathlib import Path
           import re
-          for name, renderer in [('gdi','gdi'),('opengl','opengl')]:
+          for name, renderer in [('gdi','gdi'),('opengl','opengl'),('legacy-gdi','gdi')]:
               p=Path(f'/tmp/cnc-{name}/ddraw.ini')
               s=p.read_text(errors='ignore')
+              # Only alter the first/global renderer and vsync values. Leave game profiles alone.
               if re.search(r'(?im)^\s*renderer\s*=.*$', s):
-                  s=re.sub(r'(?im)^\s*renderer\s*=.*$', f'renderer={renderer}', s)
+                  s=re.sub(r'(?im)^\s*renderer\s*=.*$', f'renderer={renderer}', s, count=1)
               else:
-                  s += f'\nrenderer={renderer}\n'
+                  s=f'renderer={renderer}\n'+s
               if re.search(r'(?im)^\s*vsync\s*=.*$', s):
-                  s=re.sub(r'(?im)^\s*vsync\s*=.*$', 'vsync=false', s)
+                  s=re.sub(r'(?im)^\s*vsync\s*=.*$', 'vsync=false', s, count=1)
               p.write_text(s)
-              print(name, [line for line in s.splitlines() if line.lower().startswith(('renderer=','vsync='))][:8])
+              print(name, [x for x in s.splitlines() if x.lower().startswith(('renderer=','vsync='))][:3])
           PY
 
       - name: Package baseline and wrapper fixtures
         run: |
           mkdir -p tools/prizim/mobmugen/fixtures/cnc
           python3 tools/prizim/mobmugen/make_perf_fixture.py \
-            /tmp/Winmugen-colorkey96.exe \
-            tools/prizim/mobmugen/fixtures/cnc/builtin.zip
-          for name in default gdi opengl; do
+            /tmp/Winmugen-colorkey96.exe tools/prizim/mobmugen/fixtures/cnc/builtin.zip
+          for name in default gdi opengl legacy legacy-gdi; do
             python3 tools/prizim/mobmugen/make_cnc_perf_fixture.py \
-              /tmp/Winmugen-colorkey96.exe \
-              "/tmp/cnc-${name}" \
+              /tmp/Winmugen-colorkey96.exe "/tmp/cnc-${name}" \
               "tools/prizim/mobmugen/fixtures/cnc/${name}.zip"
           done
-          unzip -l tools/prizim/mobmugen/fixtures/cnc/default.zip | grep -Ei 'WinMugen/(Winmugen.exe|ddraw.dll|ddraw.ini)'
+          for z in tools/prizim/mobmugen/fixtures/cnc/*.zip; do echo "=== $z ==="; unzip -l "$z" | grep -Ei 'WinMugen/(Winmugen.exe|ddraw.dll|ddraw.ini)' || true; done
 
       - name: Build CI-only F9.0 native ddraw runner
         run: |
@@ -91,12 +97,11 @@ jobs:
           grep -q 'PZ CNC-DDRAW A/B' mugen-lab/rig-f7-cnc-ci.html
           python3 - <<'PY'
           from pathlib import Path
-          import re, subprocess, tempfile
+          import re, subprocess
           s=Path('mugen-lab/rig-f7-cnc-ci.html').read_text()
           m=re.search(r'<script>\(function\(\)\{(.*)</script>', s, re.S)
           if not m: raise SystemExit('inline runner script not found')
-          js='(function(){'+m.group(1)
-          p=Path('/tmp/pz-cnc-inline.js'); p.write_text(js)
+          p=Path('/tmp/pz-cnc-inline.js'); p.write_text('(function(){'+m.group(1))
           subprocess.run(['node','--check',str(p)],check=True)
           PY
 
@@ -123,25 +128,32 @@ jobs:
           PZ_PERF_FIXTURE: tools/prizim/mobmugen/fixtures/cnc/builtin.zip
           PZ_PERF_REPORT: prizim-cnc-builtin.json
           PZ_WORKLOAD: colorkey96-builtin-wine-ddraw
-          PZ_SAMPLE_MS: '6000'
-          PZ_SAMPLES: '2'
+          PZ_WARMUP_MS: '2000'
+          PZ_SAMPLE_MS: '4000'
+          PZ_SAMPLES: '1'
         run: node tools/prizim/mobmugen/perf_probe.mjs
 
-      - name: Measure cnc-ddraw variants
+      - name: Measure all cnc-ddraw variants
         env:
           PZ_BASE_URL: http://127.0.0.1:8000
           PZ_ROUTE: /mugen-lab/rig-f7-cnc-ci.html?pz_perf=cnc
-          PZ_SAMPLE_MS: '6000'
-          PZ_SAMPLES: '2'
+          PZ_WARMUP_MS: '2000'
+          PZ_SAMPLE_MS: '4000'
+          PZ_SAMPLES: '1'
         run: |
-          set -e
-          for name in default gdi opengl; do
+          set +e
+          rm -f /tmp/cnc-status.txt
+          for name in default gdi opengl legacy legacy-gdi; do
             echo "===== CNC-DDRAW VARIANT: $name ====="
             PZ_WORKLOAD="colorkey96-cnc-${name}" \
             PZ_PERF_FIXTURE="tools/prizim/mobmugen/fixtures/cnc/${name}.zip" \
             PZ_PERF_REPORT="prizim-cnc-${name}.json" \
               node tools/prizim/mobmugen/perf_probe.mjs
+            rc=$?
+            echo "$name $rc" | tee -a /tmp/cnc-status.txt
           done
+          cat /tmp/cnc-status.txt
+          exit 0
 
       - name: Compare wrapper performance
         if: always()
@@ -149,7 +161,7 @@ jobs:
           python3 - <<'PY'
           import json
           from pathlib import Path
-          names=['builtin','default','gdi','opengl']
+          names=['builtin','default','gdi','opengl','legacy','legacy-gdi']
           rows=[]
           for n in names:
               p=Path(f'prizim-cnc-{n}.json')
@@ -160,17 +172,18 @@ jobs:
                   'variant':n,
                   'loop_fps':d.get('median_loop_fps',0),
                   'raf_fps':d.get('median_raf_fps',0),
+                  'usable':d.get('usable_for_ab',False),
                   'fatal':d.get('fatal_runtime_signatures',[]),
-                  'diag_tail':d.get('diag_tail',[])[-8:],
+                  'console_tail':d.get('console_tail',[])[-12:],
               })
           base=next((r.get('loop_fps',0) for r in rows if r.get('variant')=='builtin'),0)
           for r in rows:
               if 'loop_fps' in r:
                   r['vs_builtin_pct']=((r['loop_fps']/base)-1)*100 if base else 0
-          wrappers=[r for r in rows if r.get('variant')!='builtin' and 'loop_fps' in r and not r.get('fatal')]
+          wrappers=[r for r in rows if r.get('variant')!='builtin' and r.get('usable') and not r.get('fatal')]
           best=max(wrappers,key=lambda r:r['loop_fps'],default=None)
           summary={
-              'suite':'PriZim cnc-ddraw keyed-sprite A/B',
+              'suite':'PriZim cnc-ddraw keyed-sprite A/B v2',
               'baseline_fps':base,
               'results':rows,
               'best_variant':best.get('variant') if best else None,
@@ -192,3 +205,4 @@ jobs:
           path: |
             prizim-cnc-*.json
             /tmp/prizim-cnc-http.log
+            /tmp/cnc-status.txt
