@@ -3,14 +3,17 @@ from pathlib import Path
 import sys
 import zipfile
 
-if len(sys.argv) != 2:
-    raise SystemExit('usage: make_perf_fixture.py /path/to/Winmugen.exe')
+if len(sys.argv) not in (2, 3):
+    raise SystemExit('usage: make_perf_fixture.py /path/to/Winmugen.exe [output.zip]')
 
 exe = Path(sys.argv[1])
 if not exe.is_file():
     raise SystemExit(f'compiled benchmark missing: {exe}')
 
-out = Path(__file__).with_name('fixtures') / 'prizim_ddraw_perf_fixture.zip'
+if len(sys.argv) == 3:
+    out = Path(sys.argv[2])
+else:
+    out = Path(__file__).with_name('fixtures') / 'prizim_ddraw_perf_fixture.zip'
 out.parent.mkdir(parents=True, exist_ok=True)
 
 files = {
