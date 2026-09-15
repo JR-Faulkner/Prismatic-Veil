@@ -1,0 +1,28 @@
+name: Apply Rig F F7.1 runner patch
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/apply-rigf-f71.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply_f71:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build F7.1 runner from existing JIT core
+        run: python3 scripts/build_rigf_f7_patch.py
+      - name: Commit F7.1 runner
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add mugen-lab/rig-f7.html docs/MOBMUGEN_LIVE.md
+          git commit -m "Rig F F7.1 low-memory staged ingest"
+          git push
