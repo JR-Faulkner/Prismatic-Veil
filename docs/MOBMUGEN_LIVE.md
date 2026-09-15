@@ -280,3 +280,10 @@ BOXEDWINE ENGINE STARTED
 - Root changes to BoxedWine's official TinyCore15Wine3.1.zip package from https://boxedwine.org/v2/2/.
 - Legacy wine1.7.55-v8-min-online.zip overlay is removed for this branch.
 - If the remote root is blocked by browser CORS, the next task is same-origin packaging/proxying rather than changing WinMUGEN payload logic.
+
+
+## Rig F F7.9.1 - repair actual Wine 3.1 runtime params
+- Phone witness proved F7.9 labels changed but the actual runtime URL params still requested fullWine1.7.55-v8 plus the legacy overlay.
+- F7.9.1 replaces buildParams directly with root=TinyCore15Wine3.1 and no overlay parameter.
+- ROOT_BASE is forced to https://boxedwine.org/v2/2/ and locateOverlayBaseUrl is blanked.
+- JIT core, direct 259-file D: stream and drive-qualified WinMUGEN path stay unchanged.
