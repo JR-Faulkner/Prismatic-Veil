@@ -23,6 +23,9 @@ s = s.replace('F8.2 keeps the proven JIT + Wine 3.1 path, protects rewritten x86
               'F8.3 keeps the proven Wine 3.1, ZIP streamer, video, and controls, but swaps only the CPU core to BoxedWine non-JIT fallback for a clean stability A/B.')
 s = s.replace("const F7_CORE='./boxedwine-f7/'", "const F7_CORE='./boxedwine-f83-fallback/'")
 s = s.replace("'disableWasmJitForWrittenCode=true',", '')
+
+# Make the witness trace unambiguous. Keep legacy F7/F6 helper labels where they
+# describe shared plumbing, but all F8 mode-specific markers must identify F8.3.
 s = s.replace('F8.2 INPUT · ', 'F8.3 INPUT · ')
 s = s.replace('RIGF F8.2:', 'RIGF F8.3:')
 s = s.replace('F8.2 ROOT · ', 'F8.3 ROOT · ')
@@ -30,7 +33,11 @@ s = s.replace('F8.2 FIRST FRAME CHANGE · JIT VIDEO LIVE', 'F8.3 FIRST FRAME CHA
 s = s.replace("log('F8.2 JIT STABILITY · disableWasmJitForWrittenCode=true');", "log('F8.3 CPU MODE · BOXEDWINE NON-JIT FALLBACK');")
 s = s.replace('F8.2 MONO SUPPRESS · ', 'F8.3 MONO SUPPRESS · ')
 s = s.replace('F8.2 PERF WITNESS · ', 'F8.3 PERF WITNESS · ')
-s = s.replace('MOBMUGEN · RIG F · F8.1\\nRUNTIME STATUS · ', 'MOBMUGEN · RIG F · F8.3\\nRUNTIME STATUS · ')
+s = s.replace("status('FETCHING MODERN BOXEDWINE JIT SHELL')", "status('FETCHING BOXEDWINE FALLBACK SHELL')")
+s = s.replace("status('LOADING MODERN BOXEDWINE JIT SHELL')", "status('LOADING BOXEDWINE FALLBACK SHELL')")
+s = s.replace("status('LOADING MODERN BOXEDWINE WASM JIT')", "status('LOADING BOXEDWINE NON-JIT CORE')")
+s = s.replace("status('BOXEDWINE WASM JIT STARTED')", "status('BOXEDWINE NON-JIT CORE STARTED')")
+s = s.replace("const text='MOBMUGEN · RIG F · F8.2\\nRUNTIME STATUS · '", "const text='MOBMUGEN · RIG F · F8.3\\nRUNTIME STATUS · '")
 
 p.write_text(s, encoding='utf-8')
 print('Patched rig-f7.html to F8.3 non-JIT fallback')
