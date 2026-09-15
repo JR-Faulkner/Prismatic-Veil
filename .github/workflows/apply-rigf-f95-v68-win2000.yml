@@ -1,0 +1,88 @@
+name: Apply MOBMUGEN F9.5 Vintage 6.8 Win2000 GDI
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/apply-rigf-f95-v68-win2000.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply_f95:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore exact F9.0 phone-proven anchor
+        run: |
+          git show a8e75f91272ed77437593bba4c12f81cdc68d42f:mugen-lab/rig-f7.html > mugen-lab/rig-f7.html
+          test "$(sha256sum mugen-lab/rig-f7.html | awk '{print $1}')" = '38d7be01b93347aa7ff76dcaa321c47a59fcbf37b4d23a5eceee1c18d679f22f'
+          grep -q 'MOBMUGEN · RIG F · F9.0' mugen-lab/rig-f7.html
+
+      - name: Fetch cnc-ddraw 6.8 Win2000 i486 build
+        run: |
+          rm -rf /tmp/cnc-v68 mugen-lab/assets/cnc-ddraw-v68-win2000-gdi
+          mkdir -p /tmp/cnc-v68 mugen-lab/assets/cnc-ddraw-v68-win2000-gdi
+          curl -L --fail --retry 3 \
+            https://github.com/FunkyFr3sh/cnc-ddraw/releases/download/v6.8.0.0/cnc-ddraw_win2000_i486_mingw.zip \
+            -o /tmp/cnc-v68.zip
+          unzip -q /tmp/cnc-v68.zip -d /tmp/cnc-v68
+          test -f /tmp/cnc-v68/ddraw.dll
+          test -f /tmp/cnc-v68/ddraw.ini
+          cp /tmp/cnc-v68/ddraw.dll mugen-lab/assets/cnc-ddraw-v68-win2000-gdi/ddraw.dll
+          cp /tmp/cnc-v68/ddraw.ini mugen-lab/assets/cnc-ddraw-v68-win2000-gdi/ddraw.ini
+          sed -i -E 's/^renderer=.*/renderer=gdi/I' mugen-lab/assets/cnc-ddraw-v68-win2000-gdi/ddraw.ini
+          sed -i -E 's/^vsync=.*/vsync=false/I' mugen-lab/assets/cnc-ddraw-v68-win2000-gdi/ddraw.ini
+          grep -qi '^renderer=gdi' mugen-lab/assets/cnc-ddraw-v68-win2000-gdi/ddraw.ini
+          file mugen-lab/assets/cnc-ddraw-v68-win2000-gdi/ddraw.dll
+          sha256sum mugen-lab/assets/cnc-ddraw-v68-win2000-gdi/ddraw.dll
+
+      - name: Apply vintage 6.8 turbo to exact F9.0 page
+        run: |
+          python3 scripts/patch_rigf_f91_cnc_gdi.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('mugen-lab/rig-f7.html')
+          s=p.read_text()
+          s=s.replace('./assets/cnc-ddraw-gdi/','./assets/cnc-ddraw-v68-win2000-gdi/')
+          s=s.replace('F9.1','F9.5')
+          s=s.replace('F9.0 ANCHOR · CNC GDI PERF','F9.0 GAME ANCHOR · VINTAGE 6.8 WIN2000 GDI')
+          s=s.replace('F9.5 preserves the exact F9.0 WinMUGEN visual/runtime anchor and changes only the DirectDraw layer: PriZim-selected cnc-ddraw GDI is injected beside Winmugen.exe. Boot, Wine 1.7.55, lean FS, RAF/swap lock, viewport, and controls remain unchanged.', 'F9.5 starts from the exact phone-proven F9.0 runtime and adds only cnc-ddraw 6.8 Win2000 i486 GDI. The BoxedWine core, Wine 1.7.55 root, lean filesystem, RAF/swap lock, viewport, controls, and boot flow remain intact.')
+          s=s.replace('F9.5 PERF MODE · CNC-DDRAW GDI · F9.0 VISUAL ANCHOR PRESERVED','F9.5 PERF MODE · CNC-DDRAW 6.8 WIN2000 GDI · F9.0 VISUAL ANCHOR PRESERVED')
+          s=s.replace('F9.5 CNC-DDRAW GDI READY','F9.5 CNC-DDRAW 6.8 WIN2000 GDI READY')
+          icon='''\n<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n<meta name="apple-mobile-web-app-title" content="MOBMUGEN">\n<meta name="theme-color" content="#070b13">\n<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=10">\n<link rel="icon" type="image/png" href="./apple-touch-icon.png?v=10">\n<link rel="manifest" href="./mobmugen.webmanifest?v=1">'''
+          if 'apple-touch-icon' not in s:
+              s=s.replace('</title>\n<style>', '</title>'+icon+'\n<style>',1)
+          for x in ['MOBMUGEN · RIG F · F9.5','F9.0 GAME ANCHOR · VINTAGE 6.8 WIN2000 GDI','F9.5 CNC-DDRAW 6.8 WIN2000 GDI READY','WINEDLLOVERRIDES=ddraw=n,b','cnc-ddraw-v68-win2000-gdi']:
+              if x not in s: raise SystemExit('missing '+x)
+          p.write_text(s)
+          PY
+
+      - name: Validate preserved F9.0 runtime and JavaScript
+        run: |
+          grep -q "const PIN='c6049f9684f3c6895c8f31f361a0a29462793f41'" mugen-lab/rig-f7.html
+          grep -q 'root=fullWine1.7.55-v8' mugen-lab/rig-f7.html
+          grep -q 'wine1.7.55-v8-min-online' mugen-lab/rig-f7.html
+          grep -q 'RIGF F6.5: RAF main loop forced' mugen-lab/rig-f7.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,subprocess
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          m=re.search(r'<script>\(function\(\)\{(.*)</script>',s,re.S)
+          if not m: raise SystemExit('inline script missing')
+          Path('/tmp/f95-inline.js').write_text('(function(){'+m.group(1))
+          subprocess.run(['node','--check','/tmp/f95-inline.js'],check=True)
+          PY
+
+      - name: Commit F9.5 vintage phone candidate
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html mugen-lab/assets/cnc-ddraw-v68-win2000-gdi/ddraw.dll mugen-lab/assets/cnc-ddraw-v68-win2000-gdi/ddraw.ini
+          git commit -m 'Rig F F9.5 vintage 6.8 Win2000 GDI candidate on exact F9.0 anchor'
+          git push
