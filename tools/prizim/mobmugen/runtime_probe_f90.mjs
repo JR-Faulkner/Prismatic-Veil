@@ -44,6 +44,18 @@ for (const [value,kind] of sequence) await tap(kind,value,pointerId++);
 
 await page.locator('#zipInput').setInputFiles(fixture);
 await page.waitForFunction(() => document.querySelector('#diag')?.textContent?.includes('F6.3 LEAN FS READY'), null, {timeout:120000});
+
+// Candidate markers can belong to later lifecycle phases than lean-FS creation.
+// Wait for each requested marker before taking the final diagnostic snapshot so
+// PriZim does not reject a healthy candidate simply because it checked too early.
+for (const marker of expectedDiag) {
+  await page.waitForFunction(
+    expected => document.querySelector('#diag')?.textContent?.includes(expected),
+    marker,
+    {timeout:120000}
+  );
+}
+
 const diag = await page.locator('#diag').innerText();
 for (const marker of ['F6 ZIP META','F6 EXE FOUND · WinMugen/Winmugen.exe','F6.3 LEAN FS READY', ...expectedDiag]) {
   if (!diag.includes(marker)) throw new Error(`missing candidate marker: ${marker}`);
@@ -77,7 +89,7 @@ const report={
   page_errors:pageErrors.slice(0,10),
   console_tail:consoleLines.slice(-20),
   diag_tail:diag.split('\n').slice(-40),
-  note:'PZ verifies the F6.5/F9-derived plumbing, candidate markers, lean fixture ingest, and controller dispatch. Real WinMUGEN rendering on iPhone Safari remains the final visual authority.'
+  note:'PZ verifies the F6.5/F9-derived plumbing, lifecycle-aware candidate markers, lean fixture ingest, and controller dispatch. Real WinMUGEN rendering on iPhone Safari remains the final visual authority.'
 };
 fs.writeFileSync(reportPath,JSON.stringify(report,null,2));
 console.log(JSON.stringify(report,null,2));
