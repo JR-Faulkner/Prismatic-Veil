@@ -1,0 +1,178 @@
+name: Apply MOBMUGEN F9.2 Turbo
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/apply-rigf-f92-turbo.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply_f92:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore exact F9.0 phone-proven anchor
+        run: |
+          git show a8e75f91272ed77437593bba4c12f81cdc68d42f:mugen-lab/rig-f7.html > mugen-lab/rig-f7.html
+          grep -q 'MOBMUGEN · RIG F · F9.0' mugen-lab/rig-f7.html
+          grep -q 'EXACT F6.5 VISUAL ANCHOR' mugen-lab/rig-f7.html
+          cp mugen-lab/rig-f7.html mugen-lab/rig-f90-perf-ci.html
+          test "$(sha256sum mugen-lab/rig-f7.html | awk '{print $1}')" = '38d7be01b93347aa7ff76dcaa321c47a59fcbf37b4d23a5eceee1c18d679f22f'
+          echo 'Exact F9.0 anchor restored.'
+
+      - name: Verify pinned turbo assets
+        run: |
+          test -f mugen-lab/assets/cnc-ddraw-gdi/ddraw.dll
+          test -f mugen-lab/assets/cnc-ddraw-gdi/ddraw.ini
+          test "$(sha256sum mugen-lab/assets/cnc-ddraw-gdi/ddraw.dll | awk '{print $1}')" = '85e0f7d530dfda134793a57cb3e76b0287dcc96892ee57162dd68f47283b03a9'
+          grep -qi '^renderer=gdi' mugen-lab/assets/cnc-ddraw-gdi/ddraw.ini
+          grep -qi '^vsync=false' mugen-lab/assets/cnc-ddraw-gdi/ddraw.ini
+
+      - name: Apply surgical F9.2 turbo only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('mugen-lab/rig-f7.html')
+          s=p.read_text()
+          if 'MOBMUGEN · RIG F · F9.0' not in s or 'EXACT F6.5 VISUAL ANCHOR' not in s:
+              raise SystemExit('not exact F9.0 anchor')
+
+          s=s.replace('<title>MobMugen · Rig F · F9.0</title>', '<title>MobMugen · Rig F · F9.2</title>', 1)
+          icon='''\n<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n<meta name="apple-mobile-web-app-title" content="MOBMUGEN">\n<meta name="theme-color" content="#070b13">\n<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=10">\n<link rel="icon" type="image/png" href="./apple-touch-icon.png?v=10">\n<link rel="manifest" href="./mobmugen.webmanifest?v=1">'''
+          s=s.replace('</title>\n<style>', '</title>'+icon+'\n<style>', 1)
+          s=s.replace('MOBMUGEN · RIG F · F9.0', 'MOBMUGEN · RIG F · F9.2', 1)
+          s=s.replace('EXACT F6.5 VISUAL ANCHOR', 'F9.0 GAME ANCHOR · GDI TURBO', 1)
+          s=s.replace('<h2>Rig F · F9.0</h2>', '<h2>Rig F · F9.2</h2>', 1)
+          s=s.replace(
+              'F9.0 is the exact F6.5 visual runtime that previously rendered real WinMUGEN on iPhone: legacy pinned BoxedWine, local Wine 1.7.55 root, lean userapp FS, and RAF/swap lock. No modern JIT/Wine 3.1 changes are mixed into this recovery witness.',
+              'F9.2 starts from the exact phone-proven F9.0 runtime and changes only the DirectDraw layer: PriZim-selected cnc-ddraw GDI is placed beside Winmugen.exe at launch. The F9.0 BoxedWine core, Wine 1.7.55 root, lean filesystem, RAF/swap lock, viewport, controls, and boot flow stay intact.',
+              1)
+          s=s.replace('F9.0 witness log', 'F9.2 witness log', 1)
+
+          fs_anchor="""  window.RIGF_APP_FS=mem;\n  log('F6.3 LEAN FS READY · files='+done+' · resident='+(liveBytes/1048576).toFixed(1)+' MB');"""
+          fs_insert="""  const cncBase='./assets/cnc-ddraw-gdi/';\n  const cncFiles=['ddraw.dll','ddraw.ini'];\n  const appBase='/'+(exeDir?exeDir.replace(/\\\\/g,'/')+'/':'');\n  for(const name of cncFiles){\n    const rr=await fetch(cncBase+name,{cache:'no-store'});\n    if(!rr.ok)throw new Error('F9.2 turbo asset HTTP '+rr.status+' '+name);\n    const raw=new Uint8Array(await rr.arrayBuffer());\n    const out=appBase+name;\n    const slash=out.lastIndexOf('/');if(slash>0)mkdirp(out.slice(0,slash));\n    nfs.writeFileSync(out,Buffer.from(raw));\n    log('F9.2 TURBO FILE · '+out+' · '+raw.byteLength+' bytes');\n  }\n  log('F9.2 GDI TURBO READY · app='+appBase+' · override=ddraw=n,b');\n  window.RIGF_APP_FS=mem;\n  log('F6.3 LEAN FS READY · files='+done+' · resident='+(liveBytes/1048576).toFixed(1)+' MB');"""
+          if fs_anchor not in s: raise SystemExit('F9.0 app FS anchor missing')
+          s=s.replace(fs_anchor,fs_insert,1)
+
+          argv="src=src.replace('console.log(\\\"Emulator params:\\\" + params);','console.log(\\\"RIGF F6.3 ARGV · \\\" + params.join(\\\" | \\\")); console.log(\\\"Emulator params:\\\" + params);');"
+          if argv not in s: raise SystemExit('F9.0 argv anchor missing')
+          s=s.replace(argv, argv+"src=src.replace('params.push(\\\"/bin/wine\\\");','params.push(\\\"-env\\\"); params.push(\\\"WINEDLLOVERRIDES=ddraw=n,b\\\"); params.push(\\\"/bin/wine\\\");');",1)
+
+          mark="log('F6 URLPARAMS · '+cfg.urlParams);installNetTrace();"
+          if mark not in s: raise SystemExit('F9.0 launch marker missing')
+          s=s.replace(mark,"log('F6 URLPARAMS · '+cfg.urlParams);log('F9.2 PERF MODE · F9.0 BOOT + CNC-DDRAW GDI TURBO');installNetTrace();",1)
+          s=s.replace("const text='MOBMUGEN · RIG F · F9.0\\", "const text='MOBMUGEN · RIG F · F9.2\\", 1)
+
+          for x in ['MOBMUGEN · RIG F · F9.2','F9.0 GAME ANCHOR · GDI TURBO','F9.2 GDI TURBO READY','WINEDLLOVERRIDES=ddraw=n,b','F9.2 PERF MODE · F9.0 BOOT + CNC-DDRAW GDI TURBO','apple-touch-icon']:
+              if x not in s: raise SystemExit('missing '+x)
+          p.write_text(s)
+          PY
+
+      - name: Validate candidate JavaScript and surgical scope
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,subprocess,difflib
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          m=re.search(r'<script>\(function\(\)\{(.*)</script>',s,re.S)
+          if not m: raise SystemExit('inline script missing')
+          Path('/tmp/f92-inline.js').write_text('(function(){'+m.group(1))
+          subprocess.run(['node','--check','/tmp/f92-inline.js'],check=True)
+          base=Path('mugen-lab/rig-f90-perf-ci.html').read_text().splitlines()
+          cand=s.splitlines()
+          diff=list(difflib.unified_diff(base,cand))
+          print('F9.2 diff lines:',len(diff))
+          if len(diff)>180: raise SystemExit('F9.2 drift too large')
+          PY
+          grep -q "const PIN='c6049f9684f3c6895c8f31f361a0a29462793f41'" mugen-lab/rig-f7.html
+          grep -q 'root=fullWine1.7.55-v8' mugen-lab/rig-f7.html
+          grep -q 'wine1.7.55-v8-min-online' mugen-lab/rig-f7.html
+          grep -q 'RIGF F6.5: RAF main loop forced' mugen-lab/rig-f7.html
+          grep -q 'HIDE CTRL' mugen-lab/rig-f7.html
+
+      - name: Build PriZim keyed-sprite fixture
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-i686
+          i686-w64-mingw32-gcc -O2 -s -mwindows -DPZ_MODE=2 \
+            tools/prizim/mobmugen/pz_ddraw_suite.c \
+            -o /tmp/Winmugen-f92-perf.exe \
+            -lddraw -ldxguid -lgdi32 -luser32
+          python3 tools/prizim/mobmugen/make_perf_fixture.py /tmp/Winmugen-f92-perf.exe /tmp/prizim-f92-perf.zip
+          python3 tools/prizim/mobmugen/make_fixture.py
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local server
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 >/tmp/f92-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:8000/mugen-lab/rig-f7.html >/dev/null && exit 0; sleep 1; done
+          cat /tmp/f92-http.log; exit 1
+
+      - name: PriZim plumbing and controller gate
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_ROUTE: /mugen-lab/rig-f7.html?pz_f92=plumbing
+          PZ_FIXTURE: tools/prizim/mobmugen/fixtures/prizim_winmugen_fixture.zip
+          PZ_EXPECT_BRAND: MOBMUGEN · RIG F · F9.2
+          PZ_EXPECT_DIAG: F9.2 GDI TURBO READY;F9.2 PERF MODE · F9.0 BOOT + CNC-DDRAW GDI TURBO
+          PZ_RUNTIME_REPORT: prizim-f92-runtime.json
+        run: node tools/prizim/mobmugen/runtime_probe_f90.mjs
+
+      - name: PriZim F9.0 keyed-blit baseline
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_ROUTE: /mugen-lab/rig-f90-perf-ci.html?pz_f92=baseline
+          PZ_PERF_FIXTURE: /tmp/prizim-f92-perf.zip
+          PZ_PERF_REPORT: prizim-f92-baseline.json
+          PZ_WORKLOAD: f90-colorkey96-builtin
+          PZ_WARMUP_MS: '3000'
+          PZ_SAMPLE_MS: '6000'
+          PZ_SAMPLES: '2'
+        run: node tools/prizim/mobmugen/perf_probe.mjs
+
+      - name: PriZim F9.2 turbo candidate
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_ROUTE: /mugen-lab/rig-f7.html?pz_f92=candidate
+          PZ_PERF_FIXTURE: /tmp/prizim-f92-perf.zip
+          PZ_PERF_REPORT: prizim-f92-candidate.json
+          PZ_WORKLOAD: f92-colorkey96-cnc-gdi
+          PZ_WARMUP_MS: '3000'
+          PZ_SAMPLE_MS: '6000'
+          PZ_SAMPLES: '2'
+        run: node tools/prizim/mobmugen/perf_probe.mjs
+
+      - name: Enforce turbo performance gate
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          b=json.loads(Path('prizim-f92-baseline.json').read_text())
+          c=json.loads(Path('prizim-f92-candidate.json').read_text())
+          bf=float(b['median_loop_fps']); cf=float(c['median_loop_fps']); gain=(cf/bf-1)*100 if bf else 0
+          print(json.dumps({'baseline':bf,'turbo':cf,'gain_pct':gain},indent=2))
+          if not c.get('usable_for_ab'): raise SystemExit('candidate unusable')
+          if c.get('fatal_runtime_signatures'): raise SystemExit('candidate fatal')
+          if cf < 45: raise SystemExit(f'under 45 FPS: {cf:.2f}')
+          if gain < 25: raise SystemExit(f'gain under 25%: {gain:.2f}')
+          PY
+
+      - name: Commit F9.2 only after all gates pass
+        run: |
+          rm -f mugen-lab/rig-f90-perf-ci.html
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html
+          git commit -m 'Rig F F9.2 install GDI turbo on exact F9.0 game anchor'
+          git push
