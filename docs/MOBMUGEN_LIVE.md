@@ -202,3 +202,12 @@ BOXEDWINE ENGINE STARTED
 - Adds timing transition telemetry plus separate main-loop (`L`) and draw/present (`D`) per-second counters.
 - Keeps the lean app FS, full local Wine root, pinned WASM URL, controls, collapsible debug, 16-bit video, and sound-off isolation.
 - PV MobMugen shortcut targets `rig-f.html?v=f65`.
+
+
+## Rig F F7 - modern upstream WASM JIT experiment
+- F6.5 proved RAF timing is holding, while phone witness remained around only a few emulated frames per second.
+- F7 is isolated from the F6.5 baseline and pins current upstream BoxedWine commit `940cb6fe2c771c2275d57d4fbb5a8f77bfa7b167`.
+- Builds upstream single-threaded `make jit` WASM JIT so GitHub Pages does not require COOP/COEP SharedArrayBuffer headers.
+- Keeps the proven lean WinMUGEN selection and old local Wine 1.7.55 root for an engine-only performance comparison.
+- Copies the lean BrowserFS payload into modern BoxedWine `/d_drive` before launch, then maps it to Wine D:.
+- Sound remains off. F6.5 remains the safe proven baseline.
