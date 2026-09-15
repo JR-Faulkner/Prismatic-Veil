@@ -1,0 +1,38 @@
+name: Apply Rig F F7.7 ZIP index fix
+on:
+  push:
+    paths:
+      - 'scripts/patch_rigf_f77_entries.py'
+      - '.github/workflows/apply-rigf-f77.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apply_f77:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply F7.7 ZIP entry fix
+        run: python scripts/patch_rigf_f77_entries.py
+      - name: Validate F7.7 inline JS
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
+          inline=[x for x in scripts if x.strip()]
+          Path('/tmp/rigf-inline.js').write_text('\n'.join(inline))
+          print('inline scripts',len(inline))
+          PY
+          node --check /tmp/rigf-inline.js
+      - name: Commit F7.7
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html docs/MOBMUGEN_LIVE.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'Rig F F7.7 repair ZIP central-directory planning'
+          git push
