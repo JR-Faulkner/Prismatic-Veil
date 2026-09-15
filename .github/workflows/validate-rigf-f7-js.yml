@@ -1,0 +1,25 @@
+name: Validate Rig F F7 JavaScript
+on:
+  push:
+    paths:
+      - 'mugen-lab/rig-f7.html'
+      - '.github/workflows/validate-rigf-f7-js.yml'
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract inline script
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
+          inline=[x for x in scripts if x.strip()]
+          print('inline scripts',len(inline))
+          Path('/tmp/rigf-inline.js').write_text('\n'.join(inline))
+          PY
+      - name: Node syntax check
+        run: node --check /tmp/rigf-inline.js
