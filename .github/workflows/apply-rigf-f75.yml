@@ -1,0 +1,29 @@
+name: Apply Rig F F7.5 bootstrap witness
+
+on:
+  push:
+    paths:
+      - 'scripts/patch_rigf_f75_bootstrap.py'
+      - '.github/workflows/apply-rigf-f75.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply_f75:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply F7.5 bootstrap witness patch
+        run: python scripts/patch_rigf_f75_bootstrap.py
+      - name: Commit F7.5
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html docs/MOBMUGEN_LIVE.md
+          git diff --cached --quiet && exit 0
+          git commit -m 'Rig F F7.5 start-button bootstrap witness'
+          git push
