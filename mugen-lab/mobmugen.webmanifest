@@ -1,0 +1,17 @@
+{
+  "name": "MOBMUGEN",
+  "short_name": "MOBMUGEN",
+  "start_url": "./rig-f7.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#070b13",
+  "theme_color": "#070b13",
+  "icons": [
+    {
+      "src": "./apple-touch-icon.png?v=9",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
