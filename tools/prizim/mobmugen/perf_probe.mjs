@@ -8,6 +8,7 @@ const out = process.env.PZ_PERF_REPORT || 'prizim-mobmugen-perf.json';
 const workload = process.env.PZ_WORKLOAD || 'baseline';
 const sampleMs = Number(process.env.PZ_SAMPLE_MS || 8000);
 const samplesWanted = Number(process.env.PZ_SAMPLES || 3);
+const warmupMs = Number(process.env.PZ_WARMUP_MS || 5000);
 
 const browser = await chromium.launch({headless:true});
 const page = await browser.newPage({viewport:{width:430,height:932}});
@@ -25,7 +26,7 @@ await page.waitForFunction(() => document.querySelector('#diag')?.textContent?.i
 await page.waitForFunction(() => (window.RIGF_LOOP_COUNT || 0) > 5, null, {timeout:90000});
 
 // Warm the exact Wine/DirectDraw path before measuring.
-await page.waitForTimeout(5000);
+await page.waitForTimeout(warmupMs);
 
 async function sampleWindow(ms) {
   return await page.evaluate(async (duration) => {
@@ -88,6 +89,7 @@ const report={
   route,
   fixture,
   workload,
+  warmup_ms:warmupMs,
   sample_ms:sampleMs,
   samples,
   median_loop_fps:loopFps,
