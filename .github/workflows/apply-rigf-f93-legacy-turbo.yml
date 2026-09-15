@@ -1,0 +1,170 @@
+name: Apply MOBMUGEN F9.3 Legacy Turbo
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/apply-rigf-f93-legacy-turbo.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply_f93:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore exact F9.0 phone-proven anchor
+        run: |
+          git show a8e75f91272ed77437593bba4c12f81cdc68d42f:mugen-lab/rig-f7.html > mugen-lab/rig-f7.html
+          cp mugen-lab/rig-f7.html mugen-lab/rig-f90-perf-ci.html
+          test "$(sha256sum mugen-lab/rig-f7.html | awk '{print $1}')" = '38d7be01b93347aa7ff76dcaa321c47a59fcbf37b4d23a5eceee1c18d679f22f'
+          grep -q 'MOBMUGEN · RIG F · F9.0' mugen-lab/rig-f7.html
+          grep -q 'EXACT F6.5 VISUAL ANCHOR' mugen-lab/rig-f7.html
+
+      - name: Fetch official cnc-ddraw Windows ME legacy build
+        run: |
+          rm -rf /tmp/cnc-legacy mugen-lab/assets/cnc-ddraw-legacy-gdi
+          mkdir -p /tmp/cnc-legacy mugen-lab/assets/cnc-ddraw-legacy-gdi
+          curl -L --fail --retry 3 \
+            https://github.com/FunkyFr3sh/cnc-ddraw/releases/download/v7.1.0.0/cnc-ddraw_legacy_WindowsME.zip \
+            -o /tmp/cnc-legacy.zip
+          unzip -q /tmp/cnc-legacy.zip -d /tmp/cnc-legacy
+          find /tmp/cnc-legacy -maxdepth 2 -type f -printf '%P %s bytes\n'
+          test -f /tmp/cnc-legacy/ddraw.dll
+          test -f /tmp/cnc-legacy/ddraw.ini
+          cp /tmp/cnc-legacy/ddraw.dll mugen-lab/assets/cnc-ddraw-legacy-gdi/ddraw.dll
+          cp /tmp/cnc-legacy/ddraw.ini mugen-lab/assets/cnc-ddraw-legacy-gdi/ddraw.ini
+          sed -i -E 's/^renderer=.*/renderer=gdi/I' mugen-lab/assets/cnc-ddraw-legacy-gdi/ddraw.ini
+          sed -i -E 's/^vsync=.*/vsync=false/I' mugen-lab/assets/cnc-ddraw-legacy-gdi/ddraw.ini
+          grep -qi '^renderer=gdi' mugen-lab/assets/cnc-ddraw-legacy-gdi/ddraw.ini
+          grep -qi '^vsync=false' mugen-lab/assets/cnc-ddraw-legacy-gdi/ddraw.ini
+          file mugen-lab/assets/cnc-ddraw-legacy-gdi/ddraw.dll
+          sha256sum mugen-lab/assets/cnc-ddraw-legacy-gdi/ddraw.dll
+
+      - name: Apply already-proven DirectDraw patch to F9.0
+        run: |
+          python3 scripts/patch_rigf_f91_cnc_gdi.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('mugen-lab/rig-f7.html')
+          s=p.read_text()
+          s=s.replace('./assets/cnc-ddraw-gdi/','./assets/cnc-ddraw-legacy-gdi/')
+          s=s.replace('F9.1','F9.3')
+          s=s.replace('F9.0 ANCHOR · CNC GDI PERF','F9.0 GAME ANCHOR · LEGACY GDI TURBO')
+          s=s.replace('F9.3 preserves the exact F9.0 WinMUGEN visual/runtime anchor and changes only the DirectDraw layer: PriZim-selected cnc-ddraw GDI is injected beside Winmugen.exe. Boot, Wine 1.7.55, lean FS, RAF/swap lock, viewport, and controls remain unchanged.', 'F9.3 starts from the exact phone-proven F9.0 runtime and adds only the official cnc-ddraw Windows ME legacy GDI DirectDraw build. The F9.0 BoxedWine core, Wine 1.7.55 root, lean filesystem, RAF/swap lock, viewport, controls, and boot flow remain intact.')
+          icon='''\n<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n<meta name="apple-mobile-web-app-title" content="MOBMUGEN">\n<meta name="theme-color" content="#070b13">\n<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=10">\n<link rel="icon" type="image/png" href="./apple-touch-icon.png?v=10">\n<link rel="manifest" href="./mobmugen.webmanifest?v=1">'''
+          if 'apple-touch-icon' not in s:
+              s=s.replace('</title>\n<style>', '</title>'+icon+'\n<style>',1)
+          s=s.replace('F9.3 PERF MODE · CNC-DDRAW GDI · F9.0 VISUAL ANCHOR PRESERVED','F9.3 PERF MODE · LEGACY CNC-DDRAW GDI · F9.0 VISUAL ANCHOR PRESERVED')
+          s=s.replace('F9.3 CNC-DDRAW GDI READY','F9.3 LEGACY CNC-DDRAW GDI READY')
+          for x in ['MOBMUGEN · RIG F · F9.3','F9.0 GAME ANCHOR · LEGACY GDI TURBO','F9.3 LEGACY CNC-DDRAW GDI READY','WINEDLLOVERRIDES=ddraw=n,b','F9.3 PERF MODE · LEGACY CNC-DDRAW GDI','cnc-ddraw-legacy-gdi','apple-touch-icon']:
+              if x not in s: raise SystemExit('missing '+x)
+          p.write_text(s)
+          PY
+
+      - name: Validate exact-anchor scope and JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,subprocess,difflib
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          m=re.search(r'<script>\(function\(\)\{(.*)</script>',s,re.S)
+          if not m: raise SystemExit('inline script missing')
+          Path('/tmp/f93-inline.js').write_text('(function(){'+m.group(1))
+          subprocess.run(['node','--check','/tmp/f93-inline.js'],check=True)
+          base=Path('mugen-lab/rig-f90-perf-ci.html').read_text().splitlines()
+          diff=list(difflib.unified_diff(base,s.splitlines()))
+          print('F9.3 diff lines',len(diff))
+          if len(diff)>200: raise SystemExit('candidate drift too large')
+          PY
+          grep -q "const PIN='c6049f9684f3c6895c8f31f361a0a29462793f41'" mugen-lab/rig-f7.html
+          grep -q 'root=fullWine1.7.55-v8' mugen-lab/rig-f7.html
+          grep -q 'wine1.7.55-v8-min-online' mugen-lab/rig-f7.html
+          grep -q 'RIGF F6.5: RAF main loop forced' mugen-lab/rig-f7.html
+          grep -q 'HIDE CTRL' mugen-lab/rig-f7.html
+
+      - name: Build PriZim keyed-sprite fixture
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-i686
+          i686-w64-mingw32-gcc -O2 -s -mwindows -DPZ_MODE=2 tools/prizim/mobmugen/pz_ddraw_suite.c -o /tmp/Winmugen-f93-perf.exe -lddraw -ldxguid -lgdi32 -luser32
+          python3 tools/prizim/mobmugen/make_perf_fixture.py /tmp/Winmugen-f93-perf.exe /tmp/prizim-f93-perf.zip
+          python3 tools/prizim/mobmugen/make_fixture.py
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local server
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 >/tmp/f93-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:8000/mugen-lab/rig-f7.html >/dev/null && exit 0; sleep 1; done
+          cat /tmp/f93-http.log; exit 1
+
+      - name: PriZim controller and plumbing gate
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_ROUTE: /mugen-lab/rig-f7.html?pz_f93=plumbing
+          PZ_FIXTURE: tools/prizim/mobmugen/fixtures/prizim_winmugen_fixture.zip
+          PZ_EXPECT_BRAND: MOBMUGEN · RIG F · F9.3
+          PZ_EXPECT_DIAG: F9.3 LEGACY CNC-DDRAW GDI READY;F9.3 PERF MODE · LEGACY CNC-DDRAW GDI
+          PZ_RUNTIME_REPORT: prizim-f93-runtime.json
+        run: node tools/prizim/mobmugen/runtime_probe_f90.mjs
+
+      - name: PriZim F9.0 keyed-blit baseline
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_ROUTE: /mugen-lab/rig-f90-perf-ci.html?pz_f93=baseline
+          PZ_PERF_FIXTURE: /tmp/prizim-f93-perf.zip
+          PZ_PERF_REPORT: prizim-f93-baseline.json
+          PZ_WORKLOAD: f90-colorkey96-builtin
+          PZ_WARMUP_MS: '3000'
+          PZ_SAMPLE_MS: '6000'
+          PZ_SAMPLES: '2'
+        run: node tools/prizim/mobmugen/perf_probe.mjs
+
+      - name: PriZim F9.3 legacy turbo candidate
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_ROUTE: /mugen-lab/rig-f7.html?pz_f93=candidate
+          PZ_PERF_FIXTURE: /tmp/prizim-f93-perf.zip
+          PZ_PERF_REPORT: prizim-f93-candidate.json
+          PZ_WORKLOAD: f93-colorkey96-legacy-cnc-gdi
+          PZ_WARMUP_MS: '3000'
+          PZ_SAMPLE_MS: '6000'
+          PZ_SAMPLES: '2'
+        run: node tools/prizim/mobmugen/perf_probe.mjs
+
+      - name: Enforce compatibility and material performance gate
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          b=json.loads(Path('prizim-f93-baseline.json').read_text()); c=json.loads(Path('prizim-f93-candidate.json').read_text())
+          bf=float(b['median_loop_fps']); cf=float(c['median_loop_fps']); gain=(cf/bf-1)*100 if bf else 0
+          text=Path('prizim-f93-candidate.json').read_text().lower()
+          blockers=['setjmp is required','unhandled page fault','starting debugger','can\'t attach process']
+          found=[x for x in blockers if x in text]
+          d3dkt=text.count('d3dkmtopenadapterfromhdc')
+          print(json.dumps({'baseline_loop_fps':bf,'legacy_turbo_loop_fps':cf,'gain_pct':gain,'blockers':found,'d3dkmt_mentions':d3dkt},indent=2))
+          if found: raise SystemExit('legacy turbo compatibility blocker: '+','.join(found))
+          if d3dkt > 8: raise SystemExit(f'excessive D3DKMT spam: {d3dkt}')
+          if not c.get('usable_for_ab') or c.get('fatal_runtime_signatures'): raise SystemExit('legacy candidate unusable')
+          if cf < 45: raise SystemExit(f'F9.3 under 45 FPS: {cf:.2f}')
+          if gain < 25: raise SystemExit(f'F9.3 gain under 25%: {gain:.2f}')
+          PY
+
+      - name: Commit F9.3 only after all gates pass
+        run: |
+          rm -f mugen-lab/rig-f90-perf-ci.html
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html mugen-lab/assets/cnc-ddraw-legacy-gdi/ddraw.dll mugen-lab/assets/cnc-ddraw-legacy-gdi/ddraw.ini
+          git commit -m 'Rig F F9.3 add legacy GDI turbo to exact F9.0 game anchor'
+          git push
