@@ -55,8 +55,8 @@ if old_cfg not in s:
     raise SystemExit('F8.5 cfg selector block changed')
 s = s.replace(old_cfg, new_cfg, 1)
 
-# The F8.4 generated-shell failure came from regex escape loss inside a template literal.
-# Replace the generated-shell path normalizer with regex-free string operations.
+# F8.4 failed because path regex escapes were consumed inside patchShell's template literal.
+# Keep this generated-shell block entirely free of regexes and backslash literals.
 old_inject = """            let relName=ent.name.replace(/\\\\/g,'/').replace(/^\\/+/,''),exeRoot=(window.RIGF_EXE_DIR||'').replace(/\\\\/g,'/').replace(/^\\/+|\\/+$/g,'');
             if(exeRoot&&!relName.toLowerCase().startsWith((exeRoot+'/').toLowerCase())&&/^(data|font|sound|plugins)\\//i.test(relName))relName=exeRoot+'/'+relName;
             const dp='/d_drive/'+relName,slash=dp.lastIndexOf('/');
@@ -69,9 +69,10 @@ old_inject = """            let relName=ent.name.replace(/\\\\/g,'/').replace(/^
               console.log('RIGF F8.5: CFG READY path='+cfgDp+' bytes='+raw.byteLength+' source='+ent.name);
             }
 """
-new_inject = """            let relName=String(ent.name||'').split('\\\\').join('/');
+new_inject = """            const bs=String.fromCharCode(92);
+            let relName=String(ent.name||'').split(bs).join('/');
             while(relName.charAt(0)==='/')relName=relName.slice(1);
-            let exeRoot=String(window.RIGF_EXE_DIR||'').split('\\\\').join('/');
+            let exeRoot=String(window.RIGF_EXE_DIR||'').split(bs).join('/');
             while(exeRoot.charAt(0)==='/')exeRoot=exeRoot.slice(1);
             while(exeRoot.charAt(exeRoot.length-1)==='/')exeRoot=exeRoot.slice(0,-1);
             const relLow=relName.toLowerCase(),exeLow=exeRoot.toLowerCase();
@@ -80,8 +81,8 @@ new_inject = """            let relName=String(ent.name||'').split('\\\\').join(
             const dp='/d_drive/'+relName,slash=dp.lastIndexOf('/');
             if(slash>0)mkdirpE(dp.slice(0,slash));
             FS.writeFile(dp,raw);
-            const primaryCfg=String(window.RIGF_PRIMARY_CFG||'').split('\\\\').join('/').toLowerCase();
-            const sourceNorm=String(ent.name||'').split('\\\\').join('/').toLowerCase();
+            const primaryCfg=String(window.RIGF_PRIMARY_CFG||'').split(bs).join('/').toLowerCase();
+            const sourceNorm=String(ent.name||'').split(bs).join('/').toLowerCase();
             if(exeRoot&&primaryCfg&&sourceNorm===primaryCfg){
               const cfgDp='/d_drive/'+exeRoot+'/data/mugen.cfg',cfgSlash=cfgDp.lastIndexOf('/');
               if(cfgSlash>0)mkdirpE(cfgDp.slice(0,cfgSlash));
