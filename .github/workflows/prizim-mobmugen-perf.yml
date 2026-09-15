@@ -1,0 +1,95 @@
+name: PriZim MOBMUGEN performance lab
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'mugen-lab/rig-f7.html'
+      - 'tools/prizim/mobmugen/pz_ddraw_bench.c'
+      - 'tools/prizim/mobmugen/make_perf_fixture.py'
+      - 'tools/prizim/mobmugen/perf_probe.mjs'
+      - '.github/workflows/prizim-mobmugen-perf.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  perf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build deterministic 32-bit DirectDraw workload
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-i686
+          i686-w64-mingw32-gcc -O2 -s -mwindows \
+            tools/prizim/mobmugen/pz_ddraw_bench.c \
+            -o /tmp/Winmugen.exe \
+            -lddraw -ldxguid -lgdi32 -luser32
+          file /tmp/Winmugen.exe
+          ls -lh /tmp/Winmugen.exe
+
+      - name: Package PriZim DirectDraw fixture
+        run: |
+          python3 tools/prizim/mobmugen/make_perf_fixture.py /tmp/Winmugen.exe
+          ls -lh tools/prizim/mobmugen/fixtures/prizim_ddraw_perf_fixture.zip
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local repository server
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/prizim-perf-http.log 2>&1 &
+          echo $! > /tmp/prizim-perf-http.pid
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:8000/mugen-lab/rig-f7.html >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/prizim-perf-http.log
+          exit 1
+
+      - name: PriZim DirectDraw FPS measurement
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_ROUTE: /mugen-lab/rig-f7.html?pz_perf=1
+          PZ_PERF_FIXTURE: tools/prizim/mobmugen/fixtures/prizim_ddraw_perf_fixture.zip
+          PZ_PERF_REPORT: prizim-mobmugen-perf.json
+          PZ_SAMPLE_MS: '8000'
+          PZ_SAMPLES: '3'
+        run: |
+          node tools/prizim/mobmugen/perf_probe.mjs
+
+      - name: Print performance summary
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('prizim-mobmugen-perf.json')
+          if not p.exists():
+              print('No performance report produced.')
+              raise SystemExit(0)
+          d=json.loads(p.read_text())
+          print('PriZim MOBMUGEN PERF')
+          print('brand:', d.get('brand'))
+          print('loop fps:', round(d.get('median_loop_fps',0),2))
+          print('draw fps:', round(d.get('median_draw_fps',0),2))
+          print('RAF fps:', round(d.get('median_raf_fps',0),2))
+          print('45 target:', d.get('target_45_met'))
+          print('60 target:', d.get('target_60_met'))
+          print('usable A/B:', d.get('usable_for_ab'))
+          PY
+
+      - name: Upload PriZim performance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prizim-mobmugen-perf
+          if-no-files-found: warn
+          path: |
+            prizim-mobmugen-perf.json
+            /tmp/prizim-perf-http.log
