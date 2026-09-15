@@ -1,0 +1,22 @@
+name: Apply Rig F F7.4 native picker
+on:
+  push:
+    paths:
+      - 'scripts/patch_rigf_f74_native_picker.py'
+      - '.github/workflows/apply-rigf-f74.yml'
+permissions:
+  contents: write
+jobs:
+  apply_f74:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply F7.4 native picker patch
+        run: python3 scripts/patch_rigf_f74_native_picker.py
+      - name: Commit F7.4
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mugen-lab/rig-f7.html docs/MOBMUGEN_LIVE.md
+          git commit -m "Rig F F7.4 native visible picker"
+          git push
