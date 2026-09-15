@@ -241,3 +241,10 @@ BOXEDWINE ENGINE STARTED
 - Adds explicit START SELECTED ZIP button so file selection and boot start are separate witness points.
 - Removes input-value pre-clear behavior.
 - Keeps F7.2 direct stream and modern JIT architecture unchanged.
+
+
+## Rig F F7.5 - start-button bootstrap witness
+- Adds a dependency-free inline visual witness to the native START SELECTED ZIP button.
+- Button immediately changes to START CLICKED before main boot code runs.
+- Main boot handoff waits 250 ms so iOS Safari can paint the state change before ZIP indexing.
+- If the button changes but boot does not advance, the failure is inside main JS/boot rather than the native tap itself.
