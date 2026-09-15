@@ -1,0 +1,40 @@
+name: Apply Rig F F7.8 full executable path
+on:
+  push:
+    paths:
+      - 'scripts/patch_rigf_f78_fullpath.py'
+      - '.github/workflows/apply-rigf-f78.yml'
+permissions:
+  contents: write
+jobs:
+  apply_f78:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Apply F7.8 launch-path fix
+        run: python scripts/patch_rigf_f78_fullpath.py
+      - name: Validate F7.8 inline JS
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
+          inline=[x for x in scripts if x.strip()]
+          Path('/tmp/rigf-inline.js').write_text('\n'.join(inline))
+          print('inline scripts',len(inline))
+          PY
+          node --check /tmp/rigf-inline.js
+      - name: Verify F7.8 launch path
+        run: |
+          grep -F 'd%3A%5CWinMugen%5CWinmugen.exe' mugen-lab/rig-f7.html
+          grep -F 'MobMugen · Rig F · F7.8' mugen-lab/rig-f7.html
+      - name: Commit F7.8
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html docs/MOBMUGEN_LIVE.md
+          git commit -m 'Rig F F7.8 launch WinMUGEN by full D drive path'
+          git push
