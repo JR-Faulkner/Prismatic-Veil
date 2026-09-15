@@ -1,0 +1,144 @@
+name: Rig F F8.9 exact anchor
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/apply-rigf-f89.yml
+      - scripts/patch_rigf_f89_exact_anchor.py
+
+permissions:
+  contents: write
+
+jobs:
+  apply_f89:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate F8.9 from exact F7.9.2 anchor
+        run: python3 scripts/patch_rigf_f89_exact_anchor.py
+
+      - name: Validate F8.9 inline JS
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          blocks=re.findall(r'<script(?:[^>]*)>(.*?)</script>',s,re.S)
+          inline='\n'.join(x for x in blocks if x.strip())
+          Path('/tmp/rigf-inline.js').write_text(inline)
+          PY
+          node --check /tmp/rigf-inline.js
+
+      - name: Validate generated BoxedWine JIT shell JS
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          a=s.index('function patchShell(src){')
+          b=s.index('function installNetTrace()',a)
+          fn=s[a:b]
+          harness="const ROOT_BASE='./assets/',OVERLAY_BASE='';\n"+fn+"\nconst fs=require('fs');const src=fs.readFileSync('mugen-lab/boxedwine-f7/boxedwine-shell.js','utf8');fs.writeFileSync('/tmp/rigf-patched-shell.js',patchShell(src));\n"
+          Path('/tmp/patchshell-harness.js').write_text(harness)
+          PY
+          node /tmp/patchshell-harness.js
+          node --check /tmp/rigf-patched-shell.js
+
+      - name: Verify exact-anchor discipline
+        run: |
+          grep -q 'MOBMUGEN · RIG F · F8.9' mugen-lab/rig-f7.html
+          grep -q 'EXACT ANCHOR · JIT + CFG FIX' mugen-lab/rig-f7.html
+          grep -q "const F7_CORE='./boxedwine-f7/'" mugen-lab/rig-f7.html
+          grep -q 'F8.9 EXACT ANCHOR · source=5b9d863' mugen-lab/rig-f7.html
+          grep -q 'F8.9 CFG SOURCE · ' mugen-lab/rig-f7.html
+          grep -q 'RIGF F8.9: CFG READY' mugen-lab/rig-f7.html
+          grep -q 'F8.9 INPUT · ' mugen-lab/rig-f7.html
+          grep -q 'TinyCore15Wine3.1' mugen-lab/rig-f7.html
+          grep -q "root=TinyCore15Wine3.1','p=d%3A%5CWinMugen%5CWinmugen.exe" mugen-lab/rig-f7.html
+          grep -q 'VIDEO ACTIVE · VERIFY MUGEN' mugen-lab/rig-f7.html
+          ! grep -q 'boxedwine-f83-fallback' mugen-lab/rig-f7.html
+          ! grep -q 'disableWasmJitForWrittenCode=true' mugen-lab/rig-f7.html
+          ! grep -q 'WINEDLLOVERRIDES' mugen-lab/rig-f7.html
+          ! grep -q 'view-zoom' mugen-lab/rig-f7.html
+
+      - name: Verify anchor delta is intentionally small
+        run: |
+          git show 5b9d8638118b1cb10aafcbdf95cd504fa78e7e19:mugen-lab/rig-f7.html > /tmp/f792-anchor.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import difflib
+          a=Path('/tmp/f792-anchor.html').read_text().splitlines()
+          b=Path('mugen-lab/rig-f7.html').read_text().splitlines()
+          d=list(difflib.unified_diff(a,b,fromfile='F7.9.2-anchor',tofile='F8.9'))
+          print('anchor diff lines:',len(d))
+          Path('/tmp/f89-anchor.diff').write_text('\n'.join(d))
+          if len(d)>140:
+              raise SystemExit('F8.9 drifted too far from exact anchor')
+          PY
+
+      - name: PriZim static preflight
+        run: python3 tools/prizim/mobmugen/preflight.py | tee prizim-mobmugen-preflight.json
+
+      - name: Build PriZim synthetic WinMUGEN fixture
+        run: |
+          python3 tools/prizim/mobmugen/make_fixture.py
+          ls -lh tools/prizim/mobmugen/fixtures/prizim_winmugen_fixture.zip
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start candidate repository server
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/prizim-http.log 2>&1 &
+          echo $! > /tmp/prizim-http.pid
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:8000/mugen-lab/rig-f7.html >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/prizim-http.log
+          exit 1
+
+      - name: PriZim full browser and input simulation
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_FIXTURE: tools/prizim/mobmugen/fixtures/prizim_winmugen_fixture.zip
+        run: node tools/prizim/mobmugen/runtime_probe.mjs
+
+      - name: Root-part sanity
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          parts=[Path(f'mugen-lab/assets/TinyCore15Wine3.1.zip.part0{i}') for i in range(3)]
+          missing=[str(p) for p in parts if not p.exists()]
+          if missing: raise SystemExit('Missing Wine root parts: '+', '.join(missing))
+          total=sum(p.stat().st_size for p in parts)
+          print({'parts':3,'bytes':total})
+          if total != 119229367: raise SystemExit(f'Unexpected reconstructed Wine 3.1 size: {total}')
+          PY
+
+      - name: Upload PriZim candidate reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prizim-mobmugen-f89-candidate
+          if-no-files-found: warn
+          path: |
+            prizim-mobmugen-preflight.json
+            prizim-mobmugen-runtime.json
+            /tmp/prizim-http.log
+            /tmp/f89-anchor.diff
+
+      - name: Commit F8.9 only after PriZim passes
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add mugen-lab/rig-f7.html
+          git commit -m "Rig F F8.9 exact F7.9.2 game anchor plus proven fixes"
+          git push
