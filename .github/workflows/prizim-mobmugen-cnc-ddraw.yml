@@ -1,0 +1,194 @@
+name: PriZim MOBMUGEN cnc-ddraw A/B
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/prizim/mobmugen/pz_ddraw_suite.c'
+      - 'tools/prizim/mobmugen/perf_probe.mjs'
+      - 'tools/prizim/mobmugen/make_perf_fixture.py'
+      - 'tools/prizim/mobmugen/make_cnc_perf_fixture.py'
+      - 'tools/prizim/mobmugen/patch_f90_cnc_ci.py'
+      - '.github/workflows/prizim-mobmugen-cnc-ddraw.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  cnc_ddraw_ab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build color-key stress workload
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-i686 unzip
+          i686-w64-mingw32-gcc -O2 -s -mwindows -DPZ_MODE=2 \
+            tools/prizim/mobmugen/pz_ddraw_suite.c \
+            -o /tmp/Winmugen-colorkey96.exe \
+            -lddraw -ldxguid -lgdi32 -luser32
+          file /tmp/Winmugen-colorkey96.exe
+
+      - name: Fetch pinned cnc-ddraw 7.1
+        run: |
+          curl -fL --retry 4 \
+            -o /tmp/cnc-ddraw.zip \
+            https://github.com/FunkyFr3sh/cnc-ddraw/releases/download/v7.1.0.0/cnc-ddraw.zip
+          rm -rf /tmp/cnc-release
+          mkdir -p /tmp/cnc-release
+          unzip -q /tmp/cnc-ddraw.zip -d /tmp/cnc-release
+          find /tmp/cnc-release -maxdepth 3 -type f -printf '%P %s bytes\n' | sort | head -80
+          DLL="$(find /tmp/cnc-release -type f -iname ddraw.dll -print -quit)"
+          INI="$(find /tmp/cnc-release -type f -iname ddraw.ini -print -quit)"
+          test -n "$DLL" -a -f "$DLL"
+          test -n "$INI" -a -f "$INI"
+          echo "CNC_SOURCE_DIR=$(dirname "$DLL")" >> "$GITHUB_ENV"
+          sha256sum "$DLL" "$INI"
+          grep -inE '^(renderer|vsync|maxfps|windowed|fullscreen)[[:space:]]*=' "$INI" || true
+
+      - name: Prepare cnc-ddraw renderer variants
+        run: |
+          rm -rf /tmp/cnc-default /tmp/cnc-gdi /tmp/cnc-opengl
+          cp -a "$CNC_SOURCE_DIR" /tmp/cnc-default
+          cp -a "$CNC_SOURCE_DIR" /tmp/cnc-gdi
+          cp -a "$CNC_SOURCE_DIR" /tmp/cnc-opengl
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          for name, renderer in [('gdi','gdi'),('opengl','opengl')]:
+              p=Path(f'/tmp/cnc-{name}/ddraw.ini')
+              s=p.read_text(errors='ignore')
+              if re.search(r'(?im)^\s*renderer\s*=.*$', s):
+                  s=re.sub(r'(?im)^\s*renderer\s*=.*$', f'renderer={renderer}', s)
+              else:
+                  s += f'\nrenderer={renderer}\n'
+              if re.search(r'(?im)^\s*vsync\s*=.*$', s):
+                  s=re.sub(r'(?im)^\s*vsync\s*=.*$', 'vsync=false', s)
+              p.write_text(s)
+              print(name, [line for line in s.splitlines() if line.lower().startswith(('renderer=','vsync='))][:8])
+          PY
+
+      - name: Package baseline and wrapper fixtures
+        run: |
+          mkdir -p tools/prizim/mobmugen/fixtures/cnc
+          python3 tools/prizim/mobmugen/make_perf_fixture.py \
+            /tmp/Winmugen-colorkey96.exe \
+            tools/prizim/mobmugen/fixtures/cnc/builtin.zip
+          for name in default gdi opengl; do
+            python3 tools/prizim/mobmugen/make_cnc_perf_fixture.py \
+              /tmp/Winmugen-colorkey96.exe \
+              "/tmp/cnc-${name}" \
+              "tools/prizim/mobmugen/fixtures/cnc/${name}.zip"
+          done
+          unzip -l tools/prizim/mobmugen/fixtures/cnc/default.zip | grep -Ei 'WinMugen/(Winmugen.exe|ddraw.dll|ddraw.ini)'
+
+      - name: Build CI-only F9.0 native ddraw runner
+        run: |
+          python3 tools/prizim/mobmugen/patch_f90_cnc_ci.py
+          grep -q 'WINEDLLOVERRIDES=ddraw=n,b' mugen-lab/rig-f7-cnc-ci.html
+          grep -q 'PZ CNC-DDRAW A/B' mugen-lab/rig-f7-cnc-ci.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile
+          s=Path('mugen-lab/rig-f7-cnc-ci.html').read_text()
+          m=re.search(r'<script>\(function\(\)\{(.*)</script>', s, re.S)
+          if not m: raise SystemExit('inline runner script not found')
+          js='(function(){'+m.group(1)
+          p=Path('/tmp/pz-cnc-inline.js'); p.write_text(js)
+          subprocess.run(['node','--check',str(p)],check=True)
+          PY
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local repository server
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/prizim-cnc-http.log 2>&1 &
+          echo $! > /tmp/prizim-cnc-http.pid
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:8000/mugen-lab/rig-f7-cnc-ci.html >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/prizim-cnc-http.log
+          exit 1
+
+      - name: Measure builtin Wine ddraw baseline
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_ROUTE: /mugen-lab/rig-f7.html?pz_perf=cnc-builtin
+          PZ_PERF_FIXTURE: tools/prizim/mobmugen/fixtures/cnc/builtin.zip
+          PZ_PERF_REPORT: prizim-cnc-builtin.json
+          PZ_WORKLOAD: colorkey96-builtin-wine-ddraw
+          PZ_SAMPLE_MS: '6000'
+          PZ_SAMPLES: '2'
+        run: node tools/prizim/mobmugen/perf_probe.mjs
+
+      - name: Measure cnc-ddraw variants
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_ROUTE: /mugen-lab/rig-f7-cnc-ci.html?pz_perf=cnc
+          PZ_SAMPLE_MS: '6000'
+          PZ_SAMPLES: '2'
+        run: |
+          set -e
+          for name in default gdi opengl; do
+            echo "===== CNC-DDRAW VARIANT: $name ====="
+            PZ_WORKLOAD="colorkey96-cnc-${name}" \
+            PZ_PERF_FIXTURE="tools/prizim/mobmugen/fixtures/cnc/${name}.zip" \
+            PZ_PERF_REPORT="prizim-cnc-${name}.json" \
+              node tools/prizim/mobmugen/perf_probe.mjs
+          done
+
+      - name: Compare wrapper performance
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          names=['builtin','default','gdi','opengl']
+          rows=[]
+          for n in names:
+              p=Path(f'prizim-cnc-{n}.json')
+              if not p.exists():
+                  rows.append({'variant':n,'missing':True}); continue
+              d=json.loads(p.read_text())
+              rows.append({
+                  'variant':n,
+                  'loop_fps':d.get('median_loop_fps',0),
+                  'raf_fps':d.get('median_raf_fps',0),
+                  'fatal':d.get('fatal_runtime_signatures',[]),
+                  'diag_tail':d.get('diag_tail',[])[-8:],
+              })
+          base=next((r.get('loop_fps',0) for r in rows if r.get('variant')=='builtin'),0)
+          for r in rows:
+              if 'loop_fps' in r:
+                  r['vs_builtin_pct']=((r['loop_fps']/base)-1)*100 if base else 0
+          wrappers=[r for r in rows if r.get('variant')!='builtin' and 'loop_fps' in r and not r.get('fatal')]
+          best=max(wrappers,key=lambda r:r['loop_fps'],default=None)
+          summary={
+              'suite':'PriZim cnc-ddraw keyed-sprite A/B',
+              'baseline_fps':base,
+              'results':rows,
+              'best_variant':best.get('variant') if best else None,
+              'best_loop_fps':best.get('loop_fps') if best else None,
+              'best_gain_pct':best.get('vs_builtin_pct') if best else None,
+              'f91_gate_45':bool(best and best.get('loop_fps',0)>=45),
+              'f91_gate_material_gain':bool(best and base and best.get('loop_fps',0)>=base*1.25),
+          }
+          Path('prizim-cnc-summary.json').write_text(json.dumps(summary,indent=2))
+          print(json.dumps(summary,indent=2))
+          PY
+
+      - name: Upload cnc-ddraw A/B reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prizim-mobmugen-cnc-ddraw-ab
+          if-no-files-found: warn
+          path: |
+            prizim-cnc-*.json
+            /tmp/prizim-cnc-http.log
