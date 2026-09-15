@@ -271,3 +271,12 @@ BOXEDWINE ENGINE STARTED
 - F7.8 changes p= to d:\WinMugen\Winmugen.exe while preserving w=d:/WinMugen.
 - Stream trace cadence reduced from every 2 files to every 25 files.
 - If Wine 1.7.55 still faults after the executable is found, next branch is a modern BoxedWine-supported Wine root.
+
+
+## Rig F F7.9 - BoxedWine official Wine 3.1 root
+- F7.8 proved the modern JIT core can mount D:, locate D:\WinMugen\Winmugen.exe, and hand the actual executable to Wine.
+- F7.8 then failed in the legacy Wine 1.7.55 layer with repeated InitCommonControlsEx aborts and c0000005 during main EXE initialization.
+- F7.9 preserves the 259-file direct ZIP streamer, modern WASM JIT core, D: mount, and drive-qualified WinMUGEN launch path.
+- Root changes to BoxedWine's official TinyCore15Wine3.1.zip package from https://boxedwine.org/v2/2/.
+- Legacy wine1.7.55-v8-min-online.zip overlay is removed for this branch.
+- If the remote root is blocked by browser CORS, the next task is same-origin packaging/proxying rather than changing WinMUGEN payload logic.
