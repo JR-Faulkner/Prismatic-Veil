@@ -1,0 +1,96 @@
+name: Rig F F8.3 non-JIT fallback build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/build-rigf-f83-fallback.yml
+      - scripts/patch_rigf_f83_fallback.py
+
+permissions:
+  contents: write
+
+jobs:
+  build_f83:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Emscripten
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git /tmp/emsdk
+          cd /tmp/emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+
+      - name: Build BoxedWine non-JIT fallback
+        shell: bash
+        run: |
+          source /tmp/emsdk/emsdk_env.sh
+          git clone https://github.com/danoon2/Boxedwine.git /tmp/Boxedwine
+          cd /tmp/Boxedwine
+          git checkout 940cb6fe2c771c2275d57d4fbb5a8f77bfa7b167
+          cd project/emscripten
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('makefile')
+          s = p.read_text()
+          old = '\t@$(CC) $(ALL) -o $@ $(LDFLAGS)'
+          new = '\t@$(CXX) $(ALL) -o $@ $(LDFLAGS)'
+          if old not in s:
+              raise SystemExit('BoxedWine final link rule changed')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          make release
+          rm -rf "$GITHUB_WORKSPACE/mugen-lab/boxedwine-f83-fallback"
+          mkdir -p "$GITHUB_WORKSPACE/mugen-lab/boxedwine-f83-fallback"
+          cp -av Build/Release/. "$GITHUB_WORKSPACE/mugen-lab/boxedwine-f83-fallback/"
+          echo 940cb6fe2c771c2275d57d4fbb5a8f77bfa7b167 > "$GITHUB_WORKSPACE/mugen-lab/boxedwine-f83-fallback/UPSTREAM_COMMIT.txt"
+          echo NON_JIT_RELEASE > "$GITHUB_WORKSPACE/mugen-lab/boxedwine-f83-fallback/CPU_MODE.txt"
+
+      - name: Patch F8.3 runner
+        shell: bash
+        run: python3 scripts/patch_rigf_f83_fallback.py
+
+      - name: Validate F8.3 inline JS
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          blocks=re.findall(r'<script(?:[^>]*)>(.*?)</script>',s,re.S)
+          inline='\n'.join(x for x in blocks if x.strip())
+          Path('/tmp/rigf-inline.js').write_text(inline)
+          PY
+          node --check /tmp/rigf-inline.js
+
+      - name: Verify F8.3 fallback wiring
+        shell: bash
+        run: |
+          grep -q 'MOBMUGEN · RIG F · F8.3' mugen-lab/rig-f7.html
+          grep -q "boxedwine-f83-fallback" mugen-lab/rig-f7.html
+          grep -q 'HYBRID FALLBACK · NON-JIT CORE' mugen-lab/rig-f7.html
+          ! grep -q "disableWasmJitForWrittenCode=true" mugen-lab/rig-f7.html
+          grep -q 'TinyCore15Wine3.1' mugen-lab/rig-f7.html
+          grep -q 'd%3A%5CWinMugen%5CWinmugen.exe' mugen-lab/rig-f7.html
+          test -s mugen-lab/boxedwine-f83-fallback/boxedwine.js
+          test -s mugen-lab/boxedwine-f83-fallback/boxedwine.wasm
+
+      - name: PriZim static preflight
+        shell: bash
+        run: python3 tools/prizim/mobmugen/preflight.py
+
+      - name: Commit F8.3
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add mugen-lab/boxedwine-f83-fallback mugen-lab/rig-f7.html
+          git commit -m "Rig F F8.3 add non-JIT fallback core"
+          git push
