@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>MobMugen · Rig F · F8.8</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>MobMugen · Rig F · F8.9</title>
 <style>:root{--bg:#070b13;--line:#28384c;--gold:#f1bf55;--text:#eef4ff;--muted:#8390a4;--bad:#ff7f8b}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}body{padding:max(env(safe-area-inset-top),12px) 10px max(env(safe-area-inset-bottom),12px)}.wrap{max-width:900px;margin:auto}.bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:52px}.brand{margin-right:auto}.brand{font-weight:900;letter-spacing:.12em;color:var(--gold);font-size:13px}.pill{margin-left:0;border:1px solid #6d5722;background:#151208;color:var(--gold);border-radius:999px;padding:8px 12px;font-weight:900}.stage{position:relative;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#000;min-height:58vh}.tag{position:absolute;z-index:5;left:12px;top:10px;border:1px solid #564725;border-radius:10px;padding:6px 9px;color:var(--gold);font-size:11px;font-weight:900;background:#090c12d9}#canvas{display:block;width:100%;height:58vh;background:#000;outline:none}.setup{position:absolute;inset:0;z-index:4;display:grid;place-items:center;padding:24px;background:#070b13}.card{max-width:590px;text-align:center}.card h2{margin:0 0 8px;color:var(--gold)}.card p{color:#aab7c9;line-height:1.5;font-size:13px}.pick{display:inline-block;margin-top:12px;padding:12px 18px;border-radius:12px;border:1px solid #7a6227;background:#181307;color:var(--gold);font-weight:900;cursor:pointer}.hint{margin-top:9px;font-size:10px;color:#738195}.hide{display:none!important}.statusline{padding:10px 4px;font-size:11px;letter-spacing:.08em;color:var(--muted)}.statusline b{color:var(--text)}.diag{margin-top:8px;border:1px solid var(--line);border-radius:12px;background:#090f18;padding:10px;max-height:230px;overflow:auto;white-space:pre-wrap;font-size:10px;color:#a9b7c9}.copy{position:fixed;right:10px;bottom:max(14px,env(safe-area-inset-bottom));z-index:20;border:1px solid #7a6227;background:#181307;color:var(--gold);border-radius:999px;padding:10px 12px;font:bold 10px ui-monospace;box-shadow:0 5px 18px #0008}.bad{color:var(--bad)}
 .ctrlbtn{border:1px solid #6d5722;background:#151208;color:var(--gold);border-radius:999px;padding:8px 10px;font:900 10px ui-monospace;letter-spacing:.04em;white-space:nowrap}.bar .ctrlbtn:first-of-type{margin-left:6px}.controls{position:relative;margin-top:8px;height:228px;border:1px solid #273750;border-radius:18px;background:radial-gradient(circle at 50% 0,#20203a55,transparent 48%),linear-gradient(180deg,#101722,#06080f);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}.controls.hidden,.diag-wrap.hidden{display:none}.controls:before{content:'MOBMUGEN CONTROLLER';position:absolute;left:50%;top:6px;transform:translateX(-50%);font:900 7px ui-monospace;letter-spacing:.18em;color:#ffffff3d}.cz{position:absolute;top:18px;bottom:42px;width:50%;display:flex;align-items:center;justify-content:center}.cz.left{left:0}.cz.right{right:0}.dpad{width:min(36vw,150px);height:min(36vw,150px);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:7px;border-radius:50%;border:2px solid #6dafff88;background:radial-gradient(circle,#0b0e18 0 26%,#121a2c 27% 48%,#080b14 49% 100%);box-shadow:0 0 22px #2c8eff44,inset 0 0 22px #5940c844}.dir{appearance:none;border:0;background:transparent;color:#dcecff;font:950 22px ui-monospace;display:flex;align-items:center;justify-content:center;touch-action:none}.dir.center{pointer-events:none;font-size:8px;color:#8fa7c4;border:1px solid #6dafff44;border-radius:50%;margin:12%;background:radial-gradient(circle,#11182a,#070a11)}.dir.on{background:radial-gradient(circle,#308dff88,transparent 68%);transform:scale(.92)}.acts{position:relative;width:min(44vw,190px);height:154px}.act{position:absolute;width:min(13vw,55px);height:min(13vw,55px);border-radius:50%;color:#fff;font:950 12px ui-monospace;touch-action:none;background:radial-gradient(circle at 36% 28%,#ffffff55,#182037 45%,#070a12 100%);box-shadow:0 7px 14px #000a,inset 0 0 14px #ffffff12}.act.on{transform:scale(.91);filter:brightness(1.5)}.lp,.lk{border:2px solid #209cffcc}.mp,.mk{border:2px solid #f2b94fcc}.hp,.hk{border:2px solid #ff5050cc}.lp{left:0;top:12%}.mp{left:35%;top:0}.hp{right:0;top:12%}.lk{left:0;bottom:0}.mk{left:35%;bottom:10%}.hk{right:0;bottom:0}.util{position:absolute;left:50%;bottom:7px;transform:translateX(-50%);width:94%;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.util button{height:29px;border:1px solid #f2c45d55;background:#15130fdd;color:#f8dda0;border-radius:9px;font:950 9px ui-monospace;touch-action:none}.util button.on{background:#805c1dcc;transform:scale(.96)}.gamepad-note{display:none;margin:6px 3px 0;color:#9bf0c5;font:900 9px ui-monospace;letter-spacing:.05em}.gamepad-note.show{display:block}.diag-head{display:flex;align-items:center;justify-content:space-between;margin-top:8px}.diag-head span{font:900 9px ui-monospace;color:#7f8ca1;letter-spacing:.08em}.diag-toggle{border:1px solid #364c67;background:#0d1520;color:#b9c9dd;border-radius:999px;padding:6px 9px;font:900 9px ui-monospace}.diag-wrap{margin-top:4px}@media(max-width:520px){.stage{min-height:0}.controls{height:218px}.diag{max-height:175px}}
 #bw-hidden{display:none!important}</style>
 <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/andrewnakas/exebrowser@c6049f9684f3c6895c8f31f361a0a29462793f41/public/boxedwine/build/default/browserfs.boxedwine.js"></script></head>
-<body><div class="wrap"><div class="bar"><div class="brand">MOBMUGEN · RIG F · F8.8</div><div class="pill">GAME ANCHOR · KNOWN-GOOD JIT</div><div id="fpsBadge" class="pill">JIT</div><button id="ctrlToggle" class="ctrlbtn" type="button">HIDE CTRL</button><button id="debugToggle" class="ctrlbtn" type="button">HIDE DEBUG</button></div><div class="stage"><div class="tag">GAMEPLAY VIEWPORT</div><div id="setup" class="setup"><div class="card"><h2>Rig F · F8.8</h2><p>F8.8 restores the modern BoxedWine JIT core from the last branch that visibly rendered WinMUGEN, while preserving the newer ZIP stream, CFG path fix and controller plumbing. Game first; performance tuning follows from this anchor.</p><div style="margin-top:12px"><input id="zipInput" type="file" accept=".zip,application/zip" style="display:block;width:100%;max-width:520px;margin:0 auto;padding:12px;border:1px solid #7a6227;border-radius:12px;background:#181307;color:#f1bf55;font:900 12px ui-monospace"><button id="zipStart" type="button" class="pick" style="margin-top:10px" onclick="this.textContent='START CLICKED ✓';var rs=document.getElementById('runtimeState');var pd=document.getElementById('prepDiag');if(rs)rs.textContent='START CLICK RECEIVED';if(pd)pd.textContent='Start click received by page. Handing ZIP to boot…';">START SELECTED ZIP</button></div><div class="hint">If Safari reloads, reopen this page and COPY TRACE will include the recovered pre-crash log.</div><div id="prepDiag" class="diag">Waiting for WinMUGEN ZIP…</div></div></div><canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas></div><div class="statusline">INPUT <b>READY</b> · RUNTIME <b id="runtimeState">WAITING FOR ZIP</b></div>
+<body><div class="wrap"><div class="bar"><div class="brand">MOBMUGEN · RIG F · F8.9</div><div class="pill">EXACT ANCHOR · JIT + CFG FIX</div><div id="fpsBadge" class="pill">JIT</div><button id="ctrlToggle" class="ctrlbtn" type="button">HIDE CTRL</button><button id="debugToggle" class="ctrlbtn" type="button">HIDE DEBUG</button></div><div class="stage"><div class="tag">GAMEPLAY VIEWPORT</div><div id="setup" class="setup"><div class="card"><h2>Rig F · F8.9</h2><p>F8.9 starts from the exact F7.9.2 iPhone-visible WinMUGEN runner, then adds only the proven primary data/mugen.cfg normalization and input trace logging. No fallback core, no viewport experiment, no Wine override experiment.</p><div style="margin-top:12px"><input id="zipInput" type="file" accept=".zip,application/zip" style="display:block;width:100%;max-width:520px;margin:0 auto;padding:12px;border:1px solid #7a6227;border-radius:12px;background:#181307;color:#f1bf55;font:900 12px ui-monospace"><button id="zipStart" type="button" class="pick" style="margin-top:10px" onclick="this.textContent='START CLICKED ✓';var rs=document.getElementById('runtimeState');var pd=document.getElementById('prepDiag');if(rs)rs.textContent='START CLICK RECEIVED';if(pd)pd.textContent='Start click received by page. Handing ZIP to boot…';">START SELECTED ZIP</button></div><div class="hint">If Safari reloads, reopen this page and COPY TRACE will include the recovered pre-crash log.</div><div id="prepDiag" class="diag">Waiting for WinMUGEN ZIP…</div></div></div><canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas></div><div class="statusline">INPUT <b>READY</b> · RUNTIME <b id="runtimeState">WAITING FOR ZIP</b></div>
 <div id="gamepadNote" class="gamepad-note">GAMEPAD CONNECTED · TOUCH CONTROLS AUTO-HIDDEN</div>
 <div id="controls" class="controls">
   <div class="cz left"><div class="dpad">
@@ -20,7 +20,7 @@
   <div class="util"><button data-macro="2P">2P</button><button data-macro="2K">2K</button><button data-k="Enter" data-key="Enter">START</button><button data-k="Escape" data-key="Escape">BACK</button></div>
 </div>
 <div class="diag-head"><span>DEBUG TRACE</span><button id="diagInlineToggle" class="diag-toggle" type="button">COLLAPSE</button></div>
-<div id="diagWrap" class="diag-wrap"><div id="diag" class="diag">F8.8 witness log</div></div></div><button id="copyTrace" class="copy">COPY TRACE</button>
+<div id="diagWrap" class="diag-wrap"><div id="diag" class="diag">F8.9 witness log</div></div></div><button id="copyTrace" class="copy">COPY TRACE</button>
 <div id="bw-hidden"><div id="status"></div><progress id="progress"></progress><div id="spinner"></div><div id="dropzone"></div><pre id="output"></pre><button id="startbtn"></button><input id="soundToggle" type="checkbox"><input id="sound-checkbox" type="checkbox"><button id="uploadbtn"></button><button id="downloadbtn"></button><button id="openModalExeClick"></button><div id="items"></div><input id="showConsole" type="checkbox"><div id="console"></div><button id="inline-runbtn"></button><div id="inline"></div><button id="run-inline"></button><div id="loading"></div><div id="message"></div><a id="modalLink"></a><a id="modalLinkExe"></a><div id="tree"></div><div id="selectedItem"></div><div id="loadStatus"></div></div>
 <script>(function(){'use strict';
 const LEGACY_PIN='c6049f9684f3c6895c8f31f361a0a29462793f41',LEGACY_CDN='https://cdn.jsdelivr.net/gh/andrewnakas/exebrowser@'+LEGACY_PIN+'/public/boxedwine/';
@@ -28,19 +28,9 @@ const F7_CORE='./boxedwine-f7/',SHELL=F7_CORE+'boxedwine-shell.js',ENGINE=F7_COR
 const ROOT_BASE='./assets/',OVERLAY_BASE=LEGACY_CDN+'apps/',TRACE_KEY='mobmugen-rigf-last-trace-v1';
 const zipInput=document.getElementById('zipInput'),setup=document.getElementById('setup'),prep=document.getElementById('prepDiag'),diag=document.getElementById('diag'),state=document.getElementById('runtimeState'),canvas=document.getElementById('canvas'),bwStatus=document.getElementById('status'),copyBtn=document.getElementById('copyTrace');
 const controls=document.getElementById('controls'),ctrlToggle=document.getElementById('ctrlToggle'),debugToggle=document.getElementById('debugToggle'),diagInlineToggle=document.getElementById('diagInlineToggle'),diagWrap=document.getElementById('diagWrap'),gamepadNote=document.getElementById('gamepadNote');
-const fpsBadge=document.getElementById('fpsBadge');
-let __f8InputSent=0,__f8InputAck=0,__f8RafFrames=0,__f8RafHz=0,__f8RafMark=performance.now();
-function __f8Badge(){if(fpsBadge)fpsBadge.textContent='RAF '+(__f8RafHz||'--')+' · IN '+(__f8InputSent?'SENT':'--');}
-function __f8Raf(t){__f8RafFrames++;if(t-__f8RafMark>=1000){__f8RafHz=Math.round(__f8RafFrames*1000/(t-__f8RafMark));__f8RafFrames=0;__f8RafMark=t;__f8Badge();}requestAnimationFrame(__f8Raf)}
-requestAnimationFrame(__f8Raf);__f8Badge();
+const fpsBadge=document.getElementById('fpsBadge');if(fpsBadge)fpsBadge.textContent='JIT';
 const keyMeta={ArrowUp:[38,'ArrowUp'],ArrowDown:[40,'ArrowDown'],ArrowLeft:[37,'ArrowLeft'],ArrowRight:[39,'ArrowRight'],KeyA:[65,'a'],KeyS:[83,'s'],KeyD:[68,'d'],KeyZ:[90,'z'],KeyX:[88,'x'],KeyC:[67,'c'],Enter:[13,'Enter'],Escape:[27,'Escape']};
-function emitKey(code,key,down){
-  const m=keyMeta[code]||[0,key||''],type=down?'keydown':'keyup',opts={key:key||m[1],code,keyCode:m[0],which:m[0],bubbles:true,cancelable:true};
-  canvas.focus();let delivered=0;
-  for(const target of [canvas,document,window]){try{const ev=new KeyboardEvent(type,opts);try{Object.defineProperty(ev,'keyCode',{get:()=>m[0]});Object.defineProperty(ev,'which',{get:()=>m[0]})}catch(_){}target.dispatchEvent(ev);delivered++}catch(_){}}
-  __f8InputSent++;__f8Badge();
-  if(down)log('F8.8 INPUT · '+code+' · targets='+delivered+' · DELIVERED');
-}
+function emitKey(code,key,down){const m=keyMeta[code]||[0,key||''];const type=down?'keydown':'keyup',opts={key:key||m[1],code,keyCode:m[0],which:m[0],bubbles:true,cancelable:true};canvas.focus();for(const target of [canvas,document,window]){try{const ev=new KeyboardEvent(type,opts);try{Object.defineProperty(ev,'keyCode',{get:()=>m[0]});Object.defineProperty(ev,'which',{get:()=>m[0]})}catch(_){}target.dispatchEvent(ev)}catch(_){}}if(down)log('F8.9 INPUT · '+code+' · targets=3 · SENT')}
 function bindPress(el,codes){let held=false;const dn=e=>{e.preventDefault();if(held)return;held=true;el.classList.add('on');codes.forEach(k=>emitKey(k[0],k[1],true))};const up=e=>{e.preventDefault();if(!held)return;held=false;el.classList.remove('on');[...codes].reverse().forEach(k=>emitKey(k[0],k[1],false))};el.addEventListener('pointerdown',dn);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',e=>{if(held)up(e)})}
 document.querySelectorAll('#controls [data-k]').forEach(el=>bindPress(el,[[el.dataset.k,el.dataset.key]]));
 const macros={UL:[['ArrowUp','ArrowUp'],['ArrowLeft','ArrowLeft']],UR:[['ArrowUp','ArrowUp'],['ArrowRight','ArrowRight']],DL:[['ArrowDown','ArrowDown'],['ArrowLeft','ArrowLeft']],DR:[['ArrowDown','ArrowDown'],['ArrowRight','ArrowRight']],'2P':[['KeyA','a'],['KeyS','s']],'2K':[['KeyZ','z'],['KeyX','x']]};document.querySelectorAll('#controls [data-macro]').forEach(el=>bindPress(el,macros[el.dataset.macro]||[]));
@@ -52,12 +42,7 @@ let lines=[],bootStarted=false,exeDir='',exePath='',recovered='';
 try{recovered=localStorage.getItem(TRACE_KEY)||''}catch(e){}
 if(recovered){diag.textContent='RECOVERED PREVIOUS TRACE\n'+recovered;prep.textContent='Previous crash trace recovered. Choose ZIP to start a new run.'}
 let lastPersist=0; function persist(force){const now=Date.now();if(!force&&now-lastPersist<750)return;lastPersist=now;try{localStorage.setItem(TRACE_KEY,lines.slice(-120).join('\n').slice(-30000))}catch(e){}}
-let __f82Last='',__f82Repeat=0;
-function log(s){
-  s=String(s); if(/^BW OUT · creating:/.test(s)) return;
-  if(s===__f82Last){__f82Repeat++;if(__f82Repeat>2)return;s=s+' · repeat '+(__f82Repeat+1)}else{__f82Last=s;__f82Repeat=0}
-  lines.push(s);while(lines.length>180)lines.shift();diag.textContent=lines.join('\n');diag.scrollTop=diag.scrollHeight;persist(false)
-}
+function log(s){s=String(s); if(/^BW OUT · creating:/.test(s)) return; lines.push(s);while(lines.length>180)lines.shift();diag.textContent=lines.join('\n');diag.scrollTop=diag.scrollHeight;persist(false)}
 function status(s){state.textContent=s;log(s)}function fail(e){const s=(e&&e.stack)||((e&&e.message)||String(e));state.textContent='STOPPED';state.className='bad';prep.textContent=s.split('\n')[0];log('F6.3 ERROR · '+s);bootStarted=false}
 const nlog=console.log.bind(console),nerr=console.error.bind(console),nwarn=console.warn.bind(console);function fmt(a){return a.map(x=>{try{return typeof x==='string'?x:JSON.stringify(x)}catch(e){return String(x)}}).join(' ')}
 console.log=(...a)=>{nlog(...a);const s=fmt(a);if(/wine|mugen|emulator|mount|drive|error|warn|root|param|rIGF|zip|launch|running/i.test(s)&&!/^creating:/i.test(s))log('BW OUT · '+s.slice(0,900))};console.error=(...a)=>{nerr(...a);log('BW ERR · '+fmt(a).slice(0,1000))};console.warn=(...a)=>{nwarn(...a);log('BW WARN · '+fmt(a).slice(0,900))};
@@ -94,13 +79,15 @@ async function buildLeanAppFS(file){
     if(!rel.includes('/'))return /\.(dll|cfg|ini|def|txt|bat|cmd|dat)$/i.test(rel);
     return bootRoots.some(r=>rel.startsWith(r));
   };
-  const chosen=entries.filter(keep);
-  const cfgCandidates=chosen.filter(x=>{const n=x.name.replace(/\\/g,'/').replace(/^\/+/,''),l=n.toLowerCase();return l==='data/mugen.cfg'||(prefixLow&&l===prefixLow+'data/mugen.cfg');});
-  const cfgPrimary=cfgCandidates.find(x=>{const l=x.name.replace(/\\/g,'/').replace(/^\/+/, '').toLowerCase();return prefixLow&&l===prefixLow+'data/mugen.cfg';})||cfgCandidates.find(x=>x.name.replace(/\\/g,'/').replace(/^\/+/, '').toLowerCase()==='data/mugen.cfg')||null;
-  log('F8.8 CFG SOURCE · count='+cfgCandidates.length+(cfgPrimary?' · PRIMARY='+cfgPrimary.name:' · MISSING'));
-  if(!cfgPrimary)throw new Error('F8.8 preflight: primary data/mugen.cfg not found at '+(prefix||'ZIP root'));
-  window.RIGF_EXE_DIR=exeDir;
-  window.RIGF_PRIMARY_CFG=cfgPrimary.name;
+  let chosen=entries.filter(keep);
+  const normName=e=>e.name.replace(/\\/g,'/').replace(/^\/+/,''),lowName=e=>normName(e).toLowerCase();
+  const primaryLow=(prefixLow+'data/mugen.cfg'),primary=chosen.find(e=>lowName(e)===primaryLow);
+  const rootFallback=chosen.find(e=>lowName(e)==='data/mugen.cfg');
+  const cfgSource=primary||rootFallback;
+  log('F8.9 CFG SOURCE · count='+(cfgSource?1:0)+(cfgSource?' · '+(primary?'PRIMARY=':'ROOT_FALLBACK=')+cfgSource.name:' · MISSING'));
+  if(!cfgSource)throw new Error('F8.9 preflight: primary/root data/mugen.cfg not found');
+  chosen=chosen.filter(e=>{const l=lowName(e),isCfg=(l===primaryLow||l==='data/mugen.cfg');return !isCfg||e===cfgSource});
+  window.RIGF_EXE_DIR=exeDir;window.RIGF_CFG_SOURCE=cfgSource.name;
   const packed=chosen.reduce((a,x)=>a+x.comp,0),plain=chosen.reduce((a,x)=>a+x.uncomp,0);
   if(!chosen.some(x=>x.name.toLowerCase()==='winmugen.exe'||x.name.toLowerCase().endsWith('/winmugen.exe')))throw new Error('Lean plan lost Winmugen.exe');
   window.RIGF_STREAM_FILE=file;
@@ -125,7 +112,7 @@ function patchShell(src){
       const __args=arguments;
       (async function(){
         try{
-          console.log('RIGF F8.8: DIRECT ZIP STREAM BEGIN files='+plan.length);
+          console.log('RIGF F7.2: DIRECT ZIP STREAM BEGIN files='+plan.length);
           let files=0,bytes=0;
           function u16v(v,o){return v.getUint16(o,true)}
           function u32v(v,o){return v.getUint32(o,true)}
@@ -140,32 +127,27 @@ function patchShell(src){
             if(ent.method===0)raw=packed;
             else if(ent.method===8){if(!window.fflate)throw new Error('fflate unavailable');raw=window.fflate.inflateSync(packed)}
             else throw new Error('Unsupported ZIP method '+ent.method+' for '+ent.name);
-            const bs=String.fromCharCode(92);
-            let relName=String(ent.name||'').split(bs).join('/');
+            let relName=ent.name.split(String.fromCharCode(92)).join('/'),exeRoot=(window.RIGF_EXE_DIR||'').split(String.fromCharCode(92)).join('/');
             while(relName.charAt(0)==='/')relName=relName.slice(1);
-            let exeRoot=String(window.RIGF_EXE_DIR||'').split(bs).join('/');
             while(exeRoot.charAt(0)==='/')exeRoot=exeRoot.slice(1);
-            while(exeRoot.charAt(exeRoot.length-1)==='/')exeRoot=exeRoot.slice(0,-1);
-            const relLow=relName.toLowerCase(),exeLow=exeRoot.toLowerCase();
-            const isRootBoot=relLow.indexOf('data/')===0||relLow.indexOf('font/')===0||relLow.indexOf('sound/')===0||relLow.indexOf('plugins/')===0;
-            if(exeRoot&&relLow.indexOf(exeLow+'/')!==0&&isRootBoot)relName=exeRoot+'/'+relName;
+            while(exeRoot.endsWith('/'))exeRoot=exeRoot.slice(0,-1);
+            const relLow=relName.toLowerCase(),rootBoot=['data/','font/','sound/','plugins/'].some(r=>relLow.startsWith(r));
+            if(exeRoot&&!relLow.startsWith((exeRoot+'/').toLowerCase())&&rootBoot)relName=exeRoot+'/'+relName;
             const dp='/d_drive/'+relName,slash=dp.lastIndexOf('/');
             if(slash>0)mkdirpE(dp.slice(0,slash));
             FS.writeFile(dp,raw);
-            const primaryCfg=String(window.RIGF_PRIMARY_CFG||'').split(bs).join('/').toLowerCase();
-            const sourceNorm=String(ent.name||'').split(bs).join('/').toLowerCase();
-            if(exeRoot&&primaryCfg&&sourceNorm===primaryCfg){
+            if(ent.name===window.RIGF_CFG_SOURCE&&exeRoot){
               const cfgDp='/d_drive/'+exeRoot+'/data/mugen.cfg',cfgSlash=cfgDp.lastIndexOf('/');
               if(cfgSlash>0)mkdirpE(cfgDp.slice(0,cfgSlash));
               if(cfgDp!==dp)FS.writeFile(cfgDp,raw);
-              console.log('RIGF F8.8: CFG READY path='+cfgDp+' bytes='+raw.byteLength+' source='+ent.name);
+              console.log('RIGF F8.9: CFG READY path='+cfgDp+' bytes='+raw.byteLength+' source='+ent.name);
             }
             files++;bytes+=raw.byteLength;
             raw=null;
-            if((i%25)===24||i===plan.length-1){console.log('RIGF F8.8: STREAM '+files+'/'+plan.length+' bytes='+bytes);await new Promise(r=>setTimeout(r,0));}
+            if((i%2)===1||i===plan.length-1){console.log('RIGF F7.2: STREAM '+files+'/'+plan.length+' bytes='+bytes);await new Promise(r=>setTimeout(r,0));}
           }
           window.RIGF_STREAM_PLAN=null;window.RIGF_STREAM_FILE=null;
-          console.log('RIGF F8.8: DIRECT ZIP STREAM READY files='+files+' bytes='+bytes);
+          console.log('RIGF F7.2: DIRECT ZIP STREAM READY files='+files+' bytes='+bytes);
           return __rigF7Callback.apply(this,__args);
         }catch(e){console.error('RIGF F7.2 D DRIVE ERROR',e);throw e}
       })();
@@ -176,17 +158,17 @@ function patchShell(src){
   const __f792Inject=`function loadFile(pathPrefix, filename, callback) {
             if (filename === 'TinyCore15Wine3.1.zip') {
                 const parts=['TinyCore15Wine3.1.zip.part00','TinyCore15Wine3.1.zip.part01','TinyCore15Wine3.1.zip.part02'];
-                console.log('RIGF F8.8: LOCAL ROOT BEGIN parts='+parts.length);
+                console.log('RIGF F8.9: LOCAL ROOT BEGIN parts='+parts.length);
                 Promise.all(parts.map((n,i)=>fetch('./assets/'+n,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('root part '+i+' HTTP '+r.status);return r.arrayBuffer();}))).then(bufs=>{
                     const total=bufs.reduce((a,b)=>a+b.byteLength,0),out=new Uint8Array(total);let off=0;
                     bufs.forEach(b=>{out.set(new Uint8Array(b),off);off+=b.byteLength;});
-                    console.log('RIGF F8.8: LOCAL ROOT READY bytes='+total);
+                    console.log('RIGF F8.9: LOCAL ROOT READY bytes='+total);
                     callback(out);
-                }).catch(e=>console.error('RIGF F8.8: LOCAL ROOT ERROR',e));
+                }).catch(e=>console.error('RIGF F8.9: LOCAL ROOT ERROR',e));
                 return;
             }
 `;
-  if(!src.includes(__f792Needle))throw new Error('F7.9.2 upstream loadFile patch point changed');
+  if(!src.includes(__f792Needle))throw new Error('F8.9 upstream loadFile patch point changed');
   src=src.replace(__f792Needle,__f792Inject);
   src+='\n;try{window.__RigFConfig=Config;window.__RigFGetParams=getEmulatorParams;}catch(e){console.error(\"RIGF F7.2 expose failed\",e)}\n';
   return src
@@ -196,22 +178,22 @@ const X=window.XMLHttpRequest;if(!X||X.prototype.__rigf53)return;X.prototype.__r
 const o=X.prototype.open,send=X.prototype.send;
 X.prototype.open=function(method,url,async,user,pass){let u=String(url);if(u.startsWith('/api/fs/')){const from=u;u='./assets/'+u.slice('/api/fs/'.length);log('F6.3 ROOT REWRITE · '+from+' -> '+u)}this.__rigf53url=u;this.__rigf53method=String(method);log('F7.2 XHR OPEN · '+this.__rigf53method+' · '+this.__rigf53url+' · async='+(async!==false));return o.call(this,method,u,async,user,pass)};
 X.prototype.send=function(body){const xhr=this,u=this.__rigf53url||'?';const done=()=>{try{log('F7.2 XHR DONE · '+(xhr.__rigf53method||'?')+' · '+u+' · status='+xhr.status+' · ready='+xhr.readyState)}catch(e){}};this.addEventListener('load',done);this.addEventListener('error',()=>log('F7.2 XHR ERROR · '+u+' · status='+(xhr.status||0)));this.addEventListener('abort',()=>log('F7.2 XHR ABORT · '+u));this.addEventListener('timeout',()=>log('F7.2 XHR TIMEOUT · '+u));return send.call(this,body)};
-log('F7.2 XHR TRACE ARMED')}
+log('F7.2 XHR TRACE ARMED');log('F8.9 EXACT ANCHOR · source=5b9d863 · F7.9.2 visible-WinMUGEN runner')}
 function scriptText(t){return new Promise((res,rej)=>{const s=document.createElement('script');s.text=t;s.onerror=rej;document.head.appendChild(s);res()})}function scriptURL(u){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=u;s.onload=res;s.onerror=()=>rej(new Error('Failed to load '+u));document.head.appendChild(s)})}
 function probe(){try{const c=window.__RigFConfig;log('F6.1 CONFIG · program='+(c&&c.Program)+' work='+(c&&c.WorkingDir)+' root='+(c&&c.rootZipFile)+' overlay='+(c&&c.extraZipFiles));if(window.__RigFGetParams)log('F6.1 PARAMS · '+window.__RigFGetParams().join(' | '))}catch(e){log('F6 PROBE ERROR · '+e.message)}}
 function armLifecycle(){try{const m=window.Module||Module;if(!m){log('F7.2 MODULE PROBE · unavailable');return}const oldAbort=m.onAbort,oldExit=m.onExit;m.onAbort=function(r){log('F6.1 WASM ABORT · '+String(r));persist(true);if(oldAbort)try{oldAbort(r)}catch(e){}};m.onExit=function(c){log('F6.1 WASM EXIT · code='+c);persist(true);if(oldExit)try{oldExit(c)}catch(e){}};log('F7.2 MODULE LIFECYCLE ARMED')}catch(e){log('F7.2 MODULE HOOK ERROR · '+e.message)}}
-function canvasSig(){try{return canvas.toDataURL('image/png')}catch(e){return null}}function witness(){setTimeout(()=>{probe();const base=canvasSig();let n=0,t=setInterval(()=>{n++;if(n===8)probe();const cur=canvasSig();if(base&&cur&&cur!==base){clearInterval(t);status('VIDEO ACTIVE · VERIFY MUGEN');log('F8.8 VIDEO CHANGE · JIT CANVAS ACTIVE');log('F8.8 CPU MODE · BOXEDWINE WASM JIT BASELINE');log('F8.8 GAME ANCHOR · F7.9.2 JIT core restored · current CFG/input plumbing preserved');log('F8.8 PERF WITNESS · RAF badge measures browser scheduler; iPhone visual remains authority for WinMUGEN title')}else if(n>=28){clearInterval(t);status('BOXEDWINE ALIVE · NO VIDEO');log('F6.1 VIDEO TIMEOUT · COPY TRACE')}},750)},2500)}
+function canvasSig(){try{return canvas.toDataURL('image/png')}catch(e){return null}}function witness(){setTimeout(()=>{probe();const base=canvasSig();let n=0,t=setInterval(()=>{n++;if(n===8)probe();const cur=canvasSig();if(base&&cur&&cur!==base){clearInterval(t);status('VIDEO ACTIVE · VERIFY MUGEN');log('F8.9 VIDEO CHANGE · EXACT F7.9.2 ANCHOR CANVAS ACTIVE')}else if(n>=28){clearInterval(t);status('BOXEDWINE ALIVE · NO VIDEO');log('F6.1 VIDEO TIMEOUT · COPY TRACE')}},750)},2500)}
 async function boot(file){if(bootStarted)return;bootStarted=true;lines=[];persist();try{
 await inspectZip(file);status('STREAMING BOOT-CRITICAL APP FILES');await buildLeanAppFS(file);window.RIGF_APP_ZIP_DATA=null;
-status('FETCHING BOXEDWINE FALLBACK SHELL');const r=await fetch(SHELL,{cache:'no-store'});if(!r.ok)throw new Error('F7.2 shell HTTP '+r.status);const src=patchShell(await r.text());
-status('LOADING BOXEDWINE FALLBACK SHELL');await scriptText(src);const cfg=window.__RigFConfig;if(!cfg)throw new Error('F7.2 BoxedWine Config bridge not exposed');
+status('FETCHING MODERN BOXEDWINE JIT SHELL');const r=await fetch(SHELL,{cache:'no-store'});if(!r.ok)throw new Error('F7.2 shell HTTP '+r.status);const src=patchShell(await r.text());
+status('LOADING MODERN BOXEDWINE JIT SHELL');await scriptText(src);const cfg=window.__RigFConfig;if(!cfg)throw new Error('F7.2 BoxedWine Config bridge not exposed');
 cfg.isRunningInline=true;cfg.locateRootBaseUrl=ROOT_BASE;cfg.locateAppBaseUrl='';cfg.locateOverlayBaseUrl='';cfg.urlParams=buildParams();log('F7.2 URLPARAMS · '+cfg.urlParams);
-installNetTrace();setup.classList.add('hide');status('LOADING BOXEDWINE NON-JIT CORE');await scriptURL(ENGINE);status('BOXEDWINE NON-JIT CORE STARTED');armLifecycle();
-setTimeout(()=>{log('F8.8 ROOT · same-origin TinyCore15Wine3.1 · overlay=NONE');log('F7.9 PROGRAM PATH · d:\\WinMugen\\Winmugen.exe');log('F7.2 POST-LAUNCH HEARTBEAT · 2s');probe();persist(true)},2000);setTimeout(()=>{log('F7.2 POST-LAUNCH HEARTBEAT · 6s');probe();persist(true)},6000);witness()
+installNetTrace();setup.classList.add('hide');status('LOADING MODERN BOXEDWINE WASM JIT');await scriptURL(ENGINE);status('BOXEDWINE WASM JIT STARTED');armLifecycle();
+setTimeout(()=>{log('F8.9 ROOT · same-origin split TinyCore15Wine3.1 · overlay=NONE');log('F7.9 PROGRAM PATH · d:\\WinMugen\\Winmugen.exe');log('F7.2 POST-LAUNCH HEARTBEAT · 2s');probe();persist(true)},2000);setTimeout(()=>{log('F7.2 POST-LAUNCH HEARTBEAT · 6s');probe();persist(true)},6000);witness()
 }catch(e){fail(e)}}
 const zipStart=document.getElementById('zipStart');
 function __rigfSelected(){const f=zipInput.files&&zipInput.files[0];if(!f){status('NO ZIP SELECTED');prep.textContent='No ZIP selected yet.';log('F7.5 PICKER · no file');return null;}status('ZIP SELECTED · '+(f.name||'WinMUGEN.zip')+' · '+(f.size/1048576).toFixed(1)+' MB');prep.textContent='ZIP selected · '+(f.name||'?')+' · tap START SELECTED ZIP';log('F7.5 PICKER · selected '+(f.name||'?')+' · '+f.size+' bytes');return f;}
 zipInput.addEventListener('change',__rigfSelected);
 zipInput.addEventListener('input',__rigfSelected);
-zipStart.addEventListener('click',()=>{const f=__rigfSelected();if(!f){zipStart.textContent='NO ZIP SELECTED';return;}if(bootStarted){zipStart.textContent='BOOT ALREADY STARTED';return;}zipStart.textContent='STARTING…';prep.textContent='Starting ZIP index…';status('STARTING ZIP INDEX');log('F7.5 START · boot requested');setTimeout(()=>{try{boot(f)}catch(e){zipStart.textContent='BOOT ERROR';fail(e)}},250);});copyBtn.addEventListener('click',async()=>{let saved='';try{saved=localStorage.getItem(TRACE_KEY)||''}catch(e){}const body=(lines.length?lines.join('\n'):saved||recovered||'No trace captured');const text='MOBMUGEN · RIG F · F8.8\nRUNTIME STATUS · '+state.textContent+'\nPAGE · '+location.href+'\nUSER AGENT · '+navigator.userAgent+'\n\nTRACE\n'+body;try{await navigator.clipboard.writeText(text);copyBtn.textContent='COPIED ✓';setTimeout(()=>copyBtn.textContent='COPY TRACE',1400)}catch(e){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(_){}ta.remove();copyBtn.textContent='COPIED';setTimeout(()=>copyBtn.textContent='COPY TRACE',1400)}});
+zipStart.addEventListener('click',()=>{const f=__rigfSelected();if(!f){zipStart.textContent='NO ZIP SELECTED';return;}if(bootStarted){zipStart.textContent='BOOT ALREADY STARTED';return;}zipStart.textContent='STARTING…';prep.textContent='Starting ZIP index…';status('STARTING ZIP INDEX');log('F7.5 START · boot requested');setTimeout(()=>{try{boot(f)}catch(e){zipStart.textContent='BOOT ERROR';fail(e)}},250);});copyBtn.addEventListener('click',async()=>{let saved='';try{saved=localStorage.getItem(TRACE_KEY)||''}catch(e){}const body=(lines.length?lines.join('\n'):saved||recovered||'No trace captured');const text='MOBMUGEN · RIG F · F8.9\nRUNTIME STATUS · '+state.textContent+'\nPAGE · '+location.href+'\nUSER AGENT · '+navigator.userAgent+'\n\nTRACE\n'+body;try{await navigator.clipboard.writeText(text);copyBtn.textContent='COPIED ✓';setTimeout(()=>copyBtn.textContent='COPY TRACE',1400)}catch(e){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(_){}ta.remove();copyBtn.textContent='COPIED';setTimeout(()=>copyBtn.textContent='COPY TRACE',1400)}});
 })();</script></body></html>
