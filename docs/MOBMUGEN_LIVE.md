@@ -309,3 +309,11 @@ BOXEDWINE ENGINE STARTED
 - WinMUGEN does not require Mono/.NET for this boot path, so F8.1 passes WINEDLLOVERRIDES=mscoree=d;mshtml=d through BoxedWine's supported env parameter to suppress Mono/Gecko installation prompts.
 - The proven TinyCore15Wine3.1 same-origin root, 259-file stream, audio-off setting, RAF witness, and SDL input witness remain unchanged.
 - Expected trace includes the env parameter and F8.1 MONO SUPPRESS after first frame.
+
+
+## Rig F F8.2 - JIT stability under rewritten code
+- F8.0 phone witness proved WinMUGEN accepts the on-screen controls even though the old defaultPrevented-based badge reported DOM ONLY.
+- The same witness showed repeated `nested code invalidation preparation` messages followed by an out-of-bounds WASM failure before later input faults.
+- F8.2 keeps modern WASM JIT enabled globally but sets `disableWasmJitForWrittenCode=true`, using BoxedWine's supported safety switch for code pages that are rewritten/self-modified.
+- Input telemetry now reports SENT/DELIVERED rather than pretending defaultPrevented is an SDL acknowledgement.
+- Repeated identical runtime-error lines are collapsed to preserve useful trace context. Wine 3.1, same-origin root, 259-file stream, Mono suppression, and audio-off state remain locked.
