@@ -94,3 +94,5 @@ jobs:
           git add mugen-lab/boxedwine-f83-fallback mugen-lab/rig-f7.html
           git commit -m "Rig F F8.3 add non-JIT fallback core"
           git push
+
+# PriZim gate v2: fallback-aware preflight required before promotion.
