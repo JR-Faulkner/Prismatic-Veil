@@ -6,6 +6,7 @@ on:
     paths:
       - 'mugen-lab/rig-f7.html'
       - 'mugen-lab/boxedwine-f7/**'
+      - 'mugen-lab/boxedwine-f83-fallback/**'
       - 'mugen-lab/assets/TinyCore15Wine3.1.zip.part*'
       - 'tools/prizim/mobmugen/**'
       - '.github/workflows/prizim-mobmugen.yml'
