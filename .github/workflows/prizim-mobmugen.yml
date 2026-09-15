@@ -1,0 +1,76 @@
+name: PriZim MOBMUGEN validation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'mugen-lab/rig-f7.html'
+      - 'mugen-lab/boxedwine-f7/**'
+      - 'mugen-lab/assets/TinyCore15Wine3.1.zip.part*'
+      - 'tools/prizim/mobmugen/**'
+      - '.github/workflows/prizim-mobmugen.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  prizim_mobmugen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PriZim static preflight
+        run: |
+          python3 tools/prizim/mobmugen/preflight.py | tee prizim-mobmugen-preflight.json
+
+      - name: Build synthetic WinMUGEN fixture
+        run: |
+          python3 tools/prizim/mobmugen/make_fixture.py
+          ls -lh tools/prizim/mobmugen/fixtures/prizim_winmugen_fixture.zip
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local repository server
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/prizim-http.log 2>&1 &
+          echo $! > /tmp/prizim-http.pid
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:8000/mugen-lab/rig-f7.html >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/prizim-http.log
+          exit 1
+
+      - name: PriZim browser simulation
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_FIXTURE: tools/prizim/mobmugen/fixtures/prizim_winmugen_fixture.zip
+        run: |
+          node tools/prizim/mobmugen/runtime_probe.mjs
+
+      - name: Root-part sanity
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          parts=[Path(f'mugen-lab/assets/TinyCore15Wine3.1.zip.part0{i}') for i in range(3)]
+          missing=[str(p) for p in parts if not p.exists()]
+          if missing: raise SystemExit('Missing Wine root parts: '+', '.join(missing))
+          total=sum(p.stat().st_size for p in parts)
+          print({'parts':3,'bytes':total})
+          if total != 119229367: raise SystemExit(f'Unexpected reconstructed Wine 3.1 size: {total}')
+          PY
+
+      - name: Upload PriZim reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prizim-mobmugen-report
+          if-no-files-found: warn
+          path: |
+            prizim-mobmugen-preflight.json
+            prizim-mobmugen-runtime.json
+            /tmp/prizim-http.log
