@@ -1,0 +1,41 @@
+name: Apply Rig F F8.1 suppress Wine Mono prompt
+on:
+  push:
+    paths:
+      - 'scripts/patch_rigf_f81_nomono.py'
+      - '.github/workflows/apply-rigf-f81.yml'
+permissions:
+  contents: write
+jobs:
+  apply_f81:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Apply F8.1 Mono suppression
+        run: python scripts/patch_rigf_f81_nomono.py
+      - name: Validate F8.1 inline JS
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
+          Path('/tmp/rigf-inline.js').write_text('\n'.join(x for x in scripts if x.strip()))
+          PY
+          node --check /tmp/rigf-inline.js
+      - name: Verify F8.1 wiring
+        run: |
+          grep -F 'MOBMUGEN · RIG F · F8.1' mugen-lab/rig-f7.html
+          grep -F 'WINEDLLOVERRIDES:mscoree=d;mshtml=d' mugen-lab/rig-f7.html
+          grep -F 'F8.1 MONO SUPPRESS' mugen-lab/rig-f7.html
+          grep -F 'TinyCore15Wine3.1' mugen-lab/rig-f7.html
+          grep -F 'F8.1 INPUT' mugen-lab/rig-f7.html
+      - name: Commit F8.1
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html docs/MOBMUGEN_LIVE.md
+          git commit -m 'Rig F F8.1 suppress Wine Mono installer prompt'
+          git push
