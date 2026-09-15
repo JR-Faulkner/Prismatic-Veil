@@ -218,3 +218,12 @@ BOXEDWINE ENGINE STARTED
 - F7.1 keeps the same compiled modern WASM JIT core.
 - The D: ingest now transfers files in small batches, yields to Safari every four files, and unlinks each BrowserFS source file after copying to cap duplicate resident memory.
 - F6.5 remains the safe proven baseline.
+
+
+## Rig F F7.2 - direct ZIP stream ingest
+- F7.1 still froze on iPhone during the handoff.
+- F7.2 removes the intermediate ~223.6 MB BrowserFS payload entirely.
+- The lean selector now stores only entry metadata plus the original File handle.
+- Once the modern BoxedWine FS is ready, each selected ZIP entry is sliced, inflated, written directly to `/d_drive`, released, and Safari is yielded to every two files.
+- Modern single-threaded WASM JIT core is unchanged from F7.
+- F6.5 remains the safe baseline.
