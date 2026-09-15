@@ -1,4 +1,4 @@
-# F8.6 full PriZim witness trigger
+# Version-aware full PriZim witness trigger
 name: PriZim MOBMUGEN validation
 
 on:
@@ -52,7 +52,13 @@ jobs:
           PZ_BASE_URL: http://127.0.0.1:8000
           PZ_FIXTURE: tools/prizim/mobmugen/fixtures/prizim_winmugen_fixture.zip
         run: |
-          node tools/prizim/mobmugen/runtime_probe.mjs
+          if grep -q 'MOBMUGEN · RIG F · F9.0' mugen-lab/rig-f7.html; then
+            echo 'PriZim route: F9.0 exact F6.5 anchor probe'
+            node tools/prizim/mobmugen/runtime_probe_f90.mjs
+          else
+            echo 'PriZim route: modern runner probe'
+            node tools/prizim/mobmugen/runtime_probe.mjs
+          fi
 
       - name: Root-part sanity
         run: |
@@ -75,4 +81,5 @@ jobs:
           path: |
             prizim-mobmugen-preflight.json
             prizim-mobmugen-runtime.json
+            prizim-mobmugen-f90-runtime.json
             /tmp/prizim-http.log
