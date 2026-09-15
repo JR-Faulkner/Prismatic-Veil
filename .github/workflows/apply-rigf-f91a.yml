@@ -1,0 +1,182 @@
+name: Apply MOBMUGEN F9.1a launch witness
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/patch_rigf_f91a_launch_witness.py'
+      - 'tools/prizim/mobmugen/runtime_probe_f90.mjs'
+      - 'tools/prizim/mobmugen/perf_probe.mjs'
+      - 'tools/prizim/mobmugen/pz_ddraw_suite.c'
+      - 'tools/prizim/mobmugen/make_perf_fixture.py'
+      - '.github/workflows/apply-rigf-f91a.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply_f91a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Guard proven F9.1 GDI candidate and Home Screen wiring
+        run: |
+          grep -q 'MOBMUGEN · RIG F · F9.1' mugen-lab/rig-f7.html
+          grep -q 'F9.1 CNC-DDRAW GDI READY' mugen-lab/rig-f7.html
+          grep -q 'WINEDLLOVERRIDES=ddraw=n,b' mugen-lab/rig-f7.html
+          grep -q 'apple-touch-icon.png?v=9' mugen-lab/rig-f7.html
+          test -f mugen-lab/assets/cnc-ddraw-gdi/ddraw.dll
+          test -f mugen-lab/assets/cnc-ddraw-gdi/ddraw.ini
+          cp mugen-lab/rig-f7.html mugen-lab/rig-f91-perf-ci.html
+          sha256sum mugen-lab/rig-f7.html > /tmp/f91-anchor.sha256
+          cat /tmp/f91-anchor.sha256
+
+      - name: Patch diagnostics only to F9.1a
+        run: |
+          python3 scripts/patch_rigf_f91a_launch_witness.py
+          grep -q 'MOBMUGEN · RIG F · F9.1a' mugen-lab/rig-f7.html
+          grep -q 'F9.1A ROOT FETCH BEGIN' mugen-lab/rig-f7.html
+          grep -q 'F9.1A ROOT FETCH READY' mugen-lab/rig-f7.html
+          grep -q 'F9.1A VIDEO WITNESS ARMED' mugen-lab/rig-f7.html
+          grep -q 'F9.1A WITNESS POLICY' mugen-lab/rig-f7.html
+          grep -q 'F9.1 CNC-DDRAW GDI READY' mugen-lab/rig-f7.html
+          grep -q 'WINEDLLOVERRIDES=ddraw=n,b' mugen-lab/rig-f7.html
+          grep -q 'apple-touch-icon.png?v=9' mugen-lab/rig-f7.html
+          if grep -q 'F6.1 VIDEO TIMEOUT · COPY TRACE' mugen-lab/rig-f7.html; then
+            echo 'Old pre-launch video timeout still present'
+            exit 1
+          fi
+
+      - name: Validate F9.1a inline JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          m=re.search(r'<script>\(function\(\)\{(.*)</script>',s,re.S)
+          if not m: raise SystemExit('inline script not found')
+          p=Path('/tmp/f91a-inline.js');p.write_text('(function(){'+m.group(1))
+          subprocess.run(['node','--check',str(p)],check=True)
+          PY
+
+      - name: Install PriZim browser and benchmark compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-i686
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Build deterministic keyed-sprite fixture
+        run: |
+          i686-w64-mingw32-gcc -O2 -s -mwindows -DPZ_MODE=2 \
+            tools/prizim/mobmugen/pz_ddraw_suite.c \
+            -o /tmp/Winmugen-f91a-perf.exe \
+            -lddraw -ldxguid -lgdi32 -luser32
+          python3 tools/prizim/mobmugen/make_perf_fixture.py \
+            /tmp/Winmugen-f91a-perf.exe /tmp/prizim-f91a-perf.zip
+          python3 tools/prizim/mobmugen/make_fixture.py
+
+      - name: Start local candidate server
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/f91a-http.log 2>&1 &
+          echo $! >/tmp/f91a-http.pid
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:8000/mugen-lab/rig-f7.html >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/f91a-http.log
+          exit 1
+
+      - name: PriZim F9.1a plumbing and diagnostics gate
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_ROUTE: /mugen-lab/rig-f7.html?pz_f91a=plumbing
+          PZ_FIXTURE: tools/prizim/mobmugen/fixtures/prizim_winmugen_fixture.zip
+          PZ_EXPECT_BRAND: MOBMUGEN · RIG F · F9.1a
+          PZ_EXPECT_DIAG: F9.1 CNC-DDRAW GDI READY;F9.1A WITNESS POLICY;F9.1A PRE-LAUNCH WITNESS
+          PZ_RUNTIME_REPORT: prizim-f91a-runtime.json
+        run: node tools/prizim/mobmugen/runtime_probe_f90.mjs
+
+      - name: PriZim F9.1 keyed-sprite control
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_ROUTE: /mugen-lab/rig-f91-perf-ci.html?pz_f91a=control
+          PZ_PERF_FIXTURE: /tmp/prizim-f91a-perf.zip
+          PZ_PERF_REPORT: prizim-f91a-control.json
+          PZ_WORKLOAD: f91-colorkey96-cnc-gdi-control
+          PZ_WARMUP_MS: '2500'
+          PZ_SAMPLE_MS: '5000'
+          PZ_SAMPLES: '2'
+        run: node tools/prizim/mobmugen/perf_probe.mjs
+
+      - name: PriZim F9.1a keyed-sprite candidate
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_ROUTE: /mugen-lab/rig-f7.html?pz_f91a=candidate
+          PZ_PERF_FIXTURE: /tmp/prizim-f91a-perf.zip
+          PZ_PERF_REPORT: prizim-f91a-candidate.json
+          PZ_WORKLOAD: f91a-colorkey96-cnc-gdi
+          PZ_WARMUP_MS: '2500'
+          PZ_SAMPLE_MS: '5000'
+          PZ_SAMPLES: '2'
+        run: node tools/prizim/mobmugen/perf_probe.mjs
+
+      - name: Enforce no performance regression
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('prizim-f91a-control.json').read_text())
+          b=json.loads(Path('prizim-f91a-candidate.json').read_text())
+          af=float(a['median_loop_fps']); bf=float(b['median_loop_fps'])
+          ratio=(bf/af) if af else 0
+          result={
+              'f91_control_loop_fps':af,
+              'f91a_candidate_loop_fps':bf,
+              'ratio':ratio,
+              'candidate_target_45':bf>=45,
+              'candidate_usable':b.get('usable_for_ab'),
+              'candidate_fatal':b.get('fatal_runtime_signatures'),
+          }
+          Path('prizim-f91a-gate.json').write_text(json.dumps(result,indent=2))
+          print(json.dumps(result,indent=2))
+          if not b.get('usable_for_ab'): raise SystemExit('F9.1a PZ candidate unusable')
+          if b.get('fatal_runtime_signatures'): raise SystemExit('F9.1a PZ fatal signature')
+          if bf < 45: raise SystemExit(f'F9.1a fell below 45 FPS gate: {bf:.2f}')
+          if ratio < 0.90: raise SystemExit(f'F9.1a diagnostics regressed perf >10%: ratio={ratio:.3f}')
+          PY
+
+      - name: Verify diagnostics-only scope
+        run: |
+          grep -q "const PIN='c6049f9684f3c6895c8f31f361a0a29462793f41'" mugen-lab/rig-f7.html
+          grep -q 'root=fullWine1.7.55-v8' mugen-lab/rig-f7.html
+          grep -q 'wine1.7.55-v8-min-online' mugen-lab/rig-f7.html
+          grep -q 'RIGF F6.5: RAF main loop forced' mugen-lab/rig-f7.html
+          grep -q 'F9.1 CNC-DDRAW GDI READY' mugen-lab/rig-f7.html
+          grep -q 'WINEDLLOVERRIDES=ddraw=n,b' mugen-lab/rig-f7.html
+          echo 'F9.1a scope: diagnostics/witness timing only; F9.1 game/render path preserved'
+
+      - name: Upload PriZim reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: prizim-mobmugen-f91a-gate
+          path: |
+            prizim-f91a-*.json
+            /tmp/f91a-http.log
+
+      - name: Commit F9.1a only after PriZim gates pass
+        run: |
+          rm -f mugen-lab/rig-f91-perf-ci.html
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html
+          if git diff --cached --quiet; then
+            echo 'No F9.1a runtime changes to commit.'
+            exit 0
+          fi
+          git commit -m 'Rig F F9.1a anchor video witness to Wine launch'
+          git push
