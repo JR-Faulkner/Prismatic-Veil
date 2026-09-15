@@ -6,6 +6,7 @@ on:
     paths:
       - 'mugen-lab/rig-f7.html'
       - 'tools/prizim/mobmugen/pz_ddraw_bench.c'
+      - 'tools/prizim/mobmugen/pz_ddraw_suite.c'
       - 'tools/prizim/mobmugen/make_perf_fixture.py'
       - 'tools/prizim/mobmugen/perf_probe.mjs'
       - '.github/workflows/prizim-mobmugen-perf.yml'
@@ -16,25 +17,33 @@ permissions:
 jobs:
   perf:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build deterministic 32-bit DirectDraw workload
+      - name: Build MUGEN-shaped 32-bit DirectDraw workloads
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-mingw-w64-i686
-          i686-w64-mingw32-gcc -O2 -s -mwindows \
-            tools/prizim/mobmugen/pz_ddraw_bench.c \
-            -o /tmp/Winmugen.exe \
-            -lddraw -ldxguid -lgdi32 -luser32
-          file /tmp/Winmugen.exe
-          ls -lh /tmp/Winmugen.exe
+          mkdir -p /tmp/pz-ddraw tools/prizim/mobmugen/fixtures/perf
+          for spec in baseline:0 lockwrite:1 colorkey96:2 stretch2x:3 blit160:4; do
+            name="${spec%%:*}"
+            mode="${spec##*:}"
+            i686-w64-mingw32-gcc -O2 -s -mwindows -DPZ_MODE="$mode" \
+              tools/prizim/mobmugen/pz_ddraw_suite.c \
+              -o "/tmp/pz-ddraw/Winmugen-${name}.exe" \
+              -lddraw -ldxguid -lgdi32 -luser32
+            file "/tmp/pz-ddraw/Winmugen-${name}.exe"
+          done
 
-      - name: Package PriZim DirectDraw fixture
+      - name: Package PriZim performance fixtures
         run: |
-          python3 tools/prizim/mobmugen/make_perf_fixture.py /tmp/Winmugen.exe
-          ls -lh tools/prizim/mobmugen/fixtures/prizim_ddraw_perf_fixture.zip
+          for name in baseline lockwrite colorkey96 stretch2x blit160; do
+            python3 tools/prizim/mobmugen/make_perf_fixture.py \
+              "/tmp/pz-ddraw/Winmugen-${name}.exe" \
+              "tools/prizim/mobmugen/fixtures/perf/${name}.zip"
+          done
+          ls -lh tools/prizim/mobmugen/fixtures/perf/*.zip
 
       - name: Install Playwright
         run: |
@@ -52,44 +61,67 @@ jobs:
           cat /tmp/prizim-perf-http.log
           exit 1
 
-      - name: PriZim DirectDraw FPS measurement
+      - name: PriZim DirectDraw isolation measurements
         env:
           PZ_BASE_URL: http://127.0.0.1:8000
           PZ_ROUTE: /mugen-lab/rig-f7.html?pz_perf=1
-          PZ_PERF_FIXTURE: tools/prizim/mobmugen/fixtures/prizim_ddraw_perf_fixture.zip
-          PZ_PERF_REPORT: prizim-mobmugen-perf.json
-          PZ_SAMPLE_MS: '8000'
-          PZ_SAMPLES: '3'
+          PZ_SAMPLE_MS: '6000'
+          PZ_SAMPLES: '2'
         run: |
-          node tools/prizim/mobmugen/perf_probe.mjs
+          set -e
+          for name in baseline lockwrite colorkey96 stretch2x blit160; do
+            echo "===== PRI ZIM WORKLOAD: $name ====="
+            PZ_WORKLOAD="$name" \
+            PZ_PERF_FIXTURE="tools/prizim/mobmugen/fixtures/perf/${name}.zip" \
+            PZ_PERF_REPORT="prizim-perf-${name}.json" \
+              node tools/prizim/mobmugen/perf_probe.mjs
+          done
 
-      - name: Print performance summary
+      - name: Rank bottlenecks
         if: always()
         run: |
           python3 - <<'PY'
           import json
           from pathlib import Path
-          p=Path('prizim-mobmugen-perf.json')
-          if not p.exists():
-              print('No performance report produced.')
-              raise SystemExit(0)
-          d=json.loads(p.read_text())
-          print('PriZim MOBMUGEN PERF')
-          print('brand:', d.get('brand'))
-          print('loop fps:', round(d.get('median_loop_fps',0),2))
-          print('draw fps:', round(d.get('median_draw_fps',0),2))
-          print('RAF fps:', round(d.get('median_raf_fps',0),2))
-          print('45 target:', d.get('target_45_met'))
-          print('60 target:', d.get('target_60_met'))
-          print('usable A/B:', d.get('usable_for_ab'))
+          names=['baseline','lockwrite','colorkey96','stretch2x','blit160']
+          rows=[]
+          for name in names:
+              p=Path(f'prizim-perf-{name}.json')
+              if not p.exists():
+                  rows.append({'workload':name,'missing':True})
+                  continue
+              d=json.loads(p.read_text())
+              rows.append({
+                  'workload':name,
+                  'loop_fps':d.get('median_loop_fps',0),
+                  'raf_fps':d.get('median_raf_fps',0),
+                  'draw_ops_per_sec':d.get('median_draw_ops_per_sec',0),
+                  'loop_to_raf_ratio':d.get('loop_to_raf_ratio',0),
+                  'fatal':d.get('fatal_runtime_signatures',[]),
+              })
+          base=next((r.get('loop_fps',0) for r in rows if r.get('workload')=='baseline'),0)
+          for r in rows:
+              if 'loop_fps' in r:
+                  r['vs_baseline_pct']=((r['loop_fps']/base)-1)*100 if base else 0
+          ranked=sorted((r for r in rows if 'loop_fps' in r and r['workload']!='baseline'), key=lambda r:r['loop_fps'])
+          summary={
+              'suite':'PriZim MOBMUGEN MUGEN-shaped DirectDraw isolation',
+              'baseline_loop_fps':base,
+              'results':rows,
+              'worst_workload': ranked[0]['workload'] if ranked else None,
+              'worst_loop_fps': ranked[0]['loop_fps'] if ranked else None,
+              'note':'Lower loop FPS means that guest workload is consuming enough emulator/render time to miss browser frame opportunities. RAF alone is not game FPS.'
+          }
+          Path('prizim-perf-isolation-summary.json').write_text(json.dumps(summary,indent=2))
+          print(json.dumps(summary,indent=2))
           PY
 
-      - name: Upload PriZim performance report
+      - name: Upload PriZim performance reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: prizim-mobmugen-perf
+          name: prizim-mobmugen-perf-isolation
           if-no-files-found: warn
           path: |
-            prizim-mobmugen-perf.json
+            prizim-perf-*.json
             /tmp/prizim-perf-http.log
