@@ -1,0 +1,126 @@
+name: Rig F F9.0 exact F6.5 visual anchor
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/apply-rigf-f90.yml
+      - scripts/patch_rigf_f90_exact_f65.py
+      - tools/prizim/mobmugen/runtime_probe_f90.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  apply_f90:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate F9.0 from exact F6.5 visual anchor
+        run: python3 scripts/patch_rigf_f90_exact_f65.py
+
+      - name: Validate F9.0 inline JS
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          blocks=re.findall(r'<script(?:[^>]*)>(.*?)</script>',s,re.S)
+          inline='\n'.join(x for x in blocks if x.strip())
+          Path('/tmp/rigf-f90-inline.js').write_text(inline)
+          PY
+          node --check /tmp/rigf-f90-inline.js
+
+      - name: Verify exact F6.5 runtime discipline
+        run: |
+          grep -q 'MOBMUGEN · RIG F · F9.0' mugen-lab/rig-f7.html
+          grep -q 'EXACT F6.5 VISUAL ANCHOR' mugen-lab/rig-f7.html
+          grep -q 'root=fullWine1.7.55-v8' mugen-lab/rig-f7.html
+          grep -q 'inline-default-ondemand-root-overlay=wine1.7.55-v8-min-online' mugen-lab/rig-f7.html
+          grep -q 'app=userapp.zip' mugen-lab/rig-f7.html
+          grep -q 'p=Winmugen.exe' mugen-lab/rig-f7.html
+          grep -q 'RIGF F6.5: RAF main loop forced' mugen-lab/rig-f7.html
+          grep -q 'RIGF F6.5: eglSwapInterval ' mugen-lab/rig-f7.html
+          grep -q 'c6049f9684f3c6895c8f31f361a0a29462793f41' mugen-lab/rig-f7.html
+          ! grep -q 'TinyCore15Wine3.1' mugen-lab/rig-f7.html
+          ! grep -q 'boxedwine-f7/' mugen-lab/rig-f7.html
+          ! grep -q 'boxedwine-f83-fallback' mugen-lab/rig-f7.html
+          ! grep -q 'WINEDLLOVERRIDES' mugen-lab/rig-f7.html
+          ! grep -q 'view-zoom' mugen-lab/rig-f7.html
+
+      - name: Verify immutable F6.5 root asset
+        run: |
+          test "$(git hash-object mugen-lab/assets/fullWine1.7.55-v8.zip)" = "1cb3c83e4dbf8fe8d5a580671d345bb87a904121"
+          test "$(git rev-parse 70a7016c50ca4375cd77eca92e920adc3e0d6933:mugen-lab/rig-f.html)" = "48b081dfa6e58afb3c9bc547c1be5ca565f686ef"
+
+      - name: PriZim F9.0 static anchor preflight
+        run: |
+          python3 - <<'PY' | tee prizim-mobmugen-f90-preflight.json
+          from pathlib import Path
+          import json, subprocess
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          checks={
+            'f90_brand':'MOBMUGEN · RIG F · F9.0' in s,
+            'legacy_pinned_boxedwine':'c6049f9684f3c6895c8f31f361a0a29462793f41' in s,
+            'wine1755_root':'root=fullWine1.7.55-v8' in s,
+            'lean_userapp':'app=userapp.zip' in s,
+            'raf_lock':'RIGF F6.5: RAF main loop forced' in s,
+            'swap_lock':'RIGF F6.5: eglSwapInterval ' in s,
+            'controls':all(x in s for x in ['ArrowLeft','ArrowRight','KeyA','KeyZ','Enter']),
+            'no_modern_wine31':'TinyCore15Wine3.1' not in s,
+          }
+          failed=[k for k,v in checks.items() if not v]
+          print(json.dumps({'suite':'PriZim F9.0 exact F6.5 static preflight','checks':checks,'passed':not failed,'failed':failed},indent=2))
+          raise SystemExit(1 if failed else 0)
+          PY
+
+      - name: Build PriZim synthetic WinMUGEN fixture
+        run: |
+          python3 tools/prizim/mobmugen/make_fixture.py
+          ls -lh tools/prizim/mobmugen/fixtures/prizim_winmugen_fixture.zip
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start candidate repository server
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/prizim-f90-http.log 2>&1 &
+          echo $! > /tmp/prizim-f90-http.pid
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:8000/mugen-lab/rig-f7.html >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/prizim-f90-http.log
+          exit 1
+
+      - name: PriZim F9.0 fixture and input simulation
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_FIXTURE: tools/prizim/mobmugen/fixtures/prizim_winmugen_fixture.zip
+        run: node tools/prizim/mobmugen/runtime_probe_f90.mjs
+
+      - name: Upload PriZim F9.0 reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prizim-mobmugen-f90-candidate
+          if-no-files-found: warn
+          path: |
+            prizim-mobmugen-f90-preflight.json
+            prizim-mobmugen-f90-runtime.json
+            /tmp/prizim-f90-http.log
+
+      - name: Commit F9.0 only after PriZim passes
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add mugen-lab/rig-f7.html
+          git commit -m "Rig F F9.0 restore exact F6.5 visible WinMUGEN anchor"
+          git push
