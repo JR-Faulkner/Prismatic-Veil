@@ -263,3 +263,11 @@ BOXEDWINE ENGINE STARTED
 - F7.7 rebuilds the complete central-directory metadata array inside `buildLeanAppFS`, matching the proven F6 parser, then filters it without extracting payload bytes.
 - Adds central-directory entry-count witness before lean selection.
 - JS syntax validation is mandatory before commit.
+
+
+## Rig F F7.8 - drive-qualified WinMUGEN launch path
+- F7.7 proved the 259-file direct ZIP stream and modern BoxedWine JIT engine both start.
+- Wine then resolved bare Winmugen.exe against C:\windows\system32 and failed to find it.
+- F7.8 changes p= to d:\WinMugen\Winmugen.exe while preserving w=d:/WinMugen.
+- Stream trace cadence reduced from every 2 files to every 25 files.
+- If Wine 1.7.55 still faults after the executable is found, next branch is a modern BoxedWine-supported Wine root.
