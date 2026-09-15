@@ -302,3 +302,10 @@ BOXEDWINE ENGINE STARTED
 - Stream telemetry is reduced from every 2 files to about every 25 files.
 - Top badge now shows browser RAF cadence and input status. IN SDL✓ means a synthetic touch/gamepad keyboard event reached an Emscripten/SDL listener that prevented default; IN DOM means the event dispatched but no SDL acknowledgement was observed.
 - First-frame trace is renamed as an F8 JIT video witness. Audio remains disabled until performance and input are proven.
+
+
+## Rig F F8.1 - suppress Wine Mono prompt
+- F8.0 proved the modern JIT path still renders WinMUGEN and showed a Wine Mono Installer dialog before user interaction.
+- WinMUGEN does not require Mono/.NET for this boot path, so F8.1 passes WINEDLLOVERRIDES=mscoree=d;mshtml=d through BoxedWine's supported env parameter to suppress Mono/Gecko installation prompts.
+- The proven TinyCore15Wine3.1 same-origin root, 259-file stream, audio-off setting, RAF witness, and SDL input witness remain unchanged.
+- Expected trace includes the env parameter and F8.1 MONO SUPPRESS after first frame.
