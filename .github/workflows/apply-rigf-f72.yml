@@ -1,0 +1,27 @@
+name: Apply Rig F F7.2 direct stream patch
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/apply-rigf-f72.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply_f72:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply F7.2 direct stream patch
+        run: python3 scripts/patch_rigf_f72.py
+      - name: Commit F7.2
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html docs/MOBMUGEN_LIVE.md
+          git commit -m 'Rig F F7.2 direct ZIP stream ingest'
+          git push
