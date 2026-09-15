@@ -1,0 +1,42 @@
+name: Apply Rig F F7.9 Wine 3.1 root
+on:
+  push:
+    paths:
+      - 'scripts/patch_rigf_f79_wine31.py'
+      - '.github/workflows/apply-rigf-f79.yml'
+permissions:
+  contents: write
+jobs:
+  apply_f79:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Apply F7.9 Wine 3.1 root
+        run: python scripts/patch_rigf_f79_wine31.py
+      - name: Validate F7.9 inline JS
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
+          inline=[x for x in scripts if x.strip()]
+          Path('/tmp/rigf-inline.js').write_text('\n'.join(inline))
+          print('inline scripts',len(inline))
+          PY
+          node --check /tmp/rigf-inline.js
+      - name: Verify F7.9 root swap
+        run: |
+          grep -F 'MobMugen · Rig F · F7.9' mugen-lab/rig-f7.html
+          grep -F "ROOT_BASE='https://boxedwine.org/v2/2/'" mugen-lab/rig-f7.html
+          grep -F 'TinyCore15Wine3.1.zip' mugen-lab/rig-f7.html
+          ! grep -F 'fullWine1.7.55-v8.zip' mugen-lab/rig-f7.html
+      - name: Commit F7.9
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html docs/MOBMUGEN_LIVE.md
+          git commit -m 'Rig F F7.9 switch modern JIT to Wine 3.1 root'
+          git push
