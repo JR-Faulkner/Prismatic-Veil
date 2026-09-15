@@ -2,7 +2,12 @@ import { chromium } from 'playwright';
 import fs from 'node:fs';
 
 const base = process.env.PZ_BASE_URL || 'http://127.0.0.1:8000';
+const route = process.env.PZ_ROUTE || '/mugen-lab/rig-f7.html?pz_ci=1';
 const fixture = process.env.PZ_FIXTURE || 'tools/prizim/mobmugen/fixtures/prizim_winmugen_fixture.zip';
+const expectedBrand = process.env.PZ_EXPECT_BRAND || 'MOBMUGEN · RIG F · F9.0';
+const expectedDiag = (process.env.PZ_EXPECT_DIAG || '').split(';').map(x=>x.trim()).filter(Boolean);
+const reportPath = process.env.PZ_RUNTIME_REPORT || 'prizim-mobmugen-f90-runtime.json';
+
 const browser = await chromium.launch({headless:true});
 const page = await browser.newPage({viewport:{width:430,height:932}});
 const consoleLines=[];
@@ -10,9 +15,9 @@ const pageErrors=[];
 page.on('console', msg => consoleLines.push(msg.text()));
 page.on('pageerror', err => pageErrors.push(String(err)));
 
-await page.goto(`${base}/mugen-lab/rig-f7.html?pz_ci=1`, {waitUntil:'domcontentloaded', timeout:120000});
+await page.goto(`${base}${route}`, {waitUntil:'domcontentloaded', timeout:120000});
 const brand = await page.locator('.brand').innerText();
-if (!brand.includes('MOBMUGEN · RIG F · F9.0')) throw new Error(`unexpected brand: ${brand}`);
+if (!brand.includes(expectedBrand)) throw new Error(`unexpected brand: ${brand}; expected ${expectedBrand}`);
 
 const delivered=[];
 await page.exposeFunction('__pzKeyF90', e => delivered.push(e));
@@ -40,8 +45,8 @@ for (const [value,kind] of sequence) await tap(kind,value,pointerId++);
 await page.locator('#zipInput').setInputFiles(fixture);
 await page.waitForFunction(() => document.querySelector('#diag')?.textContent?.includes('F6.3 LEAN FS READY'), null, {timeout:120000});
 const diag = await page.locator('#diag').innerText();
-for (const marker of ['F6 ZIP META','F6 EXE FOUND · WinMugen/Winmugen.exe','F6.3 LEAN FS READY']) {
-  if (!diag.includes(marker)) throw new Error(`missing F9.0 legacy anchor marker: ${marker}`);
+for (const marker of ['F6 ZIP META','F6 EXE FOUND · WinMugen/Winmugen.exe','F6.3 LEAN FS READY', ...expectedDiag]) {
+  if (!diag.includes(marker)) throw new Error(`missing candidate marker: ${marker}`);
 }
 
 const fatalPatterns=['JS ERROR','PROMISE ·','WASM ABORT'];
@@ -57,8 +62,9 @@ if (missing.length) throw new Error(`input codes not dispatched: ${missing.join(
 if (!downs.length || !ups.length) throw new Error('missing keydown/keyup delivery');
 
 const report={
-  suite:'PriZim MOBMUGEN F9.0 exact F6.5 visual-anchor plumbing',
+  suite:'PriZim MOBMUGEN F9 visual-anchor candidate plumbing',
   brand,
+  expected_brand:expectedBrand,
   anchor:'70a7016c50ca4375cd77eca92e920adc3e0d6933',
   fixture_ingest_ready:true,
   controller_controls_tested:sequence.length,
@@ -66,12 +72,13 @@ const report={
   keyup_events_observed:ups.length,
   unique_codes:[...seen].sort(),
   missing_codes:missing,
+  expected_diag_markers:expectedDiag,
   fatal_preboot_signatures:fatalHits,
   page_errors:pageErrors.slice(0,10),
   console_tail:consoleLines.slice(-20),
-  diag_tail:diag.split('\n').slice(-30),
-  note:'PZ verifies the exact F6.5-derived page, lean fixture ingest, and controller dispatch. Real WinMUGEN rendering on iPhone Safari remains the visual authority.'
+  diag_tail:diag.split('\n').slice(-40),
+  note:'PZ verifies the F6.5/F9-derived plumbing, candidate markers, lean fixture ingest, and controller dispatch. Real WinMUGEN rendering on iPhone Safari remains the final visual authority.'
 };
-fs.writeFileSync('prizim-mobmugen-f90-runtime.json',JSON.stringify(report,null,2));
+fs.writeFileSync(reportPath,JSON.stringify(report,null,2));
 console.log(JSON.stringify(report,null,2));
 await browser.close();
