@@ -294,3 +294,11 @@ BOXEDWINE ENGINE STARTED
 - F7.9.2 keeps root=TinyCore15Wine3.1 and stores the verified official filesystem as three same-origin chunks under mugen-lab/assets.
 - patchShell now patches upstream loadFile after boxedwine-shell.js is fetched, reconstructing the root before handing it to BoxedWine.
 - Expected reconstructed size: 119229367 bytes. Expected upstream SHA-256: 09296bb395cc2b8a563fc7986f242531e485b2664bd282270eb03e12015ca693.
+
+
+## Rig F F8.0 - performance + input witness
+- F7.9.2 is the first proven modern WASM-JIT path to render WinMUGEN video on iPhone Safari using TinyCore15Wine3.1 and the same-origin split root.
+- F8.0 locks that compatibility stack and avoids further Wine/root churn.
+- Stream telemetry is reduced from every 2 files to about every 25 files.
+- Top badge now shows browser RAF cadence and input status. IN SDL✓ means a synthetic touch/gamepad keyboard event reached an Emscripten/SDL listener that prevented default; IN DOM means the event dispatched but no SDL acknowledgement was observed.
+- First-frame trace is renamed as an F8 JIT video witness. Audio remains disabled until performance and input are proven.
