@@ -10,15 +10,15 @@ s=s.replace('Rig F · F8.0','Rig F · F8.1')
 s=s.replace('F8.0 witness log','F8.1 witness log')
 s=s.replace('WASM JIT · PERF + INPUT','WASM JIT · PERF + INPUT · NO MONO')
 
-# Suppress Wine Mono/Gecko installation prompts. BoxedWine's modern shell supports
-# ?env=%22KEY:value%22 and forwards it to the emulator as -env "KEY=value".
-# Keep the value literal (semicolon is intentionally not percent-encoded) because
+# Suppress Wine Mono/Gecko installation prompts through BoxedWine's supported
+# env parameter. getEnvProp() expects a quoted KEY:value pair and forwards it
+# to the emulator as -env "KEY=value". Keep the semicolon literal because
 # getEnvProp() does not URL-decode the value after splitting KEY:value.
-needle="root=TinyCore15Wine3.1&p=d%3A%5CWinMugen%5CWinmugen.exe"
-replacement="root=TinyCore15Wine3.1&env=%22WINEDLLOVERRIDES:mscoree=d;mshtml=d%22&p=d%3A%5CWinMugen%5CWinmugen.exe"
-if needle not in s:
-    raise SystemExit('F8.1 URL params patch point not found')
-s=s.replace(needle,replacement,1)
+old="function buildParams(){const work=exeDir?'d:/'+exeDir:'d:/';return ['root=TinyCore15Wine3.1','p=d%3A%5CWinMugen%5CWinmugen.exe','w='+work,'auto=true','sound=false','bpp=16','storage=memory'].join('&')}"
+new="function buildParams(){const work=exeDir?'d:/'+exeDir:'d:/';return ['root=TinyCore15Wine3.1','env=%22WINEDLLOVERRIDES:mscoree=d;mshtml=d%22','p=d%3A%5CWinMugen%5CWinmugen.exe','w='+work,'auto=true','sound=false','bpp=16','storage=memory'].join('&')}"
+if old not in s:
+    raise SystemExit('F8.1 buildParams patch point not found')
+s=s.replace(old,new,1)
 
 # Update F8 trace identity while preserving the proven runtime stack.
 s=s.replace('F8.0 ROOT · same-origin TinyCore15Wine3.1 · overlay=NONE','F8.1 ROOT · same-origin TinyCore15Wine3.1 · overlay=NONE')
