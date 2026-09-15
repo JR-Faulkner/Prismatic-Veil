@@ -83,14 +83,19 @@ if old_keep not in s:
 s=s.replace(old_keep,new_keep,1)
 
 # Preserve the anchor streamer, changing only destination normalization for
-# root-level boot folders and the exact lowercase cfg alias.
+# root-level boot folders and the exact lowercase cfg alias. Avoid regex or
+# literal backslashes here because this code is injected into generated shell JS.
 old_dp="""            const dp='/d_drive/'+ent.name.replace(/^\\\\/+/,''),slash=dp.lastIndexOf('/');
             if(slash>0)mkdirpE(dp.slice(0,slash));
             FS.writeFile(dp,raw);files++;bytes+=raw.byteLength;
             raw=null;
 """
-new_dp="""            let relName=ent.name.replace(/\\\\/g,'/').replace(/^\\/+/,''),exeRoot=(window.RIGF_EXE_DIR||'').replace(/\\\\/g,'/').replace(/^\\/+|\\/+$/g,'');
-            if(exeRoot&&!relName.toLowerCase().startsWith((exeRoot+'/').toLowerCase())&&/^(data|font|sound|plugins)\\//i.test(relName))relName=exeRoot+'/'+relName;
+new_dp="""            let relName=ent.name.split(String.fromCharCode(92)).join('/'),exeRoot=(window.RIGF_EXE_DIR||'').split(String.fromCharCode(92)).join('/');
+            while(relName.charAt(0)==='/')relName=relName.slice(1);
+            while(exeRoot.charAt(0)==='/')exeRoot=exeRoot.slice(1);
+            while(exeRoot.endsWith('/'))exeRoot=exeRoot.slice(0,-1);
+            const relLow=relName.toLowerCase(),rootBoot=['data/','font/','sound/','plugins/'].some(r=>relLow.startsWith(r));
+            if(exeRoot&&!relLow.startsWith((exeRoot+'/').toLowerCase())&&rootBoot)relName=exeRoot+'/'+relName;
             const dp='/d_drive/'+relName,slash=dp.lastIndexOf('/');
             if(slash>0)mkdirpE(dp.slice(0,slash));
             FS.writeFile(dp,raw);
