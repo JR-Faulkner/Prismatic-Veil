@@ -1,0 +1,58 @@
+name: Rig F F8.4 cfg-path normalizer
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/apply-rigf-f84.yml
+      - scripts/patch_rigf_f84_cfgpath.py
+
+permissions:
+  contents: write
+
+jobs:
+  apply_f84:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch F8.4 runner
+        run: python3 scripts/patch_rigf_f84_cfgpath.py
+
+      - name: Validate F8.4 inline JS
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          blocks=re.findall(r'<script(?:[^>]*)>(.*?)</script>',s,re.S)
+          inline='\n'.join(x for x in blocks if x.strip())
+          Path('/tmp/rigf-inline.js').write_text(inline)
+          PY
+          node --check /tmp/rigf-inline.js
+
+      - name: Verify F8.4 cfg normalizer wiring
+        run: |
+          grep -q 'MOBMUGEN · RIG F · F8.4' mugen-lab/rig-f7.html
+          grep -q 'FALLBACK · CFG PATH NORMALIZER' mugen-lab/rig-f7.html
+          grep -q 'boxedwine-f83-fallback' mugen-lab/rig-f7.html
+          grep -q 'F8.4 CFG SOURCE' mugen-lab/rig-f7.html
+          grep -q 'RIGF F8.4: CFG READY' mugen-lab/rig-f7.html
+          grep -q "bootRoots=\['data/','font/','sound/','plugins/'\]" mugen-lab/rig-f7.html
+          grep -q 'TinyCore15Wine3.1' mugen-lab/rig-f7.html
+          ! grep -q 'disableWasmJitForWrittenCode=true' mugen-lab/rig-f7.html
+
+      - name: PriZim static preflight
+        run: python3 tools/prizim/mobmugen/preflight.py
+
+      - name: Commit F8.4
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add mugen-lab/rig-f7.html
+          git commit -m "Rig F F8.4 normalize WinMUGEN cfg path"
+          git push
