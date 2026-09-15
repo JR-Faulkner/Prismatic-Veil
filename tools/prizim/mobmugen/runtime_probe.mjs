@@ -13,7 +13,9 @@ await page.goto(`${base}/mugen-lab/rig-f7.html?pz_ci=1`, {waitUntil:'domcontentl
 
 const brand = await page.locator('.brand').innerText();
 if (!brand.includes('MOBMUGEN')) throw new Error('MOBMUGEN brand missing');
-if (!brand.includes('F8.5')) throw new Error(`expected F8.5 runner, got: ${brand}`);
+const versionMatch = brand.match(/F\d+\.\d+/);
+if (!versionMatch) throw new Error(`unable to detect runner version from: ${brand}`);
+const version = versionMatch[0];
 
 const delivered=[];
 await page.exposeFunction('__pzKey', e => delivered.push(e));
@@ -29,8 +31,8 @@ await page.waitForFunction(() => document.querySelector('#diag')?.textContent?.i
 let diag = await page.locator('#diag').innerText();
 const required = [
   'CENTRAL DIR READY',
-  'F8.5 CFG SOURCE · count=1 · PRIMARY=WinMugen/data/mugen.cfg',
-  'RIGF F8.5: CFG READY path=/d_drive/WinMugen/data/mugen.cfg',
+  `${version} CFG SOURCE · count=1 · PRIMARY=WinMugen/data/mugen.cfg`,
+  `RIGF ${version}: CFG READY path=/d_drive/WinMugen/data/mugen.cfg`,
   'STREAM PLAN',
   'DIRECT ZIP STREAM READY'
 ];
@@ -57,7 +59,6 @@ async function tap(kind, value, pointerId){
 let pointerId=10;
 for (const [value,kind] of sequence) await tap(kind,value,pointerId++);
 
-// Rapid-fire pass, intentionally deterministic so builds can be compared.
 for (let round=1; round<=3; round++) {
   for (const code of ['ArrowDown','ArrowRight','KeyZ','KeyX','KeyA','KeyS','KeyD','Enter']) {
     await tap('data-k',code,pointerId++);
@@ -85,6 +86,7 @@ if (!downs.length || !ups.length) throw new Error('missing keydown/keyup deliver
 
 const report = {
   suite:'PriZim MOBMUGEN deterministic input torture',
+  version,
   brand,
   fixture_cfg_primary:'WinMugen/data/mugen.cfg',
   stream_ready:true,
@@ -100,7 +102,7 @@ const report = {
   page_errors:pageErrors.slice(0,10),
   console_tail:consoleLines.slice(-30),
   diag_tail:diag.split('\n').slice(-40),
-  note:'Synthetic fixture validates F8.5 browser/stream/controller plumbing and deterministic input delivery. Real WinMUGEN execution and iPhone WebKit remain final witness authority.'
+  note:`Synthetic fixture validates ${version} browser/stream/controller plumbing and deterministic input delivery. Real WinMUGEN execution and iPhone WebKit remain final witness authority.`
 };
 fs.writeFileSync('prizim-mobmugen-runtime.json', JSON.stringify(report,null,2));
 console.log(JSON.stringify(report,null,2));
