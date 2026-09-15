@@ -1,0 +1,84 @@
+name: Apply MOBMUGEN F9.1 Home Screen icon
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-rigf-f91-home-icon.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  icon_gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Guard F9.1 performance candidate
+        run: |
+          grep -q 'MOBMUGEN · RIG F · F9.1' mugen-lab/rig-f7.html
+          grep -q 'F9.0 ANCHOR · CNC GDI PERF' mugen-lab/rig-f7.html
+          grep -q 'F9.1 CNC-DDRAW GDI READY' mugen-lab/rig-f7.html
+          grep -q 'WINEDLLOVERRIDES=ddraw=n,b' mugen-lab/rig-f7.html
+
+      - name: Verify dedicated MOBMUGEN icon asset
+        run: |
+          test -f mugen-lab/apple-touch-icon.png
+          file mugen-lab/apple-touch-icon.png
+          test "$(stat -c%s mugen-lab/apple-touch-icon.png)" -gt 5000
+
+      - name: Wire iPhone Home Screen metadata
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+
+          p=Path('mugen-lab/rig-f7.html')
+          s=p.read_text()
+          if 'rel="apple-touch-icon"' not in s:
+              needle='<title>MobMugen · Rig F · F9.1</title>'
+              meta='''<title>MobMugen · Rig F · F9.1</title>\n<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n<meta name="apple-mobile-web-app-title" content="MOBMUGEN">\n<meta name="theme-color" content="#070b13">\n<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=9">\n<link rel="icon" type="image/png" href="./apple-touch-icon.png?v=9">\n<link rel="manifest" href="./mobmugen.webmanifest?v=1">'''
+              if needle not in s:
+                  raise SystemExit('F9.1 title anchor missing')
+              s=s.replace(needle,meta,1)
+              p.write_text(s)
+
+          manifest={
+            'name':'MOBMUGEN',
+            'short_name':'MOBMUGEN',
+            'start_url':'./rig-f7.html',
+            'scope':'./',
+            'display':'standalone',
+            'background_color':'#070b13',
+            'theme_color':'#070b13',
+            'icons':[{'src':'./apple-touch-icon.png?v=9','sizes':'180x180','type':'image/png','purpose':'any'}]
+          }
+          Path('mugen-lab/mobmugen.webmanifest').write_text(json.dumps(manifest,indent=2)+'\n')
+          PY
+
+      - name: Validate icon wiring and runtime scope
+        run: |
+          grep -q 'apple-mobile-web-app-title" content="MOBMUGEN' mugen-lab/rig-f7.html
+          grep -q 'rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=9"' mugen-lab/rig-f7.html
+          grep -q 'rel="manifest" href="./mobmugen.webmanifest?v=1"' mugen-lab/rig-f7.html
+          python3 -m json.tool mugen-lab/mobmugen.webmanifest >/dev/null
+          grep -q '"start_url": "./rig-f7.html"' mugen-lab/mobmugen.webmanifest
+          grep -q 'F9.1 CNC-DDRAW GDI READY' mugen-lab/rig-f7.html
+          grep -q 'WINEDLLOVERRIDES=ddraw=n,b' mugen-lab/rig-f7.html
+          git diff --stat
+
+      - name: Commit icon wiring
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html mugen-lab/mobmugen.webmanifest
+          if git diff --cached --quiet; then
+            echo 'Icon wiring already current.'
+            exit 0
+          fi
+          git commit -m 'Rig F F9.1 wire MOBMUGEN Home Screen icon'
+          git push
