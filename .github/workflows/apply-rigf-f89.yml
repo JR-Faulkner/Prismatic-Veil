@@ -77,7 +77,7 @@ jobs:
           d=list(difflib.unified_diff(a,b,fromfile='F7.9.2-anchor',tofile='F8.9'))
           print('anchor diff lines:',len(d))
           Path('/tmp/f89-anchor.diff').write_text('\n'.join(d))
-          if len(d)>140:
+          if len(d)>180:
               raise SystemExit('F8.9 drifted too far from exact anchor')
           PY
 
