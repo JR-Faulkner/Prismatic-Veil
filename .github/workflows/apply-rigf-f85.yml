@@ -48,6 +48,7 @@ jobs:
           PY
           node /tmp/patchshell-harness.js
           node --check /tmp/rigf-patched-shell.js
+          grep -q 'String.fromCharCode(92)' /tmp/rigf-patched-shell.js
 
       - name: Verify F8.5 wiring
         run: |
@@ -57,7 +58,7 @@ jobs:
           grep -q 'F8.5 CFG SOURCE' mugen-lab/rig-f7.html
           grep -q 'RIGF F8.5: CFG READY' mugen-lab/rig-f7.html
           grep -q 'RIGF_PRIMARY_CFG' mugen-lab/rig-f7.html
-          grep -q "split('\\\\\\\\').join('/')" mugen-lab/rig-f7.html
+          grep -q 'String.fromCharCode(92)' mugen-lab/rig-f7.html
           grep -q 'TinyCore15Wine3.1' mugen-lab/rig-f7.html
           ! grep -q 'disableWasmJitForWrittenCode=true' mugen-lab/rig-f7.html
 
