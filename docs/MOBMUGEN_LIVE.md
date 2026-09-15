@@ -227,3 +227,10 @@ BOXEDWINE ENGINE STARTED
 - Once the modern BoxedWine FS is ready, each selected ZIP entry is sliced, inflated, written directly to `/d_drive`, released, and Safari is yielded to every two files.
 - Modern single-threaded WASM JIT core is unchanged from F7.
 - F6.5 remains the safe baseline.
+
+
+## Rig F F7.3 - picker witness
+- Adds immediate visible telemetry when iOS returns a selected ZIP.
+- Clears file-input value before opening so reselecting the same ZIP still fires.
+- Listens to both input and change.
+- Does not alter the F7.2 direct-stream or modern JIT architecture.
