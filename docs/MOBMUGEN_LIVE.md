@@ -211,3 +211,10 @@ BOXEDWINE ENGINE STARTED
 - Keeps the proven lean WinMUGEN selection and old local Wine 1.7.55 root for an engine-only performance comparison.
 - Copies the lean BrowserFS payload into modern BoxedWine `/d_drive` before launch, then maps it to Wine D:.
 - Sound remains off. F6.5 remains the safe proven baseline.
+
+
+## Rig F F7.1 - low-memory staged ingest
+- F7 phone witness froze during the direct synchronous second-copy of the ~223.6 MB lean payload into modern BoxedWine `/d_drive`.
+- F7.1 keeps the same compiled modern WASM JIT core.
+- The D: ingest now transfers files in small batches, yields to Safari every four files, and unlinks each BrowserFS source file after copying to cap duplicate resident memory.
+- F6.5 remains the safe proven baseline.
