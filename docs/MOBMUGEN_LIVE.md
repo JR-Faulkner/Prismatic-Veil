@@ -234,3 +234,10 @@ BOXEDWINE ENGINE STARTED
 - Clears file-input value before opening so reselecting the same ZIP still fires.
 - Listens to both input and change.
 - Does not alter the F7.2 direct-stream or modern JIT architecture.
+
+
+## Rig F F7.4 - native visible picker
+- Replaces hidden label-driven ZIP input with a visible native iOS file input.
+- Adds explicit START SELECTED ZIP button so file selection and boot start are separate witness points.
+- Removes input-value pre-clear behavior.
+- Keeps F7.2 direct stream and modern JIT architecture unchanged.
