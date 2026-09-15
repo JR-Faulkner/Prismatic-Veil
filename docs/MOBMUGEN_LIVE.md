@@ -287,3 +287,10 @@ BOXEDWINE ENGINE STARTED
 - F7.9.1 replaces buildParams directly with root=TinyCore15Wine3.1 and no overlay parameter.
 - ROOT_BASE is forced to https://boxedwine.org/v2/2/ and locateOverlayBaseUrl is blanked.
 - JIT core, direct 259-file D: stream and drive-qualified WinMUGEN path stay unchanged.
+
+
+## Rig F F7.9.2 - same-origin split Wine 3.1 root
+- F7.9.1 proved the runtime parameters were correct, but Safari returned PROMISE · Load failed before the Wine root was created.
+- F7.9.2 keeps root=TinyCore15Wine3.1 and stores the verified official filesystem as three same-origin chunks under mugen-lab/assets.
+- patchShell now patches upstream loadFile after boxedwine-shell.js is fetched, reconstructing the root before handing it to BoxedWine.
+- Expected reconstructed size: 119229367 bytes. Expected upstream SHA-256: 09296bb395cc2b8a563fc7986f242531e485b2664bd282270eb03e12015ca693.
