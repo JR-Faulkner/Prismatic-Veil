@@ -1,0 +1,43 @@
+name: Apply Rig F F8 performance input witness
+on:
+  push:
+    paths:
+      - 'scripts/patch_rigf_f80_perf_input.py'
+      - '.github/workflows/apply-rigf-f80.yml'
+permissions:
+  contents: write
+jobs:
+  apply_f80:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Apply F8 performance and input witness
+        run: python scripts/patch_rigf_f80_perf_input.py
+      - name: Validate F8 inline JS
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('mugen-lab/rig-f7.html').read_text()
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
+          Path('/tmp/rigf-inline.js').write_text('\n'.join(x for x in scripts if x.strip()))
+          PY
+          node --check /tmp/rigf-inline.js
+      - name: Verify F8 witness wiring
+        run: |
+          grep -F 'MOBMUGEN · RIG F · F8.0' mugen-lab/rig-f7.html
+          grep -F 'WASM JIT · PERF + INPUT' mugen-lab/rig-f7.html
+          grep -F "F8.0 INPUT ·" mugen-lab/rig-f7.html
+          grep -F "RAF '+(__f8RafHz" mugen-lab/rig-f7.html
+          grep -F 'RIGF F8.0: DIRECT ZIP STREAM READY' mugen-lab/rig-f7.html
+          grep -F 'F8.0 FIRST FRAME CHANGE · JIT VIDEO LIVE' mugen-lab/rig-f7.html
+          grep -F "root=TinyCore15Wine3.1" mugen-lab/rig-f7.html
+      - name: Commit F8
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html docs/MOBMUGEN_LIVE.md
+          git commit -m 'Rig F F8 add performance and input witness'
+          git push
