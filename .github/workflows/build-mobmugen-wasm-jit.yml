@@ -1,0 +1,86 @@
+name: Build MOBMUGEN Boxedwine WASM-JIT
+
+on:
+  push:
+    paths:
+      - '.github/workflows/build-mobmugen-wasm-jit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-jit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clone pinned upstream Boxedwine
+        shell: bash
+        run: |
+          set -euo pipefail
+          UPSTREAM_SHA=ba68d801e40fa3fc8ceeb5eec776cf4a8bdf81cf
+          git clone https://github.com/danoon2/Boxedwine.git /tmp/Boxedwine
+          git -C /tmp/Boxedwine checkout "$UPSTREAM_SHA"
+          git -C /tmp/Boxedwine submodule update --init --recursive
+          echo "$UPSTREAM_SHA" > /tmp/boxedwine-upstream-sha.txt
+
+      - name: Build single-threaded SIMD WASM-JIT
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v /tmp/Boxedwine:/src \
+            -w /src/project/emscripten \
+            emscripten/emsdk:latest \
+            bash -lc 'make jit'
+
+      - name: Stage JIT runtime and Wine 11 root
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEST=mugen-lab/assets/boxedwine-jit
+          mkdir -p "$DEST"
+          cp /tmp/Boxedwine/project/emscripten/Build/Jit/boxedwine.js "$DEST/boxedwine.js"
+          cp /tmp/Boxedwine/project/emscripten/Build/Jit/boxedwine.wasm "$DEST/boxedwine.wasm"
+          cp /tmp/Boxedwine/project/emscripten/Build/Jit/boxedwine-shell.js "$DEST/boxedwine-shell.js"
+          cp /tmp/Boxedwine/project/emscripten/Build/Jit/boxedwine.css "$DEST/boxedwine.css" || true
+
+          curl -L --fail --retry 3 \
+            -o /tmp/Boxedwine26R1Web.zip \
+            https://github.com/danoon2/Boxedwine/releases/download/26R1.0/Boxedwine26R1Web.zip
+          unzip -p /tmp/Boxedwine26R1Web.zip Wine11/boxedwine.zip > "$DEST/boxedwine-wine11.zip"
+
+          {
+            echo 'MOBMUGEN BOXEDWINE WASM-JIT RUNTIME'
+            echo '================================='
+            echo 'Upstream: danoon2/Boxedwine'
+            echo 'Upstream SHA: ba68d801e40fa3fc8ceeb5eec776cf4a8bdf81cf'
+            echo 'Target: make jit'
+            echo 'CPU backend: BOXEDWINE_WASM_JIT'
+            echo 'SIMD: -msimd128'
+            echo 'Threading: single-threaded JIT (no SharedArrayBuffer required)'
+            echo 'Wine root: official 26R1 Wine11/boxedwine.zip'
+            echo
+            sha256sum "$DEST"/boxedwine.js "$DEST"/boxedwine.wasm "$DEST"/boxedwine-shell.js "$DEST"/boxedwine-wine11.zip
+            echo
+            ls -lh "$DEST"
+          } > "$DEST/BUILD_INFO.txt"
+          cat "$DEST/BUILD_INFO.txt"
+
+      - name: Commit JIT runtime assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mugen-lab/assets/boxedwine-jit
+          if git diff --cached --quiet; then
+            echo 'No runtime changes'
+            exit 0
+          fi
+          git commit -m 'MOBMUGEN stage pinned Boxedwine SIMD WASM-JIT runtime'
+          git push
