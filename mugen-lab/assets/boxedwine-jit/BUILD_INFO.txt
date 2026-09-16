@@ -1,0 +1,23 @@
+MOBMUGEN BOXEDWINE WASM-JIT RUNTIME
+=================================
+Upstream: danoon2/Boxedwine
+Upstream SHA: ba68d801e40fa3fc8ceeb5eec776cf4a8bdf81cf
+Target: make jit
+CPU backend: BOXEDWINE_WASM_JIT
+SIMD: -msimd128
+Threading: single-threaded JIT (no SharedArrayBuffer required)
+Linker compatibility patch: final link uses em++
+Wine root: official 26R1 Wine11/boxedwine.zip
+
+6542302d57d57b224ca1b855b40bf158d5940c858890c262256c6a52a0d490ec  mugen-lab/assets/boxedwine-jit/boxedwine.js
+2e69a0c47fb12cd1a05123391d6b24fadca0c0234a1a5dfaf16999a311b18363  mugen-lab/assets/boxedwine-jit/boxedwine.wasm
+564ae0c4392f9cbc2c344bfac44060199c51b3ebdff1df692618b98a549f8b74  mugen-lab/assets/boxedwine-jit/boxedwine-shell.js
+5d251b6d53cad1c31de254c5285603d193f91bc3129b9c9ba39c4cc65a24edb3  mugen-lab/assets/boxedwine-jit/boxedwine-wine11.zip
+
+total 51M
+-rw-r--r-- 1 runner runner  834 Sep 16 18:02 BUILD_INFO.txt
+-rw-r--r-- 1 runner runner  85K Sep 16 18:02 boxedwine-shell.js
+-rw-r--r-- 1 runner runner  48M Sep 16 18:02 boxedwine-wine11.zip
+-rw-r--r-- 1 runner runner 3.8K Sep 16 18:02 boxedwine.css
+-rw-r--r-- 1 runner runner 235K Sep 16 18:02 boxedwine.js
+-rwxr-xr-x 1 runner runner 2.8M Sep 16 18:02 boxedwine.wasm
