@@ -1,0 +1,58 @@
+name: Apply MOBMUGEN F10.4 SIMD WASM-JIT
+
+on:
+  push:
+    paths:
+      - 'mugen-lab/rig-f10-4.js'
+      - 'mugen-lab/assets/boxedwine-jit/**'
+      - '.github/workflows/apply-rigf-f104-jit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-page:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build F10.4 page from F10.3 visual shell
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          src=Path('mugen-lab/rig-f10-3.html').read_text()
+          src=src.replace('MobMugen · Rig F · F10.3 60FPS PROBE','MobMugen · Rig F · F10.4 SIMD WASM-JIT')
+          src=src.replace('MOBMUGEN · RIG F · F10.3 60FPS PROBE','MOBMUGEN · RIG F · F10.4 SIMD WASM-JIT')
+          src=src.replace('Rig F · F10.3 60FPS PROBE','Rig F · F10.4 SIMD WASM-JIT')
+          src=src.replace('F10.1 keeps the proven two-fighter capsule and gives BoxedWine up to four times as many execution slices. Select mole and G.Ken, then start the fight.','F10.4 keeps the proven mole vs G.Ken capsule but swaps the old interpreter for the new SIMD WASM-JIT CPU core. Goal: attack the emulation ceiling directly and chase 60 FPS.')
+          # Replace only the final runtime inline script, preserving CSS, fflate and the controller DOM.
+          marker="<script>(function(){'use strict';"
+          i=src.rfind(marker)
+          if i < 0: raise SystemExit('F10.3 runtime script marker missing')
+          j=src.find('</script>',i)
+          if j < 0: raise SystemExit('F10.3 runtime script close missing')
+          src=src[:i]+'<script src="./rig-f10-4.js?v=f104-jit-057b777"></script>'+src[j+9:]
+          Path('mugen-lab/rig-f10-4.html').write_text(src)
+          PY
+          grep -q 'F10.4 SIMD WASM-JIT' mugen-lab/rig-f10-4.html
+          grep -q 'rig-f10-4.js' mugen-lab/rig-f10-4.html
+          test -s mugen-lab/assets/boxedwine-jit/boxedwine.wasm
+          test -s mugen-lab/assets/boxedwine-jit/boxedwine-wine11.zip
+      - name: Commit F10.4 runtime page
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mugen-lab/rig-f10-4.html
+          if git diff --cached --quiet; then
+            echo 'No page changes'
+            exit 0
+          fi
+          git commit -m 'MOBMUGEN F10.4 wire SIMD WASM-JIT capsule'
+          git push
