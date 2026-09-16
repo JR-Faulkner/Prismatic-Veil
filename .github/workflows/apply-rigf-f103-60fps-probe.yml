@@ -1,0 +1,91 @@
+name: Apply MOBMUGEN F10.3 60FPS Probe
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-rigf-f103-60fps-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build F10.3 from frozen F10.2
+        shell: python
+        run: |
+          from pathlib import Path
+          src_path = Path('mugen-lab/rig-f10-2.html')
+          dst_path = Path('mugen-lab/rig-f10-3.html')
+          s = src_path.read_text(encoding='utf-8')
+
+          # Identity only.
+          s = s.replace('F10.2 RAF HYBRID', 'F10.3 60FPS PROBE')
+          s = s.replace('Rig F · F10.2', 'Rig F · F10.3')
+          s = s.replace('F10.2 RAF HYBRID READY', 'F10.3 60FPS PROBE READY')
+          s = s.replace('F10.2 RAF HYBRID · patched', 'F10.3 60FPS PROBE · patched')
+
+          # Keep RAF, raise BoxedWine work from 2 iterations/RAF to 3.
+          s = s.replace('RAF hybrid batch=2', 'RAF hybrid batch=3')
+          s = s.replace('F10.2: RAF hybrid batch=2', 'F10.3: RAF hybrid batch=3')
+          s = s.replace('F10.2: eglSwapInterval ', 'F10.3: eglSwapInterval ')
+          s = s.replace("log('F10.2 RAF HYBRID · RAF scheduler · batch=2')", "log('F10.3 60FPS PROBE · RAF scheduler · batch=3')")
+
+          old_extra = "if(!ABORT){Browser.mainLoop.runIter(browserIterationFunc);window.RIGF_EXTRA_PULSE_COUNT=(window.RIGF_EXTRA_PULSE_COUNT||0)+1;}if(thisMainLoopId<Browser.mainLoop.currentlyRunningMainloop)return;"
+          new_extra = "if(!ABORT){Browser.mainLoop.runIter(browserIterationFunc);window.RIGF_EXTRA_PULSE_COUNT=(window.RIGF_EXTRA_PULSE_COUNT||0)+1;}if(thisMainLoopId<Browser.mainLoop.currentlyRunningMainloop)return;if(!ABORT){Browser.mainLoop.runIter(browserIterationFunc);window.RIGF_EXTRA_PULSE_COUNT=(window.RIGF_EXTRA_PULSE_COUNT||0)+1;}if(thisMainLoopId<Browser.mainLoop.currentlyRunningMainloop)return;"
+          if old_extra not in s:
+              raise SystemExit('F10.2 batch-2 runIter block missing')
+          s = s.replace(old_extra, new_extra, 1)
+
+          # Replace weak D counter with separate GL/SDL present counters.
+          old_gl = "es=es.replace('function _eglSwapBuffers(){','function _eglSwapBuffers(){window.RIGF_FRAME_COUNT=(window.RIGF_FRAME_COUNT||0)+1;');"
+          new_gl = "es=es.replace('function _eglSwapBuffers(){','function _eglSwapBuffers(){window.RIGF_GL_PRESENT_COUNT=(window.RIGF_GL_PRESENT_COUNT||0)+1;window.RIGF_FRAME_COUNT=(window.RIGF_FRAME_COUNT||0)+1;');"
+          if old_gl not in s:
+              raise SystemExit('GL present instrumentation point missing')
+          s = s.replace(old_gl, new_gl, 1)
+
+          old_sdl = "es=es.replace('SDL2.ctx.putImageData(SDL2.image,0,0);return 0','window.RIGF_FRAME_COUNT=(window.RIGF_FRAME_COUNT||0)+1;SDL2.ctx.putImageData(SDL2.image,0,0);return 0');"
+          new_sdl = "es=es.replace('SDL2.ctx.putImageData(SDL2.image,0,0);return 0','window.RIGF_SDL_PRESENT_COUNT=(window.RIGF_SDL_PRESENT_COUNT||0)+1;window.RIGF_FRAME_COUNT=(window.RIGF_FRAME_COUNT||0)+1;SDL2.ctx.putImageData(SDL2.image,0,0);return 0');"
+          if old_sdl not in s:
+              raise SystemExit('SDL present instrumentation point missing')
+          s = s.replace(old_sdl, new_sdl, 1)
+
+          old_badge = "const fpsBadge=document.getElementById('fpsBadge');let drawLast=0,loopLast=0;setInterval(()=>{const d=window.RIGF_FRAME_COUNT||0,l=window.RIGF_LOOP_COUNT||0,dd=d-drawLast,ld=l-loopLast;drawLast=d;loopLast=l;if(fpsBadge)fpsBadge.textContent='L '+ld+' · D '+dd},1000);"
+          new_badge = "const fpsBadge=document.getElementById('fpsBadge');let drawLast=0,loopLast=0,glLast=0,sdlLast=0,extraLast=0;setInterval(()=>{const d=window.RIGF_FRAME_COUNT||0,l=window.RIGF_LOOP_COUNT||0,g=window.RIGF_GL_PRESENT_COUNT||0,s=window.RIGF_SDL_PRESENT_COUNT||0,x=window.RIGF_EXTRA_PULSE_COUNT||0,dd=d-drawLast,ld=l-loopLast,gd=g-glLast,sd=s-sdlLast,xd=x-extraLast;drawLast=d;loopLast=l;glLast=g;sdlLast=s;extraLast=x;window.RIGF_PERF_SNAPSHOT='L='+ld+' GL='+gd+' SDL='+sd+' ALL='+dd+' X='+xd;if(fpsBadge)fpsBadge.textContent='L '+ld+' · G '+gd+' · S '+sd+' · X '+xd},1000);"
+          if old_badge not in s:
+              raise SystemExit('FPS badge instrumentation point missing')
+          s = s.replace(old_badge, new_badge, 1)
+
+          # Append the latest measured one-second counters to COPY TRACE.
+          old_body = "const body=(lines.length?lines.join('\\n'):saved||recovered||'No trace captured');"
+          new_body = "const body=(lines.length?lines.join('\\n'):saved||recovered||'No trace captured')+'\\nF10.3 PERF SNAPSHOT · '+(window.RIGF_PERF_SNAPSHOT||'pending');"
+          if old_body not in s:
+              raise SystemExit('COPY TRACE body point missing')
+          s = s.replace(old_body, new_body, 1)
+
+          dst_path.write_text(s, encoding='utf-8')
+          out = dst_path.read_text(encoding='utf-8')
+          assert 'F10.3 60FPS PROBE' in out
+          assert 'RAF hybrid batch=3' in out
+          assert 'RIGF_GL_PRESENT_COUNT' in out
+          assert 'RIGF_SDL_PRESENT_COUNT' in out
+          assert 'RIGF_PERF_SNAPSHOT' in out
+          assert 'mole' in out and 'G.Ken' in out and 'cfjed_warzard' in out
+          assert 'F10 HEAP LIMIT WITNESS ARMED · fixed 512 MB' in out
+          print('F10.3 60FPS probe built from F10.2 anchor')
+      - name: Commit runtime candidate
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mugen-lab/rig-f10-3.html
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "MOBMUGEN F10.3 60FPS probe batch-3 present counters"
+          git push
