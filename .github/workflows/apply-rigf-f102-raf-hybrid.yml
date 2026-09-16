@@ -1,0 +1,74 @@
+name: Apply MOBMUGEN F10.2 RAF Hybrid
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-rigf-f102-raf-hybrid.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build F10.2 from frozen F10.1
+        shell: python
+        run: |
+          from pathlib import Path
+          src_path = Path('mugen-lab/rig-f10-1.html')
+          dst_path = Path('mugen-lab/rig-f10-2.html')
+          s = src_path.read_text(encoding='utf-8')
+
+          # Label only. All capsule/heap/audio/BPP/lean-FS behavior stays inherited from F10.1.
+          s = s.replace('F10.1 SCHEDULER BOOST', 'F10.2 RAF HYBRID')
+          s = s.replace('Rig F · F10.1', 'Rig F · F10.2')
+
+          old_main = '_emscripten_set_main_loop_timing(0,4);console.log(\\\"RIGF F10.1: 4ms main loop enabled\\\");'
+          new_main = '_emscripten_set_main_loop_timing(1,1);console.log(\\\"RIGF F10.2: RAF hybrid batch=2\\\");'
+          if old_main not in s:
+              raise SystemExit('F10.1 main-loop patch point missing')
+          s = s.replace(old_main, new_main, 1)
+
+          old_swap = 'if(interval<=0)_emscripten_set_main_loop_timing(0,4);else _emscripten_set_main_loop_timing(1,interval);console.log(\\\"RIGF F10.1: eglSwapInterval \\\"+interval+\\\" -> 4ms scheduler\\\");'
+          new_swap = '_emscripten_set_main_loop_timing(1,1);console.log(\\\"RIGF F10.2: eglSwapInterval \\\"+interval+\\\" -> RAF hybrid batch=2\\\");'
+          if old_swap not in s:
+              raise SystemExit('F10.1 swap patch point missing')
+          s = s.replace(old_swap, new_swap, 1)
+
+          loop_patch = "es=es.replace(loopNeedle,'Browser.mainLoop.runner=function Browser_mainLoop_runner(){window.RIGF_LOOP_COUNT=(window.RIGF_LOOP_COUNT||0)+1;');"
+          if loop_patch not in s:
+              raise SystemExit('F10.1 loop instrumentation point missing')
+
+          hybrid = loop_patch + "const hybridNeedle='Browser.mainLoop.runIter(browserIterationFunc);if(thisMainLoopId<Browser.mainLoop.currentlyRunningMainloop)return;';if(!es.includes(hybridNeedle))throw new Error('RAF hybrid runIter patch point not found');es=es.replace(hybridNeedle,'Browser.mainLoop.runIter(browserIterationFunc);if(thisMainLoopId<Browser.mainLoop.currentlyRunningMainloop)return;if(!ABORT){Browser.mainLoop.runIter(browserIterationFunc);window.RIGF_EXTRA_PULSE_COUNT=(window.RIGF_EXTRA_PULSE_COUNT||0)+1;}if(thisMainLoopId<Browser.mainLoop.currentlyRunningMainloop)return;');log('F10.2 RAF HYBRID · RAF scheduler · batch=2');"
+          s = s.replace(loop_patch, hybrid, 1)
+
+          # Copy-trace identity if any old short label remains.
+          s = s.replace('F10.1 SCHEDULER BOOST', 'F10.2 RAF HYBRID')
+
+          dst_path.write_text(s, encoding='utf-8')
+
+          # Surgical sanity gates.
+          out = dst_path.read_text(encoding='utf-8')
+          assert 'F10.2 RAF HYBRID' in out
+          assert 'RAF hybrid batch=2' in out
+          assert 'RIGF_EXTRA_PULSE_COUNT' in out
+          assert '_emscripten_set_main_loop_timing(1,1)' in out
+          assert 'mole' in out and 'G.Ken' in out and 'cfjed_warzard' in out
+          assert '536870912' in out
+          print('F10.2 RAF Hybrid built from F10.1 anchor')
+      - name: Commit runtime candidate
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mugen-lab/rig-f10-2.html
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "MOBMUGEN F10.2 RAF Hybrid batch-2 scheduler probe"
+          git push
