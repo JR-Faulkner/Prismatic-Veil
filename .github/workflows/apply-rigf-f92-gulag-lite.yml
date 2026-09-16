@@ -1,0 +1,81 @@
+name: Apply MOBMUGEN F9.2 Gulag Lite select
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/apply-rigf-f92-gulag-lite.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch select screen in lean BrowserFS
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('mugen-lab/rig-f7.html')
+          s = p.read_text(encoding='utf-8')
+          if 'F9.1 PERF' not in s:
+              raise SystemExit('Expected F9.1 PERF anchor not found')
+
+          s = s.replace('MobMugen · Rig F · F9.1 PERF', 'MobMugen · Rig F · F9.2 GULAG LITE')
+          s = s.replace('MOBMUGEN · RIG F · F9.1 PERF', 'MOBMUGEN · RIG F · F9.2 GULAG LITE')
+          s = s.replace('Rig F · F9.1 PERF', 'Rig F · F9.2 GULAG LITE')
+
+          needle = "  window.RIGF_APP_FS=mem;\n  log('F6.3 LEAN FS READY · files='+done+' · resident='+(liveBytes/1048576).toFixed(1)+' MB');"
+          patch = r'''  // F9.2 GULAG LITE: surgically reduce WinMUGEN character-select draw load.
+          // This modifies only the in-memory copy; the user's ZIP remains untouched.
+          try {
+            const walk=(dir)=>{let out=[];for(const n of mem.readdirSync(dir)){const q=(dir==='/'?'/':dir+'/')+n;try{const st=mem.statSync(q);if(st.isDirectory())out=out.concat(walk(q));else out.push(q)}catch(_){}}return out};
+            const defs=walk('/').filter(q=>/\/system\.def$/i.test(q));
+            let patched=0;
+            for(const q of defs){
+              try{
+                let txt=mem.readFileSync(q,'utf8');
+                const m=txt.match(/\[Select Info\][\s\S]*?(?=\r?\n\s*\[|$)/i);
+                if(!m)continue;
+                let sec=m[0];
+                const set=(key,val)=>{
+                  const re=new RegExp('(^\\s*'+key.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')+'\\s*=\\s*).*$','im');
+                  if(re.test(sec))sec=sec.replace(re,'$1'+val);else sec+='\\n'+key+' = '+val;
+                };
+                set('rows','4');
+                set('columns','8');
+                set('showemptyboxes','0');
+                set('moveoveremptyboxes','0');
+                const next=txt.replace(m[0],sec);
+                if(next!==txt){mem.writeFileSync(q,Buffer.from(next,'utf8'));patched++;log('F9.2 GULAG LITE · patched '+q+' · 8x4 · empty boxes hidden')}
+              }catch(e){log('F9.2 GULAG LITE WARN · '+q+' · '+e.message)}
+            }
+            log('F9.2 GULAG LITE READY · system.def patched='+patched);
+          } catch(e) { log('F9.2 GULAG LITE ERROR · '+e.message); }
+          window.RIGF_APP_FS=mem;
+          log('F6.3 LEAN FS READY · files='+done+' · resident='+(liveBytes/1048576).toFixed(1)+' MB');'''
+          if needle not in s:
+              raise SystemExit('Lean FS insertion anchor not found')
+          s = s.replace(needle, patch, 1)
+          s = s.replace("MOBMUGEN · RIG F · F9.0\\nRUNTIME STATUS", "MOBMUGEN · RIG F · F9.2 GULAG LITE\\nRUNTIME STATUS")
+          p.write_text(s, encoding='utf-8')
+
+      - name: Sanity check
+        run: |
+          grep -q 'F9.2 GULAG LITE' mugen-lab/rig-f7.html
+          grep -q "set('rows','4')" mugen-lab/rig-f7.html
+          grep -q "set('columns','8')" mugen-lab/rig-f7.html
+          grep -q "set('showemptyboxes','0')" mugen-lab/rig-f7.html
+
+      - name: Commit runtime candidate
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html
+          git commit -m 'MOBMUGEN F9.2 Gulag Lite character-select load probe'
+          git push
