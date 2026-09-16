@@ -1,0 +1,68 @@
+name: Apply MOBMUGEN F10.5 JIT Proven Wine
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-mobmugen-f105-jit-oldwine.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-page:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build F10.5 from F10.4 with proven Wine root
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp mugen-lab/rig-f10-4.js mugen-lab/rig-f10-5.js
+          cp mugen-lab/rig-f10-4.html mugen-lab/rig-f10-5.html
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p=Path('mugen-lab/rig-f10-5.js')
+          s=p.read_text()
+          s=s.replace("ROOT='boxedwine-wine11.zip'", "ROOT='fullWine1.7.55-v8.zip'")
+          s=s.replace("TRACE_KEY='mobmugen-f104-trace'", "TRACE_KEY='mobmugen-f105-trace'")
+          s=s.replace("cfg.locateRootBaseUrl=BASE;cfg.locateAppBaseUrl='';cfg.locateOverlayBaseUrl='';", "cfg.locateRootBaseUrl='./assets/';cfg.locateAppBaseUrl='';cfg.locateOverlayBaseUrl='https://cdn.jsdelivr.net/gh/andrewnakas/exebrowser@c6049f9684f3c6895c8f31f361a0a29462793f41/public/boxedwine/apps/';")
+          old="cfg.urlParams='root='+ROOT+'&app='+APP+'&p='+encodeURIComponent(prog)+'&w='+encodeURIComponent(work)+'&auto=true&sound=false&bpp=16&storage=memory&jit-record=false'"
+          new="cfg.urlParams='root='+ROOT+'&overlay=wine1.7.55-v8-min-online.zip&app='+APP+'&p='+encodeURIComponent(prog)+'&w='+encodeURIComponent(work)+'&auto=true&sound=false&bpp=16&storage=memory&jit-record=false'"
+          if old not in s:
+              raise SystemExit('F10.4 urlParams anchor missing')
+          s=s.replace(old,new)
+          s=s.replace('F10.4','F10.5').replace('F104','F105').replace('f104','f105')
+          s=s.replace('upstream ba68d801 · SIMD128 · single-threaded JIT','upstream ba68d801 · SIMD128 JIT · Wine 1.7.55 proven root')
+          p.write_text(s)
+
+          p=Path('mugen-lab/rig-f10-5.html')
+          s=p.read_text()
+          s=s.replace('F10.4 SIMD WASM-JIT','F10.5 JIT + PROVEN WINE 1.7.55')
+          s=s.replace('F10.4 keeps the proven mole vs G.Ken capsule but swaps the old interpreter for the new SIMD WASM-JIT CPU core. Goal: attack the emulation ceiling directly and chase 60 FPS.','F10.5 keeps the proven WinMUGEN Wine 1.7.55 root/overlay and capsule while testing the SIMD WASM-JIT CPU core. One goal: preserve MUGEN boot and raise real throughput toward 60 FPS.')
+          s=s.replace('./rig-f10-4.js?v=f104-jit-057b777','./rig-f10-5.js?v=f105-jit-oldwine')
+          p.write_text(s)
+          PY
+
+          grep -q "ROOT='fullWine1.7.55-v8.zip'" mugen-lab/rig-f10-5.js
+          grep -q 'wine1.7.55-v8-min-online.zip' mugen-lab/rig-f10-5.js
+          grep -q 'F10.5 JIT + PROVEN WINE 1.7.55' mugen-lab/rig-f10-5.html
+          grep -q 'rig-f10-5.js' mugen-lab/rig-f10-5.html
+
+      - name: Commit F10.5 runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mugen-lab/rig-f10-5.js mugen-lab/rig-f10-5.html
+          if git diff --cached --quiet; then
+            echo 'No F10.5 changes'
+            exit 0
+          fi
+          git commit -m 'MOBMUGEN F10.5 SIMD JIT on proven Wine 1.7.55 root'
+          git push
