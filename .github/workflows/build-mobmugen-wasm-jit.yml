@@ -28,6 +28,19 @@ jobs:
           git -C /tmp/Boxedwine submodule update --init --recursive
           echo "$UPSTREAM_SHA" > /tmp/boxedwine-upstream-sha.txt
 
+      - name: Patch modern Emscripten C++ linker
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('/tmp/Boxedwine/project/emscripten/makefile')
+          s = p.read_text()
+          old = '\t@$(CC) $(ALL) -o $@ $(LDFLAGS)'
+          new = '\t@$(CXX) $(ALL) -o $@ $(LDFLAGS)'
+          if old not in s:
+              raise SystemExit('Boxedwine final link rule not found')
+          p.write_text(s.replace(old, new, 1))
+          print('patched final WASM link: emcc -> em++')
+
       - name: Build single-threaded SIMD WASM-JIT
         shell: bash
         run: |
@@ -63,6 +76,7 @@ jobs:
             echo 'CPU backend: BOXEDWINE_WASM_JIT'
             echo 'SIMD: -msimd128'
             echo 'Threading: single-threaded JIT (no SharedArrayBuffer required)'
+            echo 'Linker compatibility patch: final link uses em++'
             echo 'Wine root: official 26R1 Wine11/boxedwine.zip'
             echo
             sha256sum "$DEST"/boxedwine.js "$DEST"/boxedwine.wasm "$DEST"/boxedwine-shell.js "$DEST"/boxedwine-wine11.zip
