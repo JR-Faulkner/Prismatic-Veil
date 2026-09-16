@@ -1,0 +1,64 @@
+name: Inspect Boxedwine 26R1 Web
+
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-boxedwine26r1-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download and inventory official 26R1 Web release
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/bw26
+          curl -L --fail --retry 3 \
+            -o /tmp/bw26/Boxedwine26R1Web.zip \
+            https://github.com/danoon2/Boxedwine/releases/download/26R1.0/Boxedwine26R1Web.zip
+          unzip -l /tmp/bw26/Boxedwine26R1Web.zip > /tmp/bw26/full-list.txt
+          unzip -q /tmp/bw26/Boxedwine26R1Web.zip -d /tmp/bw26/extracted
+          {
+            echo 'BOXEDWINE 26R1 WEB INVENTORY'
+            echo '============================'
+            echo
+            echo 'Release: 26R1.0'
+            echo 'Asset: Boxedwine26R1Web.zip'
+            echo
+            echo 'TOP LEVEL'
+            echo '---------'
+            find /tmp/bw26/extracted -maxdepth 2 -type f -printf '%P\t%s bytes\n' | sort
+            echo
+            echo 'RUNTIME CANDIDATES'
+            echo '------------------'
+            find /tmp/bw26/extracted -type f \( \
+              -iname 'boxedwine*.js' -o \
+              -iname 'boxedwine*.wasm' -o \
+              -iname '*shell*.js' -o \
+              -iname '*.zip' \
+            \) -printf '%P\t%s bytes\n' | sort
+            echo
+            echo 'JIT / THREAD HINTS IN JS'
+            echo '------------------------'
+            grep -RInE 'WASM_JIT|wasm.?jit|pthread|PTHREAD|SIMD|simd' /tmp/bw26/extracted --include='*.js' --include='*.html' | head -n 250 || true
+          } > mugen-lab/boxedwine26r1-inventory.txt
+          sed -n '1,260p' mugen-lab/boxedwine26r1-inventory.txt
+      - name: Commit inventory
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mugen-lab/boxedwine26r1-inventory.txt
+          if git diff --cached --quiet; then
+            echo 'No changes'
+            exit 0
+          fi
+          git commit -m "MOBMUGEN inventory Boxedwine 26R1 web runtime"
+          git push
