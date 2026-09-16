@@ -2,6 +2,24 @@
 
 These instructions are mandatory for any agent modifying the live game.
 
+## TWO LANES — CHECK WHICH ONE YOU ARE IN
+
+This repository holds two independent production lanes. They share the repo
+root and nothing else. Rules do not cross over.
+
+| Lane | Scope | Authority |
+| --- | --- | --- |
+| **Prismatic Veil game** | `index.html`, `hybrid-*.html`, `src/`, `assets/` | this file, plus the `PV_*` / `live-build.json` ledgers below |
+| **MOBMUGEN / Rig F** | `mugen-lab/` | `mugen-lab/LIVE.md` |
+
+If you are working in `mugen-lab/`, read `mugen-lab/LIVE.md` first and update
+it after your pass. The LIVE28K preflight, the Hybrid chain rules and the
+`PV_*` ledgers below **do not** describe or cover that lane — none of them
+mention MOBMUGEN at all. Do not assume a `mugen-lab/` change is governed by
+them, and do not record MOBMUGEN state in them.
+
+Everything below this section is the Prismatic Veil game lane.
+
 ## BEFORE ANY LIVE28K WRITE
 
 Read, in this order:
