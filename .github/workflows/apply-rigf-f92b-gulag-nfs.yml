@@ -1,0 +1,48 @@
+name: Apply MOBMUGEN F9.2b Gulag Lite NFS Fix
+on:
+  push:
+    branches: [ main ]
+    paths: [ '.github/workflows/apply-rigf-f92b-gulag-nfs.yml' ]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch F9.2 Gulag Lite to use BrowserFS Node wrapper
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('mugen-lab/rig-f7.html')
+          s=p.read_text()
+          if 'F9.2 GULAG LITE' not in s:
+              raise SystemExit('F9.2 anchor missing')
+          swaps={
+            "mem.readdirSync(dir)":"nfs.readdirSync(dir)",
+            "mem.statSync(q)":"nfs.statSync(q)",
+            "mem.readFileSync(q,'utf8')":"nfs.readFileSync(q,'utf8')",
+            "mem.writeFileSync(q,Buffer.from(next,'utf8'))":"nfs.writeFileSync(q,Buffer.from(next,'utf8'))",
+            "F9.2 GULAG LITE":"F9.2B GULAG LITE"
+          }
+          for a,b in swaps.items():
+              if a not in s:
+                  raise SystemExit('patch point missing: '+a)
+              s=s.replace(a,b)
+          p.write_text(s)
+          PY
+      - name: Verify
+        run: |
+          grep -q "F9.2B GULAG LITE READY" mugen-lab/rig-f7.html
+          grep -q "nfs.readFileSync(q,'utf8')" mugen-lab/rig-f7.html
+          grep -q "nfs.writeFileSync(q,Buffer.from(next,'utf8'))" mugen-lab/rig-f7.html
+      - name: Commit runtime candidate
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add mugen-lab/rig-f7.html
+          git commit -m "MOBMUGEN F9.2b Gulag Lite BrowserFS NFS fix"
+          git push
