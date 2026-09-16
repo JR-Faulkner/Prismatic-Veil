@@ -14,17 +14,24 @@ about MOBMUGEN. Do not cross-apply their rules, and do not assume a change here
 is covered by `AGENTS.md`'s Hybrid preflight.
 
 - **Last updated:** 2026-09-16
-- **Live commit:** `04317e3`
+- **Live commit:** `59d19e4`
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
 ---
 
 ## Current test link
 
-**https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-5.html?v=f105b-deferstart**
+**Working baseline (runs WinMUGEN):**
+https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-1.html
 
-Status: **awaiting device witness.** Boot path verified in headless Chromium;
-no iPhone run against this build yet.
+**Instrumented baseline (same build + loop cost witness):**
+https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-6.html
+
+**JIT lane (does not boot):**
+https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-5.html?v=f105b-deferstart
+
+The JIT lane is the performance work; the F10.1/F10.6 pages are the shipping
+path and must keep running. Never let the experiment become the only path.
 
 ### Standing rule: always hand over the link
 
@@ -62,6 +69,31 @@ Do not change more than one of these per experiment.
 
 Newest first. A run only counts if it happened on the phone.
 
+### 2026-09-16 · F10.6 (`59d19e4`) — MEASURED, CPU-BOUND CONFIRMED
+
+iPhone OS 18.7, Safari 26.6. WinMUGEN running (THE THING vs GOD KEN).
+
+```
+L=4  RAF=8  D=0  BUSY=103%  MS_PER_ITER=257.0ms  LOOP_TIMER=armed
+SCHEDULER · mode=0 value=4
+```
+
+Self-consistent: 4 iterations x 257ms = 1028ms, i.e. the main thread is fully
+saturated, and RAF collapsed 60 -> 8 because emulator work starves the
+browser's own frame callbacks. The loop is NOT under-scheduled; the 4ms timer
+is asking for ~250 iterations/sec and getting 4 because that is the ceiling.
+
+**L is the frame rate. The device runs WinMUGEN at ~4 FPS.** Reaching 60 needs
+257ms -> 16.7ms, a 15.4x speedup. No scheduling change can produce that.
+
+### 2026-09-16 · F10.1 (`?v=` none) — CONFIRMED WORKING, TWICE
+
+Reached an actual fight on device on two separate runs, screenshot evidence
+both times. Run 1: iPhone OS 18.7 / Safari 26.6. Run 2: iPhone OS 26.6 /
+Edge (EdgiOS 153). Same WebKit underneath; the badge read `L 4 · D 0` in
+both. Browser and OS differ between runs and are recorded as changed
+variables, but did not move the number.
+
 ### 2026-09-16 · F10.5 (`4dc011f`, `?v=f105-jit-oldwine`) — FAIL
 
 iPhone OS 18.7, Safari 26.6. Black screen, no WinMUGEN. Status line claimed
@@ -70,6 +102,19 @@ iPhone OS 18.7, Safari 26.6. Black screen, no WinMUGEN. Status line claimed
 with the zip `File created://` lines arriving **after** shutdown.
 
 Root-caused and fixed in `04317e3`. See corrections ledger.
+
+### 2026-09-16 · F10.5 (`04317e3`, `?v=f105b-deferstart`) — FAIL, DIFFERENT FAILURE
+
+Loader race fixed: zips load, `/bin/wine` is found, Wine starts. Then
+`wineserver` page-faults repeatedly and forever. Only `/bin/wineserver` and
+`/lib/libwine.so.1.0` are ever mapped, so it dies very early in wineserver
+startup, long before MUGEN. `RAF=61` throughout — the browser is healthy, the
+emulator is in a crash loop.
+
+The faulting address was NOT captured: BoxedWine prints `Page Fault at %.8X`
+above the memory-map dump, and `rig-f10-5.js`'s console filter
+(`/wine|mugen|jit|wasm|.../`) drops that line while keeping the map entries,
+which happen to contain "wine". The next JIT build must capture the full dump.
 
 ### 2026-09-16 · F10.4 — FAIL (conclusion since withdrawn)
 
@@ -121,6 +166,44 @@ The manual start call was never needed: `auto=true` makes
 `buildBrowserFileSystem()` call `start()` itself, at the correct time, once the
 root zip is on the filesystem.
 
+### The L/GL/SDL/ALL/X present counters measure stubs — WITHDRAWN (2026-09-16)
+
+`D` (and F10.3's `GL`) counts `_eglSwapBuffers`, which in this engine is:
+
+```js
+function _eglSwapBuffers(){
+  if(!EGL.defaultDisplayInitialized) ... else if(!Module.ctx) ...
+  else if(Module.ctx.isContextLost()) ... else { EGL.setErrorCode(12288); return 1 }
+}
+```
+
+It sets an error code and returns. It draws nothing. The other counted path is
+SDL2's `putImageData`, which this build never calls, and the second
+`ctx.putImageData` call site in the engine is the mouse-cursor builder, not a
+present. `SDL_GL_SwapBuffers`, `SDL_Flip`, `SDL_UpdateRect` and
+`SDL_UpdateWindowSurface` do not appear in the engine at all.
+
+Presentation is implicit browser compositing when the main loop yields. There
+is no present call to count, so `D`/`GL` can only ever read ~0 while the game
+visibly runs. **`L` — main loop iterations per second — is the frame rate.**
+
+F10.3's "L=2 GL=3 ... exposed a CPU/emulation throughput ceiling" reached the
+right conclusion from instruments pointed at stubs. The conclusion happened to
+be correct; the evidence for it was not.
+
+### "It's presentation scheduling, not throughput" — WITHDRAWN (2026-09-16)
+
+Argued mid-session that `GL=3` meant presents were bottlenecked by scheduling
+and that the emscripten RAF advisory was the lever. F10.6 measured it and the
+opposite is true: `MS_PER_ITER=257ms`, `BUSY=103%`, `RAF` collapsed 60 -> 8.
+The thread is saturated, the timer already fires faster than the work
+completes, and RAF caps at 60/sec when the build cannot reach 4.
+
+RAF scheduling, `skipFrameFPS` and timer tuning are all dead ends for this
+bottleneck. The JIT lane is the only lever that moves a 15.4x requirement.
+F10.4/F10.5 were aimed at the correct problem and failed on execution, not
+on premise.
+
 ### F10.3's "fixed 512 MB BoxedWine heap" — DOES NOT APPLY TO THE JIT CORE
 
 F10.3's "512 MB" was an OOM *witness* patched into the engine, not a heap
@@ -140,12 +223,12 @@ in the trace.
 
 | # | Question | State |
 | --- | --- | --- |
-| 1 | Can the SIMD WASM-JIT core run against the proven Wine 1.7.55 root cleanly? | **Answered yes** (2026-09-16). Wine boots, JIT compiled and executed 1000 blocks, `failed=0`. Verified in headless Chromium; device witness still outstanding. |
+| 1 | Can the SIMD WASM-JIT core run against the proven Wine 1.7.55 root cleanly? | **Answered NO on device** (2026-09-16). Headless Chromium (V8) boots Wine and executes 1000 JIT blocks, `failed=0` — but iPhone Safari (JavaScriptCore) page-faults in `wineserver` on the same wasm. An earlier "answered yes" here was called off a headless run and is withdrawn: headless proves a boot path, never the device. **This is now the project's critical path.** |
 | 2 | Can the old BrowserFS/lean app mount semantics be reproduced on the JIT core without a second full app copy in memory? | Open. The in-memory `fetch` shim for `userapp.zip` works; peak memory not yet measured. |
-| 3 | Is there a safe way to decouple emulator CPU work from browser presentation? | Open. `skipFrameFPS` is already plumbed as a URL param and currently sits at `0` — untested lever, no rebuild required. |
+| 3 | Is there a safe way to decouple emulator CPU work from browser presentation? | **Answered — the question does not apply** (2026-09-16). There is nothing to decouple: presentation is implicit compositing and costs effectively nothing. F10.6 measured 257ms/iteration with the thread 103% busy. `skipFrameFPS`, RAF scheduling and timer tuning cannot help a workload that is CPU-bound by 15.4x. Closed. |
 | 4 | Does upstream expose a faster single-threaded JIT config, JIT cache path, or SIMD option for iPhone Safari? | Open. `jit-record` and `wasmModuleBroker` params exist and are untested; `jit-record` is currently `false`. |
 | 5 | Can a multithreaded JIT path work under iOS/Safari without cross-origin isolation? | Open, not started. Current build is single-threaded by design. |
-| 6 | Where is the real WinMUGEN GL present path, and can it be instrumented for true FPS? | Partially addressed. `rig-f10-5.js` hooks `putImageData` and `drawArrays`/`drawElements`, and the badge's `D` counter is a real draw count rather than a proxy. Not yet validated against a running MUGEN. |
+| 6 | Where is the real WinMUGEN GL present path, and can it be instrumented for true FPS? | **Answered: there isn't one** (2026-09-16). `eglSwapBuffers` is a status stub; SDL2's `putImageData` is never called; `SDL_GL_SwapBuffers`/`SDL_Flip`/`SDL_UpdateRect`/`SDL_UpdateWindowSurface` are absent from the engine. Emscripten composites implicitly on main-loop yield. **Measure `L` (main loop iterations/sec) as the frame rate — it is the only honest number.** Closed. |
 
 ---
 
