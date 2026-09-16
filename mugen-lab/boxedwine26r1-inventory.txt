@@ -1,0 +1,298 @@
+BOXEDWINE 26R1 WEB INVENTORY
+============================
+
+Release: 26R1.0
+Asset: Boxedwine26R1Web.zip
+
+TOP LEVEL
+---------
+MultiThreaded/.htaccess	107 bytes
+MultiThreaded/boxedwine-shell.js	39477 bytes
+MultiThreaded/boxedwine.css	2383 bytes
+MultiThreaded/boxedwine.html	3649 bytes
+MultiThreaded/boxedwine.js	492448 bytes
+MultiThreaded/boxedwine.wasm	2335108 bytes
+MultiThreaded/boxedwine.zip	37247698 bytes
+MultiThreaded/read.txt	2 bytes
+MultiThreaded/readme.txt	373 bytes
+MultiThreaded/ski32.zip	39491 bytes
+MultiThreaded/test.html	205 bytes
+SingleThreaded/boxedwine-shell.js	39477 bytes
+SingleThreaded/boxedwine.css	2383 bytes
+SingleThreaded/boxedwine.html	3649 bytes
+SingleThreaded/boxedwine.js	427664 bytes
+SingleThreaded/boxedwine.wasm	2295258 bytes
+SingleThreaded/boxedwine.zip	37247698 bytes
+SingleThreaded/read.txt	2 bytes
+SingleThreaded/readme.txt	373 bytes
+SingleThreaded/ski32.zip	39491 bytes
+SingleThreaded/test.html	205 bytes
+Wine11/boxedwine.zip	49320865 bytes
+readme.txt	1287 bytes
+
+RUNTIME CANDIDATES
+------------------
+MultiThreaded/boxedwine-shell.js	39477 bytes
+MultiThreaded/boxedwine.js	492448 bytes
+MultiThreaded/boxedwine.wasm	2335108 bytes
+MultiThreaded/boxedwine.zip	37247698 bytes
+MultiThreaded/ski32.zip	39491 bytes
+SingleThreaded/boxedwine-shell.js	39477 bytes
+SingleThreaded/boxedwine.js	427664 bytes
+SingleThreaded/boxedwine.wasm	2295258 bytes
+SingleThreaded/boxedwine.zip	37247698 bytes
+SingleThreaded/ski32.zip	39491 bytes
+Wine11/boxedwine.zip	49320865 bytes
+
+JIT / THREAD HINTS IN JS
+------------------------
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:73:// 1) We could be the application main() thread running in the main JS UI thread. (ENVIRONMENT_IS_WORKER == false and ENVIRONMENT_IS_PTHREAD == false)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:74:// 2) We could be the application main() running directly in a worker. (ENVIRONMENT_IS_WORKER == true, ENVIRONMENT_IS_PTHREAD == false)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:75:// 3) We could be an application pthread running in a worker. (ENVIRONMENT_IS_WORKER == true and ENVIRONMENT_IS_PTHREAD == true)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:77:// The way we signal to a worker that it is hosting a pthread is to construct
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:79:var ENVIRONMENT_IS_PTHREAD = ENVIRONMENT_IS_WORKER && globalThis.name?.startsWith('em-pthread')
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:86:  // Under node we set `workerData` to `em-pthread` to signal that the worker
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:87:  // is hosting a pthread.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:88:  ENVIRONMENT_IS_PTHREAD = ENVIRONMENT_IS_WORKER && worker_threads.workerData == 'em-pthread'
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:172:// Note that this includes Node.js workers when relevant (pthreads is enabled).
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:327:// Initializes the stack cookie. Called at the startup of main and at the startup of each thread in pthreads mode.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:491:  if (ENVIRONMENT_IS_PTHREAD) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:514:    if (runtimeInitialized && typeof _pthread_self != 'undefined'
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:516:      t = _pthread_self();
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:529:if (ENVIRONMENT_IS_NODE && (ENVIRONMENT_IS_PTHREAD)) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:554:// include: runtime_pthread.js
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:556:// This code runs only on pthread web workers and handles pthread setup
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:559:// Unique ID of the current pthread worker (zero on non-pthread-workers
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:565:if (ENVIRONMENT_IS_PTHREAD) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:601:          // handler exists on the pthread worker, then proxy that handler
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:620:        assert(msgData.pthread_ptr);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:621:        // Call inside JS module to set up the stack frame for this pthread in JS module scope.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:624:        establishStackSpace(msgData.pthread_ptr);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:627:        __emscripten_thread_init(msgData.pthread_ptr, /*is_main=*/0, /*is_runtime=*/0, /*can_block=*/1, 0, 0);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:633:        __emscripten_thread_mailbox_await(msgData.pthread_ptr);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:643:            // The pthread "crashed".  Do not call `_emscripten_thread_exit` (which
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:672:} // ENVIRONMENT_IS_PTHREAD
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:673:// end include: runtime_pthread.js
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:702:  if ((ENVIRONMENT_IS_PTHREAD)) { return }
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:731:  assert(!ENVIRONMENT_IS_PTHREAD); // PThreads reuse the runtime from the main thread.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:748:  if (ENVIRONMENT_IS_PTHREAD) return startWorker();
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:772:  if ((ENVIRONMENT_IS_PTHREAD)) { return; } // PThreads reuse the runtime from the main thread.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:973:  // Also pthreads and wasm workers initialize the wasm instance through this
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:988:  if ((ENVIRONMENT_IS_PTHREAD)) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1059:  var cleanupThread = (pthread_ptr) => {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1060:      assert(!ENVIRONMENT_IS_PTHREAD, 'Internal Error! cleanupThread() can only ever be called from main application thread!');
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1061:      assert(pthread_ptr, 'Internal Error! Null pthread_ptr in cleanupThread!');
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1062:      var worker = PThread.pthreads[pthread_ptr];
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1143:      assert(!ENVIRONMENT_IS_PTHREAD, 'Internal Error! spawnThread() can only ever be called from main application thread!');
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1144:      assert(threadParams.pthread_ptr, 'Internal error, no pthread ptr!');
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1151:      assert(!worker.pthread_ptr, 'Internal error!');
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1155:      // Add to pthreads map
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1156:      PThread.pthreads[threadParams.pthread_ptr] = worker;
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1158:      worker.pthread_ptr = threadParams.pthread_ptr;
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1163:          pthread_ptr: threadParams.pthread_ptr,
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1166:        // Mark worker as weakly referenced once we start executing a pthread,
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1172:      // Ask the worker to start executing its pthread entry point function.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1232:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1251:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1265:      if (ENVIRONMENT_IS_PTHREAD) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1266:        // implicit exit can never happen on a pthread
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1268:        // When running in a pthread we propagate the exit back to the main thread
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1270:        // The pthread may have decided not to exit its own runtime, for example
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1297:  pthreads:{
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1301:        if ((!(ENVIRONMENT_IS_PTHREAD))) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1306:        var pthreadPoolSize = 32;
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1308:        while (pthreadPoolSize--) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1314:          var pthreadPoolReady = PThread.loadWasmModuleToAllWorkers();
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1316:          await pthreadPoolReady;
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1321:        assert(!ENVIRONMENT_IS_PTHREAD, 'Internal Error! terminateAllThreads() can only ever be called from main application thread!');
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1325:        // pthreads will continue to be executing after `worker.terminate` has
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1327:        // free the underlying pthread data structures.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1336:        PThread.pthreads = {};
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1342:        // queued pthread_create which looks at the global data structures we are
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1345:        var pthread_ptr = worker.pthread_ptr;
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1346:        delete PThread.pthreads[pthread_ptr];
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1352:        // Detach the worker from the pthread object, and return it to the
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1354:        worker.pthread_ptr = 0;
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1356:        // Finally, free the underlying (and now-unused) pthread structure in
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1358:        __emscripten_thread_free_data(pthread_ptr);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1372:          if (d.targetThread && d.targetThread != _pthread_self()) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1373:            var targetWorker = PThread.pthreads[d.targetThread];
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1377:              err(`Internal error! Worker sent a message "${cmd}" to target pthread ${d.targetThread}, but that thread no longer exists!`);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1393:            // Check that this worker doesn't have an associated pthread.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1394:            if (ENVIRONMENT_IS_NODE && !worker.pthread_ptr) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1408:            // A pthread sent an uncaught exception event. Re-raise it on the main thread.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1422:          if (worker.pthread_ptr) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1423:            message = `Pthread ${ptrToString(worker.pthread_ptr)} sent an error!`;
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1438:        // When running on a pthread, none of the incoming parameters on the module
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1463:        // Instantiation is synchronous in pthreads.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1465:          ENVIRONMENT_IS_PTHREAD
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1470:        let pthreadPoolReady = Promise.all(PThread.unusedWorkers.map(PThread.loadWasmModuleToWorker));
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1471:        return pthreadPoolReady;
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1475:        var pthreadMainJs = _scriptName;
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1479:          pthreadMainJs = Module['mainScriptUrlOrBlob'];
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1480:          if (typeof pthreadMainJs != 'string') {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1481:            pthreadMainJs = URL.createObjectURL(pthreadMainJs);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1484:        worker = new Worker(pthreadMainJs, {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1486:          // a pthread.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1487:          'workerData': 'em-pthread',
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1489:          // a pthread.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1490:          'name': 'em-pthread-' + PThread.nextWorkerID,
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1497:  // PTHREAD_POOL_SIZE_STRICT should show a warning and, if set to level `2`, return from the function.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1498:  // However, if we're in Node.js, then we can create new workers on the fly and PTHREAD_POOL_SIZE_STRICT
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1503:              'If you want to increase the pool size, use setting `-sPTHREAD_POOL_SIZE=...`.'
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1504:                + '\nIf you want to throw an explicit error instead of the risk of deadlocking in those cases, use setting `-sPTHREAD_POOL_SIZE_STRICT=2`.'
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1522:  function establishStackSpace(pthread_ptr) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1523:      var stackHigh = HEAPU32[(((pthread_ptr)+(48))>>2)];
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1524:      var stackSize = HEAPU32[(((pthread_ptr)+(52))>>2)];
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1533:      // Call inside wasm module to set up the stack frame for this pthread in wasm module scope
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1584:      // Same for noExitRuntime.  The default for pthreads should always be false
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1585:      // otherwise pthreads would never complete and attempts to pthread_join to
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1587:      // pthreads can still choose to set `noExitRuntime` explicitly, or
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1589:      // their main function.  See comment in src/runtime_pthread.js for more.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1592:      // pthread entry points are always of signature 'void *ThreadMain(void *arg)'
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1607:        // pthreads. To exit a pthread with live runtime, use the function
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1608:        // emscripten_unwind_to_js_event_loop() in the pthread body.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1742:  function pthreadCreateProxied(pthread_ptr, attr, startRoutine, arg) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1743:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1744:    return proxyToMainThread(2, 0, 1, pthread_ptr, attr, startRoutine, arg);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1745:  return ___pthread_create_js(pthread_ptr, attr, startRoutine, arg)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1751:  var ___pthread_create_js = (pthread_ptr, attr, startRoutine, arg) => {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1753:        dbg('pthread_create: environment does not support SharedArrayBuffer, pthreads are not available');
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1764:      if (ENVIRONMENT_IS_PTHREAD && (transferList.length === 0 || error)) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1765:        return pthreadCreateProxied(pthread_ptr, attr, startRoutine, arg);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1774:        pthread_ptr,
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1779:      if (ENVIRONMENT_IS_PTHREAD) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1780:        // The prepopulated pool of web workers that can host pthreads is stored
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1781:        // in the main JS thread. Therefore if a pthread is attempting to spawn a
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:1790:      // We are the main thread, so we have the pthread warmup pool in this
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:5511:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:5676:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:5697:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:5795:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:5841:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:5898:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:5919:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:5947:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:5970:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6038:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6063:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6084:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6113:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6216:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6235:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6253:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6273:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6297:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6317:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6407:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6432:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6454:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6474:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6498:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6517:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6535:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6565:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6717:          if (ENVIRONMENT_IS_PTHREAD) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6721:            if (_pthread_self()) __emscripten_thread_exit(EXITSTATUS);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6749:  var __emscripten_thread_mailbox_await = (pthread_ptr) => {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6751:        // Wait on the pthread's initial self-pointer field because it is easy and
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6754:        // Note: Under wasm64 only the low 32-bit of the pthread_ptr are
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6757:        var wait = Atomics.waitAsync(HEAP32, ((pthread_ptr)>>2), pthread_ptr);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6760:        var waitingAsync = pthread_ptr + 120;
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6768:      // Only check the mailbox if we have a live pthread runtime. We implement
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6769:      // pthread_self to return 0 if there is no live runtime.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6773:      // ensure the runtime is alive, and if `_pthread_self` is NULL then the
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6775:      var pthread_ptr = _pthread_self();
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6776:      if (pthread_ptr) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6781:        __emscripten_thread_mailbox_await(pthread_ptr);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6789:      } else if (ENVIRONMENT_IS_PTHREAD) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6792:        var worker = PThread.pthreads[targetThread];
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6851:      // entry point, calls pthread_exit, or acts upon a cancellation.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6853:      // otherwise pthread_join is responsible for calling this.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6854:      if (!ENVIRONMENT_IS_PTHREAD) cleanupThread(thread);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6862:      // - keeping the "main" thread alive in PROXY_TO_PTHREAD mode;
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6866:        PThread.pthreads[thread].ref();
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6942:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:6972:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:7659:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:7676:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:7866:        // with pthreads a context is a location in memory with some synchronized
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:7869:        HEAPU32[(((handle)+(4))>>2)] = _pthread_self(); // the thread pointer of the thread that owns the control of the context
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:7957:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8013:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8038:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8063:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8089:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8211:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8229:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8238:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8262:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8302:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8332:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8596:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8615:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8636:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8649:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8703:      if (ENVIRONMENT_IS_PTHREAD) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8731:      if (ENVIRONMENT_IS_WORKER) return; // Blocking in a worker/pthread is fine.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8733:      warnOnce('Blocking on the main thread is very dangerous, see https://emscripten.org/docs/porting/pthreads.html#blocking-on-the-main-browser-thread');
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8932:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:8995:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:9187:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:9225:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:9247:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:9259:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:9271:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:9318:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:9341:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:9355:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:10739:        // hoist the heap out of the loop for size and for pthreads+growth.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:10837:        // hoist the heap out of the loop for size and for pthreads+growth.
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:10950:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:10973:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11011:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11058:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11106:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11116:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11133:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11196:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11246:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11259:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11318:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11327:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11336:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11407:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11416:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11425:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11434:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11443:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11493:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11559:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11650:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11659:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11668:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11677:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11724:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11772:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11790:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11838:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11858:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11877:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11914:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11935:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:11982:  if (ENVIRONMENT_IS_PTHREAD)
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:12093:  assert(typeof Module['pthreadMainPrefixURL'] == 'undefined', 'Module.pthreadMainPrefixURL option was removed, use Module.locateFile instead');
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:12544:// or internally queued events. This way a pthread in a Worker can synchronously
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:12549:  pthreadCreateProxied,
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:12677:var _pthread_self = makeInvalidEarlyAccess('_pthread_self');
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:12713:  assert(typeof wasmExports['pthread_self'] != 'undefined', 'missing Wasm export: pthread_self');
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:12746:  _pthread_self = createExportWrapper('pthread_self', 0);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:12784:    __pthread_create_js: ___pthread_create_js,
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:13392:  assert(!ENVIRONMENT_IS_PTHREAD);
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:13405:  if ((ENVIRONMENT_IS_PTHREAD)) {
+/tmp/bw26/extracted/MultiThreaded/boxedwine.js:13496:if ((!(ENVIRONMENT_IS_PTHREAD))) {
+/tmp/bw26/extracted/SingleThreaded/boxedwine.js:153:// Note that this includes Node.js workers when relevant (pthreads is enabled).
+/tmp/bw26/extracted/SingleThreaded/boxedwine.js:286:// Initializes the stack cookie. Called at the startup of main and at the startup of each thread in pthreads mode.
+/tmp/bw26/extracted/SingleThreaded/boxedwine.js:705:    // When the regression is fixed, can restore the above PTHREADS-enabled path.
+/tmp/bw26/extracted/SingleThreaded/boxedwine.js:715:  // Also pthreads and wasm workers initialize the wasm instance through this
+/tmp/bw26/extracted/SingleThreaded/boxedwine.js:6692:        // without pthreads a context is just an integer ID
