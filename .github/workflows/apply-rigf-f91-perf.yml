@@ -1,0 +1,53 @@
+name: Apply MOBMUGEN F9.1 Working Renderer Performance Patch
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-rigf-f91-perf.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch exact F9.0 working renderer for low-overhead runtime witness
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('mugen-lab/rig-f7.html')
+          s = p.read_text()
+          s = s.replace('MobMugen · Rig F · F9.0', 'MobMugen · Rig F · F9.1 PERF')
+          s = s.replace('MOBMUGEN · RIG F · F9.0', 'MOBMUGEN · RIG F · F9.1 PERF')
+          s = s.replace('Rig F · F9.0', 'Rig F · F9.1 PERF')
+          old = "function canvasSig(){try{return canvas.toDataURL('image/png')}catch(e){return null}}function witness(){setTimeout(()=>{probe();const base=canvasSig();let n=0,t=setInterval(()=>{n++;if(n===8)probe();const cur=canvasSig();if(base&&cur&&cur!==base){clearInterval(t);status('WINMUGEN VIDEO ✓');log('F6.1 FIRST FRAME CHANGE')}else if(n>=28){clearInterval(t);status('BOXEDWINE ALIVE · NO VIDEO');log('F6.1 VIDEO TIMEOUT · COPY TRACE')}},750)},2500)}"
+          new = "function witness(){setTimeout(()=>{const base=window.RIGF_FRAME_COUNT||0;let n=0,t=setInterval(()=>{n++;const cur=window.RIGF_FRAME_COUNT||0;if(cur>base){clearInterval(t);status('WINMUGEN VIDEO ✓');window.RIGF_RUNTIME_QUIET=true;log('F9.1 FRAME COUNTER LIVE · QUIET MODE')}else if(n>=20){clearInterval(t);status('BOXEDWINE ALIVE · NO VIDEO');log('F9.1 VIDEO TIMEOUT · COPY TRACE')}},500)},1500)}"
+          if old not in s:
+              raise SystemExit('witness patch point not found')
+          s = s.replace(old, new)
+          oldlog = "function log(s){s=String(s); if(/^BW OUT · creating:/.test(s)) return; lines.push(s);while(lines.length>180)lines.shift();diag.textContent=lines.join('\\n');diag.scrollTop=diag.scrollHeight;persist(false)}"
+          newlog = "function log(s){s=String(s);if(/^BW OUT · creating:/.test(s))return;if(window.RIGF_RUNTIME_QUIET&&!/(error|err:|abort|page fault|debugger|setjmp|stopped)/i.test(s))return;lines.push(s);while(lines.length>180)lines.shift();diag.textContent=lines.join('\\n');diag.scrollTop=diag.scrollHeight;persist(false)}"
+          if oldlog not in s:
+              raise SystemExit('log patch point not found')
+          s = s.replace(oldlog, newlog)
+          s = s.replace("setTimeout(()=>{log('F6.5 POST-LAUNCH HEARTBEAT · 2s');probe();persist(true)},2000);setTimeout(()=>{log('F6.5 POST-LAUNCH HEARTBEAT · 6s');probe();persist(true)},6000);witness()", "witness()")
+          p.write_text(s)
+          PY
+      - name: Verify F9.1 patch
+        run: |
+          grep -q 'F9.1 PERF' mugen-lab/rig-f7.html
+          grep -q 'RIGF_RUNTIME_QUIET' mugen-lab/rig-f7.html
+          grep -q 'FRAME COUNTER LIVE' mugen-lab/rig-f7.html
+          ! grep -q "canvas.toDataURL('image/png')" mugen-lab/rig-f7.html
+      - name: Commit runtime candidate
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mugen-lab/rig-f7.html
+          git commit -m 'MOBMUGEN F9.1 cut witness and trace overhead on working renderer'
+          git push
