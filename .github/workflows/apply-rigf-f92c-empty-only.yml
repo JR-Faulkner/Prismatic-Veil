@@ -1,0 +1,45 @@
+name: Apply MOBMUGEN F9.2c Empty-Only Select Probe
+on:
+  push:
+    branches: [ main ]
+    paths: [ '.github/workflows/apply-rigf-f92c-empty-only.yml' ]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Keep select geometry, hide empty cells only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('mugen-lab/rig-f7.html')
+          s=p.read_text()
+          if 'F9.2B GULAG LITE' not in s:
+              raise SystemExit('F9.2B anchor missing')
+          for line in ["      set('rows','4');\n", "      set('columns','8');\n", "      set('moveoveremptyboxes','0');\n"]:
+              if line not in s:
+                  raise SystemExit('patch point missing: '+line.strip())
+              s=s.replace(line,'')
+          s=s.replace("F9.2B GULAG LITE", "F9.2C EMPTY-ONLY")
+          s=s.replace(" · 8x4 · empty boxes hidden", " · native grid · empty boxes hidden")
+          p.write_text(s)
+          PY
+      - name: Verify
+        run: |
+          grep -q "F9.2C EMPTY-ONLY READY" mugen-lab/rig-f7.html
+          grep -q "set('showemptyboxes','0')" mugen-lab/rig-f7.html
+          ! grep -q "set('rows','4')" mugen-lab/rig-f7.html
+          ! grep -q "set('columns','8')" mugen-lab/rig-f7.html
+          ! grep -q "set('moveoveremptyboxes','0')" mugen-lab/rig-f7.html
+      - name: Commit runtime candidate
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add mugen-lab/rig-f7.html
+          git commit -m "MOBMUGEN F9.2c hide empty select cells only"
+          git push
