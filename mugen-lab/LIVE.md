@@ -14,10 +14,11 @@ about MOBMUGEN. Do not cross-apply their rules, and do not assume a change here
 is covered by `AGENTS.md`'s Hybrid preflight.
 
 - **Last updated:** 2026-09-17
+- **F10.9 build commit:** `1922181`
 - **F10.8 build commit:** `ea07353`
 - **F10.7 build commit:** `843a2de`
-- **Live note status:** F10.8 written-code JIT-off test published
-- **Awaiting:** device run of F10.8 written-code JIT-off test
+- **Live note status:** F10.9 jit-record witness published
+- **Awaiting:** device run of F10.9 jit-record witness
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
 ---
@@ -30,7 +31,10 @@ https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-1.html
 **Instrumented baseline (same build + loop cost witness):**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-6.html
 
-**JIT lane — current mitigation test:**
+**JIT lane — current recorder witness:**
+https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-9.html?v=f109-jitrecord
+
+**JIT lane — previous mitigation test (failed usefully on device):**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-8.html?v=f108-writtenjitoff
 
 **JIT lane — previous diagnostic (failed usefully on device):**
@@ -44,50 +48,41 @@ path and must keep running. Never let the experiment become the only path.
 
 ### Next test
 
-Run **F10.8** on the phone with the same WinMUGEN ZIP and COPY TRACE.
+Run **F10.9** on the phone with the same WinMUGEN ZIP and COPY TRACE.
 
-F10.8 changes exactly one runtime variable from F10.7: it adds
-`disableWasmJitForWrittenCode=true`, which makes the JIT shell append
-`-disableWasmJitForWrittenCode` to BoxedWine. Root, overlay, app capsule,
-page-fault capture and heap-growth witness are otherwise carried forward from
-F10.7.
+F10.9 changes exactly one runtime variable from F10.8: it flips
+`jit-record=false` to `jit-record=true`. It keeps F10.8's
+`disableWasmJitForWrittenCode=true`, root, overlay, app capsule, page-fault
+capture and heap-growth witness.
 
 Read the result as:
 
 | Trace shows | Meaning | Next move |
 | --- | --- | --- |
-| Null fault disappears, moves, or Wine gets farther | written/self-modified-code JIT was implicated | refine this mitigation or narrow it to `wineserver` |
-| Same `00000000` loop, `grows=0 refused=0` | the null fault is deeper than written-code JIT | test `jit-record=true`, then `wasmModuleBroker=0` |
+| Fault address changes again, recorder emits extra clue, or Wine gets farther | recorder path is exposing the failing JIT edge | narrow to the emitted record / wineserver transition |
+| Same `0000000A`, `grows=0 refused=0` | written-code JIT and recorder are not enough | test `wasmModuleBroker=0` next |
 | Heap witness fires | memory branch reopens | cap/reshape JIT heap behavior |
 
 ### Latest result
 
-**F10.7 has now been run on the phone.** It failed before WinMUGEN frames, but
-the diagnostic answered the question it was built to answer.
+**F10.8 has now been run on the phone.** It failed before WinMUGEN frames, but
+it changed the signature.
 
 Device trace:
 
 ```
 RUNTIME STATUS · NO FRAMES YET · SEE TRACE
-F10.7 FAULTS · 2087 faults · 1 distinct addr · 00000000 x2087
-F10.7 PERF SNAPSHOT · RAF=59 DRAW=0
-F10.7 HEAP · bytes=? max=? grows=0 refused=0
+F10.8 FAULTS · 2086 faults · 1 distinct addr · 0000000A x2086
+F10.8 PERF SNAPSHOT · RAF=60 DRAW=0
+F10.8 HEAP · bytes=? max=? grows=0 refused=0
 JS ERROR · RuntimeError: Out of bounds memory access (evaluating 'func()')
 mapped: /bin/wineserver and /lib/libwine.so.1.0 only
 ```
 
-Read: this is **not** iOS refusing heap growth. The JIT path reaches early
-`wineserver`, then loops on a stable null page fault at `00000000` until
-JavaScriptCore reports an out-of-bounds Wasm memory access. The browser event
-loop remains healthy (`RAF=59`) and no frames are drawn (`DRAW=0`).
-
-Next build should attack the JIT/null-fault path directly. Good candidates are
-to disable or narrow the JIT for `wineserver`, test `jit-record` /
-`wasmModuleBroker`, or build a tiny wineserver-only harness that isolates the
-first null-page fault before MUGEN assets enter the picture.
-
-Booting the JIT core is the **only** item on the critical path. Everything else
-is answered or closed.
+Read: `disableWasmJitForWrittenCode=true` changed the stable fault address from
+`00000000` to `0000000A`, so it touches the crash path, but it does not solve
+it. Heap growth remains closed (`grows=0 refused=0`). The next single-variable
+probe is `jit-record=true` while keeping the F10.8 written-code JIT-off switch.
 
 ### Standing rule: always hand over the link
 
@@ -124,6 +119,27 @@ Do not change more than one of these per experiment.
 ## Device witness log
 
 Newest first. A run only counts if it happened on the phone.
+
+### 2026-09-17 · F10.8 (`ea07353`) — DEVICE FAIL, FAULT MOVED TO 0000000A
+
+One-switch follow-up to F10.7. Added `disableWasmJitForWrittenCode=true` while
+keeping the same JIT core, Wine root, overlay, capsule, fault capture and heap
+witness.
+
+Device run reached no WinMUGEN frames:
+
+```
+RUNTIME STATUS · NO FRAMES YET · SEE TRACE
+F10.8 FAULTS · 2086 faults · 1 distinct addr · 0000000A x2086
+F10.8 PERF SNAPSHOT · RAF=60 DRAW=0
+F10.8 HEAP · bytes=? max=? grows=0 refused=0
+JS ERROR · RuntimeError: Out of bounds memory access (evaluating 'func()')
+```
+
+Read: the written-code JIT toggle affects the failing path because the stable
+fault address moved from `00000000` to `0000000A`. It did not get past the same
+early wineserver/libwine loop, and heap growth still did not fire. Next test is
+`jit-record=true` while keeping written-code JIT disabled.
 
 ### 2026-09-17 · F10.7 (`843a2de`) — DEVICE FAIL, NULL PAGE FAULT CAPTURED
 
@@ -314,7 +330,7 @@ in the trace.
 | 1 | Can the SIMD WASM-JIT core run against the proven Wine 1.7.55 root cleanly? | **Answered NO on device** (2026-09-16). Headless Chromium (V8) boots Wine and executes 1000 JIT blocks, `failed=0` — but iPhone Safari (JavaScriptCore) page-faults in `wineserver` on the same wasm. An earlier "answered yes" here was called off a headless run and is withdrawn: headless proves a boot path, never the device. **This is now the project's critical path.** |
 | 2 | Can the old BrowserFS/lean app mount semantics be reproduced on the JIT core without a second full app copy in memory? | Open. The in-memory `fetch` shim for `userapp.zip` works; peak memory not yet measured. |
 | 3 | Is there a safe way to decouple emulator CPU work from browser presentation? | **Answered — the question does not apply** (2026-09-16). There is nothing to decouple: presentation is implicit compositing and costs effectively nothing. F10.6 measured 257ms/iteration with the thread 103% busy. `skipFrameFPS`, RAF scheduling and timer tuning cannot help a workload that is CPU-bound by 15.4x. Closed. |
-| 4 | Does upstream expose a faster single-threaded JIT config, JIT cache path, or SIMD option for iPhone Safari? | Open. `jit-record` and `wasmModuleBroker` params exist and are untested; `jit-record` is currently `false`. |
+| 4 | Does upstream expose a faster single-threaded JIT config, JIT cache path, or SIMD option for iPhone Safari? | Open. `jit-record=true` is the current F10.9 probe; `wasmModuleBroker=0` is next if F10.9 repeats the F10.8 fault. |
 | 5 | Can a multithreaded JIT path work under iOS/Safari without cross-origin isolation? | Open, not started. Current build is single-threaded by design. |
 | 6 | Where is the real WinMUGEN GL present path, and can it be instrumented for true FPS? | **Answered: there isn't one** (2026-09-16). `eglSwapBuffers` is a status stub; SDL2's `putImageData` is never called; `SDL_GL_SwapBuffers`/`SDL_Flip`/`SDL_UpdateRect`/`SDL_UpdateWindowSurface` are absent from the engine. Emscripten composites implicitly on main-loop yield. **Measure `L` (main loop iterations/sec) as the frame rate — it is the only honest number.** Closed. |
 
