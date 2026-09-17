@@ -84,7 +84,7 @@
       html = html.replaceAll('F10.8 WRITTEN-CODE JIT OFF', 'F10.16 CRASH-SITE WITNESS');
       html = html.replaceAll('F10.8 JIT FAULT WITNESS', 'F10.16 CRASH-SITE WITNESS');
       html = html.replaceAll('Rig F · F10.8', 'Rig F · F10.16');
-      html = html.replace('F10.8 is a one-switch JIT mitigation build. It keeps F10.7\'s root, overlay, capsule, fault capture and heap witness, then adds disableWasmJitForWrittenCode=true to test whether early wineserver null faults come from JITing written/self-modified code.', 'F10.16 re-runs F10.15\'s exact test (wine cmd.exe /c echo) with no config changes at all -- same core, same launch. The only difference is the witness: BoxedWine\'s own crash handler already logs a full register dump naming the crashing module and a stack walk on every fault (confirmed against the real engine source), but every prior witness only forwarded lines matching a keyword list that a DLL name like ntdll.dll or comctl32.dll never matches. F10.16 captures those two lines by their exact structure instead, so this run should finally name which module the fault is actually in.');
+      html = html.replace('F10.8 is a one-switch JIT mitigation build. It keeps F10.7\'s root, overlay, capsule, fault capture and heap witness, then adds disableWasmJitForWrittenCode=true to test whether early wineserver null faults come from JITing written/self-modified code.', 'F10.16 re-runs F10.15\'s cmd.exe test with a fixed witness that finally names the crashing module.');
       html = html.replace('F10.8 written-code JIT-off trace', 'F10.16 crash-site trace');
       html = html.replace('./rig-f10-8.js?v=f108-writtenjitoff', './rig-f10-16.js?v=f1016-crashsite-witness');
       document.open();
