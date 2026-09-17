@@ -353,16 +353,56 @@
     return prefix || '';
   }
 
+  // A real MUGEN install zip can carry a full roster -- thousands of
+  // entries, gigabytes -- when this probe only needs the mole/g.ken/
+  // cfjed_warzard capsule already validated against the BoxedWine lane.
+  // Reading every entry unconditionally (first cut of this loader) meant
+  // 9500+ individually-awaited slice()+arrayBuffer() calls on a 1.7GB file
+  // on a real phone -- minutes of loading with no content-related bug at
+  // all. Same lean-capsule filter as rig-f10-8.js's keep(), applied BEFORE
+  // any entry content is read, not after.
+  function keepEntry(lowerRelPath) {
+    if (lowerRelPath === 'winmugen.exe') return true;
+    if (!lowerRelPath.includes('/') && /\.(dll|ini|cfg|dat|txt)$/i.test(lowerRelPath)) return true;
+    const capsule = lowerRelPath.startsWith('chars/mole/') || lowerRelPath.startsWith('chars/g.ken/') ||
+      lowerRelPath === 'stages/cfjed_warzard.def' || lowerRelPath === 'stages/cfjed_warzard.sff';
+    return lowerRelPath.startsWith('data/') || lowerRelPath.startsWith('font/') ||
+      lowerRelPath.startsWith('plugins/') || capsule;
+  }
+
   async function loadZipIntoVfs(file) {
     status('READING ZIP');
     log('I2 ZIP · reading central directory of ' + file.name + ' (' + (file.size / 1048576).toFixed(1) + ' MB)');
     const entries = await listZipEntries(file);
     log('I2 ZIP · ' + entries.length + ' entries found');
     const realEntries = entries.filter(e => e.name && !e.name.endsWith('/'));
-    const prefix = detectCommonPrefix(realEntries.map(e => e.name));
+
+    // Find Winmugen.exe (or an Ikemen-style content zip with no exe at all)
+    // to establish the prefix to strip, same convention as the BoxedWine
+    // lane -- then apply the lean-capsule filter relative to that prefix.
+    const exe = realEntries.find(e => {
+      const l = e.name.toLowerCase();
+      return l === 'winmugen.exe' || l.endsWith('/winmugen.exe');
+    });
+    let prefix = '';
+    if (exe) {
+      const exeDir = exe.name.includes('/') ? exe.name.slice(0, exe.name.lastIndexOf('/')) : '';
+      prefix = exeDir ? exeDir.replace(/\\/g, '/') + '/' : '';
+    } else {
+      prefix = detectCommonPrefix(realEntries.map(e => e.name));
+    }
     if (prefix) log('I2 ZIP · stripping common wrapper folder "' + prefix + '" so chars/data/stages land at VFS root');
+
+    const toLoad = realEntries.filter(e => {
+      if (prefix && !e.name.startsWith(prefix)) return false;
+      const rel = (prefix ? e.name.slice(prefix.length) : e.name).toLowerCase();
+      return keepEntry(rel);
+    });
+    log('I2 ZIP · lean capsule filter: ' + toLoad.length + '/' + realEntries.length +
+      ' entries kept (mole/g.ken/cfjed_warzard + data/font/plugins) -- same filter the BoxedWine lane uses, not the full roster');
+
     let n = 0;
-    for (const ent of realEntries) {
+    for (const ent of toLoad) {
       const raw = await entryRaw(file, ent);
       const stripped = prefix && ent.name.startsWith(prefix) ? ent.name.slice(prefix.length) : ent.name;
       vfsPutFile(stripped, raw);
@@ -377,9 +417,9 @@
         if (dirName && !charNames.includes(dirName)) charNames.push(dirName);
       }
       n++;
-      if (n % 40 === 0) status('LOADING ' + n + '/' + entries.length);
+      if (n % 20 === 0) status('LOADING ' + n + '/' + toLoad.length);
     }
-    log('I2 ZIP LOADED · ' + n + ' files into VFS');
+    log('I2 ZIP LOADED · ' + n + ' files into VFS (of ' + realEntries.length + ' total in the zip)');
     log('I2 DETECTED · motif=' + (motifPath || '(none found)') + ' stage=' + (stagePath || '(none found)') + ' chars=' + JSON.stringify(charNames));
     pin('DETECTED', 'motif=' + motifPath + ' stage=' + stagePath + ' chars=' + JSON.stringify(charNames));
     zipLoaded = true;
