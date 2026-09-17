@@ -26,9 +26,34 @@
         wrap = document.createElement('div');
         wrap.id = 'manualTraceWrap';
         wrap.style.cssText = 'position:fixed;inset:8px;z-index:2147483647;background:#05070c;color:#eef4ff;border:2px solid #f1bf55;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;font:11px ui-monospace;';
-        wrap.innerHTML = '<div style="color:#f1bf55;font-weight:900">MANUAL TRACE COPY · tap text, Select All, Copy</div><textarea id="manualTraceText" readonly style="flex:1;width:100%;background:#080d16;color:#eef4ff;border:1px solid #28384c;border-radius:10px;padding:10px;font:10px ui-monospace;white-space:pre;resize:none"></textarea><button id="manualTraceClose" type="button" style="height:38px;border:1px solid #7a6227;background:#181307;color:#f1bf55;border-radius:999px;font:900 11px ui-monospace">CLOSE</button>';
+        wrap.innerHTML = '<div style="color:#f1bf55;font-weight:900">TRACE · tap COPY NOW, or Select All + Copy manually</div><textarea id="manualTraceText" readonly style="flex:1;width:100%;background:#080d16;color:#eef4ff;border:1px solid #28384c;border-radius:10px;padding:10px;font:10px ui-monospace;white-space:pre;resize:none"></textarea><div id="manualTraceStatus" style="color:#9bf0c5;font:900 10px ui-monospace;min-height:14px"></div><div style="display:flex;gap:8px"><button id="manualTraceCopyNow" type="button" style="flex:1;height:42px;border:1px solid #7a6227;background:#241c08;color:#f1bf55;border-radius:999px;font:900 12px ui-monospace">COPY NOW</button><button id="manualTraceClose" type="button" style="flex:1;height:42px;border:1px solid #7a6227;background:#181307;color:#f1bf55;border-radius:999px;font:900 12px ui-monospace">CLOSE</button></div>';
         document.body.appendChild(wrap);
         document.getElementById('manualTraceClose').addEventListener('click', function(){ wrap.style.display = 'none'; });
+        document.getElementById('manualTraceCopyNow').addEventListener('click', function(){
+          var ta2 = document.getElementById('manualTraceText');
+          var statusEl = document.getElementById('manualTraceStatus');
+          function say(msg){ if(statusEl) statusEl.textContent = msg; }
+          try{ ta2.focus(); ta2.setSelectionRange(0, ta2.value.length); }catch(_){}
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(ta2.value).then(function(){
+              say('COPIED (clipboard API)');
+            }).catch(function(){
+              try {
+                var ok = document.execCommand('copy');
+                say(ok ? 'COPIED (execCommand)' : 'COPY FAILED - text is selected, use iOS Copy, or screenshot this box');
+              } catch(_) {
+                say('COPY FAILED - text is selected, use iOS Copy, or screenshot this box');
+              }
+            });
+          } else {
+            try {
+              var ok2 = document.execCommand('copy');
+              say(ok2 ? 'COPIED (execCommand)' : 'COPY FAILED - text is selected, use iOS Copy, or screenshot this box');
+            } catch(_) {
+              say('COPY FAILED - text is selected, use iOS Copy, or screenshot this box');
+            }
+          }
+        });
       }
       var ta = document.getElementById('manualTraceText');
       ta.value = text;
