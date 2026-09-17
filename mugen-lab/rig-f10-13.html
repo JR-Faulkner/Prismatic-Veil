@@ -7,6 +7,52 @@
 <script>
 (function(){
   'use strict';
+  function esc(s){ return String(s).replace(/[<>&]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }); }
+  function installEmergencyTraceCopy(){
+    function currentTrace(){
+      var state = document.getElementById('runtimeState');
+      var diag = document.getElementById('diag');
+      var old = '';
+      try { old = localStorage.getItem('mobmugen-f1013-bare-wine-trace') || ''; } catch(_) {}
+      return 'MOBMUGEN · RIG F · F10.13 BARE WINE HARNESS\n' +
+        'RUNTIME STATUS · ' + (state ? state.textContent : 'unknown') + '\n' +
+        'PAGE · ' + location.href + '\n' +
+        'USER AGENT · ' + navigator.userAgent + '\n\n' +
+        'TRACE\n' + ((diag && diag.textContent) || old || 'NO TRACE TEXT VISIBLE') + '\n';
+    }
+    function showManualTrace(text){
+      var wrap = document.getElementById('manualTraceWrap');
+      if(!wrap){
+        wrap = document.createElement('div');
+        wrap.id = 'manualTraceWrap';
+        wrap.style.cssText = 'position:fixed;inset:8px;z-index:2147483647;background:#05070c;color:#eef4ff;border:2px solid #f1bf55;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;font:11px ui-monospace;';
+        wrap.innerHTML = '<div style="color:#f1bf55;font-weight:900">MANUAL TRACE COPY · tap text, Select All, Copy</div><textarea id="manualTraceText" readonly style="flex:1;width:100%;background:#080d16;color:#eef4ff;border:1px solid #28384c;border-radius:10px;padding:10px;font:10px ui-monospace;white-space:pre;resize:none"></textarea><button id="manualTraceClose" type="button" style="height:38px;border:1px solid #7a6227;background:#181307;color:#f1bf55;border-radius:999px;font:900 11px ui-monospace">CLOSE</button>';
+        document.body.appendChild(wrap);
+        document.getElementById('manualTraceClose').addEventListener('click', function(){ wrap.style.display = 'none'; });
+      }
+      var ta = document.getElementById('manualTraceText');
+      ta.value = text;
+      wrap.style.display = 'flex';
+      setTimeout(function(){ try{ ta.focus(); ta.setSelectionRange(0, ta.value.length); }catch(_){} }, 50);
+    }
+    function bind(){
+      var btn = document.getElementById('copyTrace');
+      if(!btn) return false;
+      btn.textContent = 'SHOW TRACE';
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+        showManualTrace(currentTrace());
+        return false;
+      }, true);
+      return true;
+    }
+    if(!bind()){
+      var tries = 0;
+      var timer = setInterval(function(){ tries++; if(bind() || tries > 80) clearInterval(timer); }, 250);
+    }
+  }
   fetch('./rig-f10-8.html?v=f1013-base-f10-8', { cache: 'no-store' })
     .then(function(r){ if(!r.ok) throw new Error('F10.13 base HTML HTTP '+r.status); return r.text(); })
     .then(function(html){
@@ -15,13 +61,14 @@
       html = html.replaceAll('Rig F · F10.8', 'Rig F · F10.13');
       html = html.replace('F10.8 is a one-switch JIT mitigation build. It keeps F10.7\'s root, overlay, capsule, fault capture and heap witness, then adds disableWasmJitForWrittenCode=true to test whether early wineserver null faults come from JITing written/self-modified code.', 'F10.13 is a bare Wine launch harness. It launches /bin/wine with no WinMUGEN program argument and disables the shell\'s explorer/desktop fallback, isolating the bare Wine entrypoint from both WinMUGEN and explorer startup.');
       html = html.replace('F10.8 written-code JIT-off trace', 'F10.13 bare wine trace');
-      html = html.replace('./rig-f10-8.js?v=f108-writtenjitoff', './rig-f10-13.js?v=f1013-bare-wine');
+      html = html.replace('./rig-f10-8.js?v=f108-writtenjitoff', './rig-f10-13.js?v=f1013-bare-wine-manualcopy');
       document.open();
       document.write(html);
       document.close();
+      setTimeout(installEmergencyTraceCopy, 0);
     })
     .catch(function(e){
-      document.body.innerHTML = '<pre style="white-space:pre-wrap;color:#f88;background:#070b13;padding:16px">F10.13 PAGE WRAPPER ERROR\n' + String((e && e.stack) || e).replace(/[<>&]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }) + '</pre>';
+      document.body.innerHTML = '<pre style="white-space:pre-wrap;color:#f88;background:#070b13;padding:16px">F10.13 PAGE WRAPPER ERROR\n' + esc((e && e.stack) || e) + '</pre>';
     });
 })();
 </script>
