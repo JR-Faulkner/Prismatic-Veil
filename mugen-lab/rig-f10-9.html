@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MobMugen · Rig F · F10.9 JIT RECORD WITNESS</title>
+<script>
+(function(){
+  'use strict';
+  fetch('./rig-f10-8.html?v=f109-base-f10-8', { cache: 'no-store' })
+    .then(function(r){ if(!r.ok) throw new Error('F10.9 base HTML HTTP '+r.status); return r.text(); })
+    .then(function(html){
+      html = html.replaceAll('F10.8 WRITTEN-CODE JIT OFF', 'F10.9 JIT RECORD WITNESS');
+      html = html.replaceAll('F10.8 JIT FAULT WITNESS', 'F10.9 JIT RECORD WITNESS');
+      html = html.replaceAll('Rig F · F10.8', 'Rig F · F10.9');
+      html = html.replace('F10.8 is a one-switch JIT mitigation build. It keeps F10.7\'s root, overlay, capsule, fault capture and heap witness, then adds disableWasmJitForWrittenCode=true to test whether early wineserver null faults come from JITing written/self-modified code.', 'F10.9 is a one-switch follow-up to F10.8. It keeps F10.8\'s written-code JIT-off setup, root, overlay, capsule, fault capture and heap witness, then flips jit-record=true to expose the recorder path around the early wineserver fault.');
+      html = html.replace('F10.8 written-code JIT-off trace', 'F10.9 jit-record trace');
+      html = html.replace('./rig-f10-8.js?v=f108-writtenjitoff', './rig-f10-9.js?v=f109-jitrecord');
+      document.open();
+      document.write(html);
+      document.close();
+    })
+    .catch(function(e){
+      document.body.innerHTML = '<pre style="white-space:pre-wrap;color:#f88;background:#070b13;padding:16px">F10.9 PAGE WRAPPER ERROR\n' + String((e && e.stack) || e).replace(/[<>&]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }) + '</pre>';
+    });
+})();
+</script>
+</head>
+<body></body>
+</html>
