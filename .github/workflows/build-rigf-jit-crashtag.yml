@@ -145,9 +145,17 @@ jobs:
           test -s boxedwine.js
           test -s boxedwine.wasm
           test -s boxedwine-shell.js
-          grep -q "PZFAULT CRASH SITE" boxedwine.js
-          grep -q "PZFAULT TARGET" boxedwine.js
-          grep -q "PZFAULT STACK" boxedwine.js
+          # The tagged klog_fmt calls are C++ string literals, which land in
+          # boxedwine.wasm's data section, not in boxedwine.js (the emscripten
+          # JS glue code) -- confirmed directly against the already-deployed
+          # engine before writing this check: "Page Fault at" (the same
+          # klog_fmt family) is present in that wasm and completely absent
+          # from that js. grep -a treats the wasm as text for matching; it
+          # does not need to be valid UTF-8 throughout for a plain substring
+          # to be found where it occurs.
+          grep -aq "PZFAULT CRASH SITE" boxedwine.wasm
+          grep -aq "PZFAULT TARGET" boxedwine.wasm
+          grep -aq "PZFAULT STACK" boxedwine.wasm
 
       - name: Commit crash-tagged JIT engine
         shell: bash
