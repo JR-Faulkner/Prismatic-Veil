@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MobMugen · Rig F · F10.16 CRASH-SITE WITNESS</title>
+<script>
+(function(){
+  'use strict';
+  function esc(s){ return String(s).replace(/[<>&]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }); }
+  function installEmergencyTraceCopy(){
+    function currentTrace(){
+      var state = document.getElementById('runtimeState');
+      var diag = document.getElementById('diag');
+      var old = '';
+      try { old = localStorage.getItem('mobmugen-f1016-crashsite-trace') || ''; } catch(_) {}
+      return 'MOBMUGEN · RIG F · F10.16 CRASH-SITE WITNESS\n' +
+        'RUNTIME STATUS · ' + (state ? state.textContent : 'unknown') + '\n' +
+        'PAGE · ' + location.href + '\n' +
+        'USER AGENT · ' + navigator.userAgent + '\n\n' +
+        'TRACE\n' + ((diag && diag.textContent) || old || 'NO TRACE TEXT VISIBLE') + '\n';
+    }
+    function showManualTrace(text){
+      var wrap = document.getElementById('manualTraceWrap');
+      if(!wrap){
+        wrap = document.createElement('div');
+        wrap.id = 'manualTraceWrap';
+        wrap.style.cssText = 'position:fixed;inset:8px;z-index:2147483647;background:#05070c;color:#eef4ff;border:2px solid #f1bf55;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;font:11px ui-monospace;';
+        wrap.innerHTML = '<div style="color:#f1bf55;font-weight:900">TRACE · tap COPY NOW, or Select All + Copy manually</div><textarea id="manualTraceText" readonly style="flex:1;width:100%;background:#080d16;color:#eef4ff;border:1px solid #28384c;border-radius:10px;padding:10px;font:10px ui-monospace;white-space:pre;resize:none"></textarea><div id="manualTraceStatus" style="color:#9bf0c5;font:900 10px ui-monospace;min-height:14px"></div><div style="display:flex;gap:8px"><button id="manualTraceCopyNow" type="button" style="flex:1;height:42px;border:1px solid #7a6227;background:#241c08;color:#f1bf55;border-radius:999px;font:900 12px ui-monospace">COPY NOW</button><button id="manualTraceClose" type="button" style="flex:1;height:42px;border:1px solid #7a6227;background:#181307;color:#f1bf55;border-radius:999px;font:900 12px ui-monospace">CLOSE</button></div>';
+        document.body.appendChild(wrap);
+        document.getElementById('manualTraceClose').addEventListener('click', function(){ wrap.style.display = 'none'; });
+        document.getElementById('manualTraceCopyNow').addEventListener('click', function(){
+          var ta2 = document.getElementById('manualTraceText');
+          var statusEl = document.getElementById('manualTraceStatus');
+          function say(msg){ if(statusEl) statusEl.textContent = msg; }
+          try{ ta2.focus(); ta2.setSelectionRange(0, ta2.value.length); }catch(_){}
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(ta2.value).then(function(){
+              say('COPIED (clipboard API)');
+            }).catch(function(){
+              try {
+                var ok = document.execCommand('copy');
+                say(ok ? 'COPIED (execCommand)' : 'COPY FAILED - text is selected, use iOS Copy, or screenshot this box');
+              } catch(_) {
+                say('COPY FAILED - text is selected, use iOS Copy, or screenshot this box');
+              }
+            });
+          } else {
+            try {
+              var ok2 = document.execCommand('copy');
+              say(ok2 ? 'COPIED (execCommand)' : 'COPY FAILED - text is selected, use iOS Copy, or screenshot this box');
+            } catch(_) {
+              say('COPY FAILED - text is selected, use iOS Copy, or screenshot this box');
+            }
+          }
+        });
+      }
+      var ta = document.getElementById('manualTraceText');
+      ta.value = text;
+      wrap.style.display = 'flex';
+      setTimeout(function(){ try{ ta.focus(); ta.setSelectionRange(0, ta.value.length); }catch(_){} }, 50);
+    }
+    function bind(){
+      var btn = document.getElementById('copyTrace');
+      if(!btn) return false;
+      btn.textContent = 'SHOW TRACE';
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+        showManualTrace(currentTrace());
+        return false;
+      }, true);
+      return true;
+    }
+    if(!bind()){
+      var tries = 0;
+      var timer = setInterval(function(){ tries++; if(bind() || tries > 80) clearInterval(timer); }, 250);
+    }
+  }
+  fetch('./rig-f10-8.html?v=f1016-base-f10-8', { cache: 'no-store' })
+    .then(function(r){ if(!r.ok) throw new Error('F10.16 base HTML HTTP '+r.status); return r.text(); })
+    .then(function(html){
+      html = html.replaceAll('F10.8 WRITTEN-CODE JIT OFF', 'F10.16 CRASH-SITE WITNESS');
+      html = html.replaceAll('F10.8 JIT FAULT WITNESS', 'F10.16 CRASH-SITE WITNESS');
+      html = html.replaceAll('Rig F · F10.8', 'Rig F · F10.16');
+      html = html.replace('F10.8 is a one-switch JIT mitigation build. It keeps F10.7\'s root, overlay, capsule, fault capture and heap witness, then adds disableWasmJitForWrittenCode=true to test whether early wineserver null faults come from JITing written/self-modified code.', 'F10.16 re-runs F10.15\'s exact test (wine cmd.exe /c echo) with no config changes at all -- same core, same launch. The only difference is the witness: BoxedWine\'s own crash handler already logs a full register dump naming the crashing module and a stack walk on every fault (confirmed against the real engine source), but every prior witness only forwarded lines matching a keyword list that a DLL name like ntdll.dll or comctl32.dll never matches. F10.16 captures those two lines by their exact structure instead, so this run should finally name which module the fault is actually in.');
+      html = html.replace('F10.8 written-code JIT-off trace', 'F10.16 crash-site trace');
+      html = html.replace('./rig-f10-8.js?v=f108-writtenjitoff', './rig-f10-16.js?v=f1016-crashsite-witness');
+      document.open();
+      document.write(html);
+      document.close();
+      setTimeout(installEmergencyTraceCopy, 0);
+    })
+    .catch(function(e){
+      document.body.innerHTML = '<pre style="white-space:pre-wrap;color:#f88;background:#070b13;padding:16px">F10.16 PAGE WRAPPER ERROR\n' + esc((e && e.stack) || e) + '</pre>';
+    });
+})();
+</script>
+</head>
+<body></body>
+</html>
