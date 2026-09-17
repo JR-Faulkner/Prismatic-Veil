@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MobMugen · Rig F · F10.15 CMD.EXE PE HARNESS</title>
+<script>
+(function(){
+  'use strict';
+  function esc(s){ return String(s).replace(/[<>&]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }); }
+  function installEmergencyTraceCopy(){
+    function currentTrace(){
+      var state = document.getElementById('runtimeState');
+      var diag = document.getElementById('diag');
+      var old = '';
+      try { old = localStorage.getItem('mobmugen-f1015-cmdexe-trace') || ''; } catch(_) {}
+      return 'MOBMUGEN · RIG F · F10.15 CMD.EXE PE HARNESS\n' +
+        'RUNTIME STATUS · ' + (state ? state.textContent : 'unknown') + '\n' +
+        'PAGE · ' + location.href + '\n' +
+        'USER AGENT · ' + navigator.userAgent + '\n\n' +
+        'TRACE\n' + ((diag && diag.textContent) || old || 'NO TRACE TEXT VISIBLE') + '\n';
+    }
+    function showManualTrace(text){
+      var wrap = document.getElementById('manualTraceWrap');
+      if(!wrap){
+        wrap = document.createElement('div');
+        wrap.id = 'manualTraceWrap';
+        wrap.style.cssText = 'position:fixed;inset:8px;z-index:2147483647;background:#05070c;color:#eef4ff;border:2px solid #f1bf55;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;font:11px ui-monospace;';
+        wrap.innerHTML = '<div style="color:#f1bf55;font-weight:900">TRACE · tap COPY NOW, or Select All + Copy manually</div><textarea id="manualTraceText" readonly style="flex:1;width:100%;background:#080d16;color:#eef4ff;border:1px solid #28384c;border-radius:10px;padding:10px;font:10px ui-monospace;white-space:pre;resize:none"></textarea><div id="manualTraceStatus" style="color:#9bf0c5;font:900 10px ui-monospace;min-height:14px"></div><div style="display:flex;gap:8px"><button id="manualTraceCopyNow" type="button" style="flex:1;height:42px;border:1px solid #7a6227;background:#241c08;color:#f1bf55;border-radius:999px;font:900 12px ui-monospace">COPY NOW</button><button id="manualTraceClose" type="button" style="flex:1;height:42px;border:1px solid #7a6227;background:#181307;color:#f1bf55;border-radius:999px;font:900 12px ui-monospace">CLOSE</button></div>';
+        document.body.appendChild(wrap);
+        document.getElementById('manualTraceClose').addEventListener('click', function(){ wrap.style.display = 'none'; });
+        document.getElementById('manualTraceCopyNow').addEventListener('click', function(){
+          var ta2 = document.getElementById('manualTraceText');
+          var statusEl = document.getElementById('manualTraceStatus');
+          function say(msg){ if(statusEl) statusEl.textContent = msg; }
+          try{ ta2.focus(); ta2.setSelectionRange(0, ta2.value.length); }catch(_){}
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(ta2.value).then(function(){
+              say('COPIED (clipboard API)');
+            }).catch(function(){
+              try {
+                var ok = document.execCommand('copy');
+                say(ok ? 'COPIED (execCommand)' : 'COPY FAILED - text is selected, use iOS Copy, or screenshot this box');
+              } catch(_) {
+                say('COPY FAILED - text is selected, use iOS Copy, or screenshot this box');
+              }
+            });
+          } else {
+            try {
+              var ok2 = document.execCommand('copy');
+              say(ok2 ? 'COPIED (execCommand)' : 'COPY FAILED - text is selected, use iOS Copy, or screenshot this box');
+            } catch(_) {
+              say('COPY FAILED - text is selected, use iOS Copy, or screenshot this box');
+            }
+          }
+        });
+      }
+      var ta = document.getElementById('manualTraceText');
+      ta.value = text;
+      wrap.style.display = 'flex';
+      setTimeout(function(){ try{ ta.focus(); ta.setSelectionRange(0, ta.value.length); }catch(_){} }, 50);
+    }
+    function bind(){
+      var btn = document.getElementById('copyTrace');
+      if(!btn) return false;
+      btn.textContent = 'SHOW TRACE';
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+        showManualTrace(currentTrace());
+        return false;
+      }, true);
+      return true;
+    }
+    if(!bind()){
+      var tries = 0;
+      var timer = setInterval(function(){ tries++; if(bind() || tries > 80) clearInterval(timer); }, 250);
+    }
+  }
+  fetch('./rig-f10-8.html?v=f1015-base-f10-8', { cache: 'no-store' })
+    .then(function(r){ if(!r.ok) throw new Error('F10.15 base HTML HTTP '+r.status); return r.text(); })
+    .then(function(html){
+      html = html.replaceAll('F10.8 WRITTEN-CODE JIT OFF', 'F10.15 CMD.EXE PE HARNESS');
+      html = html.replaceAll('F10.8 JIT FAULT WITNESS', 'F10.15 CMD.EXE PE HARNESS');
+      html = html.replaceAll('Rig F · F10.8', 'Rig F · F10.15');
+      html = html.replace('F10.8 is a one-switch JIT mitigation build. It keeps F10.7\'s root, overlay, capsule, fault capture and heap witness, then adds disableWasmJitForWrittenCode=true to test whether early wineserver null faults come from JITing written/self-modified code.', 'F10.15 changes exactly one thing from F10.13: the program argument. F10.13 proved bare /bin/wine with nothing to run is fault-free on device. F10.15 launches wine against cmd.exe -- a genuine console-only PE binary already present in the root at its real drive_c path -- with /c echo F10.15-alive, to test whether ANY PE program faults (a loader bug) or only window-creating ones do (a GUI/user32 bug, which is what WinMUGEN.exe and explorer.exe both are).');
+      html = html.replace('F10.8 written-code JIT-off trace', 'F10.15 cmd.exe trace');
+      html = html.replace('./rig-f10-8.js?v=f108-writtenjitoff', './rig-f10-15.js?v=f1015-cmdexe-manualcopy');
+      document.open();
+      document.write(html);
+      document.close();
+      setTimeout(installEmergencyTraceCopy, 0);
+    })
+    .catch(function(e){
+      document.body.innerHTML = '<pre style="white-space:pre-wrap;color:#f88;background:#070b13;padding:16px">F10.15 PAGE WRAPPER ERROR\n' + esc((e && e.stack) || e) + '</pre>';
+    });
+})();
+</script>
+</head>
+<body></body>
+</html>
