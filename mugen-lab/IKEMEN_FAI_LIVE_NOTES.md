@@ -6,9 +6,15 @@ This file is the short live handoff for FAI. It is deliberately scoped to the cu
 
 ## Current anchor
 
-Use **RIG I10 CONTROL RELEASE** as the current known-good anchor:
+**Test next: RIG I13 CONTROL WITNESS.**
 
-`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-10.html?v=i10-control-release`
+`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-13.html?v=i13-control-witness`
+
+I13 is I10 plus exactly one control-layer fix and control instrumentation.
+The stuck-control defect was root-caused and fixed (see **Controls defect —
+diagnosed and fixed in I13**). It passes in headless but **has not been
+phone-tested yet** — until it is, I10 remains the last real-device-confirmed
+build and the fallback.
 
 I10 is the last real-device build that confirmed the important path still works:
 
@@ -24,19 +30,125 @@ I10 is the last real-device build that confirmed the important path still works:
 - WebGL2 initialized on mobile Safari.
 - Runtime reached `STILL RUNNING AFTER 5s · NO JS CRASH`.
 
-## Active defect
+## Controls defect — diagnosed and fixed in I13
 
-The current defect to work on is **touch controls sticking or responding incorrectly after the match is running**.
+**Root cause: `pickerOpen()` returned `true` for the entire match, so every
+in-match control press was routed into the picker handler instead of the
+engine.**
 
-Do not change zip persistence, picker flow, start flow, stage selection, `select.def`, or trace behavior while working this defect unless the test is explicitly about that area.
+`startMatch()` hides the `#setup` overlay:
 
-The next build should be I10 plus only control input instrumentation or a control fix.
+```js
+document.getElementById('setup').classList.add('hide');
+```
 
-Useful trace marker from I10:
+but `pickerOpen()` tested only the section's *own* class:
 
-`I10 CONTROLS · released ... stuck key(s)`
+```js
+const section = document.getElementById('charPickerSection');
+return !!(section && !section.classList.contains('hide'));
+```
 
-If the controls stick again, collect whether that marker appears. If it does not appear, the release guard is not seeing the lost/canceled touch. If it appears and the engine still behaves as if a direction/button is held, the synthetic key-up path is not clearing the Ikemen input state.
+`#charPickerSection` is a **child** of `#setup`. Hiding the parent never
+marks the child, and nothing else re-adds `.hide` to it except
+`resetForNewZip()`. So from the first zip load onward `pickerOpen()` was
+permanently `true`, and `bindPress`'s `dn` took the picker branch every
+time — which also explains why it returned before ever reaching
+`controlKey(...)`.
+
+That single condition produced both reported symptoms:
+
+- **Directions stuck.** `handlePickerControl()` dispatches a bare
+  `keydown` at `document` to move grid focus. It has no keyup — correctly,
+  for grid navigation. Sent to a running engine it is a key pressed and
+  never released, so the direction stayed held permanently.
+- **Attacks did nothing.** `pickerCommit()` calls `.focus()` and `.click()`
+  on an invisible roster item. Nothing is emitted to the engine at all.
+
+It also explains why `I10 CONTROLS · released ... stuck key(s)` never
+appeared in any trace: `activeControlKeys` is only written by
+`controlKey()`, which the picker branch returns before reaching. The
+release guard was working; it just had nothing recorded to release. **A
+silent guard was evidence the emit path was never taken, not evidence the
+guard was broken.**
+
+### Measured, before and after
+
+Driven with real multi-touch via CDP `Input.dispatchTouchEvent` against the
+actual page, recording what the engine's own `document` keydown/keyup
+listeners receive:
+
+| | I10 | I13 |
+|---|---|---|
+| single tap on a direction | `down:ArrowLeft` and no keyup ever | `down:ArrowLeft` … `up:ArrowLeft` |
+| single tap on an attack | 0 key events emitted | `down:KeyZ` … `up:KeyZ` |
+| keys left held after a tap | `ArrowLeft` stuck | none |
+
+### The fix
+
+One condition, in the control layer:
+
+```js
+return section.offsetParent !== null;
+```
+
+`offsetParent` is `null` whenever the element **or any ancestor** is
+`display:none`, so it answers the question actually being asked — is the
+picker on screen right now — instead of asking whether one specific node
+carries one specific class. Verified in both directions: picker presses
+still drive the picker, in-match presses drive the engine, and CHANGE ZIP
+puts routing back.
+
+### Instrumentation added in I13
+
+Every control press now logs one line, capped at 240 lines so it cannot
+drown the trace:
+
+```
+I13 CTRL · press ArrowLeft routed to engine
+I13 CTRL · keydown ArrowLeft -> engine | held: ArrowLeft
+I13 CTRL · keyup   ArrowLeft -> engine | held: none
+I13 CTRL · release via pointerup | held: none
+```
+
+**What to look for on the phone.** Every in-match press must read
+`routed to engine`. A single `routed to PICKER` after START MATCH means
+the fix did not take. `held:` should return to `none` after you lift. If
+`held:` keeps a key listed with nothing under your thumb, the synthetic
+keyup is reaching the document but not clearing Ikemen's own input state —
+a different defect from this one.
+
+No watchdog was added. A timer that force-releases keys would mask a
+residual stick rather than reveal it, and the point of this build is to
+find out.
+
+## Control defects found but deliberately NOT fixed in I13
+
+Reproduced while diagnosing the above. All three are real and all three
+were left alone, because the process rule is one defect per build and the
+stuck key was the defect. Each needs its own build and its own phone test.
+
+1. **Buttons sharing a key code release each other early.** The diagonal
+   macros emit the same codes as the cardinals (`DL` = `ArrowDown` +
+   `ArrowLeft`), and `activeControlKeys` is a `Map` keyed by code, global
+   across buttons. Hold `LEFT`, tap `DL`, release `DL` → `keyup ArrowLeft`
+   fires while the `LEFT` button is still physically down. Reproduced: the
+   engine ends up believing only `ArrowDown` is held. Needs a per-code
+   **reference count**, not a set — release the key only when the last
+   button holding it lets go.
+2. **Sliding between d-pad buttons registers nothing.** Rolling a thumb
+   `LEFT → DOWN` without lifting never fires `ArrowDown`; only the button
+   that got `pointerdown` ever emits. This is almost certainly what the
+   user means by quarter-circles being impossible — a hadouken needs
+   contiguous d-pad travel. Fixing it means hit-testing pointer position
+   against the d-pad on `pointermove` and swapping the active direction,
+   rather than binding per button.
+3. **Every press is delivered to `document` twice.** `emitKey` dispatches
+   the same event at `canvas`, `document` and `window`, and the event from
+   `canvas` bubbles through `document` on the way up. Harmless if Ikemen
+   tracks a boolean per key; not harmless if it ever counts or toggles.
+   Worth confirming against `input_js.go` before touching, since the
+   triple dispatch is load-bearing for reaching the engine at all.
 
 ## Known runtime noise
 
@@ -57,6 +169,10 @@ Do not use these as bases:
 - I8: preserved more of `select.def` but regressed saved-zip/start behavior; got stuck at `WAITING FOR ZIP`.
 - I11: attempted trace/noise suppression as wrapper-on-wrapper and caused a non-running error.
 - I12: safe-noise guard follow-up exists, but it was created after the user called out the process problem. Do not continue from it unless the explicit focus is trace/noise suppression.
+
+I13 is built as a **single-level wrapper over `rig-ikemen-3.js`**, applying
+I10's patch set plus the one fix — deliberately not chained on top of
+I10's own wrapper, since wrapper-on-wrapper is what made I11 fail to run.
 
 ## Process rule from live testing
 
@@ -89,19 +205,13 @@ These are working enough to preserve while fixing controls:
 
 ## Recommended next build
 
-Create a new build from I10, not I11/I12.
+I13 exists and is the thing to test. Do not build I14 until I13 has had a
+phone test and a conclusion.
 
-Suggested name:
+If I13 comes back clean, the next build picks **one** item from **Control
+defects found but deliberately NOT fixed in I13** — recommended order: the
+reference count (1), then d-pad sliding (2). Item 2 is the one the user
+feels most, but it is also the larger change, so land 1 first.
 
-`RIG I13 CONTROL WITNESS`
-
-Goal: instrument and fix the stuck-control issue only.
-
-Possible scoped probes:
-
-- Log pointer lifecycle for each control button: `pointerdown`, `pointerup`, `pointercancel`, `pointerleave`, `lostpointercapture`.
-- Log each synthetic keydown/keyup by code.
-- Add a visible emergency `RELEASE KEYS` button only if needed for diagnosis.
-- Consider a short watchdog that releases all active synthetic keys if no pointer is currently down, but only in the control layer.
-
-Do not change any zip, picker, match-start, `select.def`, runtime asset, or noise-suppression code in that build.
+If I13 still sticks, the trace answers where to look next without guessing:
+read the `I13 CTRL` lines, per **What to look for on the phone**.
