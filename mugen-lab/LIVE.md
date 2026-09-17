@@ -13,8 +13,9 @@ This lane is **separate** from the Prismatic Veil game ledgers
 about MOBMUGEN. Do not cross-apply their rules, and do not assume a change here
 is covered by `AGENTS.md`'s Hybrid preflight.
 
-- **Last updated:** 2026-09-16
-- **Live commit:** `59d19e4`
+- **Last updated:** 2026-09-17
+- **Live commit:** `843a2de`
+- **Awaiting:** device run of F10.7 (see *Next test* below)
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
 ---
@@ -27,11 +28,30 @@ https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-1.html
 **Instrumented baseline (same build + loop cost witness):**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-6.html
 
-**JIT lane (does not boot):**
+**JIT lane — current diagnostic (expected to fail; the trace is the point):**
+https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-7.html?v=f107-faultwitness
+
+**JIT lane — previous (does not boot, superseded by F10.7):**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-5.html?v=f105b-deferstart
 
 The JIT lane is the performance work; the F10.1/F10.6 pages are the shipping
 path and must keep running. Never let the experiment become the only path.
+
+### Next test
+
+Run **F10.7** on the phone, let it crash, COPY TRACE. It carries the same core,
+root, overlay and capsule as F10.5, so it is expected to fail the same way —
+the difference is that the fault address now survives into the trace.
+
+Read the result as:
+
+| Trace shows | Cause | Fix |
+| --- | --- | --- |
+| `HEAP GROW REFUSED` shortly before the faults | iOS refusing wasm heap growth | Cap the heap; the 3 GB `getHeapMax` is not real on a phone |
+| `refused=0`, healthy heap, one stable address (likely in `libwine`) | JavaScriptCore codegen bug | Attack the JIT itself |
+
+Booting the JIT core is the **only** item on the critical path. Everything else
+is answered or closed.
 
 ### Standing rule: always hand over the link
 
@@ -68,6 +88,23 @@ Do not change more than one of these per experiment.
 ## Device witness log
 
 Newest first. A run only counts if it happened on the phone.
+
+### 2026-09-17 · F10.7 (`843a2de`) — BUILT, AWAITING DEVICE
+
+JIT-lane diagnostic. Same core/root/overlay/capsule as F10.5; expected to fail
+the same way. Adds page-fault address capture (F10.5's console filter dropped
+the `Page Fault at` line while keeping the memory-map lines, which survive only
+because they contain "wine"), collapses repeat dumps to two verbatim plus a
+periodic address histogram, and witnesses `growMemory` / `_emscripten_resize_heap`
+so a refused heap growth is visible.
+
+Verified in headless Chromium: witness armed, Wine boots, JIT executes 1000
+blocks `failed=0`, and a replayed 200-fault dump in the real BoxedWine shape
+produced two verbatim dumps plus the histogram, taking the trace from 642 lines
+to 48. The instrument is proven; the reading is not — headless boots this JIT
+fine and cannot reproduce the device crash.
+
+**No device run yet.**
 
 ### 2026-09-16 · F10.6 (`59d19e4`) — MEASURED, CPU-BOUND CONFIRMED
 
