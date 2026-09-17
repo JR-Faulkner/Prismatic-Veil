@@ -1,5 +1,12 @@
 (function () {
   'use strict';
+
+  // Safari's back-forward cache can restore this exact page -- including
+  // a hidden #setup overlay and an already-exited WASM instance -- when
+  // the user simply re-taps the same link after a previous session ended,
+  // rather than doing a true reload. Force a real reload in that case so
+  // CHOOSE MUGEN ZIP is always reachable on revisit.
+  window.addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
   const state = document.getElementById('runtimeState');
   const pill = document.getElementById('runtimePill');
   const diag = document.getElementById('diag');
