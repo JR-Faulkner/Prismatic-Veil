@@ -1,0 +1,169 @@
+name: Rig F JIT crash-site tagging rebuild
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/build-rigf-jit-crashtag.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build_jit_crashtag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Emscripten
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git /tmp/emsdk
+          cd /tmp/emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+
+      - name: Clone BoxedWine at the pinned JIT commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone https://github.com/danoon2/Boxedwine.git /tmp/Boxedwine
+          cd /tmp/Boxedwine
+          # Same commit already deployed at mugen-lab/assets/boxedwine-jit/ (see
+          # its UPSTREAM_COMMIT.txt). This is a same-source rebuild adding two
+          # source-level log tags -- not a version bump, not a behavior change.
+          git checkout ba68d801e40fa3fc8ceeb5eec776cf4a8bdf81cf
+
+      - name: Tag the crash-site log lines at the source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/Boxedwine
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # KMemory::logPageFault already prints, via klog_fmt, a full register
+          # dump naming the crashing module and its module-relative EIP, right
+          # before "Page Fault at %.8X". None of BoxedWine's own diagnostic
+          # depth is missing here -- what's missing is a way for a keyword-based
+          # JS-side log filter to reliably find this specific line regardless of
+          # which module happens to be involved. rig-f10-16.js (mugen-lab)
+          # already fixes that at the JS layer by matching the line's exact
+          # printf structure instead of a keyword list. This patch is the
+          # complementary, permanent fix at the source: an unmistakable literal
+          # tag that survives even if a future refactor reorders or reformats
+          # these fields in a way that would break a structure-matched regex.
+          km = Path('source/kernel/kmemory.cpp')
+          s = km.read_text()
+          old = 'klog_fmt("%.8X EAX=%.8X ECX=%.8X EDX=%.8X EBX=%.8X ESP=%.8X EBP=%.8X ESI=%.8X EDI=%.8X %s at %.8X", cpu->seg[CS].address + cpu->eip.u32, cpu->reg[0].u32, cpu->reg[1].u32, cpu->reg[2].u32, cpu->reg[3].u32, cpu->reg[4].u32, cpu->reg[5].u32, cpu->reg[6].u32, cpu->reg[7].u32, name.c_str(), process->getModuleEip(cpu->seg[CS].address + cpu->eip.u32));'
+          if old not in s:
+              raise SystemExit('kmemory.cpp register-dump anchor not found -- upstream source changed, patch is stale')
+          new = old.replace('klog_fmt("%.8X EAX=', 'klog_fmt("PZFAULT CRASH SITE \xb7 %.8X EAX=')
+          s = s.replace(old, new, 1)
+
+          old2 = 'klog_fmt("Page Fault at %.8X", address);'
+          if old2 not in s:
+              raise SystemExit('kmemory.cpp "Page Fault at" anchor not found -- upstream source changed, patch is stale')
+          s = s.replace(old2, 'klog_fmt("PZFAULT TARGET \xb7 Page Fault at %.8X", address);', 1)
+          km.write_text(s)
+
+          # CPU::walkStack's own klog_fmt call is the per-frame stack trace line
+          # (module name, function name, eip, module-relative eip). Same tagging
+          # rationale.
+          cp = Path('source/emulation/cpu/common/cpu.cpp')
+          s2 = cp.read_text()
+          old3 = 'klog_fmt("%*s %-20s %-40s %08x / %08x", indent, "", name.length()?name.c_str():"Unknown", functionName.c_str(), eip, moduleEip);'
+          if old3 not in s2:
+              raise SystemExit('cpu.cpp walkStack anchor not found -- upstream source changed, patch is stale')
+          s2 = s2.replace(old3, 'klog_fmt("PZFAULT STACK \xb7 %*s %-20s %-40s %08x / %08x", indent, "", name.length()?name.c_str():"Unknown", functionName.c_str(), eip, moduleEip);', 1)
+          cp.write_text(s2)
+
+          print('source tags applied')
+          PY
+
+      - name: Build BoxedWine SIMD WASM-JIT (crash-tagged)
+        shell: bash
+        run: |
+          set -euo pipefail
+          source /tmp/emsdk/emsdk_env.sh
+          cd /tmp/Boxedwine/project/emscripten
+          # Same final-link compatibility fix already required and applied for
+          # this repo's other CI-built engine (mugen-lab/boxedwine-f83-fallback):
+          # the makefile's single shared final-link rule invokes $(CC) (emcc),
+          # which fails to link this C++ codebase; $(CXX) (em++) is required.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('makefile')
+          s = p.read_text()
+          old = '\t@$(CC) $(ALL) -o $@ $(LDFLAGS)'
+          new = '\t@$(CXX) $(ALL) -o $@ $(LDFLAGS)'
+          if old not in s:
+              raise SystemExit('BoxedWine final link rule changed')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          make jit
+
+      - name: Stage crash-tagged JIT engine output
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$GITHUB_WORKSPACE/mugen-lab/assets/boxedwine-jit-crashtag"
+          mkdir -p "$GITHUB_WORKSPACE/mugen-lab/assets/boxedwine-jit-crashtag"
+          cp -av /tmp/Boxedwine/project/emscripten/Build/Jit/. "$GITHUB_WORKSPACE/mugen-lab/assets/boxedwine-jit-crashtag/"
+          cd "$GITHUB_WORKSPACE/mugen-lab/assets/boxedwine-jit-crashtag"
+          echo ba68d801e40fa3fc8ceeb5eec776cf4a8bdf81cf > UPSTREAM_COMMIT.txt
+          echo JIT_RELEASE_CRASHTAG > CPU_MODE.txt
+          {
+            echo "MOBMUGEN BOXEDWINE WASM-JIT RUNTIME -- CRASH-SITE TAGGED"
+            echo "=========================================================="
+            echo "Upstream: danoon2/Boxedwine"
+            echo "Upstream SHA: ba68d801e40fa3fc8ceeb5eec776cf4a8bdf81cf (same source already deployed at mugen-lab/assets/boxedwine-jit/)"
+            echo "Target: make jit"
+            echo "CPU backend: BOXEDWINE_WASM_JIT"
+            echo "SIMD: -msimd128"
+            echo "Threading: single-threaded JIT (no SharedArrayBuffer required)"
+            echo "Linker compatibility patch: final link uses em++"
+            echo "Diagnostic patch: KMemory::logPageFault and CPU::walkStack's existing"
+            echo "  klog_fmt calls are prefixed with unmistakable literal tags"
+            echo "  (PZFAULT CRASH SITE / PZFAULT TARGET / PZFAULT STACK) so a JS-side"
+            echo "  log filter can find them regardless of which module is involved --"
+            echo "  no other line, format, or behavior changes."
+            echo
+            sha256sum boxedwine.js boxedwine.wasm boxedwine-shell.js
+          } > BUILD_INFO.txt
+          cat BUILD_INFO.txt
+
+      - name: Verify the crash-site tags actually compiled in
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/mugen-lab/assets/boxedwine-jit-crashtag"
+          test -s boxedwine.js
+          test -s boxedwine.wasm
+          test -s boxedwine-shell.js
+          grep -q "PZFAULT CRASH SITE" boxedwine.js
+          grep -q "PZFAULT TARGET" boxedwine.js
+          grep -q "PZFAULT STACK" boxedwine.js
+
+      - name: Commit crash-tagged JIT engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mugen-lab/assets/boxedwine-jit-crashtag
+          if git diff --cached --quiet; then
+            echo 'No engine changes'
+            exit 0
+          fi
+          git commit -m "MOBMUGEN: crash-tagged JIT engine rebuild (PZFAULT source tags, same upstream SHA)"
+          git push
+
+# PriZim: same-source diagnostic rebuild. Wiring this engine into a runner
+# page (rig-f10-17.js/html or similar) happens separately -- this workflow's
+# job is the engine only, verified by grepping the compiled output for the
+# three PZFAULT tags before it is ever committed.
