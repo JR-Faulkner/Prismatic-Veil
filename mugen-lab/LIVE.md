@@ -14,11 +14,11 @@ about MOBMUGEN. Do not cross-apply their rules, and do not assume a change here
 is covered by `AGENTS.md`'s Hybrid preflight.
 
 - **Last updated:** 2026-09-17
+- **F10.11 build commit:** `2ee8cf4`
 - **F10.10 build commit:** `b072511`
 - **F10.9 build commit:** `1922181`
-- **F10.8 build commit:** `ea07353`
-- **Live note status:** F10.10 device witness recorded; runtime-toggle probes closed
-- **Awaiting:** next build should isolate `wineserver` or change the JIT core build, not flip another exposed URL param
+- **Live note status:** F10.11 wineserver isolation harness published
+- **Awaiting:** device run of F10.11 wineserver harness
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
 ---
@@ -31,10 +31,11 @@ https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-1.html
 **Instrumented baseline (same build + loop cost witness):**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-6.html
 
-**Latest JIT lane test (failed usefully on device):**
-https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-10.html?v=f1010-brokeroff
+**Current JIT isolation harness:**
+https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-11.html?v=f1011-wineserver
 
 **Previous JIT lane tests:**
+https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-10.html?v=f1010-brokeroff
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-9.html?v=f109-jitrecord
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-8.html?v=f108-writtenjitoff
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-7.html?v=f107-faultwitness
@@ -42,21 +43,23 @@ https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-7.html?v=f107-fau
 The JIT lane is the performance work; the F10.1/F10.6 pages are the shipping
 path and must keep running. Never let the experiment become the only path.
 
-### Next build direction
+### Next test
 
-Do **not** keep flipping exposed runtime URL params. F10.8/F10.9/F10.10 have
-now tested the useful ones:
+Run **F10.11** on the phone with the same WinMUGEN ZIP and COPY TRACE.
 
-| Build | Change | Device result |
+F10.11 is a harness, not a runtime-param toggle. It keeps the proven root and
+overlay path, keeps the F10.8 fault/heap witness, then patches BoxedWine's shell
+so the emulator launches `/bin/wineserver` directly with no WinMUGEN program
+argument. The ZIP still supplies the same app mount path, but MUGEN should not
+be entered as the launched program.
+
+Read the result as:
+
+| Trace shows | Meaning | Next move |
 | --- | --- | --- |
-| F10.8 | `disableWasmJitForWrittenCode=true` | fault moved from `00000000` to `0000000A` |
-| F10.9 | `jit-record=true` | same `0000000A` |
-| F10.10 | `wasmModuleBroker=0` | same `0000000A` |
-
-Next build should isolate `wineserver` startup before MUGEN assets enter the
-picture, or switch to a different JIT/core build strategy. The target question
-is now: can the JIT core run `/bin/wineserver` and `libwine.so.1.0` cleanly on
-iPhone Safari at all?
+| Same `0000000A` in `/bin/wineserver` | the JIT core cannot start wineserver cleanly on iPhone Safari | change core/JIT build or instrument native wineserver path deeper |
+| Different fault or cleaner exit | MUGEN launch arguments/assets contribute to the failure | narrow from wineserver harness back toward Wine program launch |
+| Heap witness fires | memory branch reopens | cap/reshape JIT heap behavior |
 
 ### Latest result
 
@@ -191,8 +194,7 @@ before any WinMUGEN frames. The failure is not heap growth and not browser frame
 starvation. F10.8 proved the written/self-modified-code JIT toggle affects the
 crash path by moving the fault from `00000000` to `0000000A`; F10.9 proved
 `jit-record=true` does not move it; F10.10 proved `wasmModuleBroker=0` does not
-move it. The next useful step is a `wineserver` isolation harness or a different
-core/JIT build, not another URL-param toggle.
+move it. F10.11 now isolates direct `/bin/wineserver` launch.
 
 ---
 
