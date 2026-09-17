@@ -5,15 +5,17 @@
 This lane is **separate** from the Prismatic Veil game ledgers (`PV_LIVE_AUTHORITY.json`, `PV_RESUME_ANCHOR.md`, `PRIZIM_LIVE_NOTEPAD.md`, `live-build.json`). Those govern the LIVE28K Hybrid battle stack and say nothing about MOBMUGEN. Do not cross-apply their rules.
 
 - **Last updated:** 2026-09-17
+- **F10.18 device result:** DECISIVE. The `0000000A` fault is `memchr()` dereferencing a near-null pointer, confirmed at the instruction level against the real `libc-2.19.so` binary. See witness log (top entry).
+- **F10.18 build commit:** `5d4f99b`. Also fixes the real bug behind three straight F10.17 traces missing pinned data (an emergency copy-path handler was short-circuiting the real listener, not a paste-length issue as suspected).
 - **F10.13 device result:** FIRST FAULT-FREE JIT-LANE DEVICE RUN. See witness log.
 - **F10.13 build commit:** `21c1b84` page, `2d63eb2` script copy fallback, `10ae3a9`+`dd00bfd` bugfixes
 - **F10.14 build commit:** `10ae3a9`, copy-fix `dd00bfd` -- now lower priority, see "Current conclusion"
-- **Live note status:** the crash is narrowed to PE-program execution (explorer.exe or WinMugen.exe), not Wine's own loader
+- **Live note status:** the crash is narrowed to `memchr()` receiving a garbage pointer, almost certainly during wineserver/libwine startup before any PE code runs
 - **F10.15 device result:** DECISIVE. cmd.exe faults identically to WinMugen.exe/explorer.exe -- the fault is in PE-program execution itself, not windowing. See witness log.
 - **F10.15 build commit:** `93f6286`
-- **F10.16 build commit:** `69b233b`. Re-runs F10.15's exact test with a fixed witness -- captures the crashing module name BoxedWine already logs, which every prior witness (F10.7-F10.15) silently dropped because it only forwarded lines matching a keyword list, and a DLL name like ntdll.dll matches none of those keywords. Verified in headless against synthetic lines matching BoxedWine's real source format; not yet run on device.
-- **PriZim CI:** `.github/workflows/build-rigf-jit-crashtag.yml` (`8a7ab05`) rebuilds the same pinned JIT source with the same fix made permanent at the C++ level (unmistakable PZFAULT tags on the same three log lines). Run: https://github.com/JR-Faulkner/Prismatic-Veil/actions/runs/35187335426 -- in progress, ~45 min ceiling. Output lands at `mugen-lab/assets/boxedwine-jit-crashtag/`, engine only; wiring a runner page is a separate step once it lands.
-- **Awaiting:** device run of F10.16 (should finally name the crashing module); PriZim CI completion
+- **F10.16 build commit:** `69b233b`. First device run to name the crashing module (`libc-2.19.so`) -- superseded in detail by F10.18's pinned register dump, but the module-identification finding stands.
+- **PriZim CI:** `.github/workflows/build-rigf-jit-crashtag.yml` -- landed on `main` (`297eaa1`), same pinned upstream SHA rebuilt with PZFAULT source tags, verified present in the committed `.wasm`. Output at `mugen-lab/assets/boxedwine-jit-crashtag/`, engine only; wiring a runner page is a separate step, not yet requested.
+- **Awaiting:** identifying the `memchr` caller via the stack-walk lines (see F10.18 entry) to tell apart "genuine Wine startup bug" vs. "JIT-specific register corruption."
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
 ---
@@ -126,6 +128,58 @@ GitHub Pages serves from `main`, and it lags a push by roughly 60–90 seconds. 
 ## Device witness log
 
 Newest first. A run only counts if it happened on the phone.
+
+### 2026-09-17 · F10.18 (`5d4f99b`) — DEVICE RESULT, DECISIVE: FAULT IS `memchr()` DEREFERENCING A NEAR-NULL POINTER
+
+iPhone OS 18.7, Safari 26.6. Same `cmd.exe /c echo F10.15-alive` probe as
+F10.15-F10.17. This is the first run to actually surface the pinned
+crash-site detail F10.17 was built to capture -- three prior F10.17 device
+traces never showed it, and the cause was **not** paste-length truncation as
+suspected at the time. It was a real bug: the HTML wrapper's
+`installEmergencyTraceCopy()` intercepted `#copyTrace` in the capture phase
+with `stopImmediatePropagation()`, so the real JS listener (the one that
+actually wrote `pinned` into `text`) never ran -- every tap silently fell
+back to reading `diag.textContent`, the same rotating 700-line buffer the
+pin exists to survive. F10.18 fixes this by exposing the array on
+`window.__F1018_PINNED` and having the emergency copy path read it directly.
+
+The pinned crash-site register dump:
+
+```
+F10.18 CRASH SITE · C066B479 EAX=0000000A ECX=C0911030 EDX=0000005D EBX=C0760000
+  ESP=C03FEB2C EBP=C07C2E58 ESI=0000005D EDI=0000005D
+  /lib/i386-linux-gnu/libc-2.19.so at 0007B479
+```
+
+Pulled the exact `libc-2.19.so` this rig loads (from the overlay zip,
+`wine1.7.55-v8-min-online.zip`) and resolved offset `0x0007B479` directly:
+it lands 41 bytes into `memchr()` (`memchr@@GLIBC_2.0` at `0x0007B450`), at
+the instruction `cmp BYTE PTR [eax],dl` -- confirmed via `objdump -d` against
+the real binary, not inferred. `memchr`'s prologue loads `eax`=ptr (arg1),
+`edx`=byte-to-find (arg2), `esi`=length (arg3); the dump's `ESI=0000005D`
+(93) matches a length argument, and `EAX=0000000A` at the dereferencing
+instruction means the pointer `memchr` was called with was already at or
+very near `0x0000000A` -- not a null-check gap, an actual near-null address
+being read.
+
+**This is the most precise the crash-site finding has ever gotten:**
+`0000000A` was never an arbitrary bad-page address -- it's `memchr()` being
+handed a garbage/near-null pointer with a 93-byte search length, almost
+certainly during wineserver/libwine's own startup (this happens before any
+PE code runs, consistent with F10.13/F10.15's finding that no program at all
+is needed to trigger it). Two live hypotheses, not yet distinguished:
+(a) a genuine bug in this Wine 1.7.55 build's startup path that happens on
+every backend but is silently survived by the non-JIT interpreter and fatal
+here, or (b) the SIMD WASM-JIT is corrupting a register/argument in the
+*caller* before this call, on JavaScriptCore specifically (consistent with
+F10.14's non-JIT core booting the identical program cleanly, and with
+headless/V8 never reproducing this loop either).
+
+**Next single-variable step:** walk the caller from `EBP=C07C2E58` /
+`ESP=C03FEB2C` (the stack-walk lines already captured alongside this dump
+name `libc-2.19.so` and `Unknown` as the two frames) to identify what
+wineserver/libwine code path calls `memchr` here, which should discriminate
+between (a) and (b). Not yet started.
 
 ### 2026-09-17 · F10.15 (`93f6286`) — DEVICE FAIL, DECISIVE: FAULT IS PE-EXECUTION, NOT WINDOWING
 
