@@ -65,57 +65,111 @@
   let started = false;
   let zipLoaded = false;
 
-  // IndexedDB for persistent zip storage
+  // -------------------------------------------------------------------
+  // IndexedDB persistence for the picked content zip.
+  //
+  // The record stores the File object ITSELF, never file.arrayBuffer().
+  // Reading a 1.7GB zip into an ArrayBuffer materializes the whole thing
+  // in the JS heap at once, which on an iPhone is a tab crash long before
+  // it's a quota error. File/Blob are structured-cloneable and WebKit
+  // keeps them in its own on-disk blob store, handing back a reference --
+  // so put() stays cheap no matter how big the zip is, and the File that
+  // comes back out still has .name/.size/.slice() for the ranged central-
+  // directory reads listZipEntries()/entryRaw() do. Nothing ever needs
+  // the whole zip resident.
+  // -------------------------------------------------------------------
   let db = null;
   async function initDB() {
     return new Promise((res, rej) => {
-      const req = indexedDB.open('I3RosterDB', 1);
+      const req = indexedDB.open('I3RosterDB', 2);
       req.onerror = () => rej(req.error);
       req.onsuccess = () => { db = req.result; res(db); };
       req.onupgradeneeded = e => {
         const d = e.target.result;
-        if (!d.objectStoreNames.contains('zips')) d.createObjectStore('zips', { keyPath: 'hash' });
+        // v1 stored {data: ArrayBuffer}; drop it wholesale rather than
+        // migrate -- those records are exactly the memory hazard this
+        // version exists to remove, and re-picking the zip is cheap.
+        if (d.objectStoreNames.contains('zips')) d.deleteObjectStore('zips');
+        d.createObjectStore('zips', { keyPath: 'hash' });
       };
     });
   }
+
+  async function reportQuota(label) {
+    if (!navigator.storage || !navigator.storage.estimate) return null;
+    try {
+      const est = await navigator.storage.estimate();
+      const mb = n => (n / 1048576).toFixed(0) + 'MB';
+      log('I3 QUOTA · ' + label + ' · using ' + mb(est.usage || 0) + ' of ' + mb(est.quota || 0) + ' available');
+      return est;
+    } catch (_) { return null; }
+  }
+
+  // Persistent storage is opt-in on WebKit; without it the origin's data
+  // is "best-effort" and Safari will evict it under disk pressure -- which
+  // for a multi-GB zip is exactly the case that gets evicted first.
+  async function requestPersistence() {
+    if (!navigator.storage || !navigator.storage.persist) return false;
+    try {
+      if (await navigator.storage.persisted()) return true;
+      const granted = await navigator.storage.persist();
+      log('I3 STORAGE · persistent storage ' + (granted ? 'granted' : 'not granted (browser may evict under disk pressure)'));
+      return granted;
+    } catch (_) { return false; }
+  }
+
+  // Returns true if the zip was persisted, false if it could not be --
+  // never throws. Failing to persist is a convenience loss, not a reason
+  // to block the match that's already loaded and ready to boot.
   async function storeZipInDB(file, zipHash) {
-    if (!db) return;
-    const arrayBuffer = await file.arrayBuffer();
-    return new Promise((res, rej) => {
-      const tx = db.transaction('zips', 'readwrite');
-      const store = tx.objectStore('zips');
-      store.put({ hash: zipHash, filename: file.name, data: arrayBuffer, timestamp: Date.now() });
-      tx.oncomplete = res;
-      tx.onerror = () => rej(tx.error);
-    });
+    if (!db) return false;
+    try {
+      await new Promise((res, rej) => {
+        const tx = db.transaction('zips', 'readwrite');
+        tx.objectStore('zips').put({
+          hash: zipHash, filename: file.name, size: file.size,
+          file, timestamp: Date.now(),
+        });
+        tx.oncomplete = res;
+        tx.onerror = () => rej(tx.error);
+        tx.onabort = () => rej(tx.error);
+      });
+      return true;
+    } catch (e) {
+      const name = (e && e.name) || 'unknown';
+      if (name === 'QuotaExceededError') {
+        log('I3 STORAGE · zip too large for this origin\'s storage quota -- running without persistence, ' +
+          'you\'ll need to pick the zip again next visit');
+        await reportQuota('at quota failure');
+      } else {
+        log('I3 STORAGE · could not persist zip (' + name + ') -- running without persistence');
+      }
+      return false;
+    }
   }
-  async function getStoredZip(zipHash) {
-    if (!db) return null;
-    return new Promise(res => {
-      const tx = db.transaction('zips', 'readonly');
-      const store = tx.objectStore('zips');
-      const req = store.get(zipHash);
-      req.onsuccess = () => {
-        const rec = req.result;
-        if (rec && rec.data) {
-          const blob = new Blob([rec.data], { type: 'application/zip' });
-          blob.name = rec.filename;
-          res(blob);
-        } else {
-          res(null);
-        }
-      };
-      req.onerror = () => res(null);
-    });
+
+  async function listStoredZips() {
+    if (!db) return [];
+    try {
+      return await new Promise((res, rej) => {
+        const tx = db.transaction('zips', 'readonly');
+        const req = tx.objectStore('zips').getAll();
+        req.onsuccess = () => res(req.result || []);
+        req.onerror = () => rej(tx.error);
+      });
+    } catch (_) { return []; }
   }
-  async function clearStoredZip(zipHash) {
+
+  async function clearAllStoredZips() {
     if (!db) return;
-    return new Promise(res => {
-      const tx = db.transaction('zips', 'readwrite');
-      const store = tx.objectStore('zips');
-      store.delete(zipHash);
-      tx.oncomplete = res;
-    });
+    try {
+      await new Promise((res, rej) => {
+        const tx = db.transaction('zips', 'readwrite');
+        tx.objectStore('zips').clear();
+        tx.oncomplete = res;
+        tx.onerror = () => rej(tx.error);
+      });
+    } catch (_) {}
   }
 
   function status(s) { state.textContent = s; if (pill) pill.textContent = s; if (prepDiag) prepDiag.textContent = s; }
@@ -149,30 +203,25 @@
   function u16(v, o) { return v.getUint16(o, true); }
   function u32(v, o) { return v.getUint32(o, true); }
 
-  // Quick hash of central directory for verifying stored zips. Not
-  // cryptographic -- just a checksum so we know if the same file
-  // is being loaded again (by filename + dir hash).
-  async function hashZipCentralDir(file) {
-    const tailStart = Math.max(0, file.size - 65557);
-    const tail = await file.slice(tailStart).arrayBuffer();
-    const v = new DataView(tail);
-    let pos = tail.byteLength - 22;
-    while (pos >= 0) {
-      if (u32(v, pos) === 0x06054b50) {
-        const cdOffset = u32(v, pos + 16);
-        const cdSize = u32(v, pos + 12);
-        const cdStart = Math.max(0, file.size - cdOffset - cdSize - 65557 + tailStart);
-        const cd = await file.slice(cdStart, cdStart + cdSize).arrayBuffer();
-        let hash = 5381;
-        const bytes = new Uint8Array(cd);
-        for (let i = 0; i < bytes.length; i++) {
-          hash = ((hash << 5) + hash) ^ bytes[i];
-        }
-        return hash.toString(36);
-      }
-      pos -= 4;
-    }
-    return null;
+  // Storage key for a picked zip. Not cryptographic and not a integrity
+  // check -- it only has to tell "same zip as last time" from "different
+  // zip", so it folds over the entry table listZipEntries() already
+  // parses rather than re-deriving a second end-of-central-directory
+  // scan. (It did have its own, and it was wrong twice over: it treated
+  // the central directory's absolute file offset as a relative one, and
+  // stepped the EOCD signature search 4 bytes at a time when the record
+  // can begin at any byte.) Reuses the proven reader; reads no bytes the
+  // load path doesn't already read.
+  async function zipFingerprint(file) {
+    try {
+      const entries = await listZipEntries(file);
+      let h = 5381;
+      const mix = s => { for (let i = 0; i < s.length; i++) h = (((h << 5) + h) ^ s.charCodeAt(i)) >>> 0; };
+      mix(String(file.size));
+      mix(String(entries.length));
+      for (const e of entries) { mix(e.name); mix(String(e.uncomp)); }
+      return h.toString(36);
+    } catch (_) { return null; }
   }
 
   async function listZipEntries(file) {
@@ -650,22 +699,32 @@
     status('ZIP LOADED · STARTING ENGINE');
   }
 
-  async function loadAndShowPicker(file) {
+  // fromStorage: this File came back out of IndexedDB, so it's already
+  // persisted -- skip re-writing it.
+  async function loadAndShowPicker(file, fromStorage) {
     try {
       status('LOADING UNZIP LIB');
       await ensureFflate();
       await loadRuntimeAssets();
-
-      // Hash the zip for storage verification
-      const zipHash = await hashZipCentralDir(file);
-      if (zipHash) {
-        status('STORING ZIP');
-        await storeZipInDB(file, zipHash);
-        log('I3 ZIP · stored in browser storage (hash: ' + zipHash + ')');
-      }
-
       await loadZipIntoVfs(file);
       showCharacterPicker();
+
+      // Persist AFTER the picker is up. The zip is already indexed and
+      // playable at this point, so a slow or refused write costs the user
+      // nothing -- and storeZipInDB() never throws, it reports.
+      if (!fromStorage) {
+        const zipHash = await zipFingerprint(file);
+        if (zipHash) {
+          await requestPersistence();
+          const ok = await storeZipInDB(file, zipHash);
+          if (ok) {
+            log('I3 STORAGE · zip saved for next visit (' + file.name + ', hash ' + zipHash + ') -- ' +
+              'reloading this page will skip the file picker');
+            pin('STORAGE', 'zip persisted: ' + file.name);
+            await reportQuota('after save');
+          }
+        }
+      }
     } catch (e) {
       const msg = 'I3 ZIP ERROR · ' + ((e && e.stack) || e);
       log(msg); pin('CRASH', msg); status('FAILED · SEE TRACE');
@@ -675,90 +734,108 @@
   zipInput.addEventListener('change', async () => {
     const f = zipInput.files && zipInput.files[0];
     if (!f) return;
-    await loadAndShowPicker(f);
+    await loadAndShowPicker(f, false);
   });
 
   // Character picker UI
-  let pickerState = { mode: null, p1Idx: 0, p2Idx: 1, stageIdx: 0, allChars: [], allStages: [] };
-  let gridsFocused = {};
+  // ---------------------------------------------------------------------
+  const SETUP_DESC = 'Load a MUGEN content zip. It stays saved in this browser, ' +
+    'so you only pick the file once.';
+  const GRID_IDS = { p1: 'p1Grid', p2: 'p2Grid', stage: 'stageGrid' };
+  const pickerState = { p1Idx: 0, p2Idx: 0, stageIdx: 0 };
+  let pickerWired = false;
 
   function showCharacterPicker() {
-    pickerState.allChars = allChars;
-    pickerState.allStages = allStages;
-    pickerState.p1Idx = Math.max(0, allChars.indexOf(charNames[0] || allChars[0]));
-    pickerState.p2Idx = Math.max(0, allChars.indexOf(charNames[1] || (allChars.length > 1 ? allChars[1] : allChars[0])));
+    pickerState.p1Idx = Math.max(0, allChars.indexOf(charNames[0]));
+    pickerState.p2Idx = Math.max(0, allChars.indexOf(charNames[1]));
     pickerState.stageIdx = 0;
 
-    const setupDesc = document.getElementById('setupDesc');
-    const zipLabel = document.getElementById('zipLabel');
-    const prepDiag = document.getElementById('prepDiag');
-    const charPickerSec = document.getElementById('charPickerSection');
+    document.getElementById('setupDesc').textContent =
+      'Pick your fighter, an opponent and a stage. D-pad moves, START selects.';
+    document.getElementById('zipLabel').classList.add('hide');
+    document.getElementById('prepDiag').classList.add('hide');
+    document.getElementById('charPickerSection').classList.remove('hide');
 
-    setupDesc.textContent = 'Select your fighters and stage, then start the match.';
-    zipLabel.classList.add('hide');
-    prepDiag.classList.add('hide');
-    charPickerSec.classList.remove('hide');
-
-    buildRosterGrid('p1Grid', allChars, 'p1', pickerState.p1Idx);
-    buildRosterGrid('p2Grid', allChars, 'p2', pickerState.p2Idx);
-    buildRosterGrid('stageGrid', allStages, 'stage', pickerState.stageIdx);
+    buildRosterGrid('p1', allChars, pickerState.p1Idx);
+    buildRosterGrid('p2', allChars, pickerState.p2Idx);
+    buildRosterGrid('stage', allStages, pickerState.stageIdx);
     updateSelectionDisplay();
 
-    const startBtn = document.getElementById('startBtn');
-    const changeZipBtn = document.getElementById('changeZipBtn');
-    startBtn.addEventListener('click', () => startMatch());
-    changeZipBtn.addEventListener('click', () => resetForNewZip());
+    // Bind once. showCharacterPicker() runs again after CHANGE ZIP, and
+    // re-adding these every time would stack listeners -- one tap of START
+    // would then fire startMatch() once per zip the user had ever loaded.
+    if (!pickerWired) {
+      document.getElementById('startBtn').addEventListener('click', startMatch);
+      document.getElementById('changeZipBtn').addEventListener('click', resetForNewZip);
+      pickerWired = true;
+    }
+
+    const first = document.querySelector('#p1Grid .roster-item.selected') ||
+      document.querySelector('#p1Grid .roster-item');
+    if (first) first.focus();
 
     status('SELECT FIGHTERS');
-    log('I3 PICKER · character/stage selection screen displayed');
+    log('I3 PICKER · ' + allChars.length + ' characters / ' + allStages.length + ' stages offered');
   }
 
-  function buildRosterGrid(gridId, names, mode, selectedIdx) {
-    const grid = document.getElementById(gridId);
+  function buildRosterGrid(mode, names, selectedIdx) {
+    const grid = document.getElementById(GRID_IDS[mode]);
     grid.innerHTML = '';
     names.forEach((name, idx) => {
       const btn = document.createElement('button');
-      btn.className = 'roster-item';
-      if (idx === selectedIdx) btn.classList.add('selected');
+      btn.className = 'roster-item' + (idx === selectedIdx ? ' selected' : '');
       btn.textContent = name;
       btn.dataset.mode = mode;
       btn.dataset.idx = idx;
       btn.addEventListener('click', () => selectItem(mode, idx));
-      btn.addEventListener('focus', () => { gridsFocused[mode] = idx; updateSelectionDisplay(); });
       grid.appendChild(btn);
     });
-    const p1Btns = document.querySelectorAll('#p1Grid .roster-item');
-    if (p1Btns[selectedIdx]) p1Btns[selectedIdx].focus();
+    if (!names.length) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'grid-column:1/-1;color:#738195;font-size:10px;padding:6px';
+      empty.textContent = mode === 'stage'
+        ? 'no stages found in this zip — the engine will use its own default'
+        : 'no characters found in this zip';
+      grid.appendChild(empty);
+    }
   }
 
   function selectItem(mode, idx) {
-    if (mode === 'p1') { pickerState.p1Idx = idx; charNames[0] = allChars[idx]; }
-    else if (mode === 'p2') { pickerState.p2Idx = idx; charNames[1] = allChars[idx]; }
-    else if (mode === 'stage') { pickerState.stageIdx = idx; stagePath = findStageDefKey(allStages[idx]); }
+    if (mode === 'p1') pickerState.p1Idx = idx;
+    else if (mode === 'p2') pickerState.p2Idx = idx;
+    else if (mode === 'stage') pickerState.stageIdx = idx;
+    // Scope the highlight swap to THIS grid. Clearing .selected across all
+    // three grids would wipe the other two rows' marks every time one of
+    // them changed, leaving only the most recent pick visibly chosen.
+    const grid = document.getElementById(GRID_IDS[mode]);
+    grid.querySelectorAll('.roster-item.selected').forEach(el => el.classList.remove('selected'));
+    const chosen = grid.querySelector('.roster-item[data-idx="' + idx + '"]');
+    if (chosen) chosen.classList.add('selected');
     updateSelectionDisplay();
-    document.querySelectorAll('.roster-item.selected').forEach(el => el.classList.remove('selected'));
-    document.querySelectorAll('[data-mode="' + mode + '"][data-idx="' + idx + '"]').forEach(el => el.classList.add('selected'));
   }
 
   function updateSelectionDisplay() {
-    const p1Name = allChars[pickerState.p1Idx] || '-';
-    const p2Name = allChars[pickerState.p2Idx] || '-';
-    const stageName = allStages[pickerState.stageIdx] || '-';
-    document.getElementById('selP1').textContent = p1Name;
-    document.getElementById('selP2').textContent = p2Name;
-    document.getElementById('selStage').textContent = stageName;
+    document.getElementById('selP1').textContent = allChars[pickerState.p1Idx] || '-';
+    document.getElementById('selP2').textContent = allChars[pickerState.p2Idx] || '-';
+    document.getElementById('selStage').textContent = allStages[pickerState.stageIdx] || '(engine default)';
   }
 
   function startMatch() {
-    charNames[0] = allChars[pickerState.p1Idx];
-    charNames[1] = allChars[pickerState.p2Idx];
-    stagePath = findStageDefKey(allStages[pickerState.stageIdx]);
-    log('I3 PICKER · starting match: P1=' + charNames[0] + ' P2=' + charNames[1] + ' stage=' + (stagePath || '(auto)'));
+    const p1 = allChars[pickerState.p1Idx];
+    const p2 = allChars[pickerState.p2Idx];
+    if (!p1) { log('I3 PICKER · no character selected -- nothing to start'); return; }
+    charNames[0] = p1;
+    charNames[1] = p2 || p1;
+    const stageName = allStages[pickerState.stageIdx];
+    if (stageName) stagePath = findStageDefKey(stageName) || stagePath;
+    log('I3 PICKER · starting match: P1=' + charNames[0] + ' P2=' + charNames[1] +
+      ' stage=' + (stagePath || '(engine default)'));
+    pin('PICKED', 'P1=' + charNames[0] + ' P2=' + charNames[1] + ' stage=' + stagePath);
     document.getElementById('setup').classList.add('hide');
     boot();
   }
 
-  function resetForNewZip() {
+  async function resetForNewZip() {
     charNames.length = 0;
     zipLoaded = false;
     started = false;
@@ -772,46 +849,65 @@
     motifPath = null;
     stagePath = null;
 
+    // The saved copy has to go too, or the next reload silently restores
+    // the zip the user just asked to replace.
+    await clearAllStoredZips();
+
     const setupDesc = document.getElementById('setupDesc');
     const zipLabel = document.getElementById('zipLabel');
     const prepDiag = document.getElementById('prepDiag');
     const charPickerSec = document.getElementById('charPickerSection');
 
-    setupDesc.textContent = 'Picks the mole/g.ken/cfjed_warzard capsule out of your zip and boots straight into a fight.';
+    setupDesc.textContent = SETUP_DESC;
     zipLabel.classList.remove('hide');
     charPickerSec.classList.add('hide');
     prepDiag.classList.remove('hide');
     prepDiag.textContent = 'Waiting for zip…';
     status('WAITING FOR ZIP');
     zipInput.value = '';
-    log('I3 PICKER · reset for new zip selection');
+    log('I3 PICKER · cleared saved zip -- pick a new one');
   }
 
-  // On page load, check if a zip is stored in IndexedDB
+  // On page load, check whether a previously-picked zip is still in
+  // IndexedDB and reuse it instead of making the user find the file again.
   async function autoLoadStoredZip() {
     try {
       await initDB();
-      const allRecs = await new Promise((res, rej) => {
-        const tx = db.transaction('zips', 'readonly');
-        const store = tx.objectStore('zips');
-        const req = store.getAll();
-        req.onsuccess = () => res(req.result);
-        req.onerror = () => rej(tx.error);
-      });
-
-      if (allRecs.length > 0) {
-        const rec = allRecs[0];
-        if (rec && rec.data) {
-          const blob = new Blob([rec.data], { type: 'application/zip' });
-          blob.name = rec.filename;
-          log('I3 STORAGE · found stored zip: ' + rec.filename + ' (' + (rec.data.byteLength / 1048576).toFixed(1) + ' MB)');
-          status('LOADING STORED ZIP');
-          await loadAndShowPicker(blob);
-          return;
-        }
+      const recs = await listStoredZips();
+      if (!recs.length) {
+        log('I3 STORAGE · no saved zip yet -- pick one and it\'ll be remembered for next time');
+        status('WAITING FOR ZIP');
+        return;
       }
+      const rec = recs[0];
+      // Safari can hand back a record whose blob-store backing is gone
+      // (evicted, or the File's underlying disk entry vanished). The
+      // record survives; the bytes don't. Probe with a 1-byte ranged read
+      // before committing to it, so a dead reference falls back to the
+      // picker instead of failing deep inside the zip reader.
+      let usable = false;
+      try {
+        if (rec.file && typeof rec.file.slice === 'function' && rec.file.size > 0) {
+          await rec.file.slice(0, 1).arrayBuffer();
+          usable = true;
+        }
+      } catch (_) { usable = false; }
+
+      if (!usable) {
+        log('I3 STORAGE · saved zip "' + (rec.filename || '?') + '" is no longer readable ' +
+          '(evicted by the browser) -- clearing it, please pick the zip again');
+        await clearAllStoredZips();
+        status('WAITING FOR ZIP');
+        return;
+      }
+
+      log('I3 STORAGE · reusing saved zip: ' + rec.filename + ' (' + (rec.file.size / 1048576).toFixed(1) + ' MB) -- no re-upload needed');
+      pin('STORAGE', 'reused saved zip: ' + rec.filename);
+      status('LOADING SAVED ZIP');
+      await loadAndShowPicker(rec.file, true);
+      return;
     } catch (e) {
-      log('I3 STORAGE · IndexedDB check failed: ' + ((e && e.message) || e));
+      log('I3 STORAGE · IndexedDB unavailable (' + ((e && e.message) || e) + ') -- falling back to file picker');
     }
     status('WAITING FOR ZIP');
   }
@@ -969,27 +1065,53 @@
   debugToggle.addEventListener('click', () => setDebugHidden(!diagWrap.classList.contains('hidden')));
   diagInlineToggle.addEventListener('click', () => setDebugHidden(!diagWrap.classList.contains('hidden')));
 
-  // D-pad navigation for character picker
+  // D-pad navigation for the character picker. The touch controller's
+  // arrows and the six action buttons already dispatch real KeyboardEvents
+  // (emitKey, below) aimed at the engine -- while the picker is open the
+  // engine isn't running yet, so the same events drive the grid instead.
+  // A real gamepad's d-pad reaches this the same way once the browser maps
+  // it, and a physical keyboard works unchanged.
+  const COMMIT_KEYS = new Set(['Enter', ' ', 'z', 'x', 'c', 'a', 's', 'd']);
+
+  // CSS grid uses auto-fill, so the column count depends on the rendered
+  // width -- it is not derivable from the item count. Read what the
+  // browser actually laid out.
+  function gridColumnCount(grid) {
+    const tracks = getComputedStyle(grid).gridTemplateColumns;
+    const n = tracks && tracks !== 'none' ? tracks.trim().split(/\s+/).length : 1;
+    return Math.max(1, n);
+  }
+
   document.addEventListener('keydown', e => {
-    if (!document.getElementById('charPickerSection').classList.contains('hide')) {
-      const currentFocused = document.activeElement;
-      if (!currentFocused.classList.contains('roster-item')) return;
-      const grid = currentFocused.parentElement;
-      const items = [...grid.querySelectorAll('.roster-item')];
-      const idx = items.indexOf(currentFocused);
-      const cols = Math.ceil(Math.sqrt(items.length));
-      let nextIdx = idx;
+    const section = document.getElementById('charPickerSection');
+    if (!section || section.classList.contains('hide')) return;
 
-      if (e.key === 'ArrowRight') { nextIdx = Math.min(idx + 1, items.length - 1); }
-      else if (e.key === 'ArrowLeft') { nextIdx = Math.max(idx - 1, 0); }
-      else if (e.key === 'ArrowDown') { nextIdx = Math.min(idx + cols, items.length - 1); }
-      else if (e.key === 'ArrowUp') { nextIdx = Math.max(idx - cols, 0); }
+    const focused = document.activeElement;
+    if (!focused || !focused.classList.contains('roster-item')) return;
 
-      if (nextIdx !== idx) {
-        e.preventDefault();
-        items[nextIdx].focus();
-      }
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (COMMIT_KEYS.has(key)) {
+      // Enter/Space already activate a focused <button> natively; the
+      // attack keys do not, so route those through the same click path.
+      if (key !== 'Enter' && key !== ' ') { e.preventDefault(); focused.click(); }
+      return;
     }
+
+    const grid = focused.parentElement;
+    const items = [...grid.querySelectorAll('.roster-item')];
+    const idx = items.indexOf(focused);
+    if (idx < 0) return;
+    const cols = gridColumnCount(grid);
+
+    let next = idx;
+    if (e.key === 'ArrowRight') next = Math.min(idx + 1, items.length - 1);
+    else if (e.key === 'ArrowLeft') next = Math.max(idx - 1, 0);
+    else if (e.key === 'ArrowDown') next = Math.min(idx + cols, items.length - 1);
+    else if (e.key === 'ArrowUp') next = Math.max(idx - cols, 0);
+    else return;
+
+    e.preventDefault();
+    if (next !== idx) items[next].focus();
   });
 
   // Landscape usually means a Bluetooth/USB controller is in hand (the
