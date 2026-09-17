@@ -9,7 +9,8 @@ This lane is **separate** from the Prismatic Veil game ledgers (`PV_LIVE_AUTHORI
 - **F10.13 build commit:** `21c1b84` page, `2d63eb2` script copy fallback, `10ae3a9`+`dd00bfd` bugfixes
 - **F10.14 build commit:** `10ae3a9`, copy-fix `dd00bfd` -- now lower priority, see "Current conclusion"
 - **Live note status:** the crash is narrowed to PE-program execution (explorer.exe or WinMugen.exe), not Wine's own loader
-- **Awaiting:** F10.15 (bare wine + a minimal console-only PE binary) to find the exact boundary
+- **Awaiting:** device run of F10.15 (wine cmd.exe /c echo)
+- **F10.15 build commit:** `93f6286`
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
 ---
