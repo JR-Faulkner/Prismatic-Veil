@@ -14,9 +14,10 @@ about MOBMUGEN. Do not cross-apply their rules, and do not assume a change here
 is covered by `AGENTS.md`'s Hybrid preflight.
 
 - **Last updated:** 2026-09-17
+- **F10.8 build commit:** `ea07353`
 - **F10.7 build commit:** `843a2de`
-- **Live note status:** F10.7 device witness recorded
-- **Awaiting:** next JIT mitigation build after F10.7's null page-fault result
+- **Live note status:** F10.8 written-code JIT-off test published
+- **Awaiting:** device run of F10.8 written-code JIT-off test
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
 ---
@@ -29,7 +30,10 @@ https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-1.html
 **Instrumented baseline (same build + loop cost witness):**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-6.html
 
-**JIT lane — latest diagnostic (failed usefully on device):**
+**JIT lane — current mitigation test:**
+https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-8.html?v=f108-writtenjitoff
+
+**JIT lane — previous diagnostic (failed usefully on device):**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-7.html?v=f107-faultwitness
 
 **JIT lane — previous (does not boot, superseded by F10.7):**
@@ -37,6 +41,24 @@ https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-5.html?v=f105b-de
 
 The JIT lane is the performance work; the F10.1/F10.6 pages are the shipping
 path and must keep running. Never let the experiment become the only path.
+
+### Next test
+
+Run **F10.8** on the phone with the same WinMUGEN ZIP and COPY TRACE.
+
+F10.8 changes exactly one runtime variable from F10.7: it adds
+`disableWasmJitForWrittenCode=true`, which makes the JIT shell append
+`-disableWasmJitForWrittenCode` to BoxedWine. Root, overlay, app capsule,
+page-fault capture and heap-growth witness are otherwise carried forward from
+F10.7.
+
+Read the result as:
+
+| Trace shows | Meaning | Next move |
+| --- | --- | --- |
+| Null fault disappears, moves, or Wine gets farther | written/self-modified-code JIT was implicated | refine this mitigation or narrow it to `wineserver` |
+| Same `00000000` loop, `grows=0 refused=0` | the null fault is deeper than written-code JIT | test `jit-record=true`, then `wasmModuleBroker=0` |
+| Heap witness fires | memory branch reopens | cap/reshape JIT heap behavior |
 
 ### Latest result
 
