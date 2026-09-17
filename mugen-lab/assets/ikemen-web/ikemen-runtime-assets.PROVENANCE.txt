@@ -1,0 +1,39 @@
+ikemen-runtime-assets.zip contents and licensing
+=================================================
+
+data/, font/, external/ (root-level, minus data/ikemen1 and data/*.def/*.sff below)
+  Source: energyjp/ikemen-go-web (fork of ikemen-engine/Ikemen-GO)
+  Commit: see UPSTREAM_COMMIT.txt
+  License: MIT (same as upstream Ikemen-GO)
+
+data/ikemen1/, data/fight.def, data/fight.sff, data/fight.snd,
+data/fightfx.air, data/fightfx.sff, data/glyphs.sff, data/select.def,
+data/system.snd, data/common.snd, plus their font/ and sound/ dependencies
+  Source: ikemen-engine/Ikemen_GO-Elecbyte-Screenpack
+  License: MIT (code) / CC-BY-3.0 (non-code assets: sprites, sounds, fonts)
+  This is Ikemen GO's own official default motif -- required unconditionally
+  at boot (main.lua calls loadMotif() with no path, which always resolves to
+  data/ikemen1/system.def via the engine's own Config.Motif default) whether
+  or not the player supplies their own MUGEN content. It ships separately
+  from the engine's git repo (it's part of the release distribution), which
+  is why it isn't already present in energyjp/ikemen-go-web's own tree.
+
+Rebuild command (see mugen-lab/rig-ikemen-2.js's loadRuntimeAssets() for
+what paths the VFS expects):
+  python3 -c "
+  import zipfile, os
+  out = 'ikemen-runtime-assets.zip'
+  with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
+      engine_root = '<energyjp/ikemen-go-web checkout>'
+      for d in ('data', 'font', 'external'):
+          for root, dirs, files in os.walk(os.path.join(engine_root, d)):
+              for f in files:
+                  p = os.path.join(root, f)
+                  z.write(p, os.path.relpath(p, engine_root))
+      sp_root = '<ikemen-engine/Ikemen_GO-Elecbyte-Screenpack checkout>'
+      for d in ('data', 'font', 'sound'):
+          for root, dirs, files in os.walk(os.path.join(sp_root, d)):
+              for f in files:
+                  p = os.path.join(root, f)
+                  z.write(p, os.path.relpath(p, sp_root))
+  "

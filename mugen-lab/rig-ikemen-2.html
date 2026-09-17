@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MobMugen · Ikemen · RIG I2 VFS PROBE</title>
+<style>
+  html,body{margin:0;padding:0;background:#05070c;color:#eef4ff;font:12px ui-monospace,monospace;height:100%}
+  #stage{position:fixed;inset:0;display:flex;flex-direction:column}
+  #head{padding:10px 12px;border-bottom:1px solid #28384c}
+  #head h1{margin:0 0 4px;font-size:13px;color:#f1bf55}
+  #head p{margin:0;color:#9bb0c9;font-size:11px;line-height:1.4}
+  #runtimeState{font-weight:900;color:#9bf0c5}
+  #canvasWrap{padding:8px 12px;border-bottom:1px solid #28384c;display:flex;justify-content:center}
+  canvas#gameCanvas{background:#000;width:100%;max-width:480px;aspect-ratio:4/3;border:1px solid #28384c}
+  #diagWrap{flex:1;min-height:0;display:flex;flex-direction:column}
+  #diag{flex:1;min-height:0;overflow:auto;white-space:pre-wrap;padding:8px 12px;font-size:10px;color:#cfe0f5}
+  #controls{display:flex;gap:8px;padding:10px 12px;border-top:1px solid #28384c;flex-wrap:wrap}
+  button{flex:1;min-width:120px;height:44px;border:1px solid #7a6227;background:#181307;color:#f1bf55;border-radius:10px;font:900 12px ui-monospace}
+  input[type=file]{display:none}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="head">
+    <h1>MOBMUGEN · IKEMEN · RIG I2 VFS PROBE</h1>
+    <p>Second hypothesis: RIG I1 proved the WASM boundary is clean on this
+    device (identical panic to headless: <code>open save/stats.json: not
+    implemented on js</code> -- that's Go's <code>wasm_exec.js</code> shipping
+    an all-ENOSYS filesystem stub for browsers by design, not a bug). This
+    build replaces that stub with a real in-memory filesystem backed by
+    whatever MUGEN capsule zip you pick, then boots straight into a match via
+    Ikemen's own CLI quick-match args (bypassing menus entirely, same pattern
+    the reference WebMUGEN port documented). Expect new, different panics as
+    real Go file I/O starts exercising real code paths -- each one is
+    concrete, readable progress, not a dead end.</p>
+    <p>STATUS · <span id="runtimeState">IDLE</span></p>
+  </div>
+  <div id="canvasWrap"><canvas id="gameCanvas" width="640" height="480"></canvas></div>
+  <div id="diagWrap"><div id="diag"></div></div>
+  <div id="controls">
+    <button id="chooseZipBtn" type="button">CHOOSE ZIP</button>
+    <input type="file" id="zipInput" accept=".zip">
+    <button id="startBtn" type="button" disabled>START PROBE</button>
+    <button id="copyTrace" type="button">COPY TRACE</button>
+  </div>
+</div>
+<script src="./rig-ikemen-2.js?v=i2-vfs-probe"></script>
+</body>
+</html>
