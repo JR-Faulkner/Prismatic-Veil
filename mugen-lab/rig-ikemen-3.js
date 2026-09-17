@@ -561,6 +561,28 @@
       }
     }
 
+    // Manual override until there's a real character-select screen: pass
+    // ?p1=<name>&p2=<name>&s=<stagename> to pick who you play as instead
+    // of whatever order select.def happens to list two resolvable names
+    // in. Each override is validated the same way the automatic pick is --
+    // an unresolvable name is logged and ignored rather than silently
+    // producing a broken argv.
+    const params = new URLSearchParams(location.search);
+    const p1Override = params.get('p1'), p2Override = params.get('p2'), sOverride = params.get('s');
+    if (p1Override) {
+      if (findCharDefKey(p1Override)) { charNames[0] = p1Override; log('I3 OVERRIDE · ?p1=' + p1Override); }
+      else log('I3 OVERRIDE IGNORED · ?p1=' + p1Override + ' does not resolve to a real chars/<name>/<name>.def');
+    }
+    if (p2Override) {
+      if (findCharDefKey(p2Override)) { charNames[1] = p2Override; log('I3 OVERRIDE · ?p2=' + p2Override); }
+      else log('I3 OVERRIDE IGNORED · ?p2=' + p2Override + ' does not resolve to a real chars/<name>/<name>.def');
+    }
+    if (sOverride) {
+      const key = findStageDefKey(sOverride);
+      if (key) { stagePath = key; log('I3 OVERRIDE · ?s=' + sOverride); }
+      else log('I3 OVERRIDE IGNORED · ?s=' + sOverride + ' does not resolve to a real stages/<name>.def');
+    }
+
     log('I3 DETECTED · motif=' + (motifPath || '(none found)') + ' stage=' + (stagePath || '(none found)') + ' chars=' + JSON.stringify(charNames));
     pin('DETECTED', 'motif=' + motifPath + ' stage=' + stagePath + ' chars=' + JSON.stringify(charNames));
     zipLoaded = true;
