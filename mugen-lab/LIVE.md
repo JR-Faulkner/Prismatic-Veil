@@ -14,8 +14,8 @@ about MOBMUGEN. Do not cross-apply their rules, and do not assume a change here
 is covered by `AGENTS.md`'s Hybrid preflight.
 
 - **Last updated:** 2026-09-17
-- **Live commit:** `843a2de`
-- **Awaiting:** device run of F10.7 (see *Next test* below)
+- **Live commit:** `843a2de` + F10.7 device witness recorded in this file
+- **Awaiting:** next JIT mitigation build after F10.7's null page-fault result
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
 ---
@@ -28,7 +28,7 @@ https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-1.html
 **Instrumented baseline (same build + loop cost witness):**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-6.html
 
-**JIT lane — current diagnostic (expected to fail; the trace is the point):**
+**JIT lane — latest diagnostic (failed usefully on device):**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-7.html?v=f107-faultwitness
 
 **JIT lane — previous (does not boot, superseded by F10.7):**
@@ -37,18 +37,31 @@ https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-5.html?v=f105b-de
 The JIT lane is the performance work; the F10.1/F10.6 pages are the shipping
 path and must keep running. Never let the experiment become the only path.
 
-### Next test
+### Latest result
 
-Run **F10.7** on the phone, let it crash, COPY TRACE. It carries the same core,
-root, overlay and capsule as F10.5, so it is expected to fail the same way —
-the difference is that the fault address now survives into the trace.
+**F10.7 has now been run on the phone.** It failed before WinMUGEN frames, but
+the diagnostic answered the question it was built to answer.
 
-Read the result as:
+Device trace:
 
-| Trace shows | Cause | Fix |
-| --- | --- | --- |
-| `HEAP GROW REFUSED` shortly before the faults | iOS refusing wasm heap growth | Cap the heap; the 3 GB `getHeapMax` is not real on a phone |
-| `refused=0`, healthy heap, one stable address (likely in `libwine`) | JavaScriptCore codegen bug | Attack the JIT itself |
+```
+RUNTIME STATUS · NO FRAMES YET · SEE TRACE
+F10.7 FAULTS · 2087 faults · 1 distinct addr · 00000000 x2087
+F10.7 PERF SNAPSHOT · RAF=59 DRAW=0
+F10.7 HEAP · bytes=? max=? grows=0 refused=0
+JS ERROR · RuntimeError: Out of bounds memory access (evaluating 'func()')
+mapped: /bin/wineserver and /lib/libwine.so.1.0 only
+```
+
+Read: this is **not** iOS refusing heap growth. The JIT path reaches early
+`wineserver`, then loops on a stable null page fault at `00000000` until
+JavaScriptCore reports an out-of-bounds Wasm memory access. The browser event
+loop remains healthy (`RAF=59`) and no frames are drawn (`DRAW=0`).
+
+Next build should attack the JIT/null-fault path directly. Good candidates are
+to disable or narrow the JIT for `wineserver`, test `jit-record` /
+`wasmModuleBroker`, or build a tiny wineserver-only harness that isolates the
+first null-page fault before MUGEN assets enter the picture.
 
 Booting the JIT core is the **only** item on the critical path. Everything else
 is answered or closed.
@@ -89,7 +102,7 @@ Do not change more than one of these per experiment.
 
 Newest first. A run only counts if it happened on the phone.
 
-### 2026-09-17 · F10.7 (`843a2de`) — BUILT, AWAITING DEVICE
+### 2026-09-17 · F10.7 (`843a2de`) — DEVICE FAIL, NULL PAGE FAULT CAPTURED
 
 JIT-lane diagnostic. Same core/root/overlay/capsule as F10.5; expected to fail
 the same way. Adds page-fault address capture (F10.5's console filter dropped
@@ -104,7 +117,22 @@ produced two verbatim dumps plus the histogram, taking the trace from 642 lines
 to 48. The instrument is proven; the reading is not — headless boots this JIT
 fine and cannot reproduce the device crash.
 
-**No device run yet.**
+iPhone OS 18.7, Safari 26.6. Device run reached no WinMUGEN frames:
+
+```
+RUNTIME STATUS · NO FRAMES YET · SEE TRACE
+F10.7 FAULTS · 2087 faults · 1 distinct addr · 00000000 x2087
+F10.7 PERF SNAPSHOT · RAF=59 DRAW=0
+F10.7 HEAP · bytes=? max=? grows=0 refused=0
+JS ERROR · RuntimeError: Out of bounds memory access (evaluating 'func()')
+```
+
+Memory map repeated only `/bin/wineserver` and `/lib/libwine.so.1.0`. This
+closes the heap-growth branch for this failure: `grows=0 refused=0`, and there
+is no `HEAP GROW REFUSED` / `HEAP OVER MAX` line. The device failure is a
+stable null page fault in early `wineserver` on the JIT core, followed by
+JavaScriptCore's Wasm out-of-bounds exception. The browser itself is healthy
+(`RAF=59`), so this is not a renderer stall or main-thread starvation result.
 
 ### 2026-09-16 · F10.6 (`59d19e4`) — MEASURED, CPU-BOUND CONFIRMED
 
