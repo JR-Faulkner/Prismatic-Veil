@@ -5,11 +5,12 @@
 This lane is **separate** from the Prismatic Veil game ledgers (`PV_LIVE_AUTHORITY.json`, `PV_RESUME_ANCHOR.md`, `PRIZIM_LIVE_NOTEPAD.md`, `live-build.json`). Those govern the LIVE28K Hybrid battle stack and say nothing about MOBMUGEN. Do not cross-apply their rules.
 
 - **Last updated:** 2026-09-17
-- **F10.13 build commit:** `21c1b84` page, `2d63eb2` script copy fallback
+- **F10.14 build commit:** `10ae3a9` (also corrects a dead F10.13 patch, see below)
+- **F10.13 build commit:** `21c1b84` page, `2d63eb2` script copy fallback, `10ae3a9` bugfix
 - **F10.12 build commit:** `8415424`
 - **F10.11 build commit:** `2ee8cf4`
-- **Live note status:** F10.13 bare Wine harness published with COPY TRACE fallback
-- **Awaiting:** device run of F10.13 bare Wine harness
+- **Live note status:** F10.13 corrected before its first device run; F10.14 (non-JIT core, same launch shape) published alongside it
+- **Awaiting:** device run of F10.13 (corrected) and F10.14
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
 ---
@@ -22,8 +23,11 @@ https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-1.html
 **Instrumented baseline (same build + loop cost witness):**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-6.html
 
-**Current JIT launch harness:**
+**Corrected bare-Wine launch harness (JIT core -- run this):**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-13.html?v=f1013-bare-wine-copyfix
+
+**Non-JIT core discriminator (identical launch shape -- run this too):**
+https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-14.html?v=f1014-nonjit-core
 
 **Previous JIT lane tests:**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-12.html?v=f1012-wine-noprogram
@@ -35,22 +39,47 @@ https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-7.html?v=f107-fau
 
 The JIT lane is the performance work; the F10.1/F10.6 pages are the shipping path and must keep running. Never let the experiment become the only path.
 
-### Next test
+### Bug found and fixed before it reached the phone
 
-Run **F10.13** on the phone with the same WinMUGEN ZIP and COPY TRACE. If Safari refuses clipboard access, the button now opens a selected text box; manually copy the selected trace from there.
+F10.13 has never been run on device. Before it was, its own explorer-fallback
+patch was found to be dead: the regex targeted the wrapper's own fetched
+`rig-f10-8.js` text, but the string `"explorer"` never appears there at all --
+it lives inside `boxedwine-shell.js`, fetched into a local variable at
+runtime. The regex matched nothing and silently changed nothing. F10.13 had
+been going to launch `/bin/wine explorer /desktop=shell`, identical to F10.12,
+contrary to its own name and its own trace label. Confirmed directly in
+headless: command line before the fix read `/bin/wine,explorer,/desktop=shell`;
+after, `/bin/wine` alone. Fixed by patching the runtime-fetched shell text
+itself, with the needle asserted so a future shell change fails loudly instead
+of silently reintroducing this.
 
-F10.13 is the next launch harness. It goes through `/bin/wine` with no WinMUGEN program argument and disables the shell's `explorer /desktop=shell` fallback. This sits between F10.12's `/bin/wine` no-program explorer fallback and F10.11's direct `/bin/wineserver` harness.
+### Next test: two builds, run both
 
-Read the result as:
+**F10.13 (corrected)** goes through `/bin/wine` with no WinMUGEN program
+argument and, now genuinely, no explorer/desktop=shell fallback. This sits
+between F10.12's explorer-fallback path and F10.11's direct `/bin/wineserver`
+harness.
 
-| Trace shows | Meaning | Next move |
+**F10.14** is the discriminator this project has been missing. Every JIT-lane
+test since F10.7 varied something *inside* the JIT core (toggles, then Wine
+launch arguments) -- none changed the core itself, despite
+`boxedwine-f83-fallback/` (non-JIT interpreter, `CPU_MODE.txt=NON_JIT_RELEASE`)
+sitting in the repo unused since before this branch started. F10.14 is F10.13's
+corrected launch shape with exactly one variable changed: the CPU core.
+
+Read the pair together:
+
+| F10.13 (JIT) | F10.14 (non-JIT) | Meaning |
 | --- | --- | --- |
-| Same `0000000A` | bare `/bin/wine` entrypoint itself triggers the old fault | isolate Wine loader / builtin initialization before explorer |
-| Moves to `FFFFFFFF` | explorer fallback caused the F10.12 `0000000A` path | instrument explorer/desktop startup |
-| Gets farther or exits cleanly | shell fallback or program handoff contributes to the fault | narrow launch args / working dir / app mount |
-| Heap witness fires | memory branch reopens | cap/reshape JIT heap behavior |
+| Faults | Boots WinMUGEN | The fault is JIT-core-specific. The seven-test Wine-launch bisection was sound, ruling out everything except the actual JIT. |
+| Faults | Faults the same way | The JIT was never the differentiator. The new shell, launch shape, or mount semantics from F10.7+ are implicated, and the bisection has been chasing the wrong subsystem. |
+| Boots WinMUGEN | (moot) | The bare-wine fix alone was the whole problem; F10.12's explorer path was the actual fault trigger. Re-check F10.12 against this same corrected shape before concluding. |
 
-### Latest result
+If F10.13 still shows the old address table (`0000000A`/`FFFFFFFF`/`00000000`),
+read it against that table as before; the corrected launch shape may still
+move which address appears.
+
+### Historical result (F10.12, pre-dates the fix above)
 
 **F10.12 has now been run on the phone.** It returned to the F10.8-F10.10 signature.
 
@@ -76,6 +105,30 @@ GitHub Pages serves from `main`, and it lags a push by roughly 60–90 seconds. 
 ## Device witness log
 
 Newest first. A run only counts if it happened on the phone.
+
+### 2026-09-17 · F10.14 (`10ae3a9`) — BUILT, AWAITING DEVICE
+
+Non-JIT core discriminator. Same corrected bare-`/bin/wine`, no-program,
+no-explorer-fallback launch shape as F10.13; the only variable changed is
+`BASE`, pointed at `boxedwine-f83-fallback/` (never used by any page before
+this). Heap-growth witness skipped rather than faked: its target strings do
+not exist in this build's compiled output (confirmed, grep count 0).
+
+Verified in headless Chromium: shell-text patch takes effect (command line
+`/bin/wine` alone), Wine's own userland prints its usage banner, zero page
+faults. Headless has never reproduced this project's device-only fault under
+either core, so this is boot-path evidence only. **No device run yet.**
+
+### 2026-09-17 · F10.13 (corrected, `10ae3a9`) — BUILT, AWAITING FIRST DEVICE RUN
+
+Same build as originally shipped, with its dead explorer-fallback patch fixed
+(see "Bug found and fixed" above). Never run on device before or after the
+fix -- this is its first real test.
+
+Verified in headless Chromium after the fix: command line is `/bin/wine` alone,
+matching F10.14's launch shape exactly except for the CPU core. Wine's own
+userland prints its usage banner, zero page faults. Same caveat as F10.14:
+headless boot success is not a device result.
 
 ### 2026-09-17 · F10.12 (`8415424`) — DEVICE FAIL, `/bin/wine` NO-PROGRAM RETURNED TO 0000000A
 
@@ -157,7 +210,11 @@ Legacy BoxedWine/Wine path, non-JIT core. Reached actual fights on device twice.
 
 ## Current conclusion
 
-The old non-JIT path runs but is far too slow. The JIT path is the only known speed lever, but on iPhone Safari it faults before any WinMUGEN frames. The failure is not heap growth and not browser frame starvation. F10.8 proved the written/self-modified-code JIT toggle affects the crash path by moving the fault from `00000000` to `0000000A`; F10.9 proved `jit-record=true` does not move it; F10.10 proved `wasmModuleBroker=0` does not move it; F10.11 proved direct `/bin/wineserver` changes the signature to `FFFFFFFF`; F10.12 proved `/bin/wine` with no WinMUGEN program handoff returns to `0000000A`. F10.13 now tests bare `/bin/wine` with the explorer fallback removed.
+The old non-JIT path runs but is far too slow (~4 FPS, confirmed by F10.6; 60 needs a 15.4x speedup that no scheduling change can produce). The JIT path is the only known speed lever, but on iPhone Safari it faults before any WinMUGEN frames. The failure is not heap growth and not browser frame starvation. F10.8 proved the written/self-modified-code JIT toggle affects the crash path by moving the fault from `00000000` to `0000000A`; F10.9 proved `jit-record=true` does not move it; F10.10 proved `wasmModuleBroker=0` does not move it; F10.11 proved direct `/bin/wineserver` changes the signature to `FFFFFFFF`; F10.12 proved `/bin/wine` with no WinMUGEN program handoff returns to `0000000A`.
+
+**Caveat on the F10.12 reading, added 2026-09-17:** F10.13's explorer-fallback removal was found to be non-functional before its first device run (see "Bug found and fixed," above) -- the regex never matched anything, so F10.13 as originally built would have launched identically to F10.12. F10.12's own result (`0000000A`) is unaffected by this, since F10.12 never claimed to remove the fallback. But it means the Wine-launch bisection has not yet actually tested a no-explorer-fallback path on device; F10.13 (corrected) is the first build that will.
+
+F10.14 is the discriminator none of F10.7 through F10.13 provided: every one of those varied something inside the JIT core; none swapped the core itself, despite a never-used non-JIT interpreter (`boxedwine-f83-fallback/`) sitting in the repo the whole time. F10.13 (corrected) and F10.14 share an identical launch shape and differ only in CPU core -- whichever one boots WinMUGEN and whichever one doesn't will tell us, for the first time, whether this project's entire seven-test bisection has been diagnosing the JIT or diagnosing something upstream of it that both cores share.
 
 ---
 
