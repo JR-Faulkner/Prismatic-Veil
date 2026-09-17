@@ -11,7 +11,9 @@ This lane is **separate** from the Prismatic Veil game ledgers (`PV_LIVE_AUTHORI
 - **Live note status:** the crash is narrowed to PE-program execution (explorer.exe or WinMugen.exe), not Wine's own loader
 - **F10.15 device result:** DECISIVE. cmd.exe faults identically to WinMugen.exe/explorer.exe -- the fault is in PE-program execution itself, not windowing. See witness log.
 - **F10.15 build commit:** `93f6286`
-- **Awaiting:** next hypothesis, see "Current conclusion"
+- **F10.16 build commit:** `69b233b`. Re-runs F10.15's exact test with a fixed witness -- captures the crashing module name BoxedWine already logs, which every prior witness (F10.7-F10.15) silently dropped because it only forwarded lines matching a keyword list, and a DLL name like ntdll.dll matches none of those keywords. Verified in headless against synthetic lines matching BoxedWine's real source format; not yet run on device.
+- **PriZim CI:** `.github/workflows/build-rigf-jit-crashtag.yml` (`8a7ab05`) rebuilds the same pinned JIT source with the same fix made permanent at the C++ level (unmistakable PZFAULT tags on the same three log lines). Run: https://github.com/JR-Faulkner/Prismatic-Veil/actions/runs/35187335426 -- in progress, ~45 min ceiling. Output lands at `mugen-lab/assets/boxedwine-jit-crashtag/`, engine only; wiring a runner page is a separate step once it lands.
+- **Awaiting:** device run of F10.16 (should finally name the crashing module); PriZim CI completion
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
 ---
