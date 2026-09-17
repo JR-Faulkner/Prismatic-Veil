@@ -65,6 +65,59 @@
   let started = false;
   let zipLoaded = false;
 
+  // IndexedDB for persistent zip storage
+  let db = null;
+  async function initDB() {
+    return new Promise((res, rej) => {
+      const req = indexedDB.open('I3RosterDB', 1);
+      req.onerror = () => rej(req.error);
+      req.onsuccess = () => { db = req.result; res(db); };
+      req.onupgradeneeded = e => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains('zips')) d.createObjectStore('zips', { keyPath: 'hash' });
+      };
+    });
+  }
+  async function storeZipInDB(file, zipHash) {
+    if (!db) return;
+    const arrayBuffer = await file.arrayBuffer();
+    return new Promise((res, rej) => {
+      const tx = db.transaction('zips', 'readwrite');
+      const store = tx.objectStore('zips');
+      store.put({ hash: zipHash, filename: file.name, data: arrayBuffer, timestamp: Date.now() });
+      tx.oncomplete = res;
+      tx.onerror = () => rej(tx.error);
+    });
+  }
+  async function getStoredZip(zipHash) {
+    if (!db) return null;
+    return new Promise(res => {
+      const tx = db.transaction('zips', 'readonly');
+      const store = tx.objectStore('zips');
+      const req = store.get(zipHash);
+      req.onsuccess = () => {
+        const rec = req.result;
+        if (rec && rec.data) {
+          const blob = new Blob([rec.data], { type: 'application/zip' });
+          blob.name = rec.filename;
+          res(blob);
+        } else {
+          res(null);
+        }
+      };
+      req.onerror = () => res(null);
+    });
+  }
+  async function clearStoredZip(zipHash) {
+    if (!db) return;
+    return new Promise(res => {
+      const tx = db.transaction('zips', 'readwrite');
+      const store = tx.objectStore('zips');
+      store.delete(zipHash);
+      tx.oncomplete = res;
+    });
+  }
+
   function status(s) { state.textContent = s; if (pill) pill.textContent = s; if (prepDiag) prepDiag.textContent = s; }
   function log(s) {
     s = String(s);
@@ -95,6 +148,32 @@
   // ---------------------------------------------------------------------
   function u16(v, o) { return v.getUint16(o, true); }
   function u32(v, o) { return v.getUint32(o, true); }
+
+  // Quick hash of central directory for verifying stored zips. Not
+  // cryptographic -- just a checksum so we know if the same file
+  // is being loaded again (by filename + dir hash).
+  async function hashZipCentralDir(file) {
+    const tailStart = Math.max(0, file.size - 65557);
+    const tail = await file.slice(tailStart).arrayBuffer();
+    const v = new DataView(tail);
+    let pos = tail.byteLength - 22;
+    while (pos >= 0) {
+      if (u32(v, pos) === 0x06054b50) {
+        const cdOffset = u32(v, pos + 16);
+        const cdSize = u32(v, pos + 12);
+        const cdStart = Math.max(0, file.size - cdOffset - cdSize - 65557 + tailStart);
+        const cd = await file.slice(cdStart, cdStart + cdSize).arrayBuffer();
+        let hash = 5381;
+        const bytes = new Uint8Array(cd);
+        for (let i = 0; i < bytes.length; i++) {
+          hash = ((hash << 5) + hash) ^ bytes[i];
+        }
+        return hash.toString(36);
+      }
+      pos -= 4;
+    }
+    return null;
+  }
 
   async function listZipEntries(file) {
     const tailStart = Math.max(0, file.size - 65557);
@@ -378,6 +457,7 @@
   // ---------------------------------------------------------------------
   let motifPath = null, stagePath = null;
   const charNames = [];
+  let allChars = [], allStages = [];
   let runtimeAssetsLoaded = false;
 
   async function ensureFflate() {
@@ -523,73 +603,45 @@
     log('I3 ZIP · ' + eagerCount + ' engine-config files loaded now, ' + indexedCount +
       ' roster files (chars/stages/sound) indexed for on-demand loading -- not read yet');
 
-    // Discover the real roster from select.def instead of assuming two
-    // hardcoded names.
+    // Discover the real roster from select.def for the UI picker.
     charNames.length = 0;
+    allChars = [];
+    allStages = [];
     const selectRec = vfsFiles.get(motifPath ? motifPath.replace(/system\.def$/i, 'select.def') : 'data/select.def');
     if (selectRec) {
       const text = decoder.decode(selectRec.data);
       const parsed = parseSelectDef(text);
-      for (const name of parsed.chars) {
-        if (charNames.length >= 2) break;
-        if (findCharDefKey(name) && !charNames.includes(name)) charNames.push(name);
-      }
-      for (const name of parsed.stages) {
-        const key = findStageDefKey(name);
-        if (key) { stagePath = key; break; }
-      }
+      allChars = [...new Set(parsed.chars.filter(n => findCharDefKey(n)))];
+      allStages = parsed.stages.filter(n => findStageDefKey(n));
       log('I3 ROSTER · select.def parsed: ' + parsed.chars.length + ' character lines, ' + parsed.stages.length +
-        ' extra-stage lines -- picked ' + JSON.stringify(charNames) + ' (first two that actually resolve)');
-      // Real names for ?p1=/?p2=, not the placeholder text in the docs --
-      // dedup + cap so this doesn't turn a 150-character roster into a
-      // wall of text, but it's what actually goes in the URL.
-      const resolvable = [...new Set(parsed.chars.filter(n => findCharDefKey(n)))];
-      const shown = resolvable.slice(0, 60);
-      const rosterMsg = 'I3 ROSTER · ' + resolvable.length + ' playable names found -- use any of these for ?p1=/?p2=: ' +
-        shown.join(', ') + (resolvable.length > shown.length ? ' ... (+' + (resolvable.length - shown.length) + ' more)' : '');
+        ' extra-stage lines -- found ' + allChars.length + ' resolvable characters, ' + allStages.length + ' stages');
+      const shown = allChars.slice(0, 60);
+      const rosterMsg = 'I3 ROSTER · ' + allChars.length + ' playable names found: ' +
+        shown.join(', ') + (allChars.length > shown.length ? ' ... (+' + (allChars.length - shown.length) + ' more)' : '');
       log(rosterMsg);
       pin('ROSTER', rosterMsg);
     } else {
-      log('I3 ROSTER · no select.def found at the expected path -- falling back to scanning for any playable character/stage');
-    }
-    // Fall back to just scanning the index for *something* playable if
-    // select.def didn't get us a full pair (e.g. it lists names we
-    // couldn't resolve, or wasn't found at all).
-    if (charNames.length < 2) {
+      log('I3 ROSTER · no select.def found -- scanning for all resolvable characters/stages');
       for (const key of zipIndexLower.keys()) {
         const m = key.match(/^chars\/([^\/]+)\/([^\/]+)\.def$/);
-        if (m && m[1] === m[2] && !charNames.includes(m[1])) {
-          charNames.push(m[1]);
-          if (charNames.length >= 2) break;
-        }
+        if (m && m[1] === m[2]) allChars.push(m[1]);
       }
-    }
-    if (!stagePath) {
+      allChars = [...new Set(allChars)].sort();
       for (const key of zipIndexLower.keys()) {
-        if (/^stages\/[^\/]+\.def$/.test(key)) { stagePath = zipIndexLower.get(key); break; }
+        const m = key.match(/^stages\/([^\/]+)\.def$/);
+        if (m) allStages.push(m[1]);
       }
+      allStages = [...new Set(allStages)].sort();
     }
-
-    // Manual override until there's a real character-select screen: pass
-    // ?p1=<name>&p2=<name>&s=<stagename> to pick who you play as instead
-    // of whatever order select.def happens to list two resolvable names
-    // in. Each override is validated the same way the automatic pick is --
-    // an unresolvable name is logged and ignored rather than silently
-    // producing a broken argv.
-    const params = new URLSearchParams(location.search);
-    const p1Override = params.get('p1'), p2Override = params.get('p2'), sOverride = params.get('s');
-    if (p1Override) {
-      if (findCharDefKey(p1Override)) { charNames[0] = p1Override; log('I3 OVERRIDE · ?p1=' + p1Override); }
-      else log('I3 OVERRIDE IGNORED · ?p1=' + p1Override + ' does not resolve to a real chars/<name>/<name>.def');
+    // Fallback: auto-pick first two characters for initial selection
+    if (charNames.length < 2 && allChars.length >= 2) {
+      charNames.push(allChars[0], allChars[1]);
+    } else if (charNames.length < 1 && allChars.length >= 1) {
+      charNames.push(allChars[0]);
     }
-    if (p2Override) {
-      if (findCharDefKey(p2Override)) { charNames[1] = p2Override; log('I3 OVERRIDE · ?p2=' + p2Override); }
-      else log('I3 OVERRIDE IGNORED · ?p2=' + p2Override + ' does not resolve to a real chars/<name>/<name>.def');
-    }
-    if (sOverride) {
-      const key = findStageDefKey(sOverride);
-      if (key) { stagePath = key; log('I3 OVERRIDE · ?s=' + sOverride); }
-      else log('I3 OVERRIDE IGNORED · ?s=' + sOverride + ' does not resolve to a real stages/<name>.def');
+    if (!stagePath && allStages.length > 0) {
+      const key = findStageDefKey(allStages[0]);
+      if (key) stagePath = key;
     }
 
     log('I3 DETECTED · motif=' + (motifPath || '(none found)') + ' stage=' + (stagePath || '(none found)') + ' chars=' + JSON.stringify(charNames));
@@ -598,20 +650,171 @@
     status('ZIP LOADED · STARTING ENGINE');
   }
 
-  zipInput.addEventListener('change', async () => {
-    const f = zipInput.files && zipInput.files[0];
-    if (!f) return;
+  async function loadAndShowPicker(file) {
     try {
       status('LOADING UNZIP LIB');
       await ensureFflate();
       await loadRuntimeAssets();
-      await loadZipIntoVfs(f);
-      await boot();
+
+      // Hash the zip for storage verification
+      const zipHash = await hashZipCentralDir(file);
+      if (zipHash) {
+        status('STORING ZIP');
+        await storeZipInDB(file, zipHash);
+        log('I3 ZIP · stored in browser storage (hash: ' + zipHash + ')');
+      }
+
+      await loadZipIntoVfs(file);
+      showCharacterPicker();
     } catch (e) {
       const msg = 'I3 ZIP ERROR · ' + ((e && e.stack) || e);
       log(msg); pin('CRASH', msg); status('FAILED · SEE TRACE');
     }
+  }
+
+  zipInput.addEventListener('change', async () => {
+    const f = zipInput.files && zipInput.files[0];
+    if (!f) return;
+    await loadAndShowPicker(f);
   });
+
+  // Character picker UI
+  let pickerState = { mode: null, p1Idx: 0, p2Idx: 1, stageIdx: 0, allChars: [], allStages: [] };
+  let gridsFocused = {};
+
+  function showCharacterPicker() {
+    pickerState.allChars = allChars;
+    pickerState.allStages = allStages;
+    pickerState.p1Idx = Math.max(0, allChars.indexOf(charNames[0] || allChars[0]));
+    pickerState.p2Idx = Math.max(0, allChars.indexOf(charNames[1] || (allChars.length > 1 ? allChars[1] : allChars[0])));
+    pickerState.stageIdx = 0;
+
+    const setupDesc = document.getElementById('setupDesc');
+    const zipLabel = document.getElementById('zipLabel');
+    const prepDiag = document.getElementById('prepDiag');
+    const charPickerSec = document.getElementById('charPickerSection');
+
+    setupDesc.textContent = 'Select your fighters and stage, then start the match.';
+    zipLabel.classList.add('hide');
+    prepDiag.classList.add('hide');
+    charPickerSec.classList.remove('hide');
+
+    buildRosterGrid('p1Grid', allChars, 'p1', pickerState.p1Idx);
+    buildRosterGrid('p2Grid', allChars, 'p2', pickerState.p2Idx);
+    buildRosterGrid('stageGrid', allStages, 'stage', pickerState.stageIdx);
+    updateSelectionDisplay();
+
+    const startBtn = document.getElementById('startBtn');
+    const changeZipBtn = document.getElementById('changeZipBtn');
+    startBtn.addEventListener('click', () => startMatch());
+    changeZipBtn.addEventListener('click', () => resetForNewZip());
+
+    status('SELECT FIGHTERS');
+    log('I3 PICKER · character/stage selection screen displayed');
+  }
+
+  function buildRosterGrid(gridId, names, mode, selectedIdx) {
+    const grid = document.getElementById(gridId);
+    grid.innerHTML = '';
+    names.forEach((name, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'roster-item';
+      if (idx === selectedIdx) btn.classList.add('selected');
+      btn.textContent = name;
+      btn.dataset.mode = mode;
+      btn.dataset.idx = idx;
+      btn.addEventListener('click', () => selectItem(mode, idx));
+      btn.addEventListener('focus', () => { gridsFocused[mode] = idx; updateSelectionDisplay(); });
+      grid.appendChild(btn);
+    });
+    const p1Btns = document.querySelectorAll('#p1Grid .roster-item');
+    if (p1Btns[selectedIdx]) p1Btns[selectedIdx].focus();
+  }
+
+  function selectItem(mode, idx) {
+    if (mode === 'p1') { pickerState.p1Idx = idx; charNames[0] = allChars[idx]; }
+    else if (mode === 'p2') { pickerState.p2Idx = idx; charNames[1] = allChars[idx]; }
+    else if (mode === 'stage') { pickerState.stageIdx = idx; stagePath = findStageDefKey(allStages[idx]); }
+    updateSelectionDisplay();
+    document.querySelectorAll('.roster-item.selected').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('[data-mode="' + mode + '"][data-idx="' + idx + '"]').forEach(el => el.classList.add('selected'));
+  }
+
+  function updateSelectionDisplay() {
+    const p1Name = allChars[pickerState.p1Idx] || '-';
+    const p2Name = allChars[pickerState.p2Idx] || '-';
+    const stageName = allStages[pickerState.stageIdx] || '-';
+    document.getElementById('selP1').textContent = p1Name;
+    document.getElementById('selP2').textContent = p2Name;
+    document.getElementById('selStage').textContent = stageName;
+  }
+
+  function startMatch() {
+    charNames[0] = allChars[pickerState.p1Idx];
+    charNames[1] = allChars[pickerState.p2Idx];
+    stagePath = findStageDefKey(allStages[pickerState.stageIdx]);
+    log('I3 PICKER · starting match: P1=' + charNames[0] + ' P2=' + charNames[1] + ' stage=' + (stagePath || '(auto)'));
+    document.getElementById('setup').classList.add('hide');
+    boot();
+  }
+
+  function resetForNewZip() {
+    charNames.length = 0;
+    zipLoaded = false;
+    started = false;
+    allChars = [];
+    allStages = [];
+    zipIndex.clear();
+    zipIndexLower.clear();
+    vfsFiles.clear();
+    vfsDirs.clear();
+    runtimeAssetsLoaded = false;
+    motifPath = null;
+    stagePath = null;
+
+    const setupDesc = document.getElementById('setupDesc');
+    const zipLabel = document.getElementById('zipLabel');
+    const prepDiag = document.getElementById('prepDiag');
+    const charPickerSec = document.getElementById('charPickerSection');
+
+    setupDesc.textContent = 'Picks the mole/g.ken/cfjed_warzard capsule out of your zip and boots straight into a fight.';
+    zipLabel.classList.remove('hide');
+    charPickerSec.classList.add('hide');
+    prepDiag.classList.remove('hide');
+    prepDiag.textContent = 'Waiting for zip…';
+    status('WAITING FOR ZIP');
+    zipInput.value = '';
+    log('I3 PICKER · reset for new zip selection');
+  }
+
+  // On page load, check if a zip is stored in IndexedDB
+  async function autoLoadStoredZip() {
+    try {
+      await initDB();
+      const allRecs = await new Promise((res, rej) => {
+        const tx = db.transaction('zips', 'readonly');
+        const store = tx.objectStore('zips');
+        const req = store.getAll();
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => rej(tx.error);
+      });
+
+      if (allRecs.length > 0) {
+        const rec = allRecs[0];
+        if (rec && rec.data) {
+          const blob = new Blob([rec.data], { type: 'application/zip' });
+          blob.name = rec.filename;
+          log('I3 STORAGE · found stored zip: ' + rec.filename + ' (' + (rec.data.byteLength / 1048576).toFixed(1) + ' MB)');
+          status('LOADING STORED ZIP');
+          await loadAndShowPicker(blob);
+          return;
+        }
+      }
+    } catch (e) {
+      log('I3 STORAGE · IndexedDB check failed: ' + ((e && e.message) || e));
+    }
+    status('WAITING FOR ZIP');
+  }
 
   async function boot() {
     if (started) return;
@@ -766,6 +969,29 @@
   debugToggle.addEventListener('click', () => setDebugHidden(!diagWrap.classList.contains('hidden')));
   diagInlineToggle.addEventListener('click', () => setDebugHidden(!diagWrap.classList.contains('hidden')));
 
+  // D-pad navigation for character picker
+  document.addEventListener('keydown', e => {
+    if (!document.getElementById('charPickerSection').classList.contains('hide')) {
+      const currentFocused = document.activeElement;
+      if (!currentFocused.classList.contains('roster-item')) return;
+      const grid = currentFocused.parentElement;
+      const items = [...grid.querySelectorAll('.roster-item')];
+      const idx = items.indexOf(currentFocused);
+      const cols = Math.ceil(Math.sqrt(items.length));
+      let nextIdx = idx;
+
+      if (e.key === 'ArrowRight') { nextIdx = Math.min(idx + 1, items.length - 1); }
+      else if (e.key === 'ArrowLeft') { nextIdx = Math.max(idx - 1, 0); }
+      else if (e.key === 'ArrowDown') { nextIdx = Math.min(idx + cols, items.length - 1); }
+      else if (e.key === 'ArrowUp') { nextIdx = Math.max(idx - cols, 0); }
+
+      if (nextIdx !== idx) {
+        e.preventDefault();
+        items[nextIdx].focus();
+      }
+    }
+  });
+
   // Landscape usually means a Bluetooth/USB controller is in hand (the
   // engine already polls navigator.getGamepads() every frame on its own --
   // no code needed there), so the touch D-pad is just dead weight blocking
@@ -777,5 +1003,8 @@
   applyOrientation(landscapeMq.matches);
   landscapeMq.addEventListener('change', e => applyOrientation(e.matches));
 
-  log('I3 READY · tap CHOOSE MUGEN ZIP');
+  // Try to load stored zip on page load
+  autoLoadStoredZip();
+
+  log('I3 READY · waiting for zip (checking storage)');
 })();
