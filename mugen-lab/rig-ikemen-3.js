@@ -7,6 +7,45 @@
   // rather than doing a true reload. Force a real reload in that case so
   // CHOOSE MUGEN ZIP is always reachable on revisit.
   window.addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
+
+  // Audio unlock backstop. The engine's audio backend (oto's driver_js.go)
+  // already does the textbook autoplay-policy fix -- it waits for a real
+  // document-level touchend/mouseup/keyup before calling
+  // audioContext.resume() -- but it only starts listening once the WASM
+  // module is actually running, well after the CHOOSE MUGEN ZIP tap that
+  // kicked off loading. The next real interaction on the page is a touch
+  // control, which fires a real pointerdown/pointerup but only a
+  // *synthetic* KeyboardEvent (emitKey(), further down) -- and iOS Safari
+  // has been known to gate resume() on the currently-processing event's
+  // own trustedness rather than a general "activation happened somewhere
+  // in this task" flag, so oto's own keyup listener may never see a
+  // trusted event to react to. Patch AudioContext to track every instance
+  // created (by the engine or anything else) and resume any suspended one
+  // on the next REAL touchend/mouseup/keydown -- independent of oto's own
+  // listeners, so this works whether or not that gating theory is exactly
+  // right. A harmless no-op if oto's own unlock already succeeded.
+  (function () {
+    const Native = window.AudioContext || window.webkitAudioContext;
+    if (!Native) return;
+    const tracked = [];
+    function Patched(...args) {
+      const ctx = new Native(...args);
+      tracked.push(ctx);
+      return ctx;
+    }
+    Patched.prototype = Native.prototype;
+    window.AudioContext = Patched;
+    window.webkitAudioContext = Patched;
+    function resumeAll() {
+      for (const ctx of tracked) {
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      }
+    }
+    for (const ev of ['touchend', 'mouseup', 'keydown', 'pointerup']) {
+      document.addEventListener(ev, resumeAll, { passive: true });
+    }
+  })();
+
   const state = document.getElementById('runtimeState');
   const pill = document.getElementById('runtimePill');
   const diag = document.getElementById('diag');
