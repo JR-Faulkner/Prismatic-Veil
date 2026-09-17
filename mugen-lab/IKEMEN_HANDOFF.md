@@ -74,39 +74,41 @@ against the user's own real ~1.7GB/9551-entry MUGEN install.
    `wasm_exec.js` loads, so its default all-`ENOSYS` browser stub never
    installs.
 2. `ikemen-runtime-assets.zip` loads first (engine's own required files).
-3. User picks a MUGEN content zip. Only shared engine-config-shaped
-   entries (`data/`, `font/`, `plugins/`, root `.dll`/`.ini`/`.cfg`/`.txt`)
-   load eagerly. Every `chars/*`, `stages/*`, `sound/*` entry is indexed
-   (path + zip entry, bytes untouched) and decompressed **on demand** the
-   moment the engine's `open()`/`stat()` actually asks for it — a full
-   roster zip can be gigabytes; only material to a given match is ever
-   read.
-4. `data/select.def` is parsed client-side for real character/stage
-   names (the engine does its own authoritative parse internally; this
-   only needs candidates for the CLI quick-match args below). Each
-   candidate is validated against the zip index before use.
-5. Boots via Ikemen's built-in CLI quick-match (`-p1`/`-p2`/`-loadmotif`/
+3. **Zip persistence (IndexedDB)**: When a user picks a MUGEN content zip,
+   it's stored in browser IndexedDB with a hash of its central directory.
+   On next page load, if a stored zip is found, it auto-loads with no
+   file picker — the zip stays in browser storage until explicitly changed.
+4. Only shared engine-config-shaped entries (`data/`, `font/`, `plugins/`,
+   root `.dll`/`.ini`/`.cfg`/`.txt`) load eagerly. Every `chars/*`,
+   `stages/*`, `sound/*` entry is indexed (path + zip entry, bytes untouched)
+   and decompressed **on demand** the moment the engine's `open()`/`stat()`
+   actually asks for it — a full roster zip can be gigabytes; only material
+   to a given match is ever read.
+5. `data/select.def` is parsed client-side to discover real character and
+   stage names (the engine does its own authoritative parse internally; this
+   only needs candidates for roster display and CLI quick-match args).
+   All resolvable names are shown in a grid-based **character picker UI**
+   where the user selects P1, P2 (CPU), and stage with D-pad navigation or
+   touch/mouse clicks. Each choice is validated against the zip index before
+   use.
+6. Boots via Ikemen's built-in CLI quick-match (`-p1`/`-p2`/`-loadmotif`/
    `-s`/`-p2.ai`), bypassing menus entirely (native menus are known
    GC-heavy on single-threaded WASM per public prior art on this engine).
-6. Touch D-pad + 6 buttons dispatch real `KeyboardEvent`s matching this
+7. Touch D-pad + 6 buttons dispatch real `KeyboardEvent`s matching this
    build's own default key config (arrows, Z/X/C, A/S/D, Enter) — the
    engine listens via real `document.addEventListener`, same mechanism
    already proven on this repo's BoxedWine lane.
 
-### Player/stage selection (no picker UI yet)
+### Character picker UI
 
-Auto-picks the first two `select.def`-listed names that actually resolve.
-To choose instead:
+After picking a zip, a grid-based character/stage selector appears. Navigate
+with D-pad (or arrow keys/mouse), select with action buttons (or clicks).
+Current selections (P1/P2/Stage) display below the grids. Click "START MATCH"
+to boot the engine with those choices, or "CHANGE ZIP" to load a different zip
+(which clears the stored one from browser storage).
 
-```
-rig-ikemen-3.html?p1=<name>&p2=<name>&s=<stagename>
-```
-
-Names must match a real `chars/<name>/<name>.def` in the zip (case
-doesn't matter). An unresolvable override is logged and ignored, not
-silently broken. The trace (COPY TRACE button) logs every resolvable
-name found in the roster, capped at 60, so real names are always
-discoverable without inspecting the zip separately.
+The picker shows all names from `select.def` that actually resolve to real
+character/stage files. Selection names are logged to the trace for debugging.
 
 ## Known traps already hit and fixed (don't relearn these)
 
@@ -148,24 +150,24 @@ discoverable without inspecting the zip separately.
   `external/script/main.lua` in whichever fork is actually in use, not
   secondhand descriptions.
 
-## Suggested next steps (not started)
+## Suggested next steps
 
-- **Beautification pass** — current UI is functional, not polished.
-- **Real character-select screen** — the `?p1=`/`?p2=` URL override is a
-  stopgap. Either try Ikemen's own native select screen first (zero new
-  code, unconfirmed whether it's fast enough on single-threaded WASM —
-  the fork's own docs/prior art flag native *menus* as GC-heavy, unclear
-  if select screen specifically has the same issue) or build a
-  lightweight custom picker (grid of roster names/portraits) backed by
-  the same lazy VFS.
+- **GUI beautification** — current UI (character picker, setup card, HUD) is
+  functional but visually basic. Align with Prismatic Veil battle aesthetics
+  if this is meant to ship alongside it. Consider: portrait display in picker
+  grids (if character portraits are available), frame styling to match battle
+  UI, animations on selection/transitions.
 - **Bluetooth/USB controller support** — likely already works with zero
   changes: the engine polls `navigator.getGamepads()` every frame on its
   own (`input_js.go`), ranking real controllers ahead of junk HID
   devices. Touch controls already auto-hide in landscape orientation
   (assumption: a physical controller is in hand there). Not yet
   confirmed against a real device.
-- **Sound**: character-specific SFX confirmed working after the audio
-  backstop fix. Stage background music is currently out of scope — BGM
-  files live under a bare `sound/` path not covered by the current
-  eager-vs-lazy split logic (would need `sound/` added to the lazy
-  index, same as chars/stages already are).
+- **Stage background music** — character-specific SFX confirmed working
+  after the audio backstop fix. BGM files live under a bare `sound/` path
+  not covered by the current eager-vs-lazy split logic (would need `sound/`
+  added to the lazy index, same as chars/stages already are).
+- **Optional: Real character portraits in picker** — grids currently show
+  names only. If character portrait PNGs are available in the roster zip
+  (e.g. `chars/<name>/portrait.png`) or bundled separately, integrate them
+  into the picker grid for visual character selection.
