@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MobMugen · Rig F · F10.11 WINESERVER HARNESS</title>
+<script>
+(function(){
+  'use strict';
+  fetch('./rig-f10-8.html?v=f1011-base-f10-8', { cache: 'no-store' })
+    .then(function(r){ if(!r.ok) throw new Error('F10.11 base HTML HTTP '+r.status); return r.text(); })
+    .then(function(html){
+      html = html.replaceAll('F10.8 WRITTEN-CODE JIT OFF', 'F10.11 WINESERVER HARNESS');
+      html = html.replaceAll('F10.8 JIT FAULT WITNESS', 'F10.11 WINESERVER HARNESS');
+      html = html.replaceAll('Rig F · F10.8', 'Rig F · F10.11');
+      html = html.replace('F10.8 is a one-switch JIT mitigation build. It keeps F10.7\'s root, overlay, capsule, fault capture and heap witness, then adds disableWasmJitForWrittenCode=true to test whether early wineserver null faults come from JITing written/self-modified code.', 'F10.11 is a wineserver isolation harness. It uses the same root and overlay but patches the shell to launch /bin/wineserver directly with no WinMUGEN program argument, so the phone test answers whether the JIT core can start wineserver itself.');
+      html = html.replace('F10.8 written-code JIT-off trace', 'F10.11 wineserver harness trace');
+      html = html.replace('./rig-f10-8.js?v=f108-writtenjitoff', './rig-f10-11.js?v=f1011-wineserver');
+      document.open();
+      document.write(html);
+      document.close();
+    })
+    .catch(function(e){
+      document.body.innerHTML = '<pre style="white-space:pre-wrap;color:#f88;background:#070b13;padding:16px">F10.11 PAGE WRAPPER ERROR\n' + String((e && e.stack) || e).replace(/[<>&]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }) + '</pre>';
+    });
+})();
+</script>
+</head>
+<body></body>
+</html>
