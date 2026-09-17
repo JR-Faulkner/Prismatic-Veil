@@ -540,6 +540,15 @@
       }
       log('I3 ROSTER · select.def parsed: ' + parsed.chars.length + ' character lines, ' + parsed.stages.length +
         ' extra-stage lines -- picked ' + JSON.stringify(charNames) + ' (first two that actually resolve)');
+      // Real names for ?p1=/?p2=, not the placeholder text in the docs --
+      // dedup + cap so this doesn't turn a 150-character roster into a
+      // wall of text, but it's what actually goes in the URL.
+      const resolvable = [...new Set(parsed.chars.filter(n => findCharDefKey(n)))];
+      const shown = resolvable.slice(0, 60);
+      const rosterMsg = 'I3 ROSTER · ' + resolvable.length + ' playable names found -- use any of these for ?p1=/?p2=: ' +
+        shown.join(', ') + (resolvable.length > shown.length ? ' ... (+' + (resolvable.length - shown.length) + ' more)' : '');
+      log(rosterMsg);
+      pin('ROSTER', rosterMsg);
     } else {
       log('I3 ROSTER · no select.def found at the expected path -- falling back to scanning for any playable character/stage');
     }
