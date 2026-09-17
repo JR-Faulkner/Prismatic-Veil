@@ -9,8 +9,9 @@ This lane is **separate** from the Prismatic Veil game ledgers (`PV_LIVE_AUTHORI
 - **F10.13 build commit:** `21c1b84` page, `2d63eb2` script copy fallback, `10ae3a9`+`dd00bfd` bugfixes
 - **F10.14 build commit:** `10ae3a9`, copy-fix `dd00bfd` -- now lower priority, see "Current conclusion"
 - **Live note status:** the crash is narrowed to PE-program execution (explorer.exe or WinMugen.exe), not Wine's own loader
-- **Awaiting:** device run of F10.15 (wine cmd.exe /c echo)
+- **F10.15 device result:** DECISIVE. cmd.exe faults identically to WinMugen.exe/explorer.exe -- the fault is in PE-program execution itself, not windowing. See witness log.
 - **F10.15 build commit:** `93f6286`
+- **Awaiting:** next hypothesis, see "Current conclusion"
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
 ---
@@ -123,6 +124,44 @@ GitHub Pages serves from `main`, and it lags a push by roughly 60–90 seconds. 
 ## Device witness log
 
 Newest first. A run only counts if it happened on the phone.
+
+### 2026-09-17 · F10.15 (`93f6286`) — DEVICE FAIL, DECISIVE: FAULT IS PE-EXECUTION, NOT WINDOWING
+
+iPhone OS 18.7, Safari 26.6. `wine cmd.exe /c echo F10.15-alive` -- the
+simplest possible Windows program, no window creation implied by the command
+itself.
+
+```
+F10.15 FAULT SUMMARY · 300 faults · 1 distinct addr · 0000000A x300
+...
+F10.15 FAULT SUMMARY · 400 faults · 1 distinct addr · 0000000A x400
+```
+
+Same address, same shape, as F10.8-F10.10 (`0000000A`) and F10.12. Climbing
+continuously, never stopping, never shutting down cleanly.
+
+**This resolves the question F10.15 was built to answer.** It is not a
+GUI/user32/window-creation bug. A trivial console command faults exactly like
+WinMugen.exe and explorer.exe. The boundary proven by F10.13+F10.15 together
+is now precise: **no program to execute -> clean. Any program, however
+trivial -> faults at 0000000A, on the JIT core, regardless of what the
+program does.**
+
+The fault is somewhere in PE-program execution itself -- process creation,
+module/PE loading, or very early runtime init -- common to every program Wine
+launches, not specific to windowing.
+
+**Also notable:** headless Chromium (V8) running this identical
+`cmd.exe /c echo` test showed only 2 crash-adjacent events (of a different
+message format, "Unhandled page fault on read access to...") and then kept
+compiling and running thousands more JIT blocks -- it never reproduced the
+device's continuous, un-recovering `0000000A` fault loop. Device (JavaScriptCore)
+and headless (V8) diverge sharply at whatever code executes here. That
+divergence is itself a strong signal this is a JIT-codegen correctness issue
+specific to JavaScriptCore's execution of BoxedWine's WASM-JIT output, not a
+Wine-configuration or launch-argument issue -- reinforced by F10.8-F10.12
+already having ruled out every JIT toggle and launch-argument variation tried
+so far without moving this address.
 
 ### 2026-09-17 · F10.13 (corrected, `10ae3a9`) — DEVICE PASS, FIRST FAULT-FREE JIT-LANE RUN
 
@@ -262,7 +301,9 @@ The old non-JIT path runs but is far too slow (~4 FPS, confirmed by F10.6; 60 ne
 
 **Correction, 2026-09-17:** F10.13's explorer-fallback removal was found to be non-functional before its first device run (see "Bug found and fixed," above) -- the regex never matched anything, so F10.13 as originally built would have launched identically to F10.12. F10.12's own recorded result stands, since it never claimed to remove the fallback; F10.13 (corrected) is what actually tested the no-explorer, no-program path, and it is the first clean result the JIT lane has ever produced.
 
-The open question is no longer "does the JIT fault" -- it does, but only once Wine executes a program. It is now: does it fault on **any** PE program (a PE-loader/process-creation bug), or specifically on programs that **create a window** (a GUI/user32/GDI-subsystem bug, which both `WinMugen.exe` and `explorer.exe` are)? F10.15 tests that directly with a console-only PE binary already present in the root. F10.14 (non-JIT core, same bare-no-program shape as F10.13) is now expected to also boot clean regardless of core, since that shape doesn't reach the code that faults on either core -- it remains useful as a confirmatory data point, not as the priority.
+**F10.15 answered the open question, on device.** It is not a GUI/user32/window-creation-specific bug -- `cmd.exe /c echo`, a trivial console command, faults identically (`0000000A`, continuous, non-recovering) to `WinMugen.exe` and `explorer.exe`. The bisection is now airtight: no program -> clean (F10.13); any program at all -> faults the same way (F10.7-F10.10, F10.12, F10.15). This is a bug in PE-program execution itself under this JIT core, not in windowing, not in launch arguments, and not in any of the JIT toggles F10.8-F10.10 already ruled out.
+
+The device/headless divergence is the sharpest lead available: the identical `cmd.exe /c echo` test that faults continuously on device (JavaScriptCore) ran mostly clean in headless (V8), compiling thousands more JIT blocks past the two crash-adjacent events it did hit. That points at a JavaScriptCore-specific WASM-JIT codegen bug in whatever code path runs once a program is actually loaded and executed -- not a configuration problem this project can route around with another launch-argument test. F10.14 (non-JIT core, bare-no-program shape) remains a low-value confirmatory data point, not a priority, since it still doesn't touch the code path that faults.
 
 ---
 
