@@ -12,6 +12,7 @@
       src = src.replace(/else\s*\{\s*params\.push\("explorer"\);\s*params\.push\("\/desktop=shell"\);\s*\}/, 'else{console.log("F10.13 HARNESS · bare /bin/wine launch · no explorer fallback");}');
       src = src.replace('written-code JIT disabled · Wine 1.7.55 proven root', 'bare /bin/wine harness · no explorer fallback · written-code JIT disabled · Wine 1.7.55 proven root');
       src = src.replace('const BASE=', "console.log('F10.13 WRAPPER · loaded F10.8 base · bare /bin/wine with no program and no explorer fallback');\nconst BASE=");
+      src = src.replace("try{await navigator.clipboard.writeText(text);copyBtn.textContent='COPIED'}catch(_){copyBtn.textContent='COPY FAILED'}setTimeout(()=>copyBtn.textContent='COPY TRACE',1000)", "try{await navigator.clipboard.writeText(text);copyBtn.textContent='COPIED'}catch(_){let ta=document.getElementById('traceFallback');if(!ta){ta=document.createElement('textarea');ta.id='traceFallback';ta.setAttribute('readonly','readonly');ta.style.cssText='position:fixed;left:10px;right:10px;bottom:62px;z-index:30;height:42vh;background:#05070c;color:#eef4ff;border:1px solid #7a6227;border-radius:12px;padding:10px;font:10px ui-monospace;white-space:pre-wrap';document.body.appendChild(ta)}ta.value=text;ta.classList.remove('hide');ta.focus();ta.select();copyBtn.textContent='SELECT TRACE'}setTimeout(()=>copyBtn.textContent='COPY TRACE',2500)");
       const s = document.createElement('script');
       s.text = src + "\n//# sourceURL=rig-f10-13.generated.js";
       document.head.appendChild(s);
