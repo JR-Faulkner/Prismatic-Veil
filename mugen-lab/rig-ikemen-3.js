@@ -106,6 +106,27 @@
   const vfsDirs = new Set();  // explicit + implied directory paths
   const vfsFilesLower = new Map(); // lowercased path -> real (correctly-cased) path
 
+  // Lazy loading: a full MUGEN roster is way more data than any one match
+  // needs. Rather than decompressing every chars/*, stages/*, sound/* entry
+  // up front (fine for a 2-character test capsule, not fine for a
+  // multi-gigabyte full install), the zip's central directory is indexed
+  // here without touching entry bytes -- open()/stat() decompress a single
+  // entry on demand, the moment the engine actually asks for that path.
+  const zipIndex = new Map();      // stripped path (real case) -> zip entry
+  const zipIndexLower = new Map(); // lowercased stripped path -> real-case key
+  let currentZipFile = null;
+  async function lazyMaterialize(path) {
+    if (vfsFiles.has(path) || vfsDirs.has(path)) return true;
+    let key = zipIndex.has(path) ? path : zipIndexLower.get(path.toLowerCase());
+    if (!key) return false;
+    const ent = zipIndex.get(key);
+    const raw = await entryRaw(currentZipFile, ent);
+    vfsPutFile(key, raw);
+    zipIndex.delete(key);
+    zipIndexLower.delete(key.toLowerCase());
+    return true;
+  }
+
   function normPath(p) {
     if (!p) return p;
     p = p.replace(/\\/g, '/');
@@ -214,8 +235,10 @@
       if (position === null || position === undefined) h.pos += n;
       callback(null, n);
     },
-    open(path, flags, mode, callback) {
-      path = resolvePath(normPath(path));
+    async open(path, flags, mode, callback) {
+      path = normPath(path);
+      await lazyMaterialize(path);
+      path = resolvePath(path);
       const wantCreate = (flags & O_CREAT) !== 0;
       const wantTrunc = (flags & O_TRUNC) !== 0;
       if (vfsIsDir(path)) {
@@ -242,10 +265,10 @@
       if (!h) { callback(enoent('fd ' + fd)); return; }
       callback(null, statObjFor(h.path));
     },
-    stat(path, callback) {
-      const orig = path;
-      path = resolvePath(normPath(path));
-      if (window.__I2_TRACE_STAT) console.log('I3 STAT TRACE ·', orig, '->', path, '->', vfsExists(path));
+    async stat(path, callback) {
+      path = normPath(path);
+      await lazyMaterialize(path);
+      path = resolvePath(path);
       if (!vfsExists(path)) { callback(enoent(path)); return; }
       callback(null, statObjFor(path));
     },
@@ -367,33 +390,67 @@
     return prefix || '';
   }
 
-  // A real MUGEN install zip can carry a full roster -- thousands of
-  // entries, gigabytes -- when this probe only needs the mole/g.ken/
-  // cfjed_warzard capsule already validated against the BoxedWine lane.
-  // Reading every entry unconditionally (first cut of this loader) meant
-  // 9500+ individually-awaited slice()+arrayBuffer() calls on a 1.7GB file
-  // on a real phone -- minutes of loading with no content-related bug at
-  // all. Same lean-capsule filter as rig-f10-8.js's keep(), applied BEFORE
-  // any entry content is read, not after.
-  function keepEntry(lowerRelPath) {
+  // Entries loaded eagerly, before the engine even starts: the shared
+  // engine-config files every boot needs regardless of which characters
+  // get picked (data/, font/, plugins/, a few root config file types).
+  // Everything else -- every chars/*, stages/*, sound/* entry, i.e. the
+  // actual roster -- goes into zipIndex instead and is decompressed lazily
+  // by lazyMaterialize() the moment the engine actually opens it. A full
+  // roster zip can be gigabytes; reading only what a given match actually
+  // touches is what makes that tractable at all.
+  function isEagerBootstrap(lowerRelPath) {
     if (lowerRelPath === 'winmugen.exe') return true;
     if (!lowerRelPath.includes('/') && /\.(dll|ini|cfg|dat|txt)$/i.test(lowerRelPath)) return true;
-    const capsule = lowerRelPath.startsWith('chars/mole/') || lowerRelPath.startsWith('chars/g.ken/') ||
-      lowerRelPath === 'stages/cfjed_warzard.def' || lowerRelPath === 'stages/cfjed_warzard.sff';
-    return lowerRelPath.startsWith('data/') || lowerRelPath.startsWith('font/') ||
-      lowerRelPath.startsWith('plugins/') || capsule;
+    return lowerRelPath.startsWith('data/') || lowerRelPath.startsWith('font/') || lowerRelPath.startsWith('plugins/');
+  }
+
+  // Light client-side parse of select.def, just enough to hand the engine
+  // real -p1/-p2/-s candidates instead of hardcoded names -- the engine
+  // does its own full, authoritative parse internally regardless. Each
+  // candidate is validated against the zip index (a real chars/<name>/
+  // <name>.def or stages/<name>.def has to actually exist) before being
+  // used, so a stray comment or keyword line can't produce a bad argv.
+  function parseSelectDef(text) {
+    const chars = [], stages = [];
+    let section = '';
+    for (const raw of text.split(/\r?\n/)) {
+      const sm = raw.match(/^\s*\[(.+?)\]/);
+      if (sm) { section = sm[1].trim().toLowerCase(); continue; }
+      const semi = raw.indexOf(';');
+      const line = (semi >= 0 ? raw.slice(0, semi) : raw).trim();
+      if (!line) continue;
+      const first = line.split(',')[0].trim();
+      if (!first) continue;
+      if (section === 'characters' && !/^(randomselect|blank|skipslot)$/i.test(first)) chars.push(first);
+      else if (section === 'extrastages') stages.push(first);
+    }
+    return { chars, stages };
+  }
+  function findCharDefKey(name) {
+    name = name.replace(/\\/g, '/');
+    const base = name.includes('/') ? name.split('/').pop() : name;
+    const candidates = name.toLowerCase().endsWith('.def')
+      ? [name]
+      : [name + '/' + base + '.def', 'chars/' + name + '/' + base + '.def'];
+    return candidates.some(c => zipIndexLower.has(c.toLowerCase()) || vfsFilesLower.has(c.toLowerCase()));
+  }
+  function findStageDefKey(name) {
+    name = name.replace(/\\/g, '/');
+    const candidates = name.toLowerCase().endsWith('.def') ? [name] : [name + '.def', 'stages/' + name + '.def'];
+    return candidates.find(c => zipIndexLower.has(c.toLowerCase()) || vfsFilesLower.has(c.toLowerCase()));
   }
 
   async function loadZipIntoVfs(file) {
     status('READING ZIP');
     log('I3 ZIP · reading central directory of ' + file.name + ' (' + (file.size / 1048576).toFixed(1) + ' MB)');
+    currentZipFile = file;
     const entries = await listZipEntries(file);
     log('I3 ZIP · ' + entries.length + ' entries found');
     const realEntries = entries.filter(e => e.name && !e.name.endsWith('/'));
 
     // Find Winmugen.exe (or an Ikemen-style content zip with no exe at all)
     // to establish the prefix to strip, same convention as the BoxedWine
-    // lane -- then apply the lean-capsule filter relative to that prefix.
+    // lane.
     const exe = realEntries.find(e => {
       const l = e.name.toLowerCase();
       return l === 'winmugen.exe' || l.endsWith('/winmugen.exe');
@@ -407,33 +464,64 @@
     }
     if (prefix) log('I3 ZIP · stripping common wrapper folder "' + prefix + '" so chars/data/stages land at VFS root');
 
-    const toLoad = realEntries.filter(e => {
-      if (prefix && !e.name.startsWith(prefix)) return false;
-      const rel = (prefix ? e.name.slice(prefix.length) : e.name).toLowerCase();
-      return keepEntry(rel);
-    });
-    log('I3 ZIP · lean capsule filter: ' + toLoad.length + '/' + realEntries.length +
-      ' entries kept (mole/g.ken/cfjed_warzard + data/font/plugins) -- same filter the BoxedWine lane uses, not the full roster');
-
-    let n = 0;
-    for (const ent of toLoad) {
-      const raw = await entryRaw(file, ent);
-      const stripped = prefix && ent.name.startsWith(prefix) ? ent.name.slice(prefix.length) : ent.name;
-      vfsPutFile(stripped, raw);
+    let eagerCount = 0, indexedCount = 0;
+    for (const ent of realEntries) {
+      if (prefix && !ent.name.startsWith(prefix)) continue;
+      const stripped = prefix ? ent.name.slice(prefix.length) : ent.name;
       const lower = stripped.toLowerCase();
-      if (lower.endsWith('/system.def') || lower === 'system.def') motifPath = stripped;
-      if (lower.includes('stages/') && lower.endsWith('.def') && !stagePath) stagePath = stripped;
-      const m = lower.match(/(?:^|\/)chars\/([^\/]+)\/[^\/]+\.def$/);
-      if (m && charNames.length < 2) {
-        const parts = stripped.split('/');
-        const idx = parts.findIndex(p => p.toLowerCase() === 'chars');
-        const dirName = idx >= 0 ? parts[idx + 1] : m[1];
-        if (dirName && !charNames.includes(dirName)) charNames.push(dirName);
+      if (isEagerBootstrap(lower)) {
+        const raw = await entryRaw(file, ent);
+        vfsPutFile(stripped, raw);
+        if (lower.endsWith('/system.def') || lower === 'system.def') motifPath = stripped;
+        eagerCount++;
+        if (eagerCount % 20 === 0) status('LOADING ' + eagerCount);
+      } else {
+        zipIndex.set(stripped, ent);
+        zipIndexLower.set(lower, stripped);
+        indexedCount++;
       }
-      n++;
-      if (n % 20 === 0) status('LOADING ' + n + '/' + toLoad.length);
     }
-    log('I3 ZIP LOADED · ' + n + ' files into VFS (of ' + realEntries.length + ' total in the zip)');
+    log('I3 ZIP · ' + eagerCount + ' engine-config files loaded now, ' + indexedCount +
+      ' roster files (chars/stages/sound) indexed for on-demand loading -- not read yet');
+
+    // Discover the real roster from select.def instead of assuming two
+    // hardcoded names.
+    charNames.length = 0;
+    const selectRec = vfsFiles.get(motifPath ? motifPath.replace(/system\.def$/i, 'select.def') : 'data/select.def');
+    if (selectRec) {
+      const text = decoder.decode(selectRec.data);
+      const parsed = parseSelectDef(text);
+      for (const name of parsed.chars) {
+        if (charNames.length >= 2) break;
+        if (findCharDefKey(name) && !charNames.includes(name)) charNames.push(name);
+      }
+      for (const name of parsed.stages) {
+        const key = findStageDefKey(name);
+        if (key) { stagePath = key; break; }
+      }
+      log('I3 ROSTER · select.def parsed: ' + parsed.chars.length + ' character lines, ' + parsed.stages.length +
+        ' extra-stage lines -- picked ' + JSON.stringify(charNames) + ' (first two that actually resolve)');
+    } else {
+      log('I3 ROSTER · no select.def found at the expected path -- falling back to scanning for any playable character/stage');
+    }
+    // Fall back to just scanning the index for *something* playable if
+    // select.def didn't get us a full pair (e.g. it lists names we
+    // couldn't resolve, or wasn't found at all).
+    if (charNames.length < 2) {
+      for (const key of zipIndexLower.keys()) {
+        const m = key.match(/^chars\/([^\/]+)\/([^\/]+)\.def$/);
+        if (m && m[1] === m[2] && !charNames.includes(m[1])) {
+          charNames.push(m[1]);
+          if (charNames.length >= 2) break;
+        }
+      }
+    }
+    if (!stagePath) {
+      for (const key of zipIndexLower.keys()) {
+        if (/^stages\/[^\/]+\.def$/.test(key)) { stagePath = zipIndexLower.get(key); break; }
+      }
+    }
+
     log('I3 DETECTED · motif=' + (motifPath || '(none found)') + ' stage=' + (stagePath || '(none found)') + ' chars=' + JSON.stringify(charNames));
     pin('DETECTED', 'motif=' + motifPath + ' stage=' + stagePath + ' chars=' + JSON.stringify(charNames));
     zipLoaded = true;
