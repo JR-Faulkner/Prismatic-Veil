@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MobMugen · Rig F · F10.10 MODULE BROKER OFF</title>
+<script>
+(function(){
+  'use strict';
+  fetch('./rig-f10-9.html?v=f1010-base-f10-9', { cache: 'no-store' })
+    .then(function(r){ if(!r.ok) throw new Error('F10.10 base HTML HTTP '+r.status); return r.text(); })
+    .then(function(html){
+      html = html.replaceAll('F10.9 JIT RECORD WITNESS', 'F10.10 MODULE BROKER OFF');
+      html = html.replaceAll('Rig F · F10.9', 'Rig F · F10.10');
+      html = html.replace('F10.9 is a one-switch follow-up to F10.8. It keeps F10.8\'s written-code JIT-off setup, root, overlay, capsule, fault capture and heap witness, then flips jit-record=true to expose the recorder path around the early wineserver fault.', 'F10.10 is a one-switch follow-up to F10.9. It keeps written-code JIT off and jit-record on, then adds wasmModuleBroker=0 to test whether the module broker path is involved in the early wineserver fault.');
+      html = html.replace('F10.9 jit-record trace', 'F10.10 module-broker-off trace');
+      html = html.replace('./rig-f10-9.js?v=f109-jitrecord', './rig-f10-10.js?v=f1010-brokeroff');
+      document.open();
+      document.write(html);
+      document.close();
+    })
+    .catch(function(e){
+      document.body.innerHTML = '<pre style="white-space:pre-wrap;color:#f88;background:#070b13;padding:16px">F10.10 PAGE WRAPPER ERROR\n' + String((e && e.stack) || e).replace(/[<>&]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }) + '</pre>';
+    });
+})();
+</script>
+</head>
+<body></body>
+</html>
