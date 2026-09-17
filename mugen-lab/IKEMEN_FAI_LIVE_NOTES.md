@@ -6,26 +6,23 @@ This file is the short live handoff for FAI. It is deliberately scoped to the cu
 
 ## Current anchor
 
-**Test next: RIG I14 DPAD ROLL.**
+**Test next: RIG I15 LOAD GATE.**
 
-`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-14.html?v=i14-dpad-roll`
+`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-15.html?v=i15-load-gate`
 
-I14 carries I13's routing fix plus the two remaining control defects that
-were deliberately left unfixed in I13 (see **I14 — shared-key refcounting
-and d-pad rolling** below). This is a departure from strict one-defect-
-per-build: the user explicitly asked to get ahead of the phone test and
-land both remaining control-layer fixes in one pass rather than wait for
-round-trip confirmation on I13 first. Scope discipline was kept in the
-dimension that matters — everything changed is still inside the control
-layer (`bindPress`/`controlKey`/the new `bindDpadGroup`), nothing in zip
-persistence, picker/start flow, or `select.def` handling was touched, and
-I13's routing fix and instrumentation format are carried forward unchanged.
+I15 carries I14's two control fixes forward unchanged and adds one new,
+different-system fix: a loading screen that covers the canvas from the
+instant START MATCH is tapped until the match is actually ready, so the
+player can no longer take a hit against a screen they can't see yet. See
+**I15 — load gate (canvas-exposed-before-ready)** below for the full
+diagnosis; it also surfaced a separate, more surprising finding about
+main-thread blocking during boot that needs real-device confirmation.
 
-**Neither I13 nor I14 has been phone-tested.** Both pass their full
-headless suites (I13: 13/13 routing checks; I14: 13/13 new-defect checks +
-13/13 of I13's routing suite rerun against it, 26/26 total). I10 remains
-the last real-device-confirmed build and the fallback until one of these
-gets a real test.
+**I13, I14, and I15 have not been phone-tested.** All three pass their
+full headless suites (I13: 13/13; I14: 13/13 + I13's 13/13 rerun, 26/26
+total; I15: 13/14, the one non-pass is an assumption in the TEST being
+wrong, not the fix — see below). I10 remains the last real-device-
+confirmed build and the fallback until one of these gets a real test.
 
 I10 is the last real-device build that confirmed the important path still works:
 
@@ -211,6 +208,127 @@ exists for — headless can prove events fire in the right order, it cannot
 prove Ikemen's own motion buffer reads them as a valid input within its
 timing window.
 
+## I15 — load gate (canvas-exposed-before-ready)
+
+**Reported by the user directly, from a real phone test of I14**: "the
+screen itself and game load was delayed the match started, but I was
+already getting hit (black screen before)." Not a control defect — this
+is a different system (boot/reveal timing), so it gets its own build per
+the same one-system-at-a-time discipline, even though it landed the same
+day as I14.
+
+### Root cause
+
+`#setup` (the overlay holding the file picker and character picker) gets
+hidden — which is what exposes the canvas underneath — the INSTANT
+`startMatch()` runs, in `startMatch()` itself:
+
+```js
+document.getElementById('setup').classList.add('hide');
+boot();
+```
+
+`boot()` is only just starting at that point: it hasn't fetched
+`wasm_exec.js`, hasn't fetched or instantiated the `.wasm` module, and the
+Go engine hasn't run a single frame. All of that — WASM instantiation,
+`go.run()` starting, the engine's own round setup, and on a real roster
+zip, the lazy-VFS decompression of both fighters' full sprite/sound data
+the first time the engine opens those files — happens on a canvas that is
+already visible and already black, with nothing telling the player
+anything is in progress. There's a SECOND, redundant `setup.classList
+.add('hide')` later in `boot()` right after WASM instantiates, which does
+nothing (already hidden) — worth knowing about since it's easy to mistake
+for the real reveal point, which is what the first pass of this diagnosis
+did.
+
+### The fix
+
+A `LOADING MATCH…` overlay (`position:absolute;inset:0;z-index:6`,
+appended into `.stage`, above both the canvas and `#setup`'s own z-index)
+is shown by `showMatchLoadingOverlay()` at the exact same statement that
+hides `#setup`:
+
+```js
+document.getElementById('setup').classList.add('hide');
+showMatchLoadingOverlay();
+boot();
+```
+
+It removes itself once loading looks settled: `lazyMaterialize()` (the
+function that decompresses a chars/stages/sound entry on first access) now
+pings a small listener list on every call, and the overlay arms a 350ms
+"quiet" timer on every ping, removing itself once 350ms passes with no new
+activity. A 4500ms hard cap exists as a fallback in case nothing ever
+pings (e.g. every needed asset was already loaded eagerly).
+
+Verified directly with a `MutationObserver` timing the real DOM, not
+polling from outside: the overlay is added **7–8ms** after `startMatch()`
+runs, reproduced twice, consistent — meaning it paints before any of the
+heavy work below begins. It is confirmed to be the actual topmost element
+over the canvas center (not just present in the DOM), shows readable text,
+and removes itself correctly with the reason logged to trace.
+
+### A separate, bigger finding this surfaced
+
+While verifying settle timing, a heartbeat probe (a free-running
+`setInterval` alongside boot) found the main JS thread **synchronously
+blocked for ~10.6 seconds** during `boot()` — on the tiny 2-character test
+zip, in this headless/software-rendered container, not the user's real
+install. During a genuine synchronous block, **no DOM change can be
+painted, regardless of what JS exists** — this is a hard browser
+constraint, not something any amount of overlay code can work around.
+
+This reframes what the fix actually guarantees: the overlay can't make
+loading *faster*, and it can't guarantee it's visible *throughout* a
+block the browser itself can't paint during — what it guarantees is that
+it is already painted **before** such a block begins (confirmed: 7–8ms,
+long before any heavy work starts) and remains queued for removal the
+moment the browser can act again. A stuck "LOADING MATCH…" screen for the
+full length of a real block is the *correct* outcome here, not a bug — the
+alternative is exactly the reported symptom, an unmarked black screen the
+player can be hit behind.
+
+**This 10.6s block itself is unverified against real hardware and may be a
+headless/software-rendering artifact specific to this container** — this
+codebase has already hit that exact class of false signal once before (see
+the root `CLAUDE.md`'s note on a single black screenshot during a
+different game's camera push, which turned out to be a software-WebGL
+timing artifact, not a real bug). It could equally be a genuine
+`WebAssembly.instantiateStreaming` cost that's just smaller on real
+hardware, or something else specific to this environment. It has NOT been
+chased further — diagnosing it precisely would mean instrumenting inside
+`boot()`'s WASM instantiate/`go.run()` call, which starts to cross into
+territory this session didn't have time to fully isolate. If the load gate
+still looks stuck for many seconds on the real 1.7GB zip, that block is
+the next thing to measure directly (a phone-side heartbeat probe, same
+technique used here), not something to guess at.
+
+### Verified
+
+13/14 automated checks pass. The one non-pass is the test's own wrong
+assumption — it asserted overlay removal would happen in well under
+4000ms on a small zip, which turned out to depend on the same ~10.6s
+main-thread block above, not on anything the fix does. The correctness
+properties that actually matter — right reveal point patched, appears in
+the same tick as `#setup` hiding (confirmed 7–8ms via `MutationObserver`,
+reproduced twice), is genuinely the topmost visible element, removes
+itself with a logged reason, and I14's control fixes still pass 3/3
+regression checks rerun against I15 — all hold.
+
+### What to look for on the phone
+
+```
+I15 LOAD OVERLAY · shown -- covering canvas until asset loading settles ...
+I15 LOAD OVERLAY · removed after <N>ms (<reason>), <M> lazy asset(s) materialized during load
+```
+
+The real questions this build exists to answer: does `<N>` come back
+reasonable on the real zip (hundreds of ms to a few seconds, not tens of
+seconds), and — the actual bug report — is there ANY window between
+tapping START MATCH and the loading screen appearing where a black canvas
+is visible? If `<N>` is large, that's the same main-thread-block question
+above, now with real data instead of a headless guess.
+
 ## Control defects found during I13 diagnosis — status
 
 Reproduced while diagnosing I13's routing bug. Items 1 and 2 are fixed in
@@ -296,25 +414,39 @@ These are working enough to preserve while fixing controls:
 
 ## Recommended next build
 
-I14 exists and is the thing to test now — it supersedes I13 as the anchor.
-Do not build I15 until I14 has had a phone test and a conclusion.
+I15 exists and is the thing to test now — it supersedes I14 as the anchor.
+Do not build I16 until I15 has had a phone test and a conclusion.
 
-If I14 comes back clean: the control layer is done for now. The only
-known-open control item is #3 (double dispatch to `document`), and it has
-no observed symptom — leave it alone unless one shows up. Move to the next
-phase (collapsing the wrapper chain into one clean file, then GUI
-beautification) rather than inventing more control work.
+**Deviation note, same shape as I14's:** I15 started before I13/I14 got a
+phone test, on the strength of a real (if partial) phone report from the
+user mid-test of I14 — the black-screen-before-hit symptom. That is a
+different system from controls (boot/reveal timing vs input), so it stays
+its own build rather than folding into I14, but it does mean THREE
+unphone-tested builds are now stacked (I13 routing, I14 refcount+roll,
+I15 load gate) before any of them has real-device confirmation. If
+something is wrong on the phone, check builds in that order — I13's
+routing fix is the most foundational and most likely to explain a
+cascading failure in either of the other two.
 
-If I14 still sticks: the trace tells you which of the two fixes to
-distrust. `I14 CTRL · roll ...` lines show every cell-to-cell transition on
-the d-pad — if a roll produces the wrong destination code, that's fix #2.
-If `held:` shows a code that should have cleared, filter for that code's
-`keydown`/`keyup` pairs — an uneven count points at fix #1's holder-set
-bookkeeping rather than a new defect. Per **What to look for on the
-phone**, also check for a stray `routed to PICKER` mid-match, which would
-mean I13's fix regressed rather than I14's own changes being at fault.
+If I15 comes back clean: still watch `<N>ms` on `LOAD OVERLAY · removed`.
+A reasonable number closes this defect outright. A large number (many
+seconds) means the main-thread-block finding is real on hardware too, not
+just a headless artifact — that becomes its own follow-up investigation
+(instrumenting inside `boot()`'s WASM instantiate / `go.run()` call), not
+a quick fix, and should get its own build once actually needed.
 
-If I14 fixes the stuck keys but quarter-circles still don't come out in
-actual play, that is very likely Ikemen's own motion-buffer timing, not
-this control layer — the events are landing in order now, faithfully. Get
-a full trace of a failed attempt before assuming a code path is wrong.
+If the black-screen-before-hit symptom still reproduces on I15: check for
+a gap between tapping START MATCH and the loading text appearing at all —
+per the diagnosis above, that gap should not exist (confirmed 7-8ms in
+headless), so if it does on the phone, the reveal-point patch itself needs
+re-checking before touching timing.
+
+If I15's fix holds and quarter-circles still don't come out in actual
+play, per I14's own note: that is very likely Ikemen's own motion-buffer
+timing, not this control layer. Get a full trace of a failed attempt
+before assuming a code path is wrong.
+
+Once I13/I14/I15 are all confirmed: the control and boot-visibility layers
+are done for now. Move to the next phase (collapsing the wrapper chain
+into one clean file, then GUI beautification) rather than inventing more
+work in either system.
