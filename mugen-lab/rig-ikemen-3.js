@@ -608,5 +608,16 @@
   debugToggle.addEventListener('click', () => setDebugHidden(!diagWrap.classList.contains('hidden')));
   diagInlineToggle.addEventListener('click', () => setDebugHidden(!diagWrap.classList.contains('hidden')));
 
+  // Landscape usually means a Bluetooth/USB controller is in hand (the
+  // engine already polls navigator.getGamepads() every frame on its own --
+  // no code needed there), so the touch D-pad is just dead weight blocking
+  // the view. Auto-hide it on rotation to landscape, auto-show back in
+  // portrait. HIDE/SHOW CTRL still works as a manual override in either
+  // orientation on top of this.
+  const landscapeMq = window.matchMedia('(orientation: landscape)');
+  function applyOrientation(isLandscape) { setControlsHidden(isLandscape); }
+  applyOrientation(landscapeMq.matches);
+  landscapeMq.addEventListener('change', e => applyOrientation(e.matches));
+
   log('I3 READY · tap CHOOSE MUGEN ZIP');
 })();
