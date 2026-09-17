@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MobMugen · Ikemen · RIG I1 BOOT PROBE</title>
+<style>
+  html,body{margin:0;padding:0;background:#05070c;color:#eef4ff;font:12px ui-monospace,monospace;height:100%}
+  #stage{position:fixed;inset:0;display:flex;flex-direction:column}
+  #head{padding:10px 12px;border-bottom:1px solid #28384c}
+  #head h1{margin:0 0 4px;font-size:13px;color:#f1bf55}
+  #head p{margin:0;color:#9bb0c9;font-size:11px;line-height:1.4}
+  #runtimeState{font-weight:900;color:#9bf0c5}
+  #canvasWrap{padding:8px 12px;border-bottom:1px solid #28384c;display:flex;justify-content:center}
+  canvas#gameCanvas{background:#000;width:100%;max-width:480px;aspect-ratio:4/3;border:1px solid #28384c}
+  #diagWrap{flex:1;min-height:0;display:flex;flex-direction:column}
+  #diag{flex:1;min-height:0;overflow:auto;white-space:pre-wrap;padding:8px 12px;font-size:10px;color:#cfe0f5}
+  #controls{display:flex;gap:8px;padding:10px 12px;border-top:1px solid #28384c}
+  button{flex:1;height:44px;border:1px solid #7a6227;background:#181307;color:#f1bf55;border-radius:10px;font:900 12px ui-monospace}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="head">
+    <h1>MOBMUGEN · IKEMEN · RIG I1 BOOT PROBE</h1>
+    <p>First hypothesis: does the energyjp/ikemen-go-web WASM build (Go 1.24.7,
+    GOEXPERIMENT=arenas, GOOS=js GOARCH=wasm) even instantiate and execute on
+    this device's Safari at all -- before any VFS, content, or input wiring.
+    No game content is loaded yet; the engine will almost certainly complain
+    about missing config/data files. That's expected. We're only checking:
+    does it boot without a JS-engine-level crash, same as F10.1 was for the
+    BoxedWine lane.</p>
+    <p>STATUS · <span id="runtimeState">IDLE</span></p>
+  </div>
+  <div id="canvasWrap"><canvas id="gameCanvas" width="640" height="480"></canvas></div>
+  <div id="diagWrap"><div id="diag"></div></div>
+  <div id="controls">
+    <button id="startBtn" type="button">START PROBE</button>
+    <button id="copyTrace" type="button">COPY TRACE</button>
+  </div>
+</div>
+<script src="./assets/ikemen-web/wasm_exec.js"></script>
+<script src="./rig-ikemen-1.js?v=i1-boot-probe"></script>
+</body>
+</html>
