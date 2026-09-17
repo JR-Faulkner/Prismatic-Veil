@@ -17,8 +17,8 @@ is covered by `AGENTS.md`'s Hybrid preflight.
 - **F10.10 build commit:** `b072511`
 - **F10.9 build commit:** `1922181`
 - **F10.8 build commit:** `ea07353`
-- **Live note status:** F10.10 module-broker-off test published
-- **Awaiting:** device run of F10.10 module-broker-off test
+- **Live note status:** F10.10 device witness recorded; runtime-toggle probes closed
+- **Awaiting:** next build should isolate `wineserver` or change the JIT core build, not flip another exposed URL param
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
 ---
@@ -31,56 +31,51 @@ https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-1.html
 **Instrumented baseline (same build + loop cost witness):**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-6.html
 
-**JIT lane — current module broker test:**
+**Latest JIT lane test (failed usefully on device):**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-10.html?v=f1010-brokeroff
 
-**JIT lane — previous recorder witness:**
+**Previous JIT lane tests:**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-9.html?v=f109-jitrecord
-
-**JIT lane — previous mitigation test:**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-8.html?v=f108-writtenjitoff
-
-**JIT lane — previous diagnostic:**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-7.html?v=f107-faultwitness
 
 The JIT lane is the performance work; the F10.1/F10.6 pages are the shipping
 path and must keep running. Never let the experiment become the only path.
 
-### Next test
+### Next build direction
 
-Run **F10.10** on the phone with the same WinMUGEN ZIP and COPY TRACE.
+Do **not** keep flipping exposed runtime URL params. F10.8/F10.9/F10.10 have
+now tested the useful ones:
 
-F10.10 changes exactly one runtime variable from F10.9: it adds
-`wasmModuleBroker=0`. It keeps F10.9's `jit-record=true`, F10.8's
-`disableWasmJitForWrittenCode=true`, root, overlay, app capsule, page-fault
-capture and heap-growth witness.
-
-Read the result as:
-
-| Trace shows | Meaning | Next move |
+| Build | Change | Device result |
 | --- | --- | --- |
-| Fault changes, recorder emits extra clue, or Wine gets farther | module broker path is implicated | narrow around broker/JSC interaction |
-| Same `0000000A`, `grows=0 refused=0` | broker is not the lever | stop toggling runtime params; isolate `wineserver` harness or change core build |
-| Heap witness fires | memory branch reopens | cap/reshape JIT heap behavior |
+| F10.8 | `disableWasmJitForWrittenCode=true` | fault moved from `00000000` to `0000000A` |
+| F10.9 | `jit-record=true` | same `0000000A` |
+| F10.10 | `wasmModuleBroker=0` | same `0000000A` |
+
+Next build should isolate `wineserver` startup before MUGEN assets enter the
+picture, or switch to a different JIT/core build strategy. The target question
+is now: can the JIT core run `/bin/wineserver` and `libwine.so.1.0` cleanly on
+iPhone Safari at all?
 
 ### Latest result
 
-**F10.9 has now been run on the phone.** It repeated F10.8's signature.
+**F10.10 has now been run on the phone.** It repeated F10.9/F10.8's signature.
 
 Device trace:
 
 ```
 RUNTIME STATUS · WASM-JIT STARTING
-F10.9 FAULTS · 604 faults · 1 distinct addr · 0000000A x604
-F10.9 PERF SNAPSHOT · RAF=60 DRAW=0
-F10.9 HEAP · bytes=? max=? grows=0 refused=0
+F10.10 FAULTS · 952 faults · 1 distinct addr · 0000000A x952
+F10.10 PERF SNAPSHOT · RAF=60 DRAW=0
+F10.10 HEAP · bytes=? max=? grows=0 refused=0
 mapped: /bin/wineserver and /lib/libwine.so.1.0 only
 ```
 
-Read: `jit-record=true` did not move the failure. The crash still sits in the
-early `wineserver` / `libwine.so.1.0` loop at `0000000A`, with the browser event
-loop healthy and no heap growth. The next single-variable probe is
-`wasmModuleBroker=0` while keeping written-code JIT off and jit-record on.
+Read: `wasmModuleBroker=0` did not move the failure. The crash still sits in
+the early `wineserver` / `libwine.so.1.0` loop at `0000000A`, with the browser
+event loop healthy and no heap growth. This closes the currently exposed
+runtime-toggle probes.
 
 ### Standing rule: always hand over the link
 
@@ -98,6 +93,24 @@ change; do not hand over a link to a stale cache.
 
 Newest first. A run only counts if it happened on the phone.
 
+### 2026-09-17 · F10.10 (`b072511`) — DEVICE FAIL, MODULE BROKER DID NOT MOVE FAULT
+
+One-switch follow-up to F10.9. Added `wasmModuleBroker=0` while keeping
+`jit-record=true`, `disableWasmJitForWrittenCode=true`, same JIT core, Wine
+root, overlay, capsule, fault capture and heap witness.
+
+Device run reached no WinMUGEN frames:
+
+```
+RUNTIME STATUS · WASM-JIT STARTING
+F10.10 FAULTS · 952 faults · 1 distinct addr · 0000000A x952
+F10.10 PERF SNAPSHOT · RAF=60 DRAW=0
+F10.10 HEAP · bytes=? max=? grows=0 refused=0
+```
+
+Read: F10.10 repeated F10.9/F10.8's `0000000A` fault. Heap growth still did not
+fire. The module broker toggle is not the lever.
+
 ### 2026-09-17 · F10.9 (`1922181`) — DEVICE FAIL, JIT-RECORD DID NOT MOVE FAULT
 
 One-switch follow-up to F10.8. Flipped `jit-record=false` to `jit-record=true`
@@ -114,8 +127,7 @@ F10.9 HEAP · bytes=? max=? grows=0 refused=0
 ```
 
 Read: F10.9 repeated F10.8's `0000000A` fault and did not expose a new recorder
-clue in the copied trace. Heap growth still did not fire. Next test is
-`wasmModuleBroker=0` while keeping F10.9's other toggles.
+clue in the copied trace. Heap growth still did not fire.
 
 ### 2026-09-17 · F10.8 (`ea07353`) — DEVICE FAIL, FAULT MOVED TO 0000000A
 
@@ -178,8 +190,9 @@ speed lever, but on iPhone Safari it currently faults in early `wineserver`
 before any WinMUGEN frames. The failure is not heap growth and not browser frame
 starvation. F10.8 proved the written/self-modified-code JIT toggle affects the
 crash path by moving the fault from `00000000` to `0000000A`; F10.9 proved
-`jit-record=true` does not move it further. F10.10 tests the remaining exposed
-module broker toggle.
+`jit-record=true` does not move it; F10.10 proved `wasmModuleBroker=0` does not
+move it. The next useful step is a `wineserver` isolation harness or a different
+core/JIT build, not another URL-param toggle.
 
 ---
 
