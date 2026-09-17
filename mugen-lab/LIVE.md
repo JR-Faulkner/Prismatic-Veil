@@ -5,10 +5,10 @@
 This lane is **separate** from the Prismatic Veil game ledgers (`PV_LIVE_AUTHORITY.json`, `PV_RESUME_ANCHOR.md`, `PRIZIM_LIVE_NOTEPAD.md`, `live-build.json`). Those govern the LIVE28K Hybrid battle stack and say nothing about MOBMUGEN. Do not cross-apply their rules.
 
 - **Last updated:** 2026-09-17
-- **F10.13 build commit:** `21c1b84` page, `6a112e2` script
+- **F10.13 build commit:** `21c1b84` page, `2d63eb2` script copy fallback
 - **F10.12 build commit:** `8415424`
 - **F10.11 build commit:** `2ee8cf4`
-- **Live note status:** F10.13 bare Wine harness published
+- **Live note status:** F10.13 bare Wine harness published with COPY TRACE fallback
 - **Awaiting:** device run of F10.13 bare Wine harness
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
@@ -23,7 +23,7 @@ https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-1.html
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-6.html
 
 **Current JIT launch harness:**
-https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-13.html?v=f1013-bare-wine
+https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-13.html?v=f1013-bare-wine-copyfix
 
 **Previous JIT lane tests:**
 https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-f10-12.html?v=f1012-wine-noprogram
@@ -37,7 +37,7 @@ The JIT lane is the performance work; the F10.1/F10.6 pages are the shipping pat
 
 ### Next test
 
-Run **F10.13** on the phone with the same WinMUGEN ZIP and COPY TRACE.
+Run **F10.13** on the phone with the same WinMUGEN ZIP and COPY TRACE. If Safari refuses clipboard access, the button now opens a selected text box; manually copy the selected trace from there.
 
 F10.13 is the next launch harness. It goes through `/bin/wine` with no WinMUGEN program argument and disables the shell's `explorer /desktop=shell` fallback. This sits between F10.12's `/bin/wine` no-program explorer fallback and F10.11's direct `/bin/wineserver` harness.
 
