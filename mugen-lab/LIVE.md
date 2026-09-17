@@ -14,7 +14,7 @@ about MOBMUGEN. Do not cross-apply their rules, and do not assume a change here
 is covered by `AGENTS.md`'s Hybrid preflight.
 
 - **Last updated:** 2026-09-17
-- **Live commit:** `843a2de` + F10.7 device witness recorded in this file
+- **Live commit:** `42379a8` (F10.7 device witness recorded; F10.7 build commit `843a2de`)
 - **Awaiting:** next JIT mitigation build after F10.7's null page-fault result
 - **Goal:** real WinMUGEN in the browser at 60 FPS on iPhone Safari.
 
