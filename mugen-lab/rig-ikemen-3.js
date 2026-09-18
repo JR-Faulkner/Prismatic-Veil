@@ -1103,8 +1103,9 @@
   // it fires no event when it does -- so this polls rather than trying
   // to hook a call site this codebase doesn't own.
   // -------------------------------------------------------------------
-  const DEFAULT_AR = 4 / 3; // classic MUGEN screenpack default; used only
-                            // before the engine has set a real canvas size
+  const DEFAULT_AR = 16 / 9; // matches every real canvas size seen from this
+                             // engine so far (1280x720); used only before it
+                             // has set a real canvas size of its own
   let lastFitKey = '';
   function fitStage() {
     const cw = canvas.width, ch = canvas.height;
