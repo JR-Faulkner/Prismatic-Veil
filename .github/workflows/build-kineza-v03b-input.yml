@@ -1,6 +1,9 @@
 name: Build Kineza v0.3B Input Gate
 
 on:
+  push:
+    paths:
+      - ".github/workflows/build-kineza-v03b-input.yml"
   workflow_dispatch:
 
 permissions:
