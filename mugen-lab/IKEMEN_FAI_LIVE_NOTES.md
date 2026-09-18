@@ -6,63 +6,85 @@ This file is the short live handoff for FAI. It is deliberately scoped to the cu
 
 ## Current anchor
 
-**Test next: RIG I19 EVICTING.**
+**Test next: RIG I20 QUIET SELECT.**
 
-`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-19.html?v=i19-lru-eviction`
+`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-20.html?v=i20-quiet-select`
 
-I18's own phone test (mole/G.Ken/bamboo, real trace, "no crash, but hard
-stop") confirmed the memory-pressure hypothesis directly: own-VFS bytes
-climbed from 203.5MB after eager load to 757.8MB at 510 match-load
-assets, still climbing, no ceiling in sight, right up to where loading
-hung (never OS-killed this time — `STILL RUNNING AFTER 5s · NO JS CRASH`
-— just never finished). Per this file's own prior branching guidance,
-that confirms the real fix as a structural one: nothing in `vfsFiles`
-ever evicted, ever.
+I19's own phone test (mole/G.Ken, real trace, fresh reload, closed other
+apps first) proved two things at once. First, LRU eviction genuinely
+works: own-VFS bytes plateaued in a tight band (276–300MB) for the entire
+match-load window instead of I18's unbounded climb to 757.8MB+ — repeated
+`I19 EVICT ·` lines show it actively reclaiming and re-capping, exactly
+as designed. Second, it still crashed anyway (Safari's own "A problem
+repeatedly occurred" recovery page), which means the real memory driver
+had already moved to a pool I19 can't see or touch: the mid-load screen
+read **"29 assets loaded — GodRugal.def"** — a real character nobody
+picked (P1/P2 were mole/G.Ken) — proving Ikemen's own internal
+full-roster reparse (previously assumed to be cheap, near-instant
+failures on blank/placeholder select.def lines — see "Known runtime
+noise" below) actually opens and decodes real character data for
+characters never selected. Every one of those goes through Go's own
+sff/sprite decode and WebGL texture upload path, which lives in WASM
+linear memory and GPU memory, entirely outside `vfsFiles` — my own
+`evictIfOverBudget()` was never able to touch it, capped or not.
 
-**I19 adds LRU eviction on top of I18's instrumentation.** Every
-`vfsFiles` entry that came from the zip (has a `zipEnt`) can be dropped
-and re-decompressed later at zero data loss — `currentZipFile` (the
-user's original local `File` object) and `lazyMaterialize`'s own
-decompress path are still right there, untouched, for the whole session.
-Only the compressed bytes need to be re-read (a cheap local `Blob.slice`)
-and re-inflated (CPU only) — nothing is fetched over the network and
-nothing is lost. `fs.read()` copies bytes OUT of `vfsFiles` into Go's own
-WASM linear memory before returning, so Go never holds a live reference
-into our JS-side `Uint8Array`; evicting it after that point cannot
-corrupt anything the engine already has.
+**I20 stops the engine from ever opening those files at all**, instead of
+trying to recycle copies of them after the fact. Right before `boot()` is
+called (in `startMatch()`, using the already-known picked names), the
+eager-resident `data/select.def` is rewritten in place: every line in its
+`[Characters]` section is dropped unless its first field matches P1 or
+P2 exactly (same first-field parsing `parseSelectDef` already uses, so
+the two stay in lockstep). Every other section — `[Options]`,
+`[ExtraStages]`, `[Music]`, anything else — passes through byte-for-byte
+untouched; this build deliberately does not touch `[ExtraStages]` (see
+below). Since `select.def` is eager-loaded (under `data/`), the rewrite
+is a plain `vfsPutFile()` call on an already-resident path — no zip/lazy
+plumbing involved. Logged as `I20 SELECT TRIM · select.def [Characters]
+trimmed to N line(s) for this match, M other roster entries dropped`.
 
-Design: `vfsPutFile` now tracks `lastAccess` (bumped on every `fs.read()`)
-and the originating `zipEnt` (only set by `lazyMaterialize`, never by the
-eager-bootstrap loop or `O_CREAT`). After every `lazyMaterialize()` call,
-`evictIfOverBudget()` runs: if resident VFS bytes exceed a 300MB budget,
-it evicts the least-recently-touched zip-backed files — skipping any
-path with a currently open `fd` — until back under budget, and puts each
-evicted path back into `zipIndex` so a future `open()` transparently
-re-materializes it through the exact same lazy-load path that already
-handles "never loaded yet." Logged as `I19 EVICT · evicted N cold
-zip-backed file(s) ... reclaimed ...`.
+One correctness fix rode along: `vfsPutFile()` never subtracted a path's
+old byte count before adding the new one on an overwrite — harmless until
+now because nothing ever overwrote an existing path, but I20's trim is
+the first thing that does, and `vfsMemoryBytes` accuracy matters since
+eviction decisions depend on it.
 
-This is deliberately safe-by-construction against thrashing a hot file:
-LRU never evicts something just touched, so a file the engine is
-actively re-reading stays resident; only genuinely cold data (most likely
-full-roster picker portraits, or a previous match's leftovers) is ever a
-candidate. Verified with a standalone Node unit test (not yet a phone
-test) covering: eager files are never evicted; the coldest zip-backed
-file is evicted first and restored to `zipIndex`; a file with an open fd
-is protected from eviction even when it is the coldest candidate. See
-**I19 — LRU eviction** below.
+**Why `[ExtraStages]` is deliberately left alone in this build:** the CLI
+already gets `-s <realStagePath>` explicitly, so the match's own stage
+never depends on what's listed in `[ExtraStages]` — but it isn't yet known
+whether Ikemen's internal init cross-validates the CLI stage arg against
+that list before accepting it. Isolating this to characters-only keeps it
+to one specific, testable change, per this file's own "one defect, one
+build, one phone test" rule (see below). Trimming stages is the natural
+next step if characters-only doesn't fully resolve the crash.
 
-I18's own instrumentation (own-VFS byte accounting, `performance.memory`
-best-effort, per-checkpoint `I<N> MEMORY ·` logging) is carried forward
-unchanged — see **I18 — memory witness** below for that design.
+Verified before this phone test: a standalone Node unit test of
+`trimSelectDefForMatch()` against a realistic synthetic select.def
+(covering comments after real fields, `[Options]`/`[ExtraStages]`/
+`[Music]` surviving untouched, `randomselect`/`blank` placeholder lines,
+and the P1-equals-P2 mirror-match case collapsing to one kept line, not
+two); the exact runtime `.replace()` pipeline simulated in Node against
+the real base file and syntax-checked; a real headless-browser run
+against the PriZim synthetic fixture, which directly confirmed the
+mechanism end-to-end — the fixture's own placeholder roster entries
+(`zzznotreal1/2/3`, previously spamming "Failed to add char" in every
+prior rig's console) no longer appear at all once `I20 SELECT TRIM` runs.
+See **I20 — quiet select.def** below.
 
-**Also new: `tools/prizim/mobmugen-ikemen/`**, a three-layer automated
+I18's instrumentation and I19's LRU eviction both carry forward
+unchanged and stay active — I20 is additive, not a replacement. If I20
+still crashes, the next diagnostic step is checking whether it crashes
+later / at a higher asset count than I19 did (partial win, budget or
+`[ExtraStages]` still contributing) or at effectively the same point
+(the internal reparse touches real assets some other way this doesn't
+reach, or the crash was never about the roster reparse at all).
+
+**Also active: `tools/prizim/mobmugen-ikemen/`**, a three-layer automated
 harness (static preflight, Playwright runtime probe, real-trace
 analyzer) mirroring the BoxedWine lane's own PriZim setup. It catches the
 recurring stale-label class of bug mechanically now — verified against a
 deliberately reintroduced copy of the exact bug that shipped in I16
-twice. It cannot reproduce the iOS Safari memory question I18 exists to
-answer; a phone witness stays required for that, same limitation
+twice. It cannot reproduce the iOS Safari memory question I18 was built
+to answer; a phone witness stays required for that, same limitation
 PriZim's own BoxedWine doc already states for its lane. See
 `docs/PRIZIM_MOBMUGEN_IKEMEN.md`.
 
@@ -760,6 +782,125 @@ match actually complete (or hang for a different, new reason) this time.
   immediately re-requested could cost a visible frame hitch — worth
   watching for even though it would still beat a hard stop).
 
+## I20 — quiet select.def
+
+I19's real phone trace proved eviction works (VFS plateaued 276–300MB
+the whole match-load window, repeated `I19 EVICT ·` lines reclaiming
+actively) and proved the crash had already moved beyond what eviction
+can touch: the mid-load screen showed "29 assets loaded — GodRugal.def"
+while fighting mole vs G.Ken — a real, un-selected character's real def
+file, materialized through the exact same `lazyMaterialize()` counter
+mole/G.Ken's own files use. That means Ikemen's internal reparse of the
+full, unfiltered `select.def` (triggered by `-loadmotif`, needed for
+fonts/screen-pack scaling regardless of the quick-match `-p1`/`-p2` args)
+isn't just failing fast on blank placeholder lines the way the "Known
+runtime noise" section below always assumed — it's opening and decoding
+real character data for characters nobody picked, each one going through
+Go's own sprite decode + WebGL texture upload path, which is invisible
+to and unreachable by anything on the JS/`vfsFiles` side.
+
+### What changed
+
+- `trimSelectDefForMatch(keepNames)` — new function, called from
+  `startMatch()` with `[charNames[0], charNames[1]]` right before
+  `boot()`. Reads the current (eager, already-resident) `data/select.def`
+  bytes, walks it line by line with the exact same section-tracking and
+  first-comma-field parsing `parseSelectDef()` already uses (so the two
+  can never drift out of sync), and drops any `[Characters]` line whose
+  first field isn't one of the two picked names. Every other line —
+  section headers, `[Options]`, `[ExtraStages]`, `[Music]`, comments,
+  blank lines — passes through completely untouched. The result is
+  written back via `vfsPutFile()` on the same path, so the next time the
+  engine opens `data/select.def` (which happens inside `boot()`, right
+  after this call), it only ever sees two names.
+- `vfsPutFile(path, data, zipEnt)` now subtracts a path's prior byte
+  count before adding the new one, instead of only ever adding. This
+  didn't matter before I20 because nothing ever overwrote an existing
+  VFS path; it matters now because the trim does exactly that, and
+  `vfsMemoryBytes` accuracy is what I19's eviction budget decisions are
+  made from.
+
+### Why this doesn't touch anything else
+
+`data/select.def` is eager-loaded (falls under `data/` in
+`isEagerBootstrap()`), so the rewrite is a plain, synchronous
+`vfsPutFile()` call on a path that's already resident — no interaction
+with `zipIndex`, `lazyMaterialize()`, or I19's eviction path at all
+(eager files never carry a `zipEnt` and are never eviction candidates
+either way). The picker screen itself already finished reading the
+*original* full select.def long before `startMatch()` runs (`allChars`/
+`allStages` are cached JS arrays, populated once at zip-load time, never
+re-read from the VFS), so trimming the VFS copy afterward can't affect
+what the picker grid showed or any later re-pick in the same session.
+"CHANGE ZIP" / a full page reload both re-run `loadZipIntoVfs()` from the
+untouched real zip file, so the trimmed copy never leaks into a future
+attempt or corrupts the user's stored zip — it only ever exists for the
+one `boot()` call it was written for.
+
+### Why `[ExtraStages]` is untouched in this build
+
+The CLI already passes `-s <realStagePath>` explicitly, so the actual
+stage used never depends on what `[ExtraStages]` lists. What's genuinely
+unknown is whether Ikemen's internal init cross-validates that CLI stage
+argument against the `[ExtraStages]` list before accepting it — if it
+does, and this build had also trimmed that list down to just the picked
+stage, an edge case in that validation could have introduced a new
+failure mode alongside removing one. Keeping this build to characters
+only, per the "one defect, one build" rule below, means a phone-test
+result is unambiguous: it isolates whether characters alone (the
+confirmed GodRugal-class cost) get the crash point far enough out, before
+touching stages too.
+
+### Verified before this phone test
+
+- A standalone Node unit test of `trimSelectDefForMatch()`'s exact logic
+  against a realistic synthetic `select.def`: a character line with a
+  trailing comment after its real fields keeps its full original line;
+  `[Options]`, `[ExtraStages]`, and `[Music]` sections survive completely
+  byte-for-byte; `randomselect`/`blank` placeholder lines and full-line
+  comments inside `[Characters]` are handled the same way the existing
+  parser already treats them; and the P1-equals-P2 mirror-match case
+  collapses to exactly one kept line, not a duplicate.
+- The exact runtime `.replace()` pipeline simulated in Node against the
+  real base file and syntax-checked, same technique every rig since I18
+  has used, including a build-time bug this technique caught directly:
+  the `select.def` path regex was first written with the `$` end-anchor
+  double-escaped into a literal dollar-sign match, which would have made
+  `selectPath` silently fall back to `motifPath` itself instead of
+  resolving to `data/select.def` — caught by comparing the simulated
+  output's resolved path against the trace's own confirmed value before
+  ever reaching a browser.
+- A real headless-browser run against the PriZim synthetic fixture,
+  which is the strongest verification here: the fixture's own placeholder
+  roster entries (`zzznotreal1`, `zzznotreal2`, `zzznotreal3`), which
+  spammed "Failed to add char: zzznotrealN (DEF not found)" in every
+  prior rig's console output including I19's own fixture run, do not
+  appear anywhere in I20's console output. `I20 SELECT TRIM · select.def
+  [Characters] trimmed to 1 line(s) for this match, 4 other roster
+  entries dropped` fired, and the match completed normally. This is
+  direct, real (if synthetic-roster) confirmation of the actual
+  mechanism, not just of the algorithm in isolation.
+
+### What to look for on the phone
+
+- Does `I20 SELECT TRIM ·` fire with the expected count (2 kept for a
+  normal match, 1 for a mirror match) right before `ARGV`?
+- Does "29 assets loaded — GodRugal.def" (or any other un-picked
+  character) ever appear again? If the internal reparse still touches
+  real characters after this, the trim isn't reaching the copy the
+  engine actually reads, or something else is also populating its
+  roster table.
+- Does the match get further than I19 did before any crash (partial
+  win, worth then trying stage-trimming too), or does it now complete
+  and stay stable, or does it crash at effectively the same point
+  (meaning this wasn't the dominant cost, or the reparse reads character
+  data some other way this doesn't reach)?
+- Any new symptom specific to the trim itself: a lifebar name, victory
+  screen, or HUD element that reads oddly because it expected the full
+  roster's select.def content for something unrelated to character
+  loading (unlikely, since only `[Characters]` lines are touched, but
+  worth naming as a real possibility rather than assuming zero risk).
+
 ## Control defects found during I13 diagnosis — status
 
 Reproduced while diagnosing I13's routing bug. Items 1 and 2 are fixed in
@@ -845,53 +986,60 @@ These are working enough to preserve while fixing controls:
 
 ## Recommended next build
 
-I19 exists and is the thing to test now — it supersedes I18 as the
-anchor. Do not build I20 until I19 has had a phone test.
+I20 exists and is the thing to test now — it supersedes I19 as the
+anchor. Do not build I21 until I20 has had a phone test.
 
 **I13, I14, and I15/I17's load-gate fix all remain DONE — real-device
 confirmed.** Do not re-litigate any of them without a new, specific
 symptom.
 
-**I18's own phone test already answered the open question.** Real trace,
-mole/G.Ken/bamboo: own-VFS bytes climbed from 203.5MB (post-eager) to
-757.8MB (510 match-load assets), still climbing, load never completed
-("no crash, but hard stop" — JS still running, no OS-level kill this
-time, unlike earlier crash reports). Memory pressure is confirmed. Do
-not re-run I18 to re-confirm this; the next test is I19, testing whether
-eviction actually fixes it.
+**I18 confirmed memory pressure is real; I19 confirmed eviction works
+but the crash had already moved beyond it.** Real trace, mole/G.Ken,
+fresh reload: own-VFS bytes plateaued 276–300MB the entire match-load
+window (eviction actively reclaiming, exactly as designed), and it still
+crashed — Safari's "A problem repeatedly occurred" recovery page. The
+mid-load screen showed "29 assets loaded — GodRugal.def," a real,
+un-selected character, proving Ikemen's own internal full-roster reparse
+opens real character data (real decode + real WebGL texture upload, all
+outside `vfsFiles`) for characters nobody picked. That's the actual
+remaining cost, and it's a pool eviction structurally cannot reach. Do
+not re-run I19 to re-confirm this; the next test is I20, testing whether
+stopping the engine from opening those files at all actually moves the
+crash point.
 
-**I19's whole job is the fix, not more diagnosis.** Same repro
-(mole/G.Ken/bamboo, or whatever combination originally triggered the
-hang) with I19 running. Send the full `COPY TRACE` output again. What to
-check, in order:
+**I20's whole job is the fix, not more diagnosis.** Same repro
+(mole/G.Ken, or whatever combination originally triggered the crash),
+fresh reload, other apps closed. Send the full `COPY TRACE` output again,
+plus a mid-load screenshot if you can catch one. What to check, in
+order:
 
-- Does `I19 EVICT ·` appear at all during match load? If the VFS figure
-  approaches or exceeds 300MB and no eviction line ever appears, the
-  budget check or the eviction call site has a bug — the unit test only
-  proved the algorithm's logic in isolation, not that it's actually
-  wired into the real load path correctly.
-- Does `own VFS:` plateau near 300MB instead of repeating I18's climb to
-  750MB+? This is the real test of whether eviction is reclaiming enough,
-  fast enough, relative to how fast the match load consumes new files.
-- Does the match actually complete this time — a real `WASM MILESTONE`/
-  match-start signal, not just the load overlay settling on its own
-  timer?
-- Any NEW symptom specific to eviction: a wrong-looking sprite or missing
-  sound after a re-materialize (would mean a bug in the re-fetch path,
-  not in the eviction decision), or a stutter right when a large file
-  gets evicted and then immediately re-requested (re-inflating a big file
-  on demand is real CPU work — a visible hitch would still be a strict
-  improvement over a hard stop, but is worth naming as a known tradeoff
-  rather than a new mystery).
-- If it still hangs, but later / at a higher asset count than I18 did:
-  that's partial confirmation the mechanism works but the 300MB budget
-  is still too generous for this device, or something else is also
-  contributing (e.g. WASM's own linear memory growth, which eviction
-  cannot touch — it only frees JS-side bytes, not whatever the Go engine
-  has itself allocated inside WASM memory for parsed sff/air/cns
-  structures). If this happens, the next question is how much of the
-  750MB+ I18 saw was JS-side VFS bytes versus WASM's own footprint, since
-  I19 only ever addresses the former.
+- Does `I20 SELECT TRIM ·` fire right before `ARGV`, with the expected
+  kept/dropped counts (2 kept for two different characters, 1 for a
+  mirror match)? If it's missing entirely, the hook in `startMatch()`
+  didn't fire — check for a wrapper error above it.
+- Does "29 assets loaded — GodRugal.def" (or any other un-picked
+  character) show up again anywhere in the trace? If the internal
+  reparse still touches real, un-selected characters after this, the
+  trim isn't reaching the copy the engine actually reads at boot, or the
+  engine is populating its roster table from something other than
+  `data/select.def`.
+- Does the crash point move later (a higher asset count, more of the
+  match visibly loading) compared to I19's run, does the match complete
+  and stay stable, or does it crash at effectively the same point? The
+  third outcome means characters-only trimming isn't the dominant cost —
+  the next candidate is `[ExtraStages]` (deliberately left untouched in
+  this build; see **I20 — quiet select.def** above for why), or the
+  reparse reads real data some other way this doesn't reach, or WASM's
+  own linear memory growth is contributing on top of both fixes.
+- Any new symptom specific to the trim: a lifebar name, victory screen,
+  or HUD element behaving oddly, which would mean something else reads
+  the full select.def content for a reason unrelated to character
+  loading (unlikely given only `[Characters]` lines are touched, but
+  worth naming rather than assuming zero risk).
+- If I20 fixes it outright: the eager/lazy/eviction/reportMemory
+  instrumentation from I18/I19 stays valuable for the NEXT roster this
+  gets tried against (a heavier pairing, a different zip) — don't strip
+  it out just because this specific crash is resolved.
 
 If quarter-circles still don't come out in actual play despite I14's fix
 holding for a hadouken already: that is very likely Ikemen's own
