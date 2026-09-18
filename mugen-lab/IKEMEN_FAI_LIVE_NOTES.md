@@ -6,9 +6,48 @@ This file is the short live handoff for FAI. It is deliberately scoped to the cu
 
 ## Current anchor
 
-**Test next: RIG I20 QUIET SELECT.**
+**RIG I20 QUIET SELECT — CONFIRMED PLAYABLE ON REAL HARDWARE.**
 
 `https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-20.html?v=i20-quiet-select`
+
+**This is the first real, playable match this lane has ever produced on
+the phone.** Real device (iPhone, iOS 18.7, Safari 26.6, saved 1.7GB
+WinMugen.zip, installed as a web app), GodRugal vs G.Ken on
+`stages/macalania.def`: match loaded, both characters rendered, lifebars
+and round timer live, and sustained real gameplay input — the CTRL log
+is full of quarter-circle motions (`ArrowDown` → `DR` → `KeyC`) and ran
+long enough to hit the 240-entry `CTRL_LOG_MAX` cap. No crash, no hang,
+no OS-level tab kill.
+
+What the winning trace proves, specifically:
+
+- `I20 SELECT TRIM · select.def [Characters] trimmed to 2 line(s) for
+  this match, 766 other roster entries dropped`. Note 766, not 158 —
+  `parseSelectDef` only counts *real* names (it skips
+  `randomselect`/`blank`/`skipslot`), so roughly 610 of those dropped
+  lines were screenpack grid placeholders. The trim removes both classes.
+- **The `Failed to add char: blank` wall is completely gone.** That noise
+  appeared in every prior run in this lane and was documented under
+  "Known runtime noise" below as harmless; it was actually the visible
+  symptom of the engine walking the full roster. Zero instances now.
+- Every character warning in the trace is for GodRugal or G.Ken — the two
+  picked. No un-picked character's files are opened at all, which is the
+  direct fix for the I19 trace's "29 assets loaded — GodRugal.def" while
+  fighting mole vs G.Ken.
+- Peak own-VFS: **238.2MB across 419 files**, 52 lazy assets for the
+  entire match load. The 300MB budget was never reached, so **no `EVICT`
+  line fired at all this run** — compare I19, which sat pinned against
+  that ceiling (12+ evictions, 299MB sustained, 75+ assets and still
+  climbing at the equivalent checkpoint). I19's eviction stays armed as a
+  safety net for heavier pairings; it simply had nothing to do here.
+
+**Still open (cosmetic, not blocking):** the `Failed to add stage. File
+read error: stages/.def` wall is still present — hundreds of lines. Those
+are `[ExtraStages]`' own blank entries (335 extra-stage lines in this
+select.def), deliberately left untouched in I20 (see **I20 — quiet
+select.def** below for why). Not hurting anything at the current memory
+headroom, but it does confirm the engine still walks that whole list. See
+**Recommended next build** for the I21 option.
 
 I19's own phone test (mole/G.Ken, real trace, fresh reload, closed other
 apps first) proved two things at once. First, LRU eviction genuinely
@@ -881,25 +920,33 @@ touching stages too.
   direct, real (if synthetic-roster) confirmation of the actual
   mechanism, not just of the algorithm in isolation.
 
-### What to look for on the phone
+### Phone-test result — PASSED
 
-- Does `I20 SELECT TRIM ·` fire with the expected count (2 kept for a
-  normal match, 1 for a mirror match) right before `ARGV`?
-- Does "29 assets loaded — GodRugal.def" (or any other un-picked
-  character) ever appear again? If the internal reparse still touches
-  real characters after this, the trim isn't reaching the copy the
-  engine actually reads, or something else is also populating its
-  roster table.
-- Does the match get further than I19 did before any crash (partial
-  win, worth then trying stage-trimming too), or does it now complete
-  and stay stable, or does it crash at effectively the same point
-  (meaning this wasn't the dominant cost, or the reparse reads character
-  data some other way this doesn't reach)?
-- Any new symptom specific to the trim itself: a lifebar name, victory
-  screen, or HUD element that reads oddly because it expected the full
-  roster's select.def content for something unrelated to character
-  loading (unlikely, since only `[Characters]` lines are touched, but
-  worth naming as a real possibility rather than assuming zero risk).
+Real device, GodRugal vs G.Ken on `stages/macalania.def`. Every predicted
+signal came back clean:
+
+- `I20 SELECT TRIM · trimmed to 2 line(s) for this match, 766 other
+  roster entries dropped`, fired right before `ARGV` as designed.
+- No un-picked character opened anywhere in the trace. Every character
+  warning names GodRugal or G.Ken only — the I19 trace's
+  "29 assets loaded — GodRugal.def while fighting mole vs G.Ken" class of
+  event does not recur.
+- `Failed to add char: blank` — the noise wall present in every prior run
+  in this lane — is entirely absent.
+- Match loaded, rendered, and played: lifebars, round timer, sustained
+  quarter-circle input, `CTRL_LOG_MAX` cap reached from real play. No
+  crash, no hang, no tab kill.
+- Peak own-VFS 238.2MB / 419 files / 52 lazy assets, budget never
+  reached, zero evictions needed.
+- No trim-specific side effect observed: lifebar names, HUD and round
+  flow all behaved normally on a two-line select.def, confirming nothing
+  outside `[Characters]` depended on the full roster list.
+
+The one thing the trim does NOT cover, as designed: `[ExtraStages]`. The
+`Failed to add stage. File read error: stages/.def` wall is still present
+(hundreds of lines, from that section's own blank entries), proving the
+engine still walks all 335 extra-stage lines. Harmless at current memory
+headroom, and the CLI `-s` stage resolved correctly throughout.
 
 ## Control defects found during I13 diagnosis — status
 
@@ -920,14 +967,35 @@ I14 (see above). Item 3 remains open and untouched.
 
 ## Known runtime noise
 
-After boot, Ikemen still parses the original `select.def` internally and emits many repeated lines like:
+After boot, Ikemen parses `select.def` internally and emits many repeated lines like:
 
-- `Failed to add char: blank (DEF not found)`
-- `Failed to add stage. File read error: stages/.def`
+- ~~`Failed to add char: blank (DEF not found)`~~ — **gone as of I20.**
+- `Failed to add stage. File read error: stages/.def` — still present.
 
-This spam is real and makes the trace huge, but it is not the next target. Do not try to solve it until the active controls defect is resolved.
+**Correction, recorded after I20's phone test:** this section used to
+call both lines harmless cosmetic spam and warn against touching them.
+That was wrong in an expensive way. The spam was the *visible symptom* of
+Ikemen walking the entire unfiltered roster at match boot — and that walk
+was opening and decoding real character data (real sprite decode, real
+WebGL texture upload, in WASM/GPU memory that no JS-side instrumentation
+could see) for characters nobody selected. It was the single largest
+remaining cause of the crash chain that ran from I17 through I19. Treating
+it as noise for that long cost several builds' worth of investigation
+aimed at the wrong pool of memory.
 
-Earlier attempts to sanitize or suppress this caused regressions. Leave it alone unless the explicit task is roster cleanup.
+The char half is fixed at the source in I20 by trimming `[Characters]`
+before boot, rather than by suppressing the output — which is why the
+lines vanished rather than being filtered. The stage half remains for the
+same reason it was left out of I20 (see **I20 — quiet select.def**), and
+is a candidate for I21.
+
+The old warning still stands in its narrow sense: earlier attempts to
+*sanitize or suppress the output* caused regressions (see I7/I8 under
+"Bad builds"). Fixing what the engine is asked to load is not the same
+thing as filtering what it prints — the first worked, the second didn't.
+**The general lesson: a wall of repeated engine errors is evidence of
+work the engine is actually doing. Before filing it as cosmetic, check
+what it costs.**
 
 ## Bad builds / do not continue from these
 
@@ -986,60 +1054,55 @@ These are working enough to preserve while fixing controls:
 
 ## Recommended next build
 
-I20 exists and is the thing to test now — it supersedes I19 as the
-anchor. Do not build I21 until I20 has had a phone test.
+**I20 is confirmed playable on real hardware. The crash chain that ran
+from I17 through I19 is closed.** Do not re-litigate the memory work:
+I18's instrumentation, I19's LRU eviction, and I20's select.def trim all
+stay in, all carried forward by every future rig. I19's eviction did not
+need to fire in the winning run, but it stays armed for heavier pairings
+and larger rosters — do not strip it out on the grounds that "it didn't
+do anything," because not firing is the correct behavior under a load
+that fits in budget.
 
 **I13, I14, and I15/I17's load-gate fix all remain DONE — real-device
 confirmed.** Do not re-litigate any of them without a new, specific
 symptom.
 
-**I18 confirmed memory pressure is real; I19 confirmed eviction works
-but the crash had already moved beyond it.** Real trace, mole/G.Ken,
-fresh reload: own-VFS bytes plateaued 276–300MB the entire match-load
-window (eviction actively reclaiming, exactly as designed), and it still
-crashed — Safari's "A problem repeatedly occurred" recovery page. The
-mid-load screen showed "29 assets loaded — GodRugal.def," a real,
-un-selected character, proving Ikemen's own internal full-roster reparse
-opens real character data (real decode + real WebGL texture upload, all
-outside `vfsFiles`) for characters nobody picked. That's the actual
-remaining cost, and it's a pool eviction structurally cannot reach. Do
-not re-run I19 to re-confirm this; the next test is I20, testing whether
-stopping the engine from opening those files at all actually moves the
-crash point.
+There is no longer a forced next build. What follows is a menu, roughly
+in order of how much each is actually worth:
 
-**I20's whole job is the fix, not more diagnosis.** Same repro
-(mole/G.Ken, or whatever combination originally triggered the crash),
-fresh reload, other apps closed. Send the full `COPY TRACE` output again,
-plus a mid-load screenshot if you can catch one. What to check, in
-order:
+1. **Play more, on more pairings.** The single most valuable next input
+   is more real matches on heavier characters (hulk, GoD_Ryu, the
+   BroliSSJ3-class packages) and different stages. The whole
+   instrumentation stack is still live, so any new failure arrives with
+   real numbers attached instead of a guess. A heavier pairing is also
+   the first thing likely to make I19's eviction actually fire — worth
+   watching for an `EVICT` line as a signal the budget is being
+   approached again.
+2. **I21: trim `[ExtraStages]` too.** The only remaining wall of noise in
+   the winning trace (hundreds of `Failed to add stage. File read error:
+   stages/.def`) comes from that section's blank entries, and it proves
+   the engine still walks all 335 extra-stage lines. The mechanism is
+   already built and proven — it is the same line filter, applied to a
+   second section, keeping only the picked stage. The open question
+   I20 deliberately did not answer is whether Ikemen internally
+   cross-validates the CLI `-s` stage against that list before accepting
+   it; since `-s` is already passed explicitly and resolved correctly in
+   the winning run, the risk is low but real. Worth doing for trace
+   cleanliness and extra headroom, not because anything is broken.
+3. **Collapse the wrapper chain.** I20 is a single-level string-patch
+   wrapper applying ten patches to `rig-ikemen-3.js` at runtime. Now that
+   the result is known-good, it is a reasonable moment to bake the
+   patched output into one flat file and retire the wrapper indirection.
+   Do this only with the PriZim harness green before and after, and keep
+   `rig-ikemen-3.js` untouched as the historical base.
+4. **GUI work.** Picker portraits, HUD styling to match the Prismatic
+   Veil visual language. Explicitly deferred since I13; nothing blocks it
+   now.
 
-- Does `I20 SELECT TRIM ·` fire right before `ARGV`, with the expected
-  kept/dropped counts (2 kept for two different characters, 1 for a
-  mirror match)? If it's missing entirely, the hook in `startMatch()`
-  didn't fire — check for a wrapper error above it.
-- Does "29 assets loaded — GodRugal.def" (or any other un-picked
-  character) show up again anywhere in the trace? If the internal
-  reparse still touches real, un-selected characters after this, the
-  trim isn't reaching the copy the engine actually reads at boot, or the
-  engine is populating its roster table from something other than
-  `data/select.def`.
-- Does the crash point move later (a higher asset count, more of the
-  match visibly loading) compared to I19's run, does the match complete
-  and stay stable, or does it crash at effectively the same point? The
-  third outcome means characters-only trimming isn't the dominant cost —
-  the next candidate is `[ExtraStages]` (deliberately left untouched in
-  this build; see **I20 — quiet select.def** above for why), or the
-  reparse reads real data some other way this doesn't reach, or WASM's
-  own linear memory growth is contributing on top of both fixes.
-- Any new symptom specific to the trim: a lifebar name, victory screen,
-  or HUD element behaving oddly, which would mean something else reads
-  the full select.def content for a reason unrelated to character
-  loading (unlikely given only `[Characters]` lines are touched, but
-  worth naming rather than assuming zero risk).
-- If I20 fixes it outright: the eager/lazy/eviction/reportMemory
-  instrumentation from I18/I19 stays valuable for the NEXT roster this
-  gets tried against (a heavier pairing, a different zip) — don't strip
-  it out just because this specific crash is resolved.
+If a future build regresses, the fastest triage is still the same three
+signals in the trace, in this order: does `SELECT TRIM` fire with a
+sensible dropped count, does any un-picked character appear, and does
+own-VFS stay near the 238MB-ish shape the winning run had.
 
 If quarter-circles still don't come out in actual play despite I14's fix
 holding for a hadouken already: that is very likely Ikemen's own

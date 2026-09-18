@@ -122,10 +122,21 @@ else:
 
     # --- cross-check against the live notes' own "Current anchor" so the
     # doc and the actual highest-numbered file can't silently drift apart.
+    # The anchor line reads "Test next: RIG I<N>" while a rig is awaiting
+    # its phone test, and switches to a result phrasing ("RIG I<N> ... —
+    # CONFIRMED ...") once that test has happened -- both forms name the
+    # current rig, which is the only thing this check is actually about,
+    # so accept either rather than forcing the doc to keep saying "test
+    # next" about a build that has already been tested.
     if NOTES.exists():
         notes_text = NOTES.read_text(encoding='utf-8')
-        anchor_match = re.search(r'Test next: RIG I(\d+)', notes_text)
+        anchor_match = (re.search(r'Test next: RIG I(\d+)', notes_text)
+                        or re.search(r'^\*\*RIG I(\d+)\b', notes_text, re.M))
         checks['live_notes_anchor_found'] = anchor_match is not None
+        if anchor_match is None:
+            failed_reasons.append(
+                'IKEMEN_FAI_LIVE_NOTES.md has no recognizable current-rig anchor -- expected either '
+                '"Test next: RIG I<N>" or a bolded "**RIG I<N> ..." line under Current anchor')
         if anchor_match:
             anchor_n = int(anchor_match.group(1))
             checks['live_notes_anchor_matches_highest_file'] = anchor_n == n
