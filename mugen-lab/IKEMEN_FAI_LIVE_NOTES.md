@@ -1298,6 +1298,44 @@ Menu, roughly by value:
    Bake it flat, PriZim green before and after, leave the base untouched.
 4. **GUI work.** Picker portraits, HUD styling. Nothing blocks it.
 
+### Parked idea: serve the zip over HTTP instead of IndexedDB
+
+Raised and deliberately deferred. Recording it because the feasibility
+check is the useful part and should not need redoing.
+
+**It would work, and it is a small change.** The rig touches the zip File
+object in exactly three ways -- `file.size`, `file.name`, and
+`file.slice(a, b).arrayBuffer()` -- and never reads the whole 1.7GB. It
+reads the last 64KB for the central directory, then per asset a 30-byte
+local header plus that entry's compressed bytes. All random access byte
+ranges, which is exactly what HTTP Range requests provide. A shim object
+exposing those three members over `Range: bytes=a-b` is a drop-in;
+nothing else in the codebase changes.
+
+Two hard requirements if it is ever built:
+
+- **The server must support Range requests.** `python3 -m http.server`
+  does NOT -- it ignores the header and returns the whole file, which
+  here means 1.7GB per asset. Caddy or nginx, not the stdlib server.
+- **Mixed content blocks the obvious setup.** The rig is served over
+  HTTPS from github.io, and browsers refuse http:// subresources from an
+  HTTPS page. Either serve the rig from the same host, or front the
+  server with real HTTPS (Tailscale Serve handles certs and works off
+  the home network).
+
+**Why it was parked:** the value is narrower than it first appears. The
+zip is already persisted in IndexedDB, so there is no repeat upload, and
+the "add a character without touching the big zip" case is already solved
+by the repo-hosted pack path (see **I21 — repo-hosted characters**). What
+is left is swapping whole rosters, editing characters already inside the
+big zip, or standing up a fresh device. Against that: a sleeping laptop
+means no game, where IndexedDB works offline indefinitely, and boot would
+turn ~490 local disk reads into network round trips (roughly +10s on LAN,
+worse through a tunnel).
+
+If built, it should be an option (`?zipurl=...`) with IndexedDB staying
+the default -- add a lane, do not replace the working one.
+
 Triage order for any future regression is unchanged: does `SELECT TRIM`
 fire with a sensible dropped count, does any un-picked character appear,
 does own-VFS hold the ~235MB/~50-asset shape.
