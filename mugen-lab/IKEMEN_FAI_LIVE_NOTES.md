@@ -1576,3 +1576,44 @@ zip over HTTP (see the parked HTTP-Range idea above for the groundwork).
 "Also just improving [the GUI] overall" is still open beyond this one
 letterboxing fix — revisit with the user once the digital-server
 document is delivered rather than assuming further scope.
+
+## FOR DAI — real syntax error in rig-ikemen-27.js as pushed to main
+
+`mugen-lab/rig-ikemen-27.js` fails `node --check` outright:
+
+```
+mugen-lab/rig-ikemen-27.js:8
+  const wireOld = "document.querySelectorAll('#controls [data-k]').forEach(el => {
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+SyntaxError: Invalid or unexpected token
+```
+
+The `wireOld` string (line 8) opens with a double quote and then
+contains real, literal line breaks straight through to line 32 --
+JS double-quoted strings can't contain a raw newline, only `\n`. Every
+other multi-line patch string in the same file (`bindNew`, `selectNew`,
+`wireNew` itself on line 33, etc.) is built the correct way: one line,
+`\n` escapes throughout. This one string got pasted/generated without
+that escaping. The browser will hit the exact same SyntaxError the
+whole file currently does in `node --check`, so `rig-ikemen-27.html`
+cannot boot at all as currently committed on `main` (introduced in
+commit `4e6d22f`, "force action-button keyup pulses on iPhone").
+
+Fix is mechanical: re-escape `wireOld`'s value onto one line the same
+way `wireNew` right below it already is (each real newline -> `\n`,
+each embedded `'` left as-is since the string is double-quoted).
+
+Not touched here per "let DAI fix Kineza, let him be" -- this is I25-27's
+own input-gate lineage, flagged so it's visible in the file DAI already
+reads, not silently patched.
+
+Also worth knowing: `preflight.py`'s `live_notes_anchor_matches_highest_file`
+check now fails, because it expects this file's tested-rig anchor to
+match whichever `rig-ikemen-N.html` is highest on disk (I27), but this
+anchor still says I24 -- the last rig actually tested from the
+MobMugen-roster/GUI track this file otherwise documents. The two tracks
+(roster/GUI vs. Kineza input-gate) are now running in parallel on the
+same numbering sequence; the checker doesn't know that, so this failure
+is expected to stay red until the two tracks agree on one anchor
+convention, not something either side should chase alone.
