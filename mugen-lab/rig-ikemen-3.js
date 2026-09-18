@@ -1071,7 +1071,11 @@
 
   function setControlsHidden(h) { controls.classList.toggle('hidden', h); ctrlToggle.textContent = h ? 'SHOW CTRL' : 'HIDE CTRL'; }
   ctrlToggle.addEventListener('click', () => setControlsHidden(!controls.classList.contains('hidden')));
-  function setDebugHidden(h) { diagWrap.classList.toggle('hidden', h); debugToggle.textContent = h ? 'SHOW DEBUG' : 'HIDE DEBUG'; }
+  function setDebugHidden(h) {
+    diagWrap.classList.toggle('hidden', h);
+    debugToggle.textContent = h ? 'SHOW DEBUG' : 'HIDE DEBUG';
+    diagInlineToggle.textContent = h ? 'EXPAND' : 'COLLAPSE';
+  }
   debugToggle.addEventListener('click', () => setDebugHidden(!diagWrap.classList.contains('hidden')));
   diagInlineToggle.addEventListener('click', () => setDebugHidden(!diagWrap.classList.contains('hidden')));
 
