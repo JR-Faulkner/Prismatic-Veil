@@ -41,6 +41,37 @@ What the winning trace proves, specifically:
   climbing at the equivalent checkpoint). I19's eviction stays armed as a
   safety net for heavier pairings; it simply had nothing to do here.
 
+### The controlled before/after — mole vs G.Ken across three builds
+
+A second I20 phone test deliberately re-ran the exact pairing that hung
+under I18 and crashed under I19, on the same stage, same device, same
+saved zip. This is the cleanest evidence in the whole investigation
+because only the build changed:
+
+| Build | Peak own-VFS | Lazy assets | Result |
+| --- | --- | --- | --- |
+| I18 | 757.8MB, still climbing | 654+ | hung, load never completed |
+| I19 | ~299MB (pinned to budget, 12+ evictions) | 75+ | crashed (Safari recovery page) |
+| I20 | **233.5MB across 421 files** | **54** | **plays** |
+
+3.2x less resident memory and roughly 12x fewer files touched than the
+run that hung, on identical inputs.
+
+**The footprint is also reproducible, not lucky.** The two I20 phone
+tests used different characters and landed within 5MB and 2 assets of
+each other — GodRugal/G.Ken at 238.2MB / 419 files / 52 assets, mole/
+G.Ken at 233.5MB / 421 files / 54 assets. Match load is now dominated by
+the two actual fighters plus the stage, which is the shape it should
+always have had. `SELECT TRIM` reported the same 766 dropped entries in
+both runs, as expected — the roster is the same regardless of who gets
+picked, so a change in that number in some future run is itself a signal
+worth looking at.
+
+Treat ~235MB / ~50 assets as the known-good benchmark for a two-fighter
+match on this roster. A future pairing landing far above that (or making
+`EVICT` fire, which neither of these runs did) is the first sign the
+budget is being approached again.
+
 **Still open (cosmetic, not blocking):** the `Failed to add stage. File
 read error: stages/.def` wall is still present — hundreds of lines. Those
 are `[ExtraStages]`' own blank entries (335 extra-stage lines in this
