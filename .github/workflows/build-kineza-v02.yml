@@ -206,48 +206,66 @@ jobs:
           # v0.2 acceptance gate: direct x must be a deterministic one-button
           # punch route. Preserve all existing commands/specials and add only
           # the missing direct command/controller when necessary.
-          def clean_line(s):
-              return s.split(";",1)[0].strip()
-          def command_blocks(src):
-              marks=list(re.finditer(r"(?im)^\\s*\\[Command\\]\\s*$",src))
-              blocks=[]
-              for i,m in enumerate(marks):
-                  end=marks[i+1].start() if i+1<len(marks) else len(src)
-                  # A Statedef starts the controller portion; don't let a
-                  # command block consume it.
-                  sm=re.search(r"(?im)^\\s*\\[Statedef\\s+-?\\d+\\]\\s*$",src[m.end():end])
-                  if sm: end=m.end()+sm.start()
-                  blocks.append(src[m.start():end])
-              return blocks
-          def kv(block,key):
-              m=re.search(rf"(?im)^\\s*{re.escape(key)}\\s*=\\s*([^;\\r\\n]+)",block)
-              if not m: return None
-              return m.group(1).strip().strip('"').strip("'")
-          has_direct_x=any((kv(b,"name") or "").lower()=="x" and (kv(b,"command") or "").lower()=="x"
-                           for b in command_blocks(cmd))
-          if not has_direct_x:
-              direct='[Command]\\nname = "x"\\ncommand = x\\ntime = 1\\n\\n'
-              sm=re.search(r"(?im)^\\s*\\[Statedef\\s+-1\\]\\s*$",cmd)
-              cmd=(cmd[:sm.start()]+direct+cmd[sm.start():]) if sm else (direct+cmd)
-          # Detect an existing State -1 route to state 200 gated by command x.
+          def section_blocks(src):
+              out=[]
+              current=None
+              current_name=None
+              for raw in src.splitlines():
+                  s=raw.strip()
+                  if s.startswith("[") and s.endswith("]"):
+                      if current is not None:
+                          out.append((current_name,current))
+                      current_name=s[1:-1].strip()
+                      current=[]
+                  elif current is not None:
+                      current.append(raw)
+              if current is not None:
+                  out.append((current_name,current))
+              return out
+
+          def block_kv(lines):
+              d={}
+              for raw in lines:
+                  line=raw.split(";",1)[0].strip()
+                  if "=" not in line: continue
+                  k,v=line.split("=",1)
+                  d.setdefault(k.strip().lower(),[]).append(v.strip().strip('"').strip("'"))
+              return d
+
+          blocks=section_blocks(cmd)
+          has_direct_x=False
           route200=False
-          for m in re.finditer(r"(?ims)^\\s*\\[State[^\\]]*\\](.*?)(?=^\\s*\\[|\\Z)",cmd):
-              b=m.group(1)
-              if re.search(r"(?im)^\\s*type\\s*=\\s*ChangeState\\b",b) and \
-                 re.search(r"(?im)^\\s*value\\s*=\\s*200\\b",b) and \
-                 re.search(r'(?im)^\\s*trigger(?:all|\\d+)\\s*=.*command\\s*=\\s*"x"',b):
-                  route200=True; break
+          for name,lines0 in blocks:
+              lowname=name.lower()
+              vals=block_kv(lines0)
+              if lowname=="command":
+                  names=[v.lower() for v in vals.get("name",[])]
+                  commands=[v.lower() for v in vals.get("command",[])]
+                  if "x" in names and "x" in commands:
+                      has_direct_x=True
+              if lowname.startswith("state ") or lowname.startswith("state-") or lowname.startswith("state"):
+                  joined="\n".join(raw.split(";",1)[0].lower() for raw in lines0)
+                  if ("type = changestate" in joined.replace("\t"," ") and
+                      "value = 200" in joined.replace("\t"," ") and
+                      ('command = "x"' in joined or "command = x" in joined)):
+                      route200=True
+
+          if not has_direct_x:
+              direct='[Command]\nname = "x"\ncommand = x\ntime = 1\n\n'
+              lines=cmd.splitlines(True)
+              insert_at=None
+              pos=0
+              for raw in lines:
+                  if raw.strip().lower()=="[statedef -1]":
+                      insert_at=pos
+                      break
+                  pos += len(raw)
+              cmd=(cmd[:insert_at]+direct+cmd[insert_at:]) if insert_at is not None else (direct+cmd)
+
           if not route200:
-              if not re.search(r"(?im)^\\s*\\[Statedef\\s+-1\\]\\s*$",cmd):
-                  cmd += "\\n[Statedef -1]\\n"
-              cmd += """\\n[State -1, Kineza Direct Punch v0.2]
-type = ChangeState
-value = 200
-triggerall = command = "x"
-triggerall = command != "holddown"
-trigger1 = statetype = S
-trigger1 = ctrl
-"""
+              if "[statedef -1]" not in cmd.lower():
+                  cmd += '\n[Statedef -1]\n'
+              cmd += '\n[State -1, Kineza Direct Punch v0.2]\ntype = ChangeState\nvalue = 200\ntriggerall = command = "x"\ntriggerall = command != "holddown"\ntrigger1 = statetype = S\ntrigger1 = ctrl\n'
           (dst/"kineza.cmd").write_text(cmd)
 
           def val_for(text,key):
