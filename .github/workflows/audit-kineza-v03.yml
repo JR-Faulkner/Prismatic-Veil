@@ -84,11 +84,59 @@ jobs:
           print(report)
           PY
 
+      - name: Build v0.3A motion candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile, shutil, re, hashlib
+          repo=Path.cwd()
+          src=repo/"mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_2.zip"
+          work=Path("/tmp/kineza-v03a-build")
+          if work.exists(): shutil.rmtree(work)
+          work.mkdir(parents=True)
+          with zipfile.ZipFile(src) as z: z.extractall(work)
+          root=next(p.parent for p in work.rglob("kineza.def"))
+          airp=root/"kineza.air"; cnsp=root/"kineza.cns"
+          air=airp.read_text(errors="replace"); cns=cnsp.read_text(errors="replace")
+          def swap(src,n,body):
+              pat=rf"(?ims)(^\s*\[Begin\s+Action\s+{n}\s*\]\s*)(.*?)(?=^\s*\[Begin\s+Action\s+|\Z)"
+              m=re.search(pat,src)
+              if not m: raise SystemExit(f"missing action {n}")
+              return src[:m.start(2)] + body.rstrip()+"\n\n" + src[m.end(2):]
+          a200="Clsn2Default: 1\n  Clsn2[0] = -68,-300,68,0\n1000,0, 0,0, 2\nClsn1: 1\n  Clsn1[0] = 18,-245,205,-65\n1002,0, 0,0, 2\n1003,0, 0,0, 3"
+          a1000="Clsn2Default: 1\n  Clsn2[0] = -72,-300,72,0\n1000,0, 0,0, 3\n1070,0, 0,0, 1\n1070,1, 0,0, 1\n1070,2, 0,0, 1\n1070,3, 0,0, 1\n1070,4, 0,0, 1\n1070,5, 0,0, 1\n1070,6, 0,0, 1\nClsn1: 1\n  Clsn1[0] = 18,-255,220,-60\n1002,0, 0,0, 3\n1003,0, 0,0, 4"
+          a1070="Clsn2Default: 1\n  Clsn2[0] = -74,-295,74,0\n1070,0, 0,0, 2\n1070,1, 0,0, 2\n1070,2, 0,0, 2\n1070,3, 0,0, 1\n1070,4, 0,0, 1\n1070,5, 0,0, 1\n1070,6, 0,0, 1\nClsn1: 1\n  Clsn1[0] = 20,-245,185,-55\n1070,7, 0,0, 1\nClsn1: 1\n  Clsn1[0] = 20,-250,205,-55\n1070,8, 0,0, 1\nClsn1: 1\n  Clsn1[0] = 20,-255,220,-55\n1070,9, 0,0, 1\nClsn1: 1\n  Clsn1[0] = 20,-250,205,-55\n1070,10, 0,0, 1\nClsn1: 1\n  Clsn1[0] = 20,-245,185,-55\n1070,11, 0,0, 1\n1070,12, 0,0, 2\n1070,13, 0,0, 2\n1070,14, 0,0, 2\n1070,15, 0,0, 2\n1070,16, 0,0, 3\n1070,17, 0,0, 3"
+          air=swap(air,200,a200); air=swap(air,1000,a1000); air=swap(air,1070,a1070)
+          airp.write_text(air)
+          cns=cns.replace("pausetime = 7,7","pausetime = 6,7",1)
+          cns=cns.replace("x = 7.8\ny = 0","x = 8.2\ny = 0",1)
+          cns=cns.replace("x = .72","x = .68",1)
+          cns=cns.replace("pausetime = 10,12","pausetime = 9,11",1)
+          cns=cns.replace("x = 6.8\ny = 0","x = 7.4\ny = 0",1)
+          cns=cns.replace("x = .78","x = .72",1)
+          cns=cns.replace("pausetime = 8,9","pausetime = 7,9",1)
+          cnsp.write_text(cns)
+          if not re.search(r"(?im)^\s*xscale\s*=\s*\.3\s*$",cns): raise SystemExit("xscale drift")
+          if not re.search(r"(?im)^\s*yscale\s*=\s*\.3\s*$",cns): raise SystemExit("yscale drift")
+          cmd=(root/"kineza.cmd").read_text(errors="replace")
+          if "prototype punch" not in cmd: raise SystemExit("original punch command missing")
+          out=repo/"mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_3A.zip"
+          with zipfile.ZipFile(out,"w",zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+              for p in sorted((work/"chars").rglob("*")):
+                  if p.is_file(): z.write(p,p.relative_to(work).as_posix())
+          shutil.copy2(out,repo/"mugen-lab/assets/ikemen-web/kineza-char-v03a.zip")
+          sha=hashlib.sha256(out.read_bytes()).hexdigest()
+          report="# Kineza v0.3A Motion Pass\n\nBase: validated v0.2\n\n- No SFF/image bytes changed.\n- No command names changed.\n- Scale remains .3/.3.\n- Direct Punch timing: 2/2/3.\n- Momentum Fist startup/recovery tightened.\n- Blitzer uses setup -> 1-tick rush/contact -> brake/recovery timing.\n- CLSN1/CLSN2 tightened.\n- Velocity/braking and hit-pause modestly tuned.\n- Idle remains one frame.\n- Momentum Fist still borrows early Blitzer travel art.\n- No generated art.\n\nZIP SHA-256: `"+sha+"`\n"
+          (repo/"mugen-lab/KINEZA_V0_3A_MOTION_PASS.md").write_text(report)
+          print(report)
+          PY
       - name: Commit audit
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add mugen-lab/KINEZA_V0_3_EXISTING_ANIMATION_AUDIT.md mugen-lab/KINEZA_V0_3_EXISTING_ANIMATION_AUDIT.json
-          if git diff --cached --quiet; then echo "No changes"; else git commit -m "MOBMUGEN: audit Kineza v0.3 existing animation families"; git push; fi
+          git add mugen-lab/KINEZA_V0_3_EXISTING_ANIMATION_AUDIT.md mugen-lab/KINEZA_V0_3_EXISTING_ANIMATION_AUDIT.json mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_3A.zip mugen-lab/assets/ikemen-web/kineza-char-v03a.zip mugen-lab/KINEZA_V0_3A_MOTION_PASS.md
+          if git diff --cached --quiet; then echo "No changes"; else git commit -m "MOBMUGEN: audit and build Kineza v0.3A motion pass"; git push; fi
