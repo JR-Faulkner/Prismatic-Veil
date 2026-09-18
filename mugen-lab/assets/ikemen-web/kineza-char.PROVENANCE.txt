@@ -42,3 +42,40 @@ Upstream fix required: append 0x0C + the 768-byte palette to each
 sprite's PCX data when writing the SFF. No other change is needed --
 header, subheader chain, dimensions, axes, RLE, and the AIR/CNS/CMD
 wiring were all correct as delivered and loaded with zero engine errors.
+
+
+kineza.cns [Size] WAS RETUNED (2026-09-18)
+------------------------------------------
+The delivery set xscale/yscale = .5, which its own README flagged as
+temporary and asked about directly ("Is the 0.5 scale correct beside the
+existing roster?"). Measured answer: no.
+
+Silhouette content is 329px head-to-feet, so at .5 he stood 164.5 units
+tall. With no localcoord in the .def and mugenversion 04,14,2002, the
+space is the 320x240 default -- a 240-unit-tall screen -- putting him at
+68.5% of screen height. Kung Fu Man, MUGEN's own reference character,
+sits at head.pos -90, about 37%. He was ~1.8x oversized.
+
+Retuned to .3 -> 98.7 units, 41% of screen height: standard band, a
+touch above KFM, which suits a lead character standing next to the
+heavies in this roster. Every other [Size] value is expressed in game
+units, so all of them were scaled by the same 0.6 ratio to keep collision
+and reach consistent with the art:
+
+  xscale/yscale    .5   -> .3
+  ground.back      20   -> 12
+  ground.front     18   -> 11
+  air.back/front   16   -> 10
+  height          170   -> 102
+  attack.dist     160   -> 96
+  proj.attack.dist 90   -> 54
+  head.pos    -5,-155   -> -3,-99
+  mid.pos      -5,-90   -> -3,-54
+
+The .air needed no edit: Clsn boxes are in sprite-pixel space and MUGEN
+scales them by xscale/yscale automatically.
+
+Also measured and found CORRECT, contrary to an earlier guess: his feet
+land 1-3px above the axis across all stance frames, so he plants on the
+ground properly. The 44px of canvas below the axis is empty padding, not
+a floating character.
