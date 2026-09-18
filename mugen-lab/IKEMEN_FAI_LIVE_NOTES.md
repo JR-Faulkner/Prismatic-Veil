@@ -1416,6 +1416,41 @@ Also observed working: `CONTROLS · released N stuck key(s) after window
 blur` fired twice when the app lost focus mid-match -- I14's safety net,
 doing its job on real hardware.
 
+### Phone-test result — I24 exceeded its own estimate, hulk vs DragonClaw
+
+Real device. `I24 LEAN BOOT · deferred 14 large engine-config file(s)
+totalling 128.2MB` -- not the ~33MB estimated when I24 was scoped from
+`creds.sff` alone. The size-threshold approach caught everything in the
+user's `data/` at or above 4MB automatically, not just the one file known
+by name, and there was apparently a lot more of it than one trace could
+show.
+
+| | I23 (hulk/BroliSSJ3) | I24 (hulk/DragonClaw) |
+| --- | --- | --- |
+| Post-eager VFS | 205.1MB | **76.9MB** |
+| Match peak | 128.7MB (settled), own-VFS | **128.7MB** |
+| Files at eager-done | 370 | 356 |
+
+Peak memory roughly halved between two consecutive builds. Match played
+normally: lifebars, real combat input, both players landing hits, no
+`EVICT` line (nowhere near the 300MB budget). 34 lazy assets materialized
+during match load, up from I23's comparable run, consistent with the
+deferred files now genuinely being pulled on demand when the engine opens
+them rather than paid for at boot regardless.
+
+Both warning walls in this trace are the character packages' own
+authoring issues, not this lane's: `Animation missing sprite 8001,10 from
+chars/hulk/hulk.sff` is the same known gap in Hulk's file already noted
+under I23; DragonClaw's `dc.cns`/`dc.air` carry typos in its own state
+controllers (`fal.recover`, `persisent`, `sprpriority` misspelled several
+ways) that are that package's problem to fix, not the rig's.
+
+**Revise the benchmark going forward**: ~130MB match peak / ~35 lazy
+assets is now the shape to expect on this roster with I24, not the
+~235MB figure from before the eager-load trim existed. A future pairing
+landing well above ~130MB, or `EVICT` firing (still hasn't, on any build
+since I19), are the signals worth a closer look.
+
 ### Parked idea: serve the zip over HTTP instead of IndexedDB
 
 Raised and deliberately deferred. Recording it because the feasibility
