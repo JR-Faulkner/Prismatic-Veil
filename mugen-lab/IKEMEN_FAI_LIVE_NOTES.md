@@ -6,9 +6,27 @@ This file is the short live handoff for FAI. It is deliberately scoped to the cu
 
 ## Current anchor
 
-**RIG I20 QUIET SELECT — CONFIRMED PLAYABLE ON REAL HARDWARE.**
+**Test next: RIG I21 KINEZA.**
 
-`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-20.html?v=i20-quiet-select`
+`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-21.html?v=i21-kineza`
+
+I21 adds **repo-hosted extra characters**: a character package committed
+to this repo is fetched over HTTP at boot and merged straight into the
+VFS, so adding a fighter no longer means repacking and re-uploading the
+user's 1.7GB zip through a phone. The first one is **Kineza**, the
+Prismatic Veil character, always on and first in the picker roster.
+
+The mechanism is not new — `loadRuntimeAssets()` has merged 129 engine
+files into the VFS over HTTP on every single boot since I2. The engine
+cannot tell a file that came from the user's zip apart from one fetched
+from the repo; it is all just the VFS. I21 simply points the same
+fetch/walk/`vfsPutFile()` pattern at a second archive. See **I21 —
+repo-hosted characters** below.
+
+I20 stays the memory baseline and everything in it carries forward —
+see **I20 — quiet select.def** below, and the controlled before/after
+that closed the I17–I19 crash chain, which remains the reference shape
+for a healthy match load (~235MB, ~50 assets).
 
 **This is the first real, playable match this lane has ever produced on
 the phone.** Real device (iPhone, iOS 18.7, Safari 26.6, saved 1.7GB
@@ -978,6 +996,106 @@ The one thing the trim does NOT cover, as designed: `[ExtraStages]`. The
 (hundreds of lines, from that section's own blank entries), proving the
 engine still walks all 335 extra-stage lines. Harmless at current memory
 headroom, and the CLI `-s` stage resolved correctly throughout.
+
+## I21 — repo-hosted characters
+
+Adding a fighter used to mean repacking a 1.7GB zip and re-uploading it
+through a phone. I21 removes that entirely.
+
+### The mechanism (which already existed)
+
+`loadRuntimeAssets()` has, since I2, fetched `ikemen-runtime-assets.zip`
+from this repo over HTTP, walked its entries, and `vfsPutFile()`d all 129
+of them into the VFS on every boot. The engine has no idea those files
+did not come from the user's zip — everything is just the VFS. I21 points
+that same pattern at a second archive:
+
+- `EXTRA_CHAR_PACKS` — a list of `{ name, url }`. Currently one entry:
+  `kineza` at `./assets/ikemen-web/kineza-char.zip`.
+- `loadExtraChars()` — fetch, `listZipEntries()`, `entryRaw()`,
+  `vfsPutFile()`. Same four calls `loadRuntimeAssets()` makes. Wrapped in
+  a **per-pack try/catch on purpose**: a character package that fails to
+  fetch (not deployed, bad path, offline) must never take the rig down,
+  it just does not appear in the picker that run.
+- Called from `loadAndShowPicker()` **before** `loadZipIntoVfs()`, so the
+  files are resident before roster discovery runs. `findCharDefKey()`
+  already checked `vfsFilesLower` as well as the zip index, so a
+  VFS-resident character validates with zero special-casing.
+- The roster block then `unshift()`s each successfully-merged name onto
+  `allChars`, putting it **first** in the picker. A 148-entry grid on a
+  phone makes anything appended to the end a scrolling exercise, and
+  these are the characters under active development.
+- `resetForNewZip()` clears the flag alongside `runtimeAssetsLoaded`,
+  since CHANGE ZIP wipes the whole VFS and the pack has to be re-merged.
+
+### The select.def half
+
+I20's trim could only *keep* lines that already existed. A repo-hosted
+character is not in the user's select.def at all, so
+`trimSelectDefForMatch()` now tracks which picked names it actually
+found and **injects a line for any it did not**, spliced in directly
+after the `[Characters]` header (or under a new section if there is
+none). This is general — every future injected character works the same
+way for free. Logged as `(N injected: <names>)` in the SELECT TRIM line.
+
+### Layout convention
+
+The pack is laid out as `chars/kineza/kineza.def` so the roster name is
+just `kineza`, identical in form to all 147 existing entries. Keep that
+convention for future packs — it means no special cases anywhere in the
+picker, the CLI argv, or `findCharDefKey()`.
+
+### A build-time bug worth remembering
+
+The first cut anchored the `resetForNewZip` patch on the string
+`runtimeAssetsLoaded = false;` — which also appears in its own `let`
+declaration higher up the file. `.replace()` takes the **first** match,
+so the patch landed on the declaration, producing
+`let runtimeAssetsLoaded = false;` followed by `extraCharsLoaded = false;`
+*before* `extraCharsLoaded` was declared: a TDZ ReferenceError at module
+load that would have killed the rig on boot, plus a `resetForNewZip` that
+never reset the flag. **`node --check` passed**, because TDZ is a runtime
+error and the output is perfectly valid syntax.
+
+Fixed by anchoring on `vfsDirs.clear();\n    runtimeAssetsLoaded = false;`
+and by adding `needUnique()` to the builder, which fails the build if any
+anchor matches more than once. **Every patch anchor in a future rig
+should use `needUnique()`, not `need()` — an anchor that matches twice
+does not error, it silently rewrites the wrong site.**
+
+### Verified before the phone test
+
+- Unit test of the extended trim: injection into `[Characters]`, the
+  injected line landing inside that section rather than at end of file,
+  `[Options]`/`[ExtraStages]` untouched, a Kineza mirror match injecting
+  exactly one line and not two, the I20 no-injection path unchanged, and
+  a select.def with no `[Characters]` section at all getting one created.
+- The runtime `.replace()` pipeline simulated in Node and syntax-checked.
+- A real headless-browser run against the live repo copy of the pack,
+  which exercised the actual fetch: `kineza merged into VFS -- 5 file(s),
+  2.1MB (repo-hosted, not from the user zip)`, `kineza added to the
+  picker roster at position 1 of 3`, roster grid reading
+  `kineza | mole | g.ken`, and a full match booting with
+  `-p1 kineza -p2 kineza` and **zero** kineza-related engine errors — no
+  "Failed to add char", no SFF/AIR/CNS complaints, no missing sprites.
+
+### What the package itself is (v0.1 prototype)
+
+Checked structurally before integrating: SFF v1 with a valid Elecbyte
+signature and 23 subheaders that all walk cleanly; all 47 standard MUGEN
+actions defined in the AIR; every sprite the AIR references exists in the
+SFF (23 refs, 23 sprites, none missing); `stcommon = common1.cns`
+resolves against Ikemen's own `data/`. Two known prototype quirks, both
+cosmetic and both expected per its own README:
+
+1. **Action 0 (idle stance) points at sprite `9000,0`** — the
+   select-portrait slot. It is a full 512x384 image so it renders, but
+   his standing pose is his portrait frame.
+2. **Axis 256,340 on a 384-tall sprite** — 44px of image hangs below the
+   feet axis (22px at the 0.5 scale the def sets), so he may sit low or
+   clip the floor. That is the README's own open question #3.
+
+There is no SND file, so his attacks are silent by design.
 
 ## Control defects found during I13 diagnosis — status
 
