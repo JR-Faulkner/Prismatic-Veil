@@ -1,0 +1,97 @@
+{
+  "version": "0.3-blueprint",
+  "date": "2026-09-18",
+  "base": "KINEZA_MUGEN_PROTOTYPE_V0_2",
+  "scale": {
+    "x": 0.3,
+    "y": 0.3
+  },
+  "source_canvas": {
+    "width": 512,
+    "height": 384,
+    "axis": [
+      256,
+      340
+    ]
+  },
+  "families": [
+    {
+      "name": "idle",
+      "sff_group": 0,
+      "action": 0,
+      "state": 0,
+      "target_frames": "3-4",
+      "generation": "maybe",
+      "priority": 2
+    },
+    {
+      "name": "direct_punch",
+      "sff_group": 200,
+      "action": 200,
+      "state": 200,
+      "target_frames": 6,
+      "generation": "not_yet",
+      "priority": 1,
+      "timing": [
+        2,
+        2,
+        2,
+        3,
+        2,
+        2
+      ]
+    },
+    {
+      "name": "momentum_fist",
+      "sff_group": 1000,
+      "action": 1000,
+      "state": 1000,
+      "target_frames": "6-8",
+      "generation": "only_if_bridge_missing",
+      "priority": 3
+    },
+    {
+      "name": "blitzer",
+      "sff_group": 1070,
+      "action": 1070,
+      "state": 1070,
+      "current_frames": 18,
+      "generation": "do_not_generate_before_retime_test",
+      "priority": 4
+    },
+    {
+      "name": "fx",
+      "sff_group": "6000+",
+      "generation": "not_yet",
+      "priority": 5
+    },
+    {
+      "name": "walk_forward",
+      "sff_group": 20,
+      "action": 20,
+      "target_frames": "4-6",
+      "generation": "likely_later",
+      "priority": 6
+    },
+    {
+      "name": "walk_backward",
+      "sff_group": 21,
+      "action": 21,
+      "target_frames": "4-6",
+      "generation": "likely_later",
+      "priority": 7
+    }
+  ],
+  "generation_gate": [
+    "attempt existing approved art first",
+    "normalize axis/crop/timing before replacement",
+    "identify exact broken transition",
+    "generate one family or bridge only",
+    "compare against canonical Kineza references before production"
+  ],
+  "runtime_guardrail": {
+    "rig": "I24",
+    "post_eager_mb": 76.9,
+    "match_peak_mb": 128.7
+  }
+}
