@@ -1,0 +1,350 @@
+name: Build Kineza MUGEN Prototype v0.2
+
+on:
+  push:
+    paths:
+      - ".github/workflows/build-kineza-v02.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build and validate Kineza v0.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, io, os, re, shutil, struct, subprocess, zipfile
+
+          REPO = Path.cwd()
+          I21_COMMIT = "2bba87d360c3f6b7e770959febec94350a1dafb4"
+          PACK_PATH = "mugen-lab/assets/ikemen-web/kineza-char.zip"
+          ORIGINAL_SFF_SHA = "652ec567c14377f2967466064e7ddb8632949f30ca34789fd430a2dd1cc67bcc"
+
+          work = Path("/tmp/kineza-v02")
+          if work.exists():
+              shutil.rmtree(work)
+          orig = work / "orig"
+          current = work / "current"
+          outroot = work / "out"
+          for p in (orig,current,outroot):
+              p.mkdir(parents=True)
+
+          # Recover the untouched I21 package from git history.
+          orig_zip = subprocess.check_output(["git","show",f"{I21_COMMIT}:{PACK_PATH}"])
+          (work/"KINEZA_MUGEN_PROTOTYPE_V0_1.zip").write_bytes(orig_zip)
+          with zipfile.ZipFile(io.BytesIO(orig_zip)) as z:
+              z.extractall(orig)
+
+          # Current main pack contains the phone-tested .3 size retune.
+          with zipfile.ZipFile(REPO/PACK_PATH) as z:
+              z.extractall(current)
+
+          def find_char_root(base: Path) -> Path:
+              cands = [p.parent for p in base.rglob("kineza.def")]
+              if len(cands) != 1:
+                  raise SystemExit(f"expected one kineza.def under {base}, found {len(cands)}")
+              return cands[0]
+
+          oroot = find_char_root(orig)
+          croot = find_char_root(current)
+          dst = outroot / "chars" / "kineza"
+          shutil.copytree(croot, dst)
+
+          osff = oroot / "kineza.sff"
+          sff_bytes = osff.read_bytes()
+          sha = hashlib.sha256(sff_bytes).hexdigest()
+          if sha != ORIGINAL_SFF_SHA:
+              raise SystemExit(f"original SFF SHA mismatch: {sha}")
+
+          def read_header(d):
+              if d[:12].rstrip(b"\0") != b"ElecbyteSpr":
+                  raise ValueError("not SFF v1")
+              ver = d[12:16]
+              ngroups,nimages,first_off,subhdr_size = struct.unpack_from("<IIII",d,16)
+              paltype = struct.unpack_from("<H",d,32)[0]
+              if subhdr_size != 32:
+                  raise ValueError(f"unexpected subheader size {subhdr_size}")
+              return ver,ngroups,nimages,first_off,subhdr_size,paltype
+
+          def walk_sff(d):
+              ver,ng,nimg,off,sh,paltype = read_header(d)
+              items=[]
+              seen=set()
+              while off:
+                  if off in seen: raise ValueError("subheader loop")
+                  seen.add(off)
+                  if off+32 > len(d): raise ValueError("subheader past EOF")
+                  rawhdr=bytearray(d[off:off+32])
+                  nxt,length,ax,ay,grp,img = struct.unpack_from("<IIhhHH", rawhdr, 0)
+                  linked = struct.unpack_from("<H",rawhdr,16)[0]
+                  palsame = rawhdr[18]
+                  body=d[off+32:off+32+length]
+                  if len(body)!=length: raise ValueError(f"short body {grp},{img}")
+                  items.append(dict(off=off,nxt=nxt,length=length,ax=ax,ay=ay,grp=grp,img=img,
+                                    linked=linked,palsame=palsame,rawhdr=rawhdr,body=body))
+                  if not nxt: break
+                  off=nxt
+              if len(items)!=nimg:
+                  raise ValueError(f"walked {len(items)} sprites but header says {nimg}")
+              return items
+
+          original = walk_sff(sff_bytes)
+          if len(original) != 23:
+              raise SystemExit(f"expected 23 sprites, got {len(original)}")
+
+          # Narrow repair: insert one PCX palette marker immediately before
+          # the existing final 768 palette bytes. Preserve all image and palette bytes.
+          repaired_bodies=[]
+          for s in original:
+              body=s["body"]
+              if len(body) < 128+768:
+                  raise SystemExit(f"sprite {s['grp']},{s['img']} body too short")
+              if body[-769:-768] == b"\x0c":
+                  raise SystemExit(f"sprite {s['grp']},{s['img']} already has delimiter")
+              palette=body[-768:]
+              pcx_without_palette=body[:-768]
+              repaired_bodies.append(pcx_without_palette+b"\x0c"+palette)
+
+          header=bytearray(sff_bytes[:512])
+          first_off=512
+          struct.pack_into("<I",header,24,first_off)
+          out=bytearray(header)
+          offsets=[]
+          cur=first_off
+          for b in repaired_bodies:
+              offsets.append(cur)
+              cur += 32+len(b)
+          for i,(s,b) in enumerate(zip(original,repaired_bodies)):
+              hdr=bytearray(s["rawhdr"])
+              nxt=offsets[i+1] if i+1<len(offsets) else 0
+              struct.pack_into("<I",hdr,0,nxt)
+              struct.pack_into("<I",hdr,4,len(b))
+              out += hdr
+              out += b
+          repaired=bytes(out)
+          (dst/"kineza.sff").write_bytes(repaired)
+
+          # --- Ikemen-compatible PCX/SFF validation ---
+          def pcx_decode(body, label):
+              if body[-769] != 0x0C:
+                  raise ValueError(f"{label}: missing 0x0C at palette boundary")
+              pcx=body[:-769]
+              pal=body[-768:]
+              if len(pcx)<128: raise ValueError(f"{label}: short PCX")
+              h=pcx[:128]
+              if h[0] != 0x0A: raise ValueError(f"{label}: PCX manufacturer {h[0]:02x}")
+              if h[2] != 1: raise ValueError(f"{label}: PCX encoding {h[2]}")
+              if h[3] != 8: raise ValueError(f"{label}: bits-per-pixel {h[3]}")
+              xmin,ymin,xmax,ymax=struct.unpack_from("<HHHH",h,4)
+              w=xmax-xmin+1; ht=ymax-ymin+1
+              planes=h[65]
+              bpl=struct.unpack_from("<H",h,66)[0]
+              if planes != 1: raise ValueError(f"{label}: planes={planes}")
+              enc=pcx[128:]
+              dec=bytearray(); j=0
+              need=bpl*ht
+              while j<len(enc) and len(dec)<need:
+                  b=enc[j]; j+=1
+                  if (b & 0xC0)==0xC0:
+                      count=b & 0x3F
+                      if j>=len(enc): raise ValueError(f"{label}: truncated RLE")
+                      val=enc[j]; j+=1
+                      dec.extend([val]*count)
+                  else:
+                      dec.append(b)
+              if len(dec) != need:
+                  raise ValueError(f"{label}: decoded {len(dec)} bytes, expected {need}")
+              pix=bytearray()
+              for y in range(ht):
+                  pix.extend(dec[y*bpl:y*bpl+w])
+              if len(pix) != w*ht:
+                  raise ValueError(f"{label}: pixel count mismatch")
+              rgb=bytearray()
+              for idx in pix:
+                  k=idx*3
+                  rgb.extend(pal[k:k+3])
+              return dict(width=w,height=ht,pixels=len(pix),
+                          index_sha=hashlib.sha256(pix).hexdigest(),
+                          palette_sha=hashlib.sha256(pal).hexdigest(),
+                          rgb_sha=hashlib.sha256(rgb).hexdigest())
+
+          fixed = walk_sff(repaired)
+          decoded=[]
+          for old,new in zip(original,fixed):
+              label=f"{new['grp']},{new['img']}"
+              if new["body"][-768:] != old["body"][-768:]:
+                  raise SystemExit(f"{label}: palette bytes changed")
+              if new["body"][:-769] != old["body"][:-768]:
+                  raise SystemExit(f"{label}: PCX image bytes changed")
+              info=pcx_decode(new["body"],label)
+              info.update(group=new["grp"],image=new["img"],axis=(new["ax"],new["ay"]))
+              decoded.append(info)
+
+          if len(fixed)!=23 or any(s["body"][-769]!=0x0C for s in fixed):
+              raise SystemExit("palette delimiter validation failed")
+
+          # Text/package validation. Use the current main text files so the
+          # already-tested .3 size tune is retained while the art is repaired.
+          def text(name):
+              return (dst/name).read_text(errors="replace")
+
+          deff=text("kineza.def")
+          air=text("kineza.air")
+          cmd=text("kineza.cmd")
+          cns=text("kineza.cns")
+
+          def val_for(text,key):
+              m=re.search(rf"(?im)^\s*{re.escape(key)}\s*=\s*([^;\r\n]+)",text)
+              return m.group(1).strip() if m else None
+          xs=val_for(deff,"xscale"); ys=val_for(deff,"yscale")
+          if xs not in (".3","0.3") or ys not in (".3","0.3"):
+              raise SystemExit(f"expected .3 scale, got x={xs}, y={ys}")
+
+          # Collect all SFF group,image keys.
+          sprite_keys={(s["grp"],s["img"]) for s in fixed}
+
+          # Parse AIR actions and sprite refs.
+          actions={}
+          cur_action=None
+          refs=[]
+          for raw in air.splitlines():
+              m=re.match(r"\s*\[\s*Begin\s+Action\s+(\d+)\s*\]",raw,re.I)
+              if m:
+                  cur_action=int(m.group(1)); actions[cur_action]=[]; continue
+              if cur_action is None: continue
+              line=raw.split(";",1)[0].strip()
+              if not line or line.lower().startswith(("clsn","loopstart")): continue
+              m=re.match(r"\s*(-?\d+)\s*,\s*(-?\d+)\s*,",line)
+              if m:
+                  g=int(m.group(1)); i=int(m.group(2))
+                  if g>=0:
+                      refs.append((cur_action,g,i))
+                      actions[cur_action].append((g,i))
+          missing=[r for r in refs if (r[1],r[2]) not in sprite_keys]
+          if missing:
+              raise SystemExit(f"AIR missing sprite refs: {missing[:10]}")
+          for act in (0,200,1000,1070):
+              if act not in actions:
+                  raise SystemExit(f"missing AIR action {act}")
+
+          # Required state defs and safe return-to-0 checks.
+          for st in (200,1000,1070):
+              m=re.search(rf"(?is)\[\s*Statedef\s+{st}\s*\](.*?)(?=\n\s*\[\s*Statedef\s+|\Z)",cns)
+              if not m:
+                  raise SystemExit(f"missing Statedef {st}")
+              block=m.group(1)
+              if not re.search(r"(?is)type\s*=\s*ChangeState.*?value\s*=\s*0",block):
+                  raise SystemExit(f"state {st} has no ChangeState back to 0")
+
+          # Direct x -> state 200 route, following the clean reference pattern
+          # seen in G.Ken / DragonClaw: one-button command, state -1 ChangeState,
+          # state 200 animation, then return to neutral.
+          if not re.search(r'(?is)\[Command\].*?name\s*=\s*"x".*?command\s*=\s*x(?:\s|$)',cmd):
+              raise SystemExit('missing direct x command')
+          if not re.search(r'(?is)\[State[^\]]*\].*?type\s*=\s*ChangeState.*?value\s*=\s*200.*?command\s*=\s*"x"',cmd):
+              # alternate ordering: command before value
+              if not re.search(r'(?is)\[State[^\]]*\].*?type\s*=\s*ChangeState.*?command\s*=\s*"x".*?value\s*=\s*200',cmd):
+                  raise SystemExit('missing direct x -> state 200 route')
+          s200=re.search(r"(?is)\[\s*Statedef\s+200\s*\](.*?)(?=\n\s*\[\s*Statedef\s+|\Z)",cns).group(1)
+          if not re.search(r"(?im)^\s*anim\s*=\s*200\b",s200):
+              raise SystemExit("Statedef 200 does not use anim 200")
+          if len(actions[200]) < 2 or len(set(actions[200])) < 2:
+              raise SystemExit("Action 200 is not visually distinct enough (needs >=2 sprite refs)")
+
+          # Package output.
+          out_zip = REPO/"mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_2.zip"
+          out_zip.parent.mkdir(parents=True,exist_ok=True)
+          with zipfile.ZipFile(out_zip,"w",zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+              for p in sorted((outroot/"chars").rglob("*")):
+                  if p.is_file():
+                      z.write(p,p.relative_to(outroot).as_posix())
+
+          live_zip = REPO/"mugen-lab/assets/ikemen-web/kineza-char-v02.zip"
+          shutil.copy2(out_zip,live_zip)
+
+          fixed_sha=hashlib.sha256(repaired).hexdigest()
+          zip_sha=hashlib.sha256(out_zip.read_bytes()).hexdigest()
+          unique_dims=sorted({(d["width"],d["height"]) for d in decoded})
+          report = f"""# Kineza MUGEN Prototype v0.2 Validation
+
+          Build date: 2026-09-18
+          Source package: I21 commit `{I21_COMMIT}`
+          Original SFF SHA-256: `{sha}`
+          Repaired SFF SHA-256: `{fixed_sha}`
+          v0.2 ZIP SHA-256: `{zip_sha}`
+
+          ## Repair
+          - Recovered the untouched v0.1 SFF from I21 history.
+          - For each of 23 sprites, inserted exactly one PCX palette delimiter `0x0C` immediately before the existing final 768-byte RGB palette.
+          - Preserved every original PCX header/RLE byte and every original palette byte.
+          - Recomputed SFF sprite block lengths and next offsets.
+          - Did not use the flat-green silhouette palette.
+          - Retained the current phone-tested `.3` x/y scale from the live pack.
+
+          ## Engine-format validation
+          - SFF sprites walked: **{len(fixed)}**
+          - Palette delimiters at expected boundary: **{sum(1 for s in fixed if s["body"][-769] == 0x0C)}/23**
+          - PCX decodes completed: **{len(decoded)}/23**
+          - AIR actions parsed: **{len(actions)}**
+          - AIR sprite references: **{len(refs)}**, missing: **{len(missing)}**
+          - Required actions 0 / 200 / 1000 / 1070: **present**
+          - Required states 200 / 1000 / 1070: **present and return to state 0**
+          - Scale: **x={xs}, y={ys}**
+          - Direct command gate: **MUGEN x -> state 200 -> anim 200 -> state 0**
+          - Action 200 distinct sprite refs: **{len(set(actions[200]))}**
+          - Decoded sprite dimensions observed: **{unique_dims}**
+
+          ## Pixel integrity
+          For every sprite, the post-repair PCX image bytes are byte-identical to v0.1 and the 768 palette bytes are byte-identical to v0.1. The validator decodes indexed pixels and reconstructs RGB output from those preserved palettes. This proves the repair changes only the missing palette boundary byte plus SFF offsets.
+
+          The exact authoritative source-PNG visual comparison remains a separate visual QA gate because those source PNGs are not stored in this repository package. Do not substitute a generated/silhouette image for that comparison.
+
+          ## Reference comparison
+          Dropbox construction references were reviewed separately:
+          - G.Ken uses a one-tick direct `x` command, routes it through State -1 to State 200, State 200 uses Anim 200, and returns to State 0 on `AnimTime = 0`.
+          - DragonClaw uses the same one-button command discipline and an explicit State 200 attack family.
+          - Kineza v0.2 is validated against that clean input/state lifecycle without copying their moves or art.
+
+          ## Phone gate
+          1. Load the v0.2 candidate through the existing MobMugen/Ikemen path.
+          2. Pick Kineza.
+          3. Confirm his body renders normally, not green blocks/noise.
+          4. Tap the browser button that emits keyboard **x** (current controller label: **MK / KeyX**).
+          5. Confirm the direct punch visibly changes animation and returns to idle.
+          6. Only after that, test QCF+x Momentum Fist and QCF+y Blitz Rush.
+          7. Record exactly: **render fixed / not fixed** and **direct action fixed / not fixed**.
+          """
+          report = "\n".join(line[10:] if line.startswith("          ") else line for line in report.splitlines()) + "\n"
+          (REPO/"mugen-lab/KINEZA_V0_2_VALIDATION.md").write_text(report)
+
+          # Machine-readable sprite manifest for later source-PNG comparison.
+          import json
+          manifest={"original_sff_sha256":sha,"repaired_sff_sha256":fixed_sha,"zip_sha256":zip_sha,
+                    "sprites":decoded}
+          (REPO/"mugen-lab/KINEZA_V0_2_SPRITE_MANIFEST.json").write_text(json.dumps(manifest,indent=2))
+          print(report)
+          PY
+
+      - name: Commit v0.2 candidate and report
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_2.zip                   mugen-lab/assets/ikemen-web/kineza-char-v02.zip                   mugen-lab/KINEZA_V0_2_VALIDATION.md                   mugen-lab/KINEZA_V0_2_SPRITE_MANIFEST.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "MOBMUGEN: build Kineza prototype v0.2 repaired palettes"
+            git push
+          fi
