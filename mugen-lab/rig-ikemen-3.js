@@ -1136,7 +1136,14 @@
     else return;
 
     e.preventDefault();
-    if (next !== idx) items[next].focus();
+    if (next !== idx) {
+      items[next].focus();
+      // .focus() alone doesn't reliably auto-scroll an overflow:auto
+      // container on iOS Safari for a synthetic (non-native-tab) focus
+      // call -- confirmed by testing, not assumed. block:'nearest' keeps
+      // horizontal position untouched and only scrolls the axis needed.
+      items[next].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
   });
 
   // Landscape usually means a Bluetooth/USB controller is in hand (the
