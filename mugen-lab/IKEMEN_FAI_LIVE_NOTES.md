@@ -6,59 +6,36 @@ This file is the short live handoff for FAI. It is deliberately scoped to the cu
 
 ## Current anchor
 
-**Test next: RIG I16 TRACE PIN.**
+**Test next: RIG I17 LOAD PATIENT.**
 
-`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-16.html?v=i16-trace-pin`
+`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-17.html?v=i17-load-patient`
 
-**I13 and I14 got their first real phone test on I15, and both held.**
-The user played a full round on the real 1.7GB roster (P1=G.Ken vs
-P2=Peter Griffin) and landed an actual quarter-circle-forward special
-move — confirmed directly in the returned trace: `ArrowDown` rolling into
-the `DR` diagonal, rolling into pure `ArrowRight`, then a punch, exactly
-the motion I14's d-pad-roll fix exists to enable. I13's routing fix also
-held with zero `routed to PICKER` lines appearing mid-match. **Both are
-now real-device confirmed, not just headless-clean.**
+**The I16 phone test found a real bug in I15's own fix, plus two more
+instances of the label-leak trap I16 was supposed to have closed.** Full
+writeup below (**I17 — the overlay disappeared before the real load even
+started**). Short version: the load overlay removed itself after 357ms
+with `0 lazy asset(s) materialized` — it read "nothing has happened in
+350ms" as "loading is done," when what was actually true was "the engine
+hasn't started touching real character files yet." The two full custom
+characters (GoD Ryu, a heavily-edited CVS-style Ryu; Homero, a Simpsons
+character) then decompressed for the reported ~2 minutes on an already-
+exposed, unmarked canvas — exactly the symptom I15 was built to prevent,
+reintroduced by a flaw in I15's own settle heuristic.
 
-I15's load-gate overlay also displayed correctly on the phone (screenshot
-confirmed "NOW LOADING…" rendered over a black canvas), but the user still
-reported the match felt delayed — plausibly the same main-thread-block
-question I15's own diagnosis flagged as unconfirmed, but this could not be
-verified because **the load-overlay's own timing lines never made it into
-the returned trace** — a wall of ~300 "Failed to add stage"/"blank" roster
-noise lines (already-documented, don't-fix) rotated them out of the
-700-line rolling buffer before COPY TRACE was pressed. Separately, the
-control trace lines all read `I14 CTRL`/`I14 CONTROLS` despite running on
-I15 — cosmetic (I15's own code was genuinely running; the label was a
-build artifact), but confusing and needed fixing at the root before it
-kept recurring on every future build.
+Also found in the same trace: `selectNew`'s picker-selection log lines
+and `bindNew`'s `pickerCommit()` log line were STILL hardcoded to
+`'I14 PICKER'` under I16 — two more instances of the exact trap I16's own
+writeup described, missed because I16's verification only checked
+CTRL/CONTROLS text, not PICKER text. Both are fixed in I17, and I17's
+verification greps the whole generated file for any `I<number>` literal
+generically rather than asserting against a fixed list — the same mistake
+should not be possible to make a fourth time.
 
-I16 fixes both, with zero behavior changes: the load-overlay shown/removed
-events are now `pin()`ned (the same append-capped, rotation-proof
-mechanism every other milestone in this file already uses), and every
-`I<N>`-prefixed log line — including the ones this session itself
-introduced — is now baked into the patch text with the correct final
-label at Node build time, not left depending on a runtime `replaceAll`
-pass that patch-injected text can never actually reach (see the trap note
-below; it bit three separate times across I15 and this build before being
-fixed at the root instead of patched around again).
-
-**Still needed from a phone test:** the actual `I<N> LOAD OVERLAY ·
-removed after <N>ms` number, now that it will actually survive to
-COPY TRACE.
-
-I10 is the last real-device build that confirmed the important path still works:
-
-- iPhone Safari reused the saved `WinMugen.zip` from IndexedDB.
-- The real zip was `WinMugen.zip`, 1723.6 MB, 9551 entries.
-- Runtime assets loaded: 129 files.
-- Zip load indexed 3549 roster files and eagerly loaded 245 engine config files.
-- Roster parse found 147 playable characters and 8 stages.
-- Picker worked: user selected `hulk` vs `GoD_Ryu`, stage `stages/cfjed_warzard.def`.
-- CLI args were correct:
-  `['ikemen','-p1','hulk','-p2','GoD_Ryu','-loadmotif','data/system.def','-s','stages/cfjed_warzard.def','-p2.ai','5']`
-- WASM instantiated.
-- WebGL2 initialized on mobile Safari.
-- Runtime reached `STILL RUNNING AFTER 5s · NO JS CRASH`.
+**I13's routing fix and I14's refcount/roll fixes remain real-device
+confirmed** (per I15's phone test) and are untouched here. I15's actual
+defect (canvas exposed before WASM even starts) also remains fixed and
+untouched — only the settle-heuristic bug that let a NEW instance of the
+same symptom back in through a side door is addressed.
 
 ## Controls defect — diagnosed and fixed in I13
 
@@ -429,6 +406,118 @@ path; I14's refcount and roll fixes both rerun clean. No behavior changed
 — this build only affects what the trace reports, not what the engine or
 controls do.
 
+## I17 — the overlay disappeared before the real load even started
+
+Diagnosed from the user's own real phone trace of I16 (P1=GoD_Ryu,
+P2=homero, both large, heavily-edited custom characters). Two distinct
+bugs, found in the same read.
+
+### Bug 1: the settle heuristic couldn't tell "not started" from "done"
+
+The trace's own numbers say it directly:
+
+```
+I16 LOAD OVERLAY · shown -- ...
+I16 LOAD OVERLAY · removed after 357ms (asset loading settled), 0 lazy asset(s) materialized during load
+```
+
+**Zero assets materialized, and it removed itself anyway.** The 350ms
+quiet timer armed at show-time and nothing had touched `zipIndex` yet by
+the time it fired — not because loading was done, but because the engine
+was still churning through Ikemen's own internal re-parse of the full,
+unfiltered `select.def` (the ~150 `blank`/malformed entries already
+documented under **Known runtime noise** below). None of those misses
+touch `zipIndex` (a `blank` slot has no real file to find), so none of
+them ping the overlay's activity listener. From the overlay's point of
+view, total silence for 350ms looked identical whether "nothing has
+started" or "everything is finished" — it could not tell those apart, and
+guessed wrong.
+
+After that false-positive removal, the ACTUAL expensive work — Ikemen
+opening `chars/GoD_Ryu/GoD_Ryu.sff` and `chars/homero/homero.sff` (full
+sprite sheets) plus every `.snd`/`.cns`/`.cmd`/`.air` file each heavily-
+edited character needs, each one synchronously decompressed via
+`fflate.inflateSync()` inside `lazyMaterialize()` — happened on a canvas
+that was already exposed, with nothing telling the player anything was
+in progress. Reported directly: "shouldn't be taking 2 minute loading,"
+correctly reading it as no visible sign of work happening. This is the
+exact symptom I15 exists to prevent, reintroduced by a different bug in
+I15's own removal logic rather than by the original reveal-point mistake
+(which stayed fixed).
+
+### The fix
+
+1. **The settle timer may only actually remove the overlay once at least
+   one real asset has been materialized.** If it fires while
+   `lazyActivity.count` is still at its start-of-show value, it just
+   re-arms instead of removing — silence before the first real hit no
+   longer reads as "done."
+2. **Quiet window widened 350ms → 900ms**, tolerating a bigger real gap
+   between (for example) finishing P1's assets and starting P2's without
+   misreading it as settled.
+3. **Hard cap widened 4500ms → 180000ms (3 minutes).** The old value
+   assumed all loading is fast; it visibly isn't, for large edited
+   characters, and a premature hard-cap removal is the same bug through a
+   different door. The cap still exists purely as a "something is actually
+   broken" backstop — verified directly (see below) to still fire when
+   nothing ever loads at all.
+4. **Live progress added to the overlay itself**: an updating line
+   showing asset count and the current file's name, refreshed on every
+   real load, specifically because a real 1-3 minute wait with a fully
+   static screen reads as broken even when it's working correctly.
+
+### Bug 2: two more instances of the exact label-leak trap I16 documented
+
+`selectNew`'s picker-selection logs and `bindNew`'s `pickerCommit()` log
+line were STILL hardcoded `'I14 PICKER'` under I16 — confirmed directly in
+the real trace (`I14 PICKER · P1 selected...` while I16 was running).
+I16's own writeup diagnosed this exact class of bug for CTRL/CONTROLS
+text and fixed it there — but the verification suite that shipped with
+I16 only asserted on CTRL/CONTROLS strings, not PICKER strings, so a
+second (and third — `pickerCommit()`'s line lives inside `bindNew`, a
+different function than `selectNew`) instance of the identical mistake
+shipped anyway.
+
+Fixed the same way (bake the real label in via the `RIG` build-time
+constant), but this time **the verification greps the entire generated
+file for any `I<number>` literal that isn't the current rig**, rather than
+checking a fixed list of known-about label sites. A fixed list is exactly
+what let two instances slip through I16 despite the trap already being
+documented — a generic sweep is the only check that scales as more
+patches accumulate copy-pasted log lines across future rigs.
+
+### Verified
+
+- **Algorithm, directly**: the exact shipped overlay function was
+  extracted and driven with a synthetic, time-compressed activity
+  timeline (real ms constants unchanged; wall-clock scaled 60x so the
+  test finishes in seconds) through four scenarios — silence before any
+  real load starts (must not remove), a long real load trickling in
+  (must stay up and show live progress), real settling after activity
+  stops (must remove, with the correct asset count, via the settle path
+  not the hard cap), and a load that never produces any activity at all
+  (the hard cap must still eventually release it). All four hold on the
+  actual code that ships, not a re-implementation of it.
+- **Labels, generically**: grepped the whole generated file for any
+  `I1[3-6]`-prefixed literal; zero found outside one intentional prose
+  reference in the READY message ("on top of I13/I14/I15/I16 fixes").
+- **Regression**: I14's roll fix and I13's routing (no `routed to PICKER`
+  once in-match) both rerun clean against I17.
+
+### What to look for on the phone
+
+Same GoD_Ryu/homero pairing if possible, so the comparison to I16's trace
+is direct. Check:
+
+- Does `I17 LOAD OVERLAY · removed after <N>ms` now report a plausible
+  count of real assets (dozens, for two full characters) instead of 0?
+- Does the on-screen overlay text visibly update with a file name and
+  count while the real ~1-3 minute load runs, instead of sitting static?
+- Does the removal reason read `asset loading settled`, not
+  `hard timeout`? A hard-timeout removal on a genuinely still-loading
+  match means 3 minutes wasn't enough margin and the constant needs
+  raising further, not that the approach is wrong.
+
 ## Control defects found during I13 diagnosis — status
 
 Reproduced while diagnosing I13's routing bug. Items 1 and 2 are fixed in
@@ -514,32 +603,32 @@ These are working enough to preserve while fixing controls:
 
 ## Recommended next build
 
-I16 exists and is the thing to test now — it supersedes I15 as the anchor.
-Do not build I17 until I16 has had a phone test.
+I17 exists and is the thing to test now — it supersedes I16 as the
+anchor. Do not build I18 until I17 has had a phone test.
 
-**I13 and I14 are DONE — real-device confirmed, per the anchor section
-above.** A real quarter-circle special move landed on the actual phone,
-against the actual 1.7GB roster. Do not re-litigate the routing fix or
-the refcount/roll fixes without a new, specific symptom; treat them as
-closed.
+**I13 and I14 remain DONE — real-device confirmed.** A real quarter-
+circle special move landed on the actual phone. Do not re-litigate the
+routing fix or the refcount/roll fixes without a new, specific symptom.
 
-**I15's load-gate fix is functionally unconfirmed** — the overlay itself
-displayed correctly (screenshot evidence), but whether its timing is
-reasonable is still unknown, because the one number that would answer
-that got rotated out of the trace before it could be read. That is the
-single thing I16 exists to fix, and it changes nothing else. The next
-phone test's whole job is: report the `I<N> LOAD OVERLAY · removed after
-<N>ms (<reason>)` line from the PINNED section.
+**I15's defect (canvas exposed before WASM even starts) also remains
+fixed and confirmed** — that was never in question. What I16's phone test
+found was a SEPARATE bug, in I15's own removal-timing heuristic, that let
+a new instance of the same class of symptom back in through a different
+door (the overlay disappearing too early, rather than never appearing at
+all). I17 fixes that specific heuristic. The next phone test's whole job:
+report the `I<N> LOAD OVERLAY · removed after <N>ms (<reason>)` line, and
+whether the on-screen text visibly updated during the wait.
 
-- A reasonable `<N>` (hundreds of ms to a couple seconds) closes I15's
-  defect outright — the perceived "delayed, started before I could see
-  it" feeling was likely just... loading taking a few real seconds, now
-  correctly covered, not a new bug.
-- A large `<N>` (many seconds) means the main-thread-block finding from
-  I15's diagnosis is real on hardware, not a headless artifact. That
-  becomes its own follow-up (instrumenting inside `boot()`'s WASM
-  instantiate / `go.run()` call) — genuinely harder, and should get its
-  own dedicated build once confirmed necessary, not be guessed at now.
+- Correct outcome: `<reason>` reads `asset loading settled`, `<N>` is in
+  the range of the real load (could legitimately be over a minute for
+  heavy characters — that's fine, as long as the screen showed live
+  progress the whole time instead of a static or absent overlay).
+- Wrong outcome: `<reason>` reads `hard timeout` on a match that DID
+  eventually start — means 180000ms wasn't enough margin, raise it
+  further, don't add new logic.
+- Also wrong: the overlay text stays static ("preparing…") for the whole
+  wait despite real characters loading — means the per-ping counter
+  isn't reaching real activity for some reason, worth its own look.
 
 If quarter-circles still don't come out in actual play despite I14's fix
 holding for a hadouken already: that is very likely Ikemen's own
@@ -547,7 +636,16 @@ motion-buffer timing on a specific motion, not this control layer. Get a
 full trace of the specific failed attempt before assuming a code path is
 wrong — don't re-open I14.
 
-Once I16's number comes back and I15's status is known either way: the
-control and boot-visibility layers are done for now. Move to the next
-phase (collapsing the wrapper chain into one clean file, then GUI
-beautification) rather than inventing more work in either system.
+**Process note for whoever builds I18+:** two builds in a row (I16, I17)
+found the label-leak trap recurring in spots the previous build's own
+verification didn't check. Before shipping any build that extracts a
+prior rig's patch text, grep the WHOLE generated file for `I1[0-9]`
+(everything except the current rig's own number) rather than asserting
+against a specific list of known label sites — that generic sweep is
+what actually catches this class of bug, and checking a fixed list is
+exactly how it slipped through twice.
+
+Once I17's real numbers come back clean: the control and boot-visibility
+layers are done. Move to the next phase (collapsing the wrapper chain
+into one clean file, then GUI beautification) rather than inventing more
+work in either system.
