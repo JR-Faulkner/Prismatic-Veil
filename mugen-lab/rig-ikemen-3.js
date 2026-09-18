@@ -172,7 +172,17 @@
     } catch (_) {}
   }
 
-  function status(s) { state.textContent = s; if (pill) pill.textContent = s; if (prepDiag) prepDiag.textContent = s; }
+  function classifyStatus(s) {
+    if (/CRASH|FAILED|EXITED/.test(s)) return 'error';
+    if (/RUNNING/.test(s)) return 'running';
+    if (/WAITING FOR ZIP|SELECT FIGHTERS/.test(s)) return 'idle';
+    return 'loading';
+  }
+  function status(s) {
+    state.textContent = s;
+    if (pill) { pill.textContent = s; pill.dataset.state = classifyStatus(s); }
+    if (prepDiag) prepDiag.textContent = s;
+  }
   function log(s) {
     s = String(s);
     lines.push(s);
