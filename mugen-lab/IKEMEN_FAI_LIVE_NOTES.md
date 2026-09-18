@@ -6,23 +6,45 @@ This file is the short live handoff for FAI. It is deliberately scoped to the cu
 
 ## Current anchor
 
-**Test next: RIG I15 LOAD GATE.**
+**Test next: RIG I16 TRACE PIN.**
 
-`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-15.html?v=i15-load-gate`
+`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-16.html?v=i16-trace-pin`
 
-I15 carries I14's two control fixes forward unchanged and adds one new,
-different-system fix: a loading screen that covers the canvas from the
-instant START MATCH is tapped until the match is actually ready, so the
-player can no longer take a hit against a screen they can't see yet. See
-**I15 — load gate (canvas-exposed-before-ready)** below for the full
-diagnosis; it also surfaced a separate, more surprising finding about
-main-thread blocking during boot that needs real-device confirmation.
+**I13 and I14 got their first real phone test on I15, and both held.**
+The user played a full round on the real 1.7GB roster (P1=G.Ken vs
+P2=Peter Griffin) and landed an actual quarter-circle-forward special
+move — confirmed directly in the returned trace: `ArrowDown` rolling into
+the `DR` diagonal, rolling into pure `ArrowRight`, then a punch, exactly
+the motion I14's d-pad-roll fix exists to enable. I13's routing fix also
+held with zero `routed to PICKER` lines appearing mid-match. **Both are
+now real-device confirmed, not just headless-clean.**
 
-**I13, I14, and I15 have not been phone-tested.** All three pass their
-full headless suites (I13: 13/13; I14: 13/13 + I13's 13/13 rerun, 26/26
-total; I15: 13/14, the one non-pass is an assumption in the TEST being
-wrong, not the fix — see below). I10 remains the last real-device-
-confirmed build and the fallback until one of these gets a real test.
+I15's load-gate overlay also displayed correctly on the phone (screenshot
+confirmed "NOW LOADING…" rendered over a black canvas), but the user still
+reported the match felt delayed — plausibly the same main-thread-block
+question I15's own diagnosis flagged as unconfirmed, but this could not be
+verified because **the load-overlay's own timing lines never made it into
+the returned trace** — a wall of ~300 "Failed to add stage"/"blank" roster
+noise lines (already-documented, don't-fix) rotated them out of the
+700-line rolling buffer before COPY TRACE was pressed. Separately, the
+control trace lines all read `I14 CTRL`/`I14 CONTROLS` despite running on
+I15 — cosmetic (I15's own code was genuinely running; the label was a
+build artifact), but confusing and needed fixing at the root before it
+kept recurring on every future build.
+
+I16 fixes both, with zero behavior changes: the load-overlay shown/removed
+events are now `pin()`ned (the same append-capped, rotation-proof
+mechanism every other milestone in this file already uses), and every
+`I<N>`-prefixed log line — including the ones this session itself
+introduced — is now baked into the patch text with the correct final
+label at Node build time, not left depending on a runtime `replaceAll`
+pass that patch-injected text can never actually reach (see the trap note
+below; it bit three separate times across I15 and this build before being
+fixed at the root instead of patched around again).
+
+**Still needed from a phone test:** the actual `I<N> LOAD OVERLAY ·
+removed after <N>ms` number, now that it will actually survive to
+COPY TRACE.
 
 I10 is the last real-device build that confirmed the important path still works:
 
@@ -329,6 +351,84 @@ tapping START MATCH and the loading screen appearing where a black canvas
 is visible? If `<N>` is large, that's the same main-thread-block question
 above, now with real data instead of a headless guess.
 
+## I16 — trace pin + the recurring "I3 " patch-text trap
+
+Small, zero-behavior-change build fixing two observability gaps found
+while reading I15's real phone-test trace.
+
+### What was wrong
+
+1. **Load-overlay events weren't pinned.** `showMatchLoadingOverlay()`
+   used `log(...)` only. On a real ~1.7GB roster the "known runtime noise"
+   (hundreds of `Failed to add stage`/`Failed to add char: blank` lines,
+   already documented above as real-but-not-the-target) floods the
+   rolling 700-line `lines` buffer fast enough that the load-timing
+   evidence — the entire point of I15 — rotated out before COPY TRACE was
+   even pressed. `pin()` (append-only, capped at 60, exists specifically
+   to survive this) already covers every other milestone in this file;
+   the overlay should have used it from the start.
+2. **Control trace lines read `I14 CTRL`/`I14 CONTROLS` while running
+   I15.** Not a functional bug — I15's own code was genuinely executing —
+   but confusing, and it would have kept happening on every future build
+   built the same way (extracting a prior rig's already-generated control
+   patch and reusing it verbatim).
+
+### The actual trap, and why it took three tries
+
+Every rig wrapper does this at the top, once, against the freshly fetched
+base text:
+
+```js
+src = src.replaceAll('I3 ', 'I16 ');
+```
+
+That pass runs over the ORIGINAL fetched `rig-ikemen-3.js` source. Any
+`src.replace(patchOld, patchNew)` call comes AFTER it. So if `patchNew`
+— text a build script is INJECTING, not text already present in the base
+file — contains a literal `'I3 '` or a stale prior rig's number, **it
+never goes through that relabeling pass and keeps whatever string was
+typed into the patch, forever.**
+
+This bit three times in a row before being fixed at the root:
+
+- I15's WASM-instantiated reveal-point patch initially said `'I3 WASM
+  INSTANTIATED'` in its own replacement text, expecting the top-of-file
+  pass to relabel it — it doesn't, because the patch is spliced in after
+  that pass already ran. (Caught and fixed same-session, before shipping.)
+- I16's first draft copied I14's hardcoded `'I14 CTRL'` text and tried to
+  "fix" it by swapping in a generic `'I3 CTRL'` placeholder, hoping the
+  same top-of-file pass would relabel it in I16 — it doesn't, for the
+  identical reason. (Caught by the verification suite before shipping:
+  the trace literally read `I3 LOAD OVERLAY · removed...`.)
+- The load-overlay's own `pin()`/`log()` calls made the exact same mistake
+  independently, in the same build.
+
+**The only correct fix**: any label text a build script generates for
+NEW patch content must have the real, final rig number baked in directly
+at Node build time (a `const RIG = 'I16'` in the build script, used via
+string concatenation when constructing the patch's replacement text) —
+never left as a runtime placeholder hoping a `replaceAll` will reach it.
+Text that was ALREADY part of the base file before any patching (like the
+base's own `'I3 WASM INSTANTIATED'` log line, untouched) is fine and does
+get relabeled correctly by the existing top-of-file pass — the trap is
+specifically about text a patch is ADDING.
+
+**Whoever builds I17+ this same way (extracting a prior rig's already-
+generated patch text and reusing it) needs to grep the extracted text for
+any `I<number> ` literal before splicing it into a new build**, or use a
+`RIG` constant and rebuild the label from a generic template kept
+separately, rather than extracting post-substitution text repeatedly.
+
+### Verified
+
+9/9 checks: labels correctly read `I16 CTRL`/`I16 LOAD OVERLAY` with zero
+stale `I14`/`I15`/`I3` text; the pinned load-overlay shown/removed lines
+survive an injected flood of 900 noise lines (simulating the real
+device's roster noise) in both the PINNED section and the clipboard-copy
+path; I14's refcount and roll fixes both rerun clean. No behavior changed
+— this build only affects what the trace reports, not what the engine or
+controls do.
+
 ## Control defects found during I13 diagnosis — status
 
 Reproduced while diagnosing I13's routing bug. Items 1 and 2 are fixed in
@@ -414,39 +514,40 @@ These are working enough to preserve while fixing controls:
 
 ## Recommended next build
 
-I15 exists and is the thing to test now — it supersedes I14 as the anchor.
-Do not build I16 until I15 has had a phone test and a conclusion.
+I16 exists and is the thing to test now — it supersedes I15 as the anchor.
+Do not build I17 until I16 has had a phone test.
 
-**Deviation note, same shape as I14's:** I15 started before I13/I14 got a
-phone test, on the strength of a real (if partial) phone report from the
-user mid-test of I14 — the black-screen-before-hit symptom. That is a
-different system from controls (boot/reveal timing vs input), so it stays
-its own build rather than folding into I14, but it does mean THREE
-unphone-tested builds are now stacked (I13 routing, I14 refcount+roll,
-I15 load gate) before any of them has real-device confirmation. If
-something is wrong on the phone, check builds in that order — I13's
-routing fix is the most foundational and most likely to explain a
-cascading failure in either of the other two.
+**I13 and I14 are DONE — real-device confirmed, per the anchor section
+above.** A real quarter-circle special move landed on the actual phone,
+against the actual 1.7GB roster. Do not re-litigate the routing fix or
+the refcount/roll fixes without a new, specific symptom; treat them as
+closed.
 
-If I15 comes back clean: still watch `<N>ms` on `LOAD OVERLAY · removed`.
-A reasonable number closes this defect outright. A large number (many
-seconds) means the main-thread-block finding is real on hardware too, not
-just a headless artifact — that becomes its own follow-up investigation
-(instrumenting inside `boot()`'s WASM instantiate / `go.run()` call), not
-a quick fix, and should get its own build once actually needed.
+**I15's load-gate fix is functionally unconfirmed** — the overlay itself
+displayed correctly (screenshot evidence), but whether its timing is
+reasonable is still unknown, because the one number that would answer
+that got rotated out of the trace before it could be read. That is the
+single thing I16 exists to fix, and it changes nothing else. The next
+phone test's whole job is: report the `I<N> LOAD OVERLAY · removed after
+<N>ms (<reason>)` line from the PINNED section.
 
-If the black-screen-before-hit symptom still reproduces on I15: check for
-a gap between tapping START MATCH and the loading text appearing at all —
-per the diagnosis above, that gap should not exist (confirmed 7-8ms in
-headless), so if it does on the phone, the reveal-point patch itself needs
-re-checking before touching timing.
+- A reasonable `<N>` (hundreds of ms to a couple seconds) closes I15's
+  defect outright — the perceived "delayed, started before I could see
+  it" feeling was likely just... loading taking a few real seconds, now
+  correctly covered, not a new bug.
+- A large `<N>` (many seconds) means the main-thread-block finding from
+  I15's diagnosis is real on hardware, not a headless artifact. That
+  becomes its own follow-up (instrumenting inside `boot()`'s WASM
+  instantiate / `go.run()` call) — genuinely harder, and should get its
+  own dedicated build once confirmed necessary, not be guessed at now.
 
-If I15's fix holds and quarter-circles still don't come out in actual
-play, per I14's own note: that is very likely Ikemen's own motion-buffer
-timing, not this control layer. Get a full trace of a failed attempt
-before assuming a code path is wrong.
+If quarter-circles still don't come out in actual play despite I14's fix
+holding for a hadouken already: that is very likely Ikemen's own
+motion-buffer timing on a specific motion, not this control layer. Get a
+full trace of the specific failed attempt before assuming a code path is
+wrong — don't re-open I14.
 
-Once I13/I14/I15 are all confirmed: the control and boot-visibility layers
-are done for now. Move to the next phase (collapsing the wrapper chain
-into one clean file, then GUI beautification) rather than inventing more
-work in either system.
+Once I16's number comes back and I15's status is known either way: the
+control and boot-visibility layers are done for now. Move to the next
+phase (collapsing the wrapper chain into one clean file, then GUI
+beautification) rather than inventing more work in either system.
