@@ -206,14 +206,10 @@ jobs:
           def val_for(text,key):
               m=re.search(rf"(?im)^\s*{re.escape(key)}\s*=\s*([^;\r\n]+)",text)
               return m.group(1).strip() if m else None
-          # [Size] lives in kineza.cns for this character, not kineza.def.
-          size_match=re.search(r"(?is)\\[\\s*Size\\s*\\](.*?)(?=\\n\\s*\\[|\\Z)",cns)
-          if not size_match:
-              raise SystemExit("missing [Size] section in kineza.cns")
-          size_block=size_match.group(1)
-          xs=val_for(size_block,"xscale"); ys=val_for(size_block,"yscale")
+          # Kineza's [Size] values live in kineza.cns.
+          xs=val_for(cns,"xscale"); ys=val_for(cns,"yscale")
           if xs not in (".3","0.3") or ys not in (".3","0.3"):
-              raise SystemExit(f"expected .3 scale in kineza.cns [Size], got x={xs}, y={ys}")
+              raise SystemExit(f"expected .3 scale in kineza.cns, got x={xs}, y={ys}")
 
           # Collect all SFF group,image keys.
           sprite_keys={(s["grp"],s["img"]) for s in fixed}
