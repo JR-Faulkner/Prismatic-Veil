@@ -1,0 +1,68 @@
+# Ikemen-lane PriZim witness trigger, mirroring prizim-mobmugen.yml's
+# structure for the BoxedWine lane. This lane's rigs auto-increment (the
+# tools themselves detect the current highest rig-ikemen-N.html on disk),
+# so no version pinning is needed here the way the BoxedWine lane pins F9.0.
+name: PriZim MOBMUGEN-IKEMEN validation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'mugen-lab/rig-ikemen-*.html'
+      - 'mugen-lab/rig-ikemen-*.js'
+      - 'mugen-lab/IKEMEN_FAI_LIVE_NOTES.md'
+      - 'tools/prizim/mobmugen-ikemen/**'
+      - '.github/workflows/prizim-mobmugen-ikemen.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  prizim_mobmugen_ikemen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PriZim static preflight
+        run: |
+          python3 tools/prizim/mobmugen-ikemen/preflight.py | tee prizim-mobmugen-ikemen-preflight.json
+
+      - name: Build synthetic Ikemen fixture
+        run: |
+          python3 tools/prizim/mobmugen-ikemen/make_fixture.py
+          ls -lh tools/prizim/mobmugen-ikemen/fixtures/prizim_ikemen_fixture.zip
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local repository server
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 > /tmp/prizim-ikemen-http.log 2>&1 &
+          echo $! > /tmp/prizim-ikemen-http.pid
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:8000/mugen-lab/rig-ikemen-3.html >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/prizim-ikemen-http.log
+          exit 1
+
+      - name: PriZim browser simulation
+        env:
+          PZ_BASE_URL: http://127.0.0.1:8000
+          PZ_FIXTURE: tools/prizim/mobmugen-ikemen/fixtures/prizim_ikemen_fixture.zip
+        run: |
+          node tools/prizim/mobmugen-ikemen/runtime_probe.mjs
+
+      - name: Upload PriZim reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prizim-mobmugen-ikemen-report
+          if-no-files-found: warn
+          path: |
+            prizim-mobmugen-ikemen-preflight.json
+            prizim-mobmugen-ikemen-runtime.json
+            /tmp/prizim-ikemen-http.log
