@@ -1,0 +1,76 @@
+name: Build MobMugen RIG I23 Kineza v0.2
+
+on:
+  push:
+    paths:
+      - ".github/workflows/build-rig-i23.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build I23 from I22 with only Kineza package swap
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path("mugen-lab")
+          h=(root/"rig-ikemen-22.html").read_text()
+          j=(root/"rig-ikemen-22.js").read_text()
+
+          # HTML: preserve I22 mechanics, relabel candidate.
+          h=h.replace("RIG I22 QUIET STAGES","RIG I23 KINEZA V0.2")
+          h=h.replace("RIG I22","RIG I23")
+          h=h.replace("Rig I22 · quiet stages","Rig I23 · Kineza v0.2")
+          h=h.replace("i22-base-i3","i23-base-i3")
+          h=h.replace("./rig-ikemen-22.js?v=i22-quiet-stages","./rig-ikemen-23.js?v=i23-kineza-v02")
+          h=h.replace("I22 PAGE WRAPPER ERROR","I23 PAGE WRAPPER ERROR")
+
+          # JS: exact I22 patch set, only functional delta is hosted Kineza ZIP.
+          j=j.replace("const base = './rig-ikemen-3.js?v=i22-base-i3';",
+                      "const base = './rig-ikemen-3.js?v=i23-base-i3';")
+          j=j.replace("./assets/ikemen-web/kineza-char.zip",
+                      "./assets/ikemen-web/kineza-char-v02.zip")
+          j=j.replace("I22 ", "I23 ")
+          j=j.replace("I22_", "I23_")
+          j=j.replace("RIG I22 QUIET STAGES","RIG I23 KINEZA V0.2")
+          j=j.replace("rig-ikemen-22.generated.js","rig-ikemen-23.generated.js")
+          j=j.replace("I23 READY · QUIET STAGES --",
+                      "I23 READY · KINEZA V0.2 -- repaired original palettes + direct punch gate; QUIET STAGES --")
+
+          if "kineza-char-v02.zip" not in j:
+              raise SystemExit("I23 package swap missing")
+          if "kineza-char.zip" in j:
+              raise SystemExit("I23 still references old Kineza package")
+          if "rig-ikemen-23.js" not in h:
+              raise SystemExit("I23 HTML does not point to I23 JS")
+
+          (root/"rig-ikemen-23.html").write_text(h)
+          (root/"rig-ikemen-23.js").write_text(j)
+          PY
+
+          # Syntax-check generated JS.
+          node --check mugen-lab/rig-ikemen-23.js
+
+      - name: Commit I23
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mugen-lab/rig-ikemen-23.html mugen-lab/rig-ikemen-23.js
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "MOBMUGEN: RIG I23 Kineza v0.2 phone gate"
+            git push
+          fi
