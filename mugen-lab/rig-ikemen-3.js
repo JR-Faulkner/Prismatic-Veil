@@ -46,6 +46,7 @@
     }
   })();
 
+  const stageBox = document.querySelector('.stage');
   const state = document.getElementById('runtimeState');
   const pill = document.getElementById('runtimePill');
   const diag = document.getElementById('diag');
@@ -1080,15 +1081,64 @@
   };
   document.querySelectorAll('#controls [data-macro]').forEach(el => bindPress(el, macros[el.dataset.macro] || []));
 
-  function setControlsHidden(h) { controls.classList.toggle('hidden', h); ctrlToggle.textContent = h ? 'SHOW CTRL' : 'HIDE CTRL'; }
+  function setControlsHidden(h) { controls.classList.toggle('hidden', h); ctrlToggle.textContent = h ? 'SHOW CTRL' : 'HIDE CTRL'; fitStage(); }
   ctrlToggle.addEventListener('click', () => setControlsHidden(!controls.classList.contains('hidden')));
   function setDebugHidden(h) {
     diagWrap.classList.toggle('hidden', h);
     debugToggle.textContent = h ? 'SHOW DEBUG' : 'HIDE DEBUG';
     diagInlineToggle.textContent = h ? 'EXPAND' : 'COLLAPSE';
+    fitStage();
   }
   debugToggle.addEventListener('click', () => setDebugHidden(!diagWrap.classList.contains('hidden')));
   diagInlineToggle.addEventListener('click', () => setDebugHidden(!diagWrap.classList.contains('hidden')));
+
+  // -------------------------------------------------------------------
+  // Stage sizing: fit the GAMEPLAY VIEWPORT to the canvas's real aspect
+  // ratio and let it grow to whatever the screen actually has room for,
+  // instead of the old flat vh-based min/max-height. A flat vh guess is
+  // wrong for every aspect ratio except the one it happened to be tuned
+  // for -- it either leaves letterbox dead space (guess too tall) or
+  // clips/crams the canvas (guess too short). canvas.width/canvas.height
+  // are set by the Go/Ebiten WASM runtime once it boots, not by us, and
+  // it fires no event when it does -- so this polls rather than trying
+  // to hook a call site this codebase doesn't own.
+  // -------------------------------------------------------------------
+  const DEFAULT_AR = 4 / 3; // classic MUGEN screenpack default; used only
+                            // before the engine has set a real canvas size
+  let lastFitKey = '';
+  function fitStage() {
+    const cw = canvas.width, ch = canvas.height;
+    // 300x150 is the browser's own default canvas size, present before
+    // the engine has ever touched it -- not a real resolution to fit to.
+    const hasRealSize = cw > 0 && ch > 0 && !(cw === 300 && ch === 150);
+    const ar = hasRealSize ? cw / ch : DEFAULT_AR;
+
+    const availW = stageBox.parentElement.clientWidth;
+    const stageTop = stageBox.getBoundingClientRect().top;
+    const controlsH = controls.classList.contains('hidden') ? 0 : controls.getBoundingClientRect().height + 8;
+    const diagH = diagWrap.classList.contains('hidden') ? 0 : diagWrap.getBoundingClientRect().height + 8;
+    const statusEl = document.querySelector('.statusline');
+    const diagHeadEl = document.querySelector('.diag-head');
+    const chromeBelow = (statusEl ? statusEl.getBoundingClientRect().height : 0) +
+      (diagHeadEl ? diagHeadEl.getBoundingClientRect().height : 0) + controlsH + diagH + 24;
+    const availH = Math.max(160, window.innerHeight - stageTop - chromeBelow);
+
+    const key = availW + 'x' + Math.round(availH) + '@' + ar.toFixed(4);
+    if (key === lastFitKey) return;
+    lastFitKey = key;
+
+    let w, h;
+    if (availW / ar <= availH) { w = availW; h = availW / ar; }
+    else { h = availH; w = availH * ar; }
+    stageBox.style.width = Math.round(w) + 'px';
+    stageBox.style.height = Math.round(h) + 'px';
+  }
+  fitStage();
+  window.addEventListener('resize', fitStage);
+  window.addEventListener('orientationchange', () => setTimeout(fitStage, 50));
+  // No DOM event exists for the engine setting canvas.width/height, so
+  // poll -- fitStage() itself is a cheap no-op once nothing has changed.
+  setInterval(fitStage, 300);
 
   // D-pad navigation for the character picker. The touch controller's
   // arrows and the six action buttons already dispatch real KeyboardEvents
