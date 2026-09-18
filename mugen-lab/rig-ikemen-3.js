@@ -180,7 +180,9 @@
   }
   function status(s) {
     state.textContent = s;
-    if (pill) { pill.textContent = s; pill.dataset.state = classifyStatus(s); }
+    const cls = classifyStatus(s);
+    if (pill) { pill.textContent = s; pill.dataset.state = cls; }
+    document.body.dataset.runtimeState = cls;
     if (prepDiag) prepDiag.textContent = s;
   }
   function log(s) {
