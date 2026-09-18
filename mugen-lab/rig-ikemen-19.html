@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MobMugen · Ikemen · RIG I19 EVICTING</title>
+<script>
+(function(){
+  'use strict';
+  fetch('./rig-ikemen-3.html?v=i19-base-i3', { cache: 'no-store' })
+    .then(function(r){ if(!r.ok) throw new Error('I19 base HTML HTTP '+r.status); return r.text(); })
+    .then(function(html){
+      html = html.replaceAll('RIG I3 PLAYABLE', 'RIG I19 EVICTING');
+      html = html.replaceAll('RIG I3', 'RIG I19');
+      html = html.replaceAll('Rig I3 · playable', 'Rig I19 · memory eviction');
+      html = html.replaceAll('D-pad moves, START selects.', 'D-pad moves. START/attack selects P1, P2, Stage, then START MATCH. Now evicts cold, zip-backed cache entries once resident memory passes budget, re-fetching them from the same local zip on demand.');
+      html = html.replace('./rig-ikemen-3.js?v=i3-picker-persist', './rig-ikemen-19.js?v=i19-lru-eviction');
+      document.open();
+      document.write(html);
+      document.close();
+    })
+    .catch(function(e){
+      document.body.innerHTML = '<pre style="white-space:pre-wrap;color:#f88;background:#070b13;padding:16px">I19 PAGE WRAPPER ERROR\n' + String((e && e.stack) || e).replace(/[<>&]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }) + '</pre>';
+    });
+})();
+</script>
+</head>
+<body></body>
+</html>

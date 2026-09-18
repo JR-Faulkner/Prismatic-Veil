@@ -6,22 +6,55 @@ This file is the short live handoff for FAI. It is deliberately scoped to the cu
 
 ## Current anchor
 
-**Test next: RIG I18 MEMORY WITNESS.**
+**Test next: RIG I19 EVICTING.**
 
-`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-18.html?v=i18-memory-witness`
+`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-19.html?v=i19-lru-eviction`
 
-I18 adds no new behavior — it exists purely to answer the open question
-from the mole/G.Ken crash: is this app running out of memory. Every
-decompressed file this app has ever produced lives forever in `vfsFiles`
-(nothing evicts), so I18 sums those bytes at every load checkpoint —
-after eager load, every 20 files during the eager loop specifically
-(the exact loop that was running when the mole/G.Ken trace went silent
-at "LOADING 200" with zero memory data to show for it), and periodically
-during real character loading. It also reports `performance.memory` when
-available, but **that API does not exist on iOS Safari** — the one
-browser this actually needs to answer for — so the self-tracked VFS byte
-count is the real signal, not a bonus. See **I18 — memory witness**
-below.
+I18's own phone test (mole/G.Ken/bamboo, real trace, "no crash, but hard
+stop") confirmed the memory-pressure hypothesis directly: own-VFS bytes
+climbed from 203.5MB after eager load to 757.8MB at 510 match-load
+assets, still climbing, no ceiling in sight, right up to where loading
+hung (never OS-killed this time — `STILL RUNNING AFTER 5s · NO JS CRASH`
+— just never finished). Per this file's own prior branching guidance,
+that confirms the real fix as a structural one: nothing in `vfsFiles`
+ever evicted, ever.
+
+**I19 adds LRU eviction on top of I18's instrumentation.** Every
+`vfsFiles` entry that came from the zip (has a `zipEnt`) can be dropped
+and re-decompressed later at zero data loss — `currentZipFile` (the
+user's original local `File` object) and `lazyMaterialize`'s own
+decompress path are still right there, untouched, for the whole session.
+Only the compressed bytes need to be re-read (a cheap local `Blob.slice`)
+and re-inflated (CPU only) — nothing is fetched over the network and
+nothing is lost. `fs.read()` copies bytes OUT of `vfsFiles` into Go's own
+WASM linear memory before returning, so Go never holds a live reference
+into our JS-side `Uint8Array`; evicting it after that point cannot
+corrupt anything the engine already has.
+
+Design: `vfsPutFile` now tracks `lastAccess` (bumped on every `fs.read()`)
+and the originating `zipEnt` (only set by `lazyMaterialize`, never by the
+eager-bootstrap loop or `O_CREAT`). After every `lazyMaterialize()` call,
+`evictIfOverBudget()` runs: if resident VFS bytes exceed a 300MB budget,
+it evicts the least-recently-touched zip-backed files — skipping any
+path with a currently open `fd` — until back under budget, and puts each
+evicted path back into `zipIndex` so a future `open()` transparently
+re-materializes it through the exact same lazy-load path that already
+handles "never loaded yet." Logged as `I19 EVICT · evicted N cold
+zip-backed file(s) ... reclaimed ...`.
+
+This is deliberately safe-by-construction against thrashing a hot file:
+LRU never evicts something just touched, so a file the engine is
+actively re-reading stays resident; only genuinely cold data (most likely
+full-roster picker portraits, or a previous match's leftovers) is ever a
+candidate. Verified with a standalone Node unit test (not yet a phone
+test) covering: eager files are never evicted; the coldest zip-backed
+file is evicted first and restored to `zipIndex`; a file with an open fd
+is protected from eviction even when it is the coldest candidate. See
+**I19 — LRU eviction** below.
+
+I18's own instrumentation (own-VFS byte accounting, `performance.memory`
+best-effort, per-checkpoint `I<N> MEMORY ·` logging) is carried forward
+unchanged — see **I18 — memory witness** below for that design.
 
 **Also new: `tools/prizim/mobmugen-ikemen/`**, a three-layer automated
 harness (static preflight, Playwright runtime probe, real-trace
@@ -637,6 +670,96 @@ reproduces again during eager load, the every-20-files checkpoints
 should show the VFS total climbing right up to wherever the trace goes
 silent, which is the actual answer to whether this is a memory ceiling.
 
+## I19 — LRU eviction
+
+I18's real trace confirmed memory pressure is genuine (757.8MB and
+climbing at 510 assets, hung rather than completing). I19 is the first
+attempt at the actual fix, built on the exact mechanism found while
+scoping it out: `entryRaw(currentZipFile, ent)` re-derives a file's raw
+bytes from the user's own local `File` object (a cheap `Blob.slice` plus
+`fflate.inflateSync`) — it never re-fetches over the network and never
+depends on anything else in JS-heap memory. The only thing standing
+between "decompressed once" and "decompressed again on demand" was
+`lazyMaterialize` discarding the tiny zip-entry metadata (`ent`:
+name/offset/compressed-size/method) right after first use. Keep that,
+and eviction becomes safe and cheap.
+
+### What changed
+
+- `vfsPutFile(path, data, zipEnt)` — new third parameter, only ever
+  passed by `lazyMaterialize`. Every record now also carries
+  `lastAccess` (bumped on every `fs.read()`, so eviction is a real LRU
+  over what the engine actually touched recently, not creation order).
+- `evictIfOverBudget()` — runs after every `lazyMaterialize()` call. If
+  `vfsMemoryBytes` exceeds `VFS_MEMORY_BUDGET_BYTES` (300MB), it collects
+  every `vfsFiles` entry that (a) has a `zipEnt` and (b) has no
+  currently-open `fd` (`anyFdOpenFor()`), sorts by `lastAccess` ascending,
+  and evicts oldest-first until back under budget. Each eviction deletes
+  the entry from `vfsFiles`/`vfsFilesLower`, subtracts its bytes from
+  `vfsMemoryBytes`, and puts it back into `zipIndex`/`zipIndexLower` so
+  the next `open()` on that path re-materializes it exactly like a
+  never-before-seen file.
+- Eager-bootstrap files (`data/`, `font/`, `plugins/`, root config files)
+  and anything created live via `O_CREAT` have no `zipEnt` and are never
+  eviction candidates — only roster content (`chars/`, `stages/`,
+  `sound/`) loaded lazily through the zip is ever evicted.
+- `reportMemory()` now also prints lifetime eviction totals when any have
+  happened (`evicted lifetime: N file(s), X MB reclaimed`), so a real
+  trace shows whether eviction ran at all and how much it reclaimed.
+
+### Why this shouldn't thrash a hot file
+
+LRU by construction only evicts what's least recently touched. If the
+engine is re-reading the same sff every frame during a live round, that
+file's `lastAccess` keeps refreshing and it is never the oldest candidate
+— only genuinely cold data (most plausibly full-roster picker portraits
+the player is no longer looking at, or a previous match's leftovers) is
+ever reclaimed. Worst case for a wrongly-evicted-then-reopened file is
+one extra inflate + one local slice-read (CPU only), not corrupted state
+or a crash — confirmed safe by fs.read() copying bytes into Go's own WASM
+memory before returning, so evicting the JS-side copy afterward can never
+invalidate something the engine is still using.
+
+### Verified before the phone test
+
+A standalone Node unit test
+(`tools/prizim/mobmugen-ikemen/` does not yet include it as an automated
+layer — see the note in that harness's own limitations) directly
+exercises the eviction algorithm with fake `vfsFiles`/`zipIndex`/`fdTable`
+maps:
+
+- an eager (no-`zipEnt`) file is never evicted even far over budget
+- given three zip-backed files over budget, the oldest-by-`lastAccess`
+  is evicted first and restored to `zipIndex`, newer ones survive
+- a file with a currently-open `fd` is never evicted, even when it is
+  the coldest candidate by `lastAccess`
+- an evicted entry's original `zipEnt` survives the round trip back into
+  `zipIndex`, so a subsequent `lazyMaterialize` can find it again
+
+This proves the algorithm's logic is correct in isolation. It does
+**not** prove real-device behavior — that still needs the same
+mole/G.Ken/bamboo phone test I18 ran, this time watching for: does the
+`own VFS:` figure now plateau near 300MB instead of climbing past
+750MB, do `I19 EVICT ·` lines appear during match load, and does the
+match actually complete (or hang for a different, new reason) this time.
+
+### What to look for on the phone
+
+- `I19 EVICT ·` lines during match load — if they never appear at all
+  even as the VFS figure approaches 300MB, `evictIfOverBudget()` isn't
+  running or the budget check has a bug.
+- Whether `own VFS:` plateaus near 300MB instead of repeating I18's climb
+  to 750MB+.
+- Whether the match actually completes this time (a real `WASM
+  MILESTONE`/match-start signal, not just the load overlay settling).
+- Any new symptom eviction itself could cause: a texture or sound that
+  looks/sounds wrong after being evicted and re-materialized (would
+  indicate a bug in the re-fetch path, not the eviction decision itself),
+  or a stutter right at an eviction point (re-inflating a large evicted
+  file on demand is CPU work, so a big enough file being evicted and
+  immediately re-requested could cost a visible frame hitch — worth
+  watching for even though it would still beat a hard stop).
+
 ## Control defects found during I13 diagnosis — status
 
 Reproduced while diagnosing I13's routing bug. Items 1 and 2 are fixed in
@@ -722,37 +845,53 @@ These are working enough to preserve while fixing controls:
 
 ## Recommended next build
 
-I18 exists and is the thing to test now — it supersedes I17 as the
-anchor. Do not build I19 until I18 has had a phone test.
+I19 exists and is the thing to test now — it supersedes I18 as the
+anchor. Do not build I20 until I19 has had a phone test.
 
 **I13, I14, and I15/I17's load-gate fix all remain DONE — real-device
 confirmed.** Do not re-litigate any of them without a new, specific
 symptom.
 
-**I18 adds zero new behavior.** It cannot fix the suspected memory
-crash — it exists only to produce real numbers instead of a guess. The
-next phone test's whole job: reproduce (or fail to reproduce) the
-mole/G.Ken-style crash with I18 running, then send whatever `I18 MEMORY
-·` lines made it into the trace.
+**I18's own phone test already answered the open question.** Real trace,
+mole/G.Ken/bamboo: own-VFS bytes climbed from 203.5MB (post-eager) to
+757.8MB (510 match-load assets), still climbing, load never completed
+("no crash, but hard stop" — JS still running, no OS-level kill this
+time, unlike earlier crash reports). Memory pressure is confirmed. Do
+not re-run I18 to re-confirm this; the next test is I19, testing whether
+eviction actually fixes it.
 
-- If the crash reproduces and the VFS byte total climbs to something
-  large (hundreds of MB) right up to where the trace goes silent: memory
-  pressure is confirmed as the real cause, and the actual fix becomes
-  real work — likely reducing what stays resident in `vfsFiles` after
-  the engine has consumed it, since nothing currently evicts anything
-  ever. That is a structural change, not a quick patch, and should not
-  be attempted speculatively before this confirms it is needed.
-- If the crash reproduces but the VFS byte total stays small (tens of
-  MB) right up to the silent stop: memory pressure is NOT the cause,
-  and the real explanation is still open — worth a completely different
-  line of investigation (WASM's own memory growth, a Go-side panic that
-  doesn't surface as a JS error, or something else specific to iOS
-  Safari's WebAssembly implementation).
-- If the crash does not reproduce at all this time: still worth trying
-  once more, ideally back-to-back with a heavy pairing like the original
-  hulk/GoD_Ryu attempt, since a one-off might mean the earlier crash
-  really was tab-carryover from a prior heavy attempt rather than a
-  fresh-load problem.
+**I19's whole job is the fix, not more diagnosis.** Same repro
+(mole/G.Ken/bamboo, or whatever combination originally triggered the
+hang) with I19 running. Send the full `COPY TRACE` output again. What to
+check, in order:
+
+- Does `I19 EVICT ·` appear at all during match load? If the VFS figure
+  approaches or exceeds 300MB and no eviction line ever appears, the
+  budget check or the eviction call site has a bug — the unit test only
+  proved the algorithm's logic in isolation, not that it's actually
+  wired into the real load path correctly.
+- Does `own VFS:` plateau near 300MB instead of repeating I18's climb to
+  750MB+? This is the real test of whether eviction is reclaiming enough,
+  fast enough, relative to how fast the match load consumes new files.
+- Does the match actually complete this time — a real `WASM MILESTONE`/
+  match-start signal, not just the load overlay settling on its own
+  timer?
+- Any NEW symptom specific to eviction: a wrong-looking sprite or missing
+  sound after a re-materialize (would mean a bug in the re-fetch path,
+  not in the eviction decision), or a stutter right when a large file
+  gets evicted and then immediately re-requested (re-inflating a big file
+  on demand is real CPU work — a visible hitch would still be a strict
+  improvement over a hard stop, but is worth naming as a known tradeoff
+  rather than a new mystery).
+- If it still hangs, but later / at a higher asset count than I18 did:
+  that's partial confirmation the mechanism works but the 300MB budget
+  is still too generous for this device, or something else is also
+  contributing (e.g. WASM's own linear memory growth, which eviction
+  cannot touch — it only frees JS-side bytes, not whatever the Go engine
+  has itself allocated inside WASM memory for parsed sff/air/cns
+  structures). If this happens, the next question is how much of the
+  750MB+ I18 saw was JS-side VFS bytes versus WASM's own footprint, since
+  I19 only ever addresses the former.
 
 If quarter-circles still don't come out in actual play despite I14's fix
 holding for a hadouken already: that is very likely Ikemen's own
