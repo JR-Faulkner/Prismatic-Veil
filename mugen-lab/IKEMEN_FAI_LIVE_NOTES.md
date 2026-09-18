@@ -6,9 +6,18 @@ This file is the short live handoff for FAI. It is deliberately scoped to the cu
 
 ## Current anchor
 
-**Test next: RIG I22 QUIET STAGES.**
+**Test next: RIG I23 KINEZA v0.2.**
 
-`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-22.html?v=i22-quiet-stages`
+`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-23.html`
+
+I23 carries everything from I22 and swaps the character pack for
+`kineza-char-v02.zip`, which has **Kineza's real palettes restored** --
+not the silhouette stand-in. Independently verified here: all 23 sprites
+now carry the `0x0c` marker, and the `.3` scale retune is retained. It
+has a phone gate attached: confirm he renders in real colour (not green
+blocks or noise), then confirm the direct `x` punch changes animation and
+returns to idle, and only then test QCF+x / QCF+y. See
+`mugen-lab/KINEZA_V0_2_VALIDATION.md`.
 
 I22 does two things, both follow-ups to I21's phone test.
 
@@ -1127,14 +1136,39 @@ Everything else in the file was verified correct: RLE decodes to exactly
 dimensions, axis 256,340, subheader chain intact, index 0 at 75-84% of
 pixels (already the correct MUGEN transparent-background convention).
 
-**The original palette is unrecoverable.** Quantisation was adaptive —
-all 256 indices in use, none above 0.5% of pixels — so each index maps
-to a specific colour that exists nowhere in the delivery.
+**CORRECTION (recorded after I23): the claim that the palette was
+unrecoverable was WRONG, and the silhouette stand-in was unnecessary.**
+
+The 768-byte palette was present in every sprite the whole time. Only the
+single `0x0c` delimiter byte that must precede it was missing -- 23 bytes
+absent from a 2.1MB file. Verified directly: the trailing 768 bytes of
+each sprite decode as a well-formed palette (255 distinct colours, warm
+skin and hair tones), the RLE consumes exactly 64,552 bytes to produce
+exactly 196,608 pixels, and precisely 768 bytes remain after it, preceded
+by `0x00` instead of `0x0c`. I23 repairs it by inserting only that
+delimiter, preserving every original PCX and palette byte.
+
+**How the wrong call was made, so it is not repeated:** the check looked
+for the `0x0c` marker, did not find it, then ran whole-file byte
+accounting that showed no gaps and no unaccounted bytes -- and concluded
+the palette was absent. But byte accounting cannot distinguish a palette
+sitting *inside* a sprite's own data block from image data; those 768
+bytes were counted as part of `length`. The decode loop stopped at
+`bpl*h` pixels and never touched them, which hid it further. **The step
+that was skipped: look at whether the trailing bytes resemble a
+palette.** They plainly did. A missing delimiter is evidence about the
+delimiter, not about the data -- do not generalise from one to the other
+without inspecting the data itself.
+
+The adaptive-quantisation observation is accurate but was used to support
+the wrong conclusion: indices spread across all 256 slots means the
+palette is *essential*, not that it is *gone*.
 
 **Upstream fix:** append `0x0C` + the 768-byte palette to each sprite's
 PCX data when writing the SFF. Nothing else needs to change.
 
-**Stand-in shipped in the meantime:** `tools/make_silhouette_sff.py`
+**Stand-in shipped in the meantime (superseded by I23, and it should
+never have been needed):** `tools/make_silhouette_sff.py`
 attaches a palette where index 0 stays background and indices 1-255 all
 take Kineza's canonical PV accent `0x68ff8c` (`src/BattleConfig.js`),
 producing a flat green silhouette. **The colours are fake.** It exists so

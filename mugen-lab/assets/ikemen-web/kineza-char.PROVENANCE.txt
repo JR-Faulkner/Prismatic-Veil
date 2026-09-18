@@ -1,3 +1,23 @@
+SUPERSEDED BY kineza-char-v02.zip (RIG I23) -- AND THE DIAGNOSIS BELOW
+WAS WRONG ON ONE KEY POINT.
+
+The palette was NOT missing. All 768 bytes were present in every sprite;
+only the single 0x0c delimiter byte that must precede them was absent --
+23 bytes in a 2.1MB file. The text below concluding the palette "was
+never written" and is "unrecoverable" is incorrect. It was reached by
+checking for the delimiter, not finding it, and then running whole-file
+byte accounting -- which cannot distinguish a palette inside a sprite's
+own data block from image data, since those bytes are counted in the
+block length. The trailing 768 bytes visibly decode as a real palette
+(255 distinct colours, warm skin and hair tones); that was never checked.
+
+I23 repairs it correctly by inserting only the delimiter and preserving
+every original PCX and palette byte. Use kineza-char-v02.zip. The
+silhouette pack described below was unnecessary; its [Size] retune, which
+remains valid, was carried into v0.2.
+
+--------------------------------------------------------------------
+
 kineza-char.zip — Kineza MUGEN prototype, repo-hosted character pack
 ====================================================================
 
