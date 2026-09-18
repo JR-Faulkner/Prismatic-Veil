@@ -247,7 +247,7 @@ jobs:
                   joined="\n".join(raw.split(";",1)[0].lower() for raw in lines0)
                   if ("type = changestate" in joined.replace("\t"," ") and
                       "value = 200" in joined.replace("\t"," ") and
-                      ('command = "x"' in joined or "command = x" in joined)):
+                      ('command = "prototype punch"' in joined or "command = prototype punch" in joined)):
                       route200=True
 
           if not has_direct_x:
@@ -315,12 +315,12 @@ jobs:
           # Direct x -> state 200 route, following the clean reference pattern
           # seen in G.Ken / DragonClaw: one-button command, state -1 ChangeState,
           # state 200 animation, then return to neutral.
-          if not re.search(r'(?is)\[Command\].*?name\s*=\s*"x".*?command\s*=\s*x(?:\s|$)',cmd):
-              raise SystemExit('missing direct x command')
-          if not re.search(r'(?is)\[State[^\]]*\].*?type\s*=\s*ChangeState.*?value\s*=\s*200.*?command\s*=\s*"x"',cmd):
+          if not re.search(r'(?is)\[Command\].*?name\s*=\s*"prototype punch".*?command\s*=\s*x(?:\s|$)',cmd):
+              raise SystemExit('missing original prototype punch command on x')
+          if not re.search(r'(?is)\[State[^\]]*\].*?type\s*=\s*ChangeState.*?value\s*=\s*200.*?command\s*=\s*"prototype punch"',cmd):
               # alternate ordering: command before value
-              if not re.search(r'(?is)\[State[^\]]*\].*?type\s*=\s*ChangeState.*?command\s*=\s*"x".*?value\s*=\s*200',cmd):
-                  raise SystemExit('missing direct x -> state 200 route')
+              if not re.search(r'(?is)\[State[^\]]*\].*?type\s*=\s*ChangeState.*?command\s*=\s*"prototype punch".*?value\s*=\s*200',cmd):
+                  raise SystemExit('missing original prototype punch -> state 200 route')
           s200=re.search(r"(?is)\[\s*Statedef\s+200\s*\](.*?)(?=\n\s*\[\s*Statedef\s+|\Z)",cns).group(1)
           if not re.search(r"(?im)^\s*anim\s*=\s*200\b",s200):
               raise SystemExit("Statedef 200 does not use anim 200")
@@ -366,7 +366,7 @@ jobs:
           - Required actions 0 / 200 / 1000 / 1070: **present**
           - Required states 200 / 1000 / 1070: **present and return to state 0**
           - Scale: **x={xs}, y={ys}**
-          - Direct command gate: **MUGEN x -> state 200 -> anim 200 -> state 0**
+          - Direct command gate: **MUGEN x -> "prototype punch" -> state 200 -> anim 200 -> state 0**
           - Action 200 distinct sprite refs: **{len(set(actions[200]))}**
           - Decoded sprite dimensions observed: **{unique_dims}**
 
