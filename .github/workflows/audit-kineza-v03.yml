@@ -132,11 +132,54 @@ jobs:
           (repo/"mugen-lab/KINEZA_V0_3A_MOTION_PASS.md").write_text(report)
           print(report)
           PY
+      - name: Build v0.3B six-button input gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile, shutil, re, hashlib
+          repo=Path.cwd()
+          src=repo/"mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_3A.zip"
+          work=Path("/tmp/kineza-v03b-input")
+          if work.exists(): shutil.rmtree(work)
+          work.mkdir(parents=True)
+          with zipfile.ZipFile(src) as z: z.extractall(work)
+          root=next(p.parent for p in work.rglob("kineza.def"))
+          cmdp=root/"kineza.cmd"
+          cmd=cmdp.read_text(errors="replace")
+          marker="[Statedef -1]"
+          if marker not in cmd: raise SystemExit("missing Statedef -1")
+          names=[("x",200),("y",1000),("z",1070),("a",200),("b",1000),("c",1070)]
+          defs=[]
+          for n,_ in names:
+              if f"probe_{n}" not in cmd:
+                  defs += ["[Command]",f"name = \"probe_{n}\"",f"command = {n}","time = 1",""]
+          if defs: cmd=cmd.replace(marker,"\n".join(defs)+"\n"+marker,1)
+          if "v0.3B INPUT GATE" not in cmd:
+              route=["","; v0.3B INPUT GATE"]
+              for n,state in names:
+                  route += [f"[State -1, Probe {n.upper()}]","type = ChangeState",f"value = {state}",f"triggerall = command = \"probe_{n}\"","triggerall = statetype != A","trigger1 = ctrl",""]
+              cmd=cmd.replace(marker,marker+"\n"+"\n".join(route),1)
+          cmdp.write_text(cmd)
+          for n,state in names:
+              if f"name = \"probe_{n}\"" not in cmd or f"command = {n}" not in cmd: raise SystemExit(f"missing command {n}")
+              if f"[State -1, Probe {n.upper()}]" not in cmd or f"value = {state}" not in cmd: raise SystemExit(f"missing route {n}")
+          out=repo/"mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_3B_INPUT.zip"
+          with zipfile.ZipFile(out,"w",zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+              for p in sorted((work/"chars").rglob("*")):
+                  if p.is_file(): z.write(p,p.relative_to(work).as_posix())
+          shutil.copy2(out,repo/"mugen-lab/assets/ikemen-web/kineza-char-v03b-input.zip")
+          sha=hashlib.sha256(out.read_bytes()).hexdigest()
+          lines=["# Kineza v0.3B Input Gate","", "Base: v0.3A.", "", "Six direct one-button routes:", "- x -> 200","- y -> 1000","- z -> 1070","- a -> 200","- b -> 1000","- c -> 1070","", "Browser controller unchanged. Visible X/Y/Z use keyboard A/S/D; visible A/B/C use Z/X/C, matching the engine default six-button keyboard config.","","No SFF/AIR/CNS change in this gate.","",f"ZIP SHA-256: `{sha}`",""]
+          (repo/"mugen-lab/KINEZA_V0_3B_INPUT_GATE.md").write_text("\n".join(lines))
+          print("\n".join(lines))
+          PY
       - name: Commit audit
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add mugen-lab/KINEZA_V0_3_EXISTING_ANIMATION_AUDIT.md mugen-lab/KINEZA_V0_3_EXISTING_ANIMATION_AUDIT.json mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_3A.zip mugen-lab/assets/ikemen-web/kineza-char-v03a.zip mugen-lab/KINEZA_V0_3A_MOTION_PASS.md
-          if git diff --cached --quiet; then echo "No changes"; else git commit -m "MOBMUGEN: audit and build Kineza v0.3A motion pass"; git push; fi
+          git add mugen-lab/KINEZA_V0_3_EXISTING_ANIMATION_AUDIT.md mugen-lab/KINEZA_V0_3_EXISTING_ANIMATION_AUDIT.json mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_3A.zip mugen-lab/assets/ikemen-web/kineza-char-v03a.zip mugen-lab/KINEZA_V0_3A_MOTION_PASS.md mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_3B_INPUT.zip mugen-lab/assets/ikemen-web/kineza-char-v03b-input.zip mugen-lab/KINEZA_V0_3B_INPUT_GATE.md
+          if git diff --cached --quiet; then echo "No changes"; else git commit -m "MOBMUGEN: build Kineza v0.3B six-button input gate"; git push; fi
