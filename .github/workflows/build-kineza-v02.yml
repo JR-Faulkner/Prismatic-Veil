@@ -203,6 +203,53 @@ jobs:
           cmd=text("kineza.cmd")
           cns=text("kineza.cns")
 
+          # v0.2 acceptance gate: direct x must be a deterministic one-button
+          # punch route. Preserve all existing commands/specials and add only
+          # the missing direct command/controller when necessary.
+          def clean_line(s):
+              return s.split(";",1)[0].strip()
+          def command_blocks(src):
+              marks=list(re.finditer(r"(?im)^\\s*\\[Command\\]\\s*$",src))
+              blocks=[]
+              for i,m in enumerate(marks):
+                  end=marks[i+1].start() if i+1<len(marks) else len(src)
+                  # A Statedef starts the controller portion; don't let a
+                  # command block consume it.
+                  sm=re.search(r"(?im)^\\s*\\[Statedef\\s+-?\\d+\\]\\s*$",src[m.end():end])
+                  if sm: end=m.end()+sm.start()
+                  blocks.append(src[m.start():end])
+              return blocks
+          def kv(block,key):
+              m=re.search(rf"(?im)^\\s*{re.escape(key)}\\s*=\\s*([^;\\r\\n]+)",block)
+              if not m: return None
+              return m.group(1).strip().strip('"').strip("'")
+          has_direct_x=any((kv(b,"name") or "").lower()=="x" and (kv(b,"command") or "").lower()=="x"
+                           for b in command_blocks(cmd))
+          if not has_direct_x:
+              direct='[Command]\\nname = "x"\\ncommand = x\\ntime = 1\\n\\n'
+              sm=re.search(r"(?im)^\\s*\\[Statedef\\s+-1\\]\\s*$",cmd)
+              cmd=(cmd[:sm.start()]+direct+cmd[sm.start():]) if sm else (direct+cmd)
+          # Detect an existing State -1 route to state 200 gated by command x.
+          route200=False
+          for m in re.finditer(r"(?ims)^\\s*\\[State[^\\]]*\\](.*?)(?=^\\s*\\[|\\Z)",cmd):
+              b=m.group(1)
+              if re.search(r"(?im)^\\s*type\\s*=\\s*ChangeState\\b",b) and \
+                 re.search(r"(?im)^\\s*value\\s*=\\s*200\\b",b) and \
+                 re.search(r'(?im)^\\s*trigger(?:all|\\d+)\\s*=.*command\\s*=\\s*"x"',b):
+                  route200=True; break
+          if not route200:
+              if not re.search(r"(?im)^\\s*\\[Statedef\\s+-1\\]\\s*$",cmd):
+                  cmd += "\\n[Statedef -1]\\n"
+              cmd += """\\n[State -1, Kineza Direct Punch v0.2]
+type = ChangeState
+value = 200
+triggerall = command = "x"
+triggerall = command != "holddown"
+trigger1 = statetype = S
+trigger1 = ctrl
+"""
+          (dst/"kineza.cmd").write_text(cmd)
+
           def val_for(text,key):
               m=re.search(rf"(?im)^\s*{re.escape(key)}\s*=\s*([^;\r\n]+)",text)
               return m.group(1).strip() if m else None
