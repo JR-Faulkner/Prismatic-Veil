@@ -4,7 +4,7 @@ Build date: 2026-09-18
 Source package: I21 commit `2bba87d360c3f6b7e770959febec94350a1dafb4`
 Original SFF SHA-256: `652ec567c14377f2967466064e7ddb8632949f30ca34789fd430a2dd1cc67bcc`
 Repaired SFF SHA-256: `4be0c838b32b6644ff0e6b8a08d364850883917e1900b5493f6b748bbfb35ced`
-v0.2 ZIP SHA-256: `7590ca9bacd6f81d5395e2ccf1df8a6ee8ee4ff2b40254f70ee4960416e53a66`
+v0.2 ZIP SHA-256: `f45ad7fac73b2f11412d980173fe1387fe56dae9cc39cf3995e60017167750af`
 
 ## Repair
 - Recovered the untouched v0.1 SFF from I21 history.

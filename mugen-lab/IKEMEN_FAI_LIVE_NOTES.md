@@ -1515,3 +1515,64 @@ it's ruled out, or if no crash reproduces, the control and boot-
 visibility layers are done for now — move to the next phase (collapsing
 the wrapper chain into one clean file, then GUI beautification) rather
 than inventing more work in either system.
+
+## GUI — portrait-mode letterboxing fix (base `rig-ikemen-3.html`)
+
+Reported by the user with a real-device portrait screenshot (Hulk vs
+DragonClaw, mid-match): the "GAMEPLAY VIEWPORT" box (`.stage`) had a
+large black dead zone above and below the actual game canvas once a
+match was running.
+
+Root cause: `.stage` carried an unconditional `min-height:40vh`. That
+floor is correct and wanted during the picker/setup phase (`#setup`
+visible, no canvas content yet, needs the box to hold its shape) but
+wrong once a match is running, because at that point the canvas has its
+own intrinsic size (from the WASM/Ebiten runtime's actual drawing-buffer
+resolution) and `.stage`'s flex layout should just hug it. The 40vh
+floor stayed in effect the whole time regardless of phase, forcing extra
+black space around a canvas far shorter than 40vh of a typical portrait
+phone viewport.
+
+Fix: scope the floor to the setup phase only, using `:has()`:
+
+```
+.stage{...same as before, minus min-height:40vh...}
+.stage:has(#setup:not(.hide)){min-height:40vh}
+```
+
+`#setup` only ever gets `.hide` added once, right when the WASM module
+takes over (`rig-ikemen-3.js`, boot path), and is never re-shown after
+that — confirmed by grepping every `classList` touch on `#setup` in the
+base JS. So `:has(#setup:not(.hide))` is true for exactly the pre-match
+picker phase and false for the rest of a session, including across a
+CHANGE ZIP reset (which resets state in place without re-showing
+`#setup`, since it's already visible at that point). Safari 15.4+
+supports `:has()`; this project's iOS 18.7 target is well past that.
+
+Verified two ways:
+
+- **Synthetic harness** (`scratchpad/gui-test/`): a standalone page
+  faking the canvas's intrinsic size the way the real runtime sets it,
+  driven through 6 states (setup shown / just-hidden-no-size-yet /
+  sized, each under base CSS and fixed CSS) via Playwright at 390×844.
+  Base CSS: 154px dead space pre-size, 62px with a 640×480 mock canvas.
+  Fixed CSS: ~2px dead space in every sized state, and the 338px (40vh
+  of 844px) floor still holds correctly during setup.
+- **Real live page** (`rig-ikemen-24.html`, actual engine): setup-phase
+  stage height measured 338px (unchanged, correct). Mid-real-match:
+  `{"stageH":209,"canvasH":207,"dead":2,"canvasIntrinsic":"1280x720"}` —
+  confirms the fix holds against the engine's real 16:9 buffer (not the
+  4:3 assumed in the synthetic mock), and that the fix is resolution-
+  agnostic since it never references a hardcoded aspect ratio.
+
+Since this lives in the shared base HTML, every numbered rig built from
+it (I3 onward, including future ones) inherits the fix automatically —
+no per-rig patch needed.
+
+Next up, per the user's own sequencing: a "Digital Server" spec/
+breakdown document for their separate AI-Assistant to build from,
+covering what MobMugen specifically needs from self-hosting the content
+zip over HTTP (see the parked HTTP-Range idea above for the groundwork).
+"Also just improving [the GUI] overall" is still open beyond this one
+letterboxing fix — revisit with the user once the digital-server
+document is delivered rather than assuming further scope.
