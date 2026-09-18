@@ -804,7 +804,7 @@
     });
     if (!names.length) {
       const empty = document.createElement('div');
-      empty.style.cssText = 'grid-column:1/-1;color:#738195;font-size:10px;padding:6px';
+      empty.className = 'roster-empty';
       empty.textContent = mode === 'stage'
         ? 'no stages found in this zip — the engine will use its own default'
         : 'no characters found in this zip';
