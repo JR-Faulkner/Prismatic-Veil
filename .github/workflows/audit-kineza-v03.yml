@@ -1,0 +1,94 @@
+name: Audit Kineza v0.3 Existing Animations
+
+on:
+  push:
+    paths:
+      - ".github/workflows/audit-kineza-v03.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Inspect v0.2 AIR/CNS/CMD
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, zipfile, json, hashlib
+          repo=Path.cwd()
+          zp=repo/"mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_2.zip"
+          tmp=Path("/tmp/kineza-v03-audit")
+          tmp.mkdir(exist_ok=True)
+          with zipfile.ZipFile(zp) as z: z.extractall(tmp)
+          root=next(p.parent for p in tmp.rglob("kineza.def"))
+          air=(root/"kineza.air").read_text(errors="replace")
+          cns=(root/"kineza.cns").read_text(errors="replace")
+          cmd=(root/"kineza.cmd").read_text(errors="replace")
+
+          def action_block(num):
+              m=re.search(rf"(?ims)^\s*\[Begin\s+Action\s+{num}\s*\]\s*(.*?)(?=^\s*\[Begin\s+Action\s+|\Z)",air)
+              return m.group(1) if m else None
+
+          def parse_action(num):
+              block=action_block(num)
+              if block is None: return None
+              rows=[]
+              for raw in block.splitlines():
+                  line=raw.split(";",1)[0].strip()
+                  if not line or line.lower().startswith(("clsn","loopstart")): continue
+                  m=re.match(r"\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)(?:\s*,\s*([^,]+))?",line)
+                  if m:
+                      rows.append({"group":int(m.group(1)),"image":int(m.group(2)),"x":int(m.group(3)),"y":int(m.group(4)),"ticks":int(m.group(5)),"flags":(m.group(6) or "").strip()})
+              return {"raw":block.strip(),"frames":rows}
+
+          def state_block(num):
+              m=re.search(rf"(?ims)^\s*\[Statedef\s+{num}\s*\]\s*(.*?)(?=^\s*\[Statedef\s+|\Z)",cns)
+              return m.group(1).strip() if m else None
+
+          acts={n:parse_action(n) for n in (0,200,1000,1070)}
+          states={n:state_block(n) for n in (0,200,1000,1070)}
+          lines=["# Kineza v0.3 Existing Animation Audit","","Generated from current validated v0.2. No art/gameplay files changed.",""]
+          for n in (0,200,1000,1070):
+              a=acts[n]
+              lines += [f"## Action {n}",""]
+              if not a:
+                  lines += ["Missing",""]
+                  continue
+              fs=a["frames"]
+              lines += [f"- Sprite frames: {len(fs)}",f"- Unique sprite refs: {len(set((x['group'],x['image']) for x in fs))}",f"- Total nominal ticks: {sum(max(0,x['ticks']) for x in fs)}",""]
+              lines += ["| # | Sprite | Offset | Ticks | Flags |","|---:|---|---|---:|---|"]
+              for i,x in enumerate(fs): lines.append(f"| {i} | {x['group']},{x['image']} | {x['x']},{x['y']} | {x['ticks']} | {x['flags']} |")
+              lines += ["","Raw AIR:","",a["raw"],""]
+          lines += ["## State summaries",""]
+          for n in (200,1000,1070): lines += [f"### State {n}","",states[n] or "MISSING",""]
+
+          gen=[]
+          p=(acts[200] or {"frames":[]})["frames"]
+          if len(set((x["group"],x["image"]) for x in p)) < 5:
+              gen.append("Direct Punch currently has fewer than five unique body sprites. Use the supplied six-frame punch reference for the rebuild before requesting generation.")
+          b=(acts[1070] or {"frames":[]})["frames"]
+          if len(set((x["group"],x["image"]) for x in b)) >= 12:
+              gen.append("Blitzer already has a deep source sequence. Retiming/axis/body-FX classification comes before any generation request.")
+          lines += ["## Generation gate findings",""]+[f"- {x}" for x in gen]+[""]
+          report="\n".join(lines)
+          (repo/"mugen-lab/KINEZA_V0_3_EXISTING_ANIMATION_AUDIT.md").write_text(report)
+          payload={"package_sha256":hashlib.sha256(zp.read_bytes()).hexdigest(),"actions":{str(k):v for k,v in acts.items()},"states":{str(k):v for k,v in states.items()},"generation_findings":gen}
+          (repo/"mugen-lab/KINEZA_V0_3_EXISTING_ANIMATION_AUDIT.json").write_text(json.dumps(payload,indent=2)+"\n")
+          print(report)
+          PY
+
+      - name: Commit audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mugen-lab/KINEZA_V0_3_EXISTING_ANIMATION_AUDIT.md mugen-lab/KINEZA_V0_3_EXISTING_ANIMATION_AUDIT.json
+          if git diff --cached --quiet; then echo "No changes"; else git commit -m "MOBMUGEN: audit Kineza v0.3 existing animation families"; git push; fi
