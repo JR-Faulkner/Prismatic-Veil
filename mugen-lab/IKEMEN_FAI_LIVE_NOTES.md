@@ -6,36 +6,32 @@ This file is the short live handoff for FAI. It is deliberately scoped to the cu
 
 ## Current anchor
 
-**Test next: RIG I17 LOAD PATIENT.**
+**Test next: RIG I18 MEMORY WITNESS.**
 
-`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-17.html?v=i17-load-patient`
+`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-18.html?v=i18-memory-witness`
 
-**The I16 phone test found a real bug in I15's own fix, plus two more
-instances of the label-leak trap I16 was supposed to have closed.** Full
-writeup below (**I17 — the overlay disappeared before the real load even
-started**). Short version: the load overlay removed itself after 357ms
-with `0 lazy asset(s) materialized` — it read "nothing has happened in
-350ms" as "loading is done," when what was actually true was "the engine
-hasn't started touching real character files yet." The two full custom
-characters (GoD Ryu, a heavily-edited CVS-style Ryu; Homero, a Simpsons
-character) then decompressed for the reported ~2 minutes on an already-
-exposed, unmarked canvas — exactly the symptom I15 was built to prevent,
-reintroduced by a flaw in I15's own settle heuristic.
+I18 adds no new behavior — it exists purely to answer the open question
+from the mole/G.Ken crash: is this app running out of memory. Every
+decompressed file this app has ever produced lives forever in `vfsFiles`
+(nothing evicts), so I18 sums those bytes at every load checkpoint —
+after eager load, every 20 files during the eager loop specifically
+(the exact loop that was running when the mole/G.Ken trace went silent
+at "LOADING 200" with zero memory data to show for it), and periodically
+during real character loading. It also reports `performance.memory` when
+available, but **that API does not exist on iOS Safari** — the one
+browser this actually needs to answer for — so the self-tracked VFS byte
+count is the real signal, not a bonus. See **I18 — memory witness**
+below.
 
-Also found in the same trace: `selectNew`'s picker-selection log lines
-and `bindNew`'s `pickerCommit()` log line were STILL hardcoded to
-`'I14 PICKER'` under I16 — two more instances of the exact trap I16's own
-writeup described, missed because I16's verification only checked
-CTRL/CONTROLS text, not PICKER text. Both are fixed in I17, and I17's
-verification greps the whole generated file for any `I<number>` literal
-generically rather than asserting against a fixed list — the same mistake
-should not be possible to make a fourth time.
-
-**I13's routing fix and I14's refcount/roll fixes remain real-device
-confirmed** (per I15's phone test) and are untouched here. I15's actual
-defect (canvas exposed before WASM even starts) also remains fixed and
-untouched — only the settle-heuristic bug that let a NEW instance of the
-same symptom back in through a side door is addressed.
+**Also new: `tools/prizim/mobmugen-ikemen/`**, a three-layer automated
+harness (static preflight, Playwright runtime probe, real-trace
+analyzer) mirroring the BoxedWine lane's own PriZim setup. It catches the
+recurring stale-label class of bug mechanically now — verified against a
+deliberately reintroduced copy of the exact bug that shipped in I16
+twice. It cannot reproduce the iOS Safari memory question I18 exists to
+answer; a phone witness stays required for that, same limitation
+PriZim's own BoxedWine doc already states for its lane. See
+`docs/PRIZIM_MOBMUGEN_IKEMEN.md`.
 
 ## Controls defect — diagnosed and fixed in I13
 
@@ -518,6 +514,129 @@ is direct. Check:
   match means 3 minutes wasn't enough margin and the constant needs
   raising further, not that the approach is wrong.
 
+## I18 — memory witness
+
+Zero behavior change. Exists to answer, with real numbers instead of a
+guess, the open question from the mole/G.Ken crash trace: was that
+actually memory pressure.
+
+### Why `performance.memory` alone isn't enough
+
+`performance.memory.usedJSHeapSize` is a real, useful number where it
+exists — but it is a **Chrome/Blink-only, non-standard API. iOS Safari
+does not implement it.** Building instrumentation that only reports this
+would ship a build that answers nothing on the one device this question
+is actually about. Verified directly in the runtime probe's headless
+Chromium run: `performance.memory` returns real numbers there, which is
+useful for local/CI verification, but that is not evidence it will do
+the same on a phone.
+
+### The real signal: this app's own byte accounting
+
+Nothing in this codebase ever evicts a decompressed file from `vfsFiles`
+— every entry `vfsPutFile()` has ever stored stays resident for the life
+of the page. That means summing `.data.length` across every call is an
+**exact, platform-independent measurement of this app's own contribution
+to memory pressure**, with no dependency on any experimental browser API.
+It won't see WASM's own heap, WebGL texture memory, or anything Go's
+runtime allocates internally — but it directly measures the exact
+mechanism the crash hypothesis names: unbounded decompressed-byte
+accumulation with no cleanup.
+
+`reportMemory(label)` reports both numbers together, every time: the
+VFS byte total (with file count and the single largest file, in case one
+oversized sprite sheet turns out to matter more than cumulative volume),
+and the JS heap figure when available, explicitly labeled as
+Chrome-only/unavailable-on-iOS-Safari when it isn't. Example, from a
+real run:
+
+```
+I18 MEMORY · match load asset loading settled -- own VFS: 23.7MB across
+137 file(s) (largest: 8.7MB data/ikemen1/system.sff) | JS heap
+(Chrome/Blink only, unavailable on iOS Safari): 162.7MB used / 4095.8MB
+limit
+```
+
+### Checkpoints, and why the eager-loop one matters most
+
+- **Every 20 files during the eager-load loop itself** — the exact loop
+  that was running when the mole/G.Ken trace went silent at
+  `RUNTIME STATUS · LOADING 200` with zero memory data to show for it.
+  Without a checkpoint inside this specific loop, a crash here again
+  would leave this build exactly as blind as I17 was.
+- Once, right after eager load finishes (baseline before any
+  character-specific data starts).
+- Once, right when the match-load overlay first shows (baseline for
+  whatever character loading follows).
+- Every 15 real lazy-loaded assets during a match load, piggybacked on
+  the overlay's existing progress-pin cadence rather than adding a
+  second parallel reporting mechanism.
+- Once, whenever the overlay is removed (settled or hard-timeout),
+  labeled with the removal reason.
+
+All of these are `pin()`ned, not just `log()`ged — the same lesson from
+I16: a real roster's noise (hundreds of `blank`/`stage` lines) will
+rotate a merely-logged checkpoint out of the trace before COPY TRACE is
+even pressed. These survive that.
+
+### A build-time bug this build found in itself, twice
+
+Two real mistakes were made and caught before shipping, worth recording
+because they're a variant of the recurring `I3 `-in-patch-text trap
+already documented under I16, not a new class of bug:
+
+1. **`eagerDoneOld`/`eagerDoneNew` initially kept the literal `'I3 ZIP'`
+   text** in the RUNTIME constants (not just the build-time base-check
+   constants) — the same "text added via a patch never sees the
+   wrapper's own top-of-file `replaceAll('I3 ', 'I18 ')` pass" mistake,
+   this time inside a totally different patch than the ones that had
+   already been fixed. Caught by this session's own new PriZim preflight
+   tool, which flagged `stale rig label(s) found in rig-ikemen-18.js: I3,
+   I17` before this ever reached a browser — the first real proof that
+   tool earns its keep.
+2. **A contraction ("this app's own") broke a single-quoted output
+   string, twice, for two different reasons.** First pass: the
+   replacement text was embedded directly with a single backslash before
+   the apostrophe, which is genuinely correct \'-escaping semantics in a
+   *single*-quoted context — but the text was sitting inside the
+   wrapper's own *double*-quoted string, where `\'` is redundant
+   escaping that JS collapses back down to a bare `'`, silently eating
+   the backslash before it ever reached the output. The apostrophe that
+   survived into the final single-quoted `log('...')` call then closed
+   the string early. Fixed by using two backslashes in the wrapper's own
+   double-quoted source, so the double-quote parse leaves behind exactly
+   one literal backslash + apostrophe in the resulting text, for the
+   single-quoted output string to interpret correctly.
+
+   `node --check` on the wrapper file caught neither pass, because it
+   only validates the WRAPPER's own syntax — never the text its
+   `replace()` calls actually produce. Confirmed by writing a small
+   Playwright harness that intercepts the wrapper's own network response,
+   patches in a one-line hook to capture the real `src` variable right
+   before `document.head.appendChild(s)`, and runs `node --check` against
+   *that* — the only way to verify what a string-patch wrapper actually
+   produces, as opposed to what its own source merely parses as. Worth
+   keeping as a technique for any future patch that touches a log message
+   containing a contraction or possessive.
+
+### Verified
+
+Full pipeline (preflight, runtime probe, PriZim's stale-label sweep, I13
+routing, I14 refcount/roll, I15/I17 load-gate) reruns clean against I18.
+The memory report line itself was confirmed present and correctly
+formatted in a real run, with both the VFS figure and the Chrome-only
+heap figure populated.
+
+### What to look for on the phone
+
+The `I18 MEMORY ·` lines, especially the one right before whatever
+happens next if the crash reproduces. On iOS Safari the `JS heap` half
+will almost certainly read "unavailable on this browser" — that's
+expected, not a bug — read the `own VFS:` figure instead. If the crash
+reproduces again during eager load, the every-20-files checkpoints
+should show the VFS total climbing right up to wherever the trace goes
+silent, which is the actual answer to whether this is a memory ceiling.
+
 ## Control defects found during I13 diagnosis — status
 
 Reproduced while diagnosing I13's routing bug. Items 1 and 2 are fixed in
@@ -603,32 +722,37 @@ These are working enough to preserve while fixing controls:
 
 ## Recommended next build
 
-I17 exists and is the thing to test now — it supersedes I16 as the
-anchor. Do not build I18 until I17 has had a phone test.
+I18 exists and is the thing to test now — it supersedes I17 as the
+anchor. Do not build I19 until I18 has had a phone test.
 
-**I13 and I14 remain DONE — real-device confirmed.** A real quarter-
-circle special move landed on the actual phone. Do not re-litigate the
-routing fix or the refcount/roll fixes without a new, specific symptom.
+**I13, I14, and I15/I17's load-gate fix all remain DONE — real-device
+confirmed.** Do not re-litigate any of them without a new, specific
+symptom.
 
-**I15's defect (canvas exposed before WASM even starts) also remains
-fixed and confirmed** — that was never in question. What I16's phone test
-found was a SEPARATE bug, in I15's own removal-timing heuristic, that let
-a new instance of the same class of symptom back in through a different
-door (the overlay disappearing too early, rather than never appearing at
-all). I17 fixes that specific heuristic. The next phone test's whole job:
-report the `I<N> LOAD OVERLAY · removed after <N>ms (<reason>)` line, and
-whether the on-screen text visibly updated during the wait.
+**I18 adds zero new behavior.** It cannot fix the suspected memory
+crash — it exists only to produce real numbers instead of a guess. The
+next phone test's whole job: reproduce (or fail to reproduce) the
+mole/G.Ken-style crash with I18 running, then send whatever `I18 MEMORY
+·` lines made it into the trace.
 
-- Correct outcome: `<reason>` reads `asset loading settled`, `<N>` is in
-  the range of the real load (could legitimately be over a minute for
-  heavy characters — that's fine, as long as the screen showed live
-  progress the whole time instead of a static or absent overlay).
-- Wrong outcome: `<reason>` reads `hard timeout` on a match that DID
-  eventually start — means 180000ms wasn't enough margin, raise it
-  further, don't add new logic.
-- Also wrong: the overlay text stays static ("preparing…") for the whole
-  wait despite real characters loading — means the per-ping counter
-  isn't reaching real activity for some reason, worth its own look.
+- If the crash reproduces and the VFS byte total climbs to something
+  large (hundreds of MB) right up to where the trace goes silent: memory
+  pressure is confirmed as the real cause, and the actual fix becomes
+  real work — likely reducing what stays resident in `vfsFiles` after
+  the engine has consumed it, since nothing currently evicts anything
+  ever. That is a structural change, not a quick patch, and should not
+  be attempted speculatively before this confirms it is needed.
+- If the crash reproduces but the VFS byte total stays small (tens of
+  MB) right up to the silent stop: memory pressure is NOT the cause,
+  and the real explanation is still open — worth a completely different
+  line of investigation (WASM's own memory growth, a Go-side panic that
+  doesn't surface as a JS error, or something else specific to iOS
+  Safari's WebAssembly implementation).
+- If the crash does not reproduce at all this time: still worth trying
+  once more, ideally back-to-back with a heavy pairing like the original
+  hulk/GoD_Ryu attempt, since a one-off might mean the earlier crash
+  really was tab-carryover from a prior heavy attempt rather than a
+  fresh-load problem.
 
 If quarter-circles still don't come out in actual play despite I14's fix
 holding for a hadouken already: that is very likely Ikemen's own
@@ -636,16 +760,18 @@ motion-buffer timing on a specific motion, not this control layer. Get a
 full trace of the specific failed attempt before assuming a code path is
 wrong — don't re-open I14.
 
-**Process note for whoever builds I18+:** two builds in a row (I16, I17)
-found the label-leak trap recurring in spots the previous build's own
-verification didn't check. Before shipping any build that extracts a
-prior rig's patch text, grep the WHOLE generated file for `I1[0-9]`
-(everything except the current rig's own number) rather than asserting
-against a specific list of known label sites — that generic sweep is
-what actually catches this class of bug, and checking a fixed list is
-exactly how it slipped through twice.
+**`tools/prizim/mobmugen-ikemen/` now exists** (see `docs/
+PRIZIM_MOBMUGEN_IKEMEN.md`) and runs automatically in CI on any
+`rig-ikemen-*` push. Run its preflight and runtime probe locally before
+manually re-deriving the same checks by hand — that tooling exists
+specifically so the label-leak class of bug (see I16 and I18's own
+build-time notes above) gets caught before a build ships, not after a
+phone test finds it a third time. It cannot answer the memory question
+above; only a phone can.
 
-Once I17's real numbers come back clean: the control and boot-visibility
-layers are done. Move to the next phase (collapsing the wrapper chain
-into one clean file, then GUI beautification) rather than inventing more
-work in either system.
+Once I18's real numbers come back: if memory pressure is confirmed,
+that becomes the next build's whole focus, ahead of anything else. If
+it's ruled out, or if no crash reproduces, the control and boot-
+visibility layers are done for now — move to the next phase (collapsing
+the wrapper chain into one clean file, then GUI beautification) rather
+than inventing more work in either system.
