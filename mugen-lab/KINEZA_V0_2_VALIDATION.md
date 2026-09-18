@@ -4,7 +4,7 @@ Build date: 2026-09-18
 Source package: I21 commit `2bba87d360c3f6b7e770959febec94350a1dafb4`
 Original SFF SHA-256: `652ec567c14377f2967466064e7ddb8632949f30ca34789fd430a2dd1cc67bcc`
 Repaired SFF SHA-256: `4be0c838b32b6644ff0e6b8a08d364850883917e1900b5493f6b748bbfb35ced`
-v0.2 ZIP SHA-256: `233d5309bda32954130b050fed3456bd8122b5a8a8f7bd1092cf8d3c75870645`
+v0.2 ZIP SHA-256: `7590ca9bacd6f81d5395e2ccf1df8a6ee8ee4ff2b40254f70ee4960416e53a66`
 
 ## Repair
 - Recovered the untouched v0.1 SFF from I21 history.
@@ -23,7 +23,7 @@ v0.2 ZIP SHA-256: `233d5309bda32954130b050fed3456bd8122b5a8a8f7bd1092cf8d3c75870
 - Required actions 0 / 200 / 1000 / 1070: **present**
 - Required states 200 / 1000 / 1070: **present and return to state 0**
 - Scale: **x=.3, y=.3**
-- Direct command gate: **MUGEN x -> state 200 -> anim 200 -> state 0**
+- Direct command gate: **MUGEN x -> "prototype punch" -> state 200 -> anim 200 -> state 0**
 - Action 200 distinct sprite refs: **3**
 - Decoded sprite dimensions observed: **[(512, 384)]**
 
