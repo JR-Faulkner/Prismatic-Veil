@@ -6,18 +6,65 @@ This file is the short live handoff for FAI. It is deliberately scoped to the cu
 
 ## Current anchor
 
-**Test next: RIG I23 KINEZA v0.2.**
+**Test next: RIG I24 LEAN BOOT.**
 
-`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-23.html`
+`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-24.html?v=i24-lean-boot`
 
-I23 carries everything from I22 and swaps the character pack for
-`kineza-char-v02.zip`, which has **Kineza's real palettes restored** --
-not the silhouette stand-in. Independently verified here: all 23 sprites
-now carry the `0x0c` marker, and the `.3` scale retune is retained. It
-has a phone gate attached: confirm he renders in real colour (not green
-blocks or noise), then confirm the direct `x` punch changes animation and
-returns to idle, and only then test QCF+x / QCF+y. See
-`mugen-lab/KINEZA_V0_2_VALIDATION.md`.
+I24 carries everything from I23 (including Kineza v0.2 with the real
+palettes) and trims the eager load.
+
+**What changed.** `isEagerBootstrap()` pulled *everything* under `data/`,
+`font/` and `plugins/` at boot -- 245 files, 205MB, before a match was
+even picked. The hulk/BroliSSJ3 stress test proved that baseline is the
+entire remaining footprint, since match load adds only ~32MB regardless
+of who is picked. I24 defers by SIZE rather than blocklisting names:
+anything in those directories at or above **4MB** goes to `zipIndex`
+instead, and if the engine actually opens it, `fs.open()` ->
+`lazyMaterialize()` pulls it on demand through the same path that already
+serves every character and stage. Never opened means never paid for. The
+decision costs no reads -- `ent.uncomp` comes from the zip central
+directory, which is already parsed.
+
+Text config stays eager at **any** size regardless of the threshold:
+`motifPath` is discovered by that loop, and the picker reads `select.def`
+straight out of `vfsFiles` rather than through `fs.open()`, so neither
+can be made lazy. Guarded by extension (`.def .cns .cmd .air .ini .cfg
+.txt .dat .snd`).
+
+Logged as `I24 LEAN BOOT · deferred N large engine-config file(s)
+totalling X MB out of the eager load (threshold 4.0MB, largest ...)`.
+
+**Expected saving on the real roster: ~33MB**, from
+`data/brokenMUGEN/sff/creds.sff` (32.7MB, a credits sprite sheet a quick
+match never opens), plus anything else in the user's `data/` at or above
+the threshold. That should take the post-eager figure from ~205MB to
+~172MB and the match peak from ~237MB to ~204MB.
+
+**Known limit -- this does NOT cover the runtime assets pack.**
+`ikemen-runtime-assets.zip` (23.7MB, 129 files) is merged by
+`loadRuntimeAssets()`, which calls `vfsPutFile()` directly and never
+consults `isEagerBootstrap()`. Two files in it are at or above the
+threshold and are therefore still loaded eagerly every boot:
+
+  8.7MB  data/ikemen1/system.sff   (Ikemen's fallback motif screenpack --
+                                    unused once the user's own
+                                    data/system.def motif loads)
+  6.1MB  data/fight.snd
+
+`data/ikemen1/system.sff` is the genuinely wasted one. Deferring it is
+**not** a one-line change: `loadRuntimeAssets()` registers nothing in
+`zipIndex`, and `lazyMaterialize()` resolves entries through
+`entryRaw(currentZipFile, ent)` -- hardcoded to the user's zip. Skipping
+a runtime-pack file today would make it simply missing rather than lazy.
+Doing it properly means giving zip-index entries a per-entry source blob
+so the lazy path can pull from either archive. Worth ~9MB; deliberately
+not attempted in this build, which keeps to one change.
+
+Related observation, not acted on: the runtime pack loads *before* the
+user's zip, so any path present in both is loaded and then overwritten by
+the user's version. The bytes are accounted correctly since I22 fixed
+`vfsPutFile()`'s overwrite arithmetic, but the decompression work is
+wasted. Unknown how many paths actually collide.
 
 I22 does two things, both follow-ups to I21's phone test.
 
