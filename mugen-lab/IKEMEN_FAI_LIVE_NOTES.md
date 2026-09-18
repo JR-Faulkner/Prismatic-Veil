@@ -1332,6 +1332,43 @@ Menu, roughly by value:
    Bake it flat, PriZim green before and after, leave the base untouched.
 4. **GUI work.** Picker portraits, HUD styling. Nothing blocks it.
 
+### Stress test PASSED — hulk vs BroliSSJ3 on I23
+
+Two of the heaviest packages in the roster, real device, real zip.
+
+- **`[ExtraStages]` trim confirmed on the real roster**: `trimmed to 1
+  line(s), 337 dropped`, and **zero** `Failed to add stage. File read
+  error: stages/.def` lines anywhere in the trace. The wall that made a
+  clean I21 run look broken is gone.
+- **Peak own-VFS 237.2MB across 397 files, 25 lazy assets**, settled in
+  11.7s. Against the mole/G.Ken benchmark of 233.5MB / 54 assets, that is
+  the same memory with *fewer* assets. No `EVICT` line fired; the 300MB
+  budget was never approached.
+
+**The finding that matters: memory no longer scales with character
+choice.** Eager load alone is 205.1MB, and a full match with two
+heavyweight characters plus a stage added only ~32MB on top. The heaviest
+pairing on the roster costs the same as the lightest.
+
+**So the next memory target, if one is ever wanted, is the eager load —
+not the roster.** `isEagerBootstrap()` pulls everything under `data/`,
+`font/` and `plugins/` at boot: 245 files, 205MB. The single largest is
+`data/brokenMUGEN/sff/creds.sff` at **32.7MB** — a credits-screen sprite
+sheet that a quick match never touches, loaded on every boot, 16% of the
+entire footprint. Narrowing the eager set (or lazy-loading the big
+non-essential sff files in it) is where the remaining headroom is. Not
+urgent: nothing is failing, and the budget has a 60MB cushion.
+
+Character-package warnings in that trace (hundreds, from Hulk and Broly's
+own CNS files) are the packages' own and not this lane's problem, same
+class as GodRugal's ~130 and G.Ken's ~150. One is genuine and worth
+knowing: `Animation missing sprite 8001,10 from chars/hulk/hulk.sff` --
+Hulk's own sff is missing a sprite his own air file asks for.
+
+Also observed working: `CONTROLS · released N stuck key(s) after window
+blur` fired twice when the app lost focus mid-match -- I14's safety net,
+doing its job on real hardware.
+
 ### Parked idea: serve the zip over HTTP instead of IndexedDB
 
 Raised and deliberately deferred. Recording it because the feasibility
