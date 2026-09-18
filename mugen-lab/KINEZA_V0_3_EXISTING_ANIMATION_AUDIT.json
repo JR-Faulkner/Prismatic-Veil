@@ -1,0 +1,291 @@
+{
+  "package_sha256": "7590ca9bacd6f81d5395e2ccf1df8a6ee8ee4ff2b40254f70ee4960416e53a66",
+  "actions": {
+    "0": {
+      "raw": "Clsn2Default: 1\n  Clsn2[0] = -72,-320,72,0\n9000,0, 0,0, -1",
+      "frames": [
+        {
+          "group": 9000,
+          "image": 0,
+          "x": 0,
+          "y": 0,
+          "ticks": -1,
+          "flags": ""
+        }
+      ]
+    },
+    "200": {
+      "raw": "Clsn2Default: 1\n  Clsn2[0] = -76,-315,76,0\n1000,0, 0,0, 3\nClsn1: 1\n  Clsn1[0] = 5,-280,235,-55\n1002,0, 0,0, 3\n1003,0, 0,0, 5",
+      "frames": [
+        {
+          "group": 1000,
+          "image": 0,
+          "x": 0,
+          "y": 0,
+          "ticks": 3,
+          "flags": ""
+        },
+        {
+          "group": 1002,
+          "image": 0,
+          "x": 0,
+          "y": 0,
+          "ticks": 3,
+          "flags": ""
+        },
+        {
+          "group": 1003,
+          "image": 0,
+          "x": 0,
+          "y": 0,
+          "ticks": 5,
+          "flags": ""
+        }
+      ]
+    },
+    "1000": {
+      "raw": "Clsn2Default: 1\n  Clsn2[0] = -82,-310,82,0\n1000,0, 0,0, 5\n1070,0, 0,0, 1\n1070,1, 0,0, 1\n1070,2, 0,0, 1\n1070,3, 0,0, 1\n1070,4, 0,0, 1\n1070,5, 0,0, 1\n1070,6, 0,0, 1\nClsn1: 1\n  Clsn1[0] = 0,-285,255,-45\n1002,0, 0,0, 4\n1003,0, 0,0, 7",
+      "frames": [
+        {
+          "group": 1000,
+          "image": 0,
+          "x": 0,
+          "y": 0,
+          "ticks": 5,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 0,
+          "x": 0,
+          "y": 0,
+          "ticks": 1,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 1,
+          "x": 0,
+          "y": 0,
+          "ticks": 1,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 2,
+          "x": 0,
+          "y": 0,
+          "ticks": 1,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 3,
+          "x": 0,
+          "y": 0,
+          "ticks": 1,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 4,
+          "x": 0,
+          "y": 0,
+          "ticks": 1,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 5,
+          "x": 0,
+          "y": 0,
+          "ticks": 1,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 6,
+          "x": 0,
+          "y": 0,
+          "ticks": 1,
+          "flags": ""
+        },
+        {
+          "group": 1002,
+          "image": 0,
+          "x": 0,
+          "y": 0,
+          "ticks": 4,
+          "flags": ""
+        },
+        {
+          "group": 1003,
+          "image": 0,
+          "x": 0,
+          "y": 0,
+          "ticks": 7,
+          "flags": ""
+        }
+      ]
+    },
+    "1070": {
+      "raw": "Clsn2Default: 1\n  Clsn2[0] = -88,-305,88,0\n1070,0, 0,0, 2\n1070,1, 0,0, 2\n1070,2, 0,0, 2\n1070,3, 0,0, 2\n1070,4, 0,0, 2\n1070,5, 0,0, 2\n1070,6, 0,0, 2\nClsn1: 1\n  Clsn1[0] = 0,-280,210,-35\n1070,7, 0,0, 2\nClsn1: 1\n  Clsn1[0] = 0,-280,225,-35\n1070,8, 0,0, 2\nClsn1: 1\n  Clsn1[0] = 0,-280,235,-35\n1070,9, 0,0, 2\nClsn1: 1\n  Clsn1[0] = 0,-280,225,-35\n1070,10, 0,0, 2\nClsn1: 1\n  Clsn1[0] = 0,-280,210,-35\n1070,11, 0,0, 2\n1070,12, 0,0, 2\n1070,13, 0,0, 2\n1070,14, 0,0, 2\n1070,15, 0,0, 2\n1070,16, 0,0, 3\n1070,17, 0,0, 4\n\n; Temporary common-state stand-ins. These keep the prototype loadable while\n; dedicated hurt/fall/get-up art is produced.",
+      "frames": [
+        {
+          "group": 1070,
+          "image": 0,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 1,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 2,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 3,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 4,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 5,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 6,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 7,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 8,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 9,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 10,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 11,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 12,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 13,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 14,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 15,
+          "x": 0,
+          "y": 0,
+          "ticks": 2,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 16,
+          "x": 0,
+          "y": 0,
+          "ticks": 3,
+          "flags": ""
+        },
+        {
+          "group": 1070,
+          "image": 17,
+          "x": 0,
+          "y": 0,
+          "ticks": 4,
+          "flags": ""
+        }
+      ]
+    }
+  },
+  "states": {
+    "0": null,
+    "200": "type = S\nmovetype = A\nphysics = S\njuggle = 2\nvelset = 0,0\nctrl = 0\nanim = 200\npoweradd = 15\nsprpriority = 2\n\n[State 200, Hit]\ntype = HitDef\ntrigger1 = AnimElem = 2\nattr = S,NA\ndamage = 35,4\nanimtype = Light\nguardflag = MA\nhitflag = MAF\npriority = 3,Hit\npausetime = 7,7\nsparkno = -1\nguard.sparkno = -1\nhitsound = F5,0\nguardsound = F6,0\nground.type = High\nground.slidetime = 6\nground.hittime = 10\nground.velocity = -3.5,0\nair.velocity = -2.5,-3\n\n[State 200, Done]\ntype = ChangeState\ntrigger1 = AnimTime = 0\nvalue = 0\nctrl = 1\n\n; ---------------------------------------------------------------------------\n; Momentum Fist -- first identity move.",
+    "1000": "type = S\nmovetype = A\nphysics = N\njuggle = 6\nvelset = 0,0\nctrl = 0\nanim = 1000\npoweradd = 60\nsprpriority = 3\n\n[State 1000, Launch]\ntype = VelSet\ntrigger1 = AnimElem = 2\nx = 7.8\ny = 0\n\n[State 1000, Carry]\ntype = VelMul\ntrigger1 = AnimElemTime(9) >= 0\nx = .72\n\n[State 1000, Hit]\ntype = HitDef\ntrigger1 = AnimElem = 9\nattr = S,SA\ndamage = 85,14\nanimtype = Heavy\nguardflag = MA\nhitflag = MAF\npriority = 5,Hit\npausetime = 10,12\nsparkno = -1\nguard.sparkno = -1\nhitsound = F5,0\nguardsound = F6,0\nground.type = High\nground.slidetime = 13\nground.hittime = 18\nground.velocity = -6.5,-2.5\nair.velocity = -5,-4\nfall = 1\nfall.recover = 1\n\n[State 1000, Done]\ntype = ChangeState\ntrigger1 = AnimTime = 0\nvalue = 0\nctrl = 1\n\n; ---------------------------------------------------------------------------\n; Blitz Rush -- current 18-frame PriZim sequence used as one prototype move.",
+    "1070": "type = S\nmovetype = A\nphysics = N\njuggle = 5\nvelset = 0,0\nctrl = 0\nanim = 1070\npoweradd = 45\nsprpriority = 3\n\n[State 1070, Burst]\ntype = VelSet\ntrigger1 = AnimElem = 2\nx = 6.8\ny = 0\n\n[State 1070, Brake]\ntype = VelMul\ntrigger1 = AnimElemTime(13) >= 0\nx = .78\n\n[State 1070, Hit]\ntype = HitDef\ntrigger1 = AnimElem = 8\nattr = S,SA\ndamage = 65,10\nanimtype = Medium\nguardflag = MA\nhitflag = MAF\npriority = 4,Hit\npausetime = 8,9\nsparkno = -1\nguard.sparkno = -1\nhitsound = F5,0\nguardsound = F6,0\nground.type = High\nground.slidetime = 10\nground.hittime = 15\nground.velocity = -5,-1.5\nair.velocity = -4,-3.5\n\n[State 1070, Done]\ntype = ChangeState\ntrigger1 = AnimTime = 0\nvalue = 0\nctrl = 1"
+  },
+  "generation_findings": [
+    "Direct Punch currently has fewer than five unique body sprites. Use the supplied six-frame punch reference for the rebuild before requesting generation.",
+    "Blitzer already has a deep source sequence. Retiming/axis/body-FX classification comes before any generation request."
+  ]
+}
