@@ -825,9 +825,18 @@
   }
 
   function updateSelectionDisplay() {
-    document.getElementById('selP1').textContent = allChars[pickerState.p1Idx] || '-';
-    document.getElementById('selP2').textContent = allChars[pickerState.p2Idx] || '-';
-    document.getElementById('selStage').textContent = allStages[pickerState.stageIdx] || '(engine default)';
+    const p1Name = allChars[pickerState.p1Idx];
+    const p2Name = allChars[pickerState.p2Idx];
+    const stageName = allStages[pickerState.stageIdx];
+    const selP1 = document.getElementById('selP1');
+    const selP2 = document.getElementById('selP2');
+    const selStage = document.getElementById('selStage');
+    selP1.textContent = p1Name || '-';
+    selP2.textContent = p2Name || '-';
+    selStage.textContent = stageName || '(engine default)';
+    selP1.closest('.sel-item').classList.toggle('filled', !!p1Name);
+    selP2.closest('.sel-item').classList.toggle('filled', !!p2Name);
+    selStage.closest('.sel-item').classList.toggle('filled', !!stageName);
   }
 
   function startMatch() {
