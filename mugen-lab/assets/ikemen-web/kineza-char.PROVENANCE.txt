@@ -1,0 +1,44 @@
+kineza-char.zip — Kineza MUGEN prototype, repo-hosted character pack
+====================================================================
+
+Source: KINEZA_MUGEN_PROTOTYPE_V0_1.zip (DAI, 2026-09-18), described by
+its own README as "a load-test and motion-test build, not the finished
+fighter."
+
+Layout changed from the original delivery: the folder was renamed from
+Kineza_Prototype_V0_1/ to chars/kineza/ so the roster line is just
+"kineza", matching the form of every other entry in the user's
+select.def. Nothing inside the .def/.cns/.cmd/.air was edited.
+
+kineza.sff IS NOT THE ORIGINAL FILE.
+------------------------------------
+The delivered SFF v1 had no palette. A PCX 8-bit image must end with a
+0x0C marker byte followed by 768 bytes (256 RGB triplets); all 23
+sprites were missing that block entirely, confirmed by full byte
+accounting of the file (512-byte header + 2,163,794 bytes of sprite
+blocks, zero gaps, zero unaccounted bytes). With no colour table the
+8-bit indices are meaningless, and the character rendered on device as
+magenta/green confetti.
+
+The original palette is unrecoverable from the file: quantisation was
+adaptive (all 256 indices in use, none above 0.5% of pixels), so each
+index maps to a specific colour that exists nowhere in the delivery.
+
+The SFF here has a STAND-IN silhouette palette attached by
+tools' make_silhouette_sff.py: index 0 (75-84% of every sprite, already
+the correct MUGEN transparent-background convention) stays background,
+and indices 1-255 all take Kineza's canonical Prismatic Veil accent
+colour 0x68ff8c from src/BattleConfig.js. The result is a flat green
+silhouette.
+
+THE COLOURS ARE FAKE. This does not fix the character. It exists so the
+build can be used as what it says it is -- a motion test -- while the
+SFF is regenerated upstream with its real palette attached. Everything
+else in the file is untouched and was verified correct: RLE data decodes
+to exactly 196,608 of 196,608 expected pixels on all 23 sprites, 512x384
+dimensions, axis 256,340, subheader chain intact.
+
+Upstream fix required: append 0x0C + the 768-byte palette to each
+sprite's PCX data when writing the SFF. No other change is needed --
+header, subheader chain, dimensions, axes, RLE, and the AIR/CNS/CMD
+wiring were all correct as delivered and loaded with zero engine errors.

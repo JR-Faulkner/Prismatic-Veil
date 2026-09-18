@@ -6,9 +6,25 @@ This file is the short live handoff for FAI. It is deliberately scoped to the cu
 
 ## Current anchor
 
-**Test next: RIG I21 KINEZA.**
+**Test next: RIG I22 QUIET STAGES.**
 
-`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-21.html?v=i21-kineza`
+`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-22.html?v=i22-quiet-stages`
+
+I22 does two things, both follow-ups to I21's phone test.
+
+**1. `[ExtraStages]` is now trimmed too.** I20 deliberately left that
+section alone; I21's trace showed why it mattered. The wall of `Failed to
+add stage. File read error: stages/.def` — hundreds of lines from that
+section's own unresolvable entries — made a completely clean Kineza run
+*look* broken, and cost a round-trip to explain. `trimSelectDefForMatch()`
+now takes the picked stage as a second argument and keeps only that one
+line, injecting it if it was not listed. A falsy stage (engine default)
+leaves the section untouched. Confirmed in a headless run: the
+`Failed to add stage` line present in I21's fixture output is entirely
+absent from I22's.
+
+**2. Kineza renders as a silhouette instead of confetti.** See
+**I21 — repo-hosted characters** and the palette section below.
 
 I21 adds **repo-hosted extra characters**: a character package committed
 to this repo is fetched over HTTP at boot and merged straight into the
@@ -1079,6 +1095,62 @@ does not error, it silently rewrites the wrong site.**
   `-p1 kineza -p2 kineza` and **zero** kineza-related engine errors — no
   "Failed to add char", no SFF/AIR/CNS complaints, no missing sprites.
 
+### Phone-test result — integration PASSED, art payload did not
+
+Real device: `kineza merged into VFS -- 5 file(s), 2.1MB`, `added to the
+picker roster at position 1 of 148`, `148 characters / 8 stages offered`,
+`SELECT TRIM ... (1 injected: kineza), 768 other roster entries dropped`,
+`-p1 kineza -p2 kineza`, match loaded and settled at **212.2MB / 17 lazy
+assets** — *below* the 235MB/50-asset benchmark, because his files load
+eagerly with the rig instead of lazily from the zip. Both lifebars read
+"Kineza". **Zero kineza-related engine errors** — for scale, GodRugal
+threw ~130 warning lines on load and G.Ken ~150; Kineza threw none.
+
+Every `ERR` line in that trace was the pre-existing `[ExtraStages]`
+noise, now fixed in I22. The integration path is sound end to end.
+
+**But he rendered as magenta/green confetti.** That is an art-payload
+bug, not an integration one — see below.
+
+### The missing-palette bug (diagnosed from the bytes)
+
+A PCX 8-bit image must end with a `0x0C` marker byte followed by 768
+bytes (256 RGB triplets). **All 23 sprites in the delivered SFF were
+missing that block.** Confirmed by full byte accounting: 512-byte header
+plus 2,163,794 bytes of sprite blocks, zero gaps, zero unaccounted bytes
+— the palette is not merely misplaced, it was never written. With no
+colour table the 8-bit indices are meaningless, which renders as
+confetti rather than a wrong-but-coherent tint.
+
+Everything else in the file was verified correct: RLE decodes to exactly
+196,608 of 196,608 expected pixels on all 23 sprites, 512x384
+dimensions, axis 256,340, subheader chain intact, index 0 at 75-84% of
+pixels (already the correct MUGEN transparent-background convention).
+
+**The original palette is unrecoverable.** Quantisation was adaptive —
+all 256 indices in use, none above 0.5% of pixels — so each index maps
+to a specific colour that exists nowhere in the delivery.
+
+**Upstream fix:** append `0x0C` + the 768-byte palette to each sprite's
+PCX data when writing the SFF. Nothing else needs to change.
+
+**Stand-in shipped in the meantime:** `tools/make_silhouette_sff.py`
+attaches a palette where index 0 stays background and indices 1-255 all
+take Kineza's canonical PV accent `0x68ff8c` (`src/BattleConfig.js`),
+producing a flat green silhouette. **The colours are fake.** It exists so
+the build can be used as what its README says it is — a motion test —
+answering its own open questions #3 and #5 (foot-axis stability through
+Momentum Fist and Blitz Rush, and whether either rush carries him off
+camera). Provenance is recorded next to the pack in
+`mugen-lab/assets/ikemen-web/kineza-char.PROVENANCE.txt`.
+
+Note on the silhouette: the clean stance frames read beautifully, but the
+Blitz Rush frames (`1070,*`) flatten into a large amorphous blob, because
+those sprites have energy/debris FX baked into the art — the README says
+so directly. That is accurate to the source, not a fault of the
+repalette, and it likely explains the large washed-out rectangle visible
+in the confetti screenshot too.
+
 ### What the package itself is (v0.1 prototype)
 
 Checked structurally before integrating: SFF v1 with a valid Elecbyte
@@ -1203,55 +1275,33 @@ These are working enough to preserve while fixing controls:
 
 ## Recommended next build
 
-**I20 is confirmed playable on real hardware. The crash chain that ran
-from I17 through I19 is closed.** Do not re-litigate the memory work:
-I18's instrumentation, I19's LRU eviction, and I20's select.def trim all
-stay in, all carried forward by every future rig. I19's eviction did not
-need to fire in the winning run, but it stays armed for heavier pairings
-and larger rosters — do not strip it out on the grounds that "it didn't
-do anything," because not firing is the correct behavior under a load
-that fits in budget.
+**I22 is the anchor.** It carries everything from I13 onward and adds the
+`[ExtraStages]` trim plus the Kineza silhouette stand-in.
 
-**I13, I14, and I15/I17's load-gate fix all remain DONE — real-device
-confirmed.** Do not re-litigate any of them without a new, specific
-symptom.
+**The Kineza integration path is proven and is not the open item** — his
+pack merges, injects, loads and runs with zero engine errors. What is
+open is the **art payload**: the SFF needs regenerating upstream with its
+palette attached (see the palette section above for the exact one-line
+fix). Until then he is a green silhouette by design.
 
-There is no longer a forced next build. What follows is a menu, roughly
-in order of how much each is actually worth:
+Menu, roughly by value:
 
-1. **Play more, on more pairings.** The single most valuable next input
-   is more real matches on heavier characters (hulk, GoD_Ryu, the
-   BroliSSJ3-class packages) and different stages. The whole
-   instrumentation stack is still live, so any new failure arrives with
-   real numbers attached instead of a guess. A heavier pairing is also
-   the first thing likely to make I19's eviction actually fire — worth
-   watching for an `EVICT` line as a signal the budget is being
-   approached again.
-2. **I21: trim `[ExtraStages]` too.** The only remaining wall of noise in
-   the winning trace (hundreds of `Failed to add stage. File read error:
-   stages/.def`) comes from that section's blank entries, and it proves
-   the engine still walks all 335 extra-stage lines. The mechanism is
-   already built and proven — it is the same line filter, applied to a
-   second section, keeping only the picked stage. The open question
-   I20 deliberately did not answer is whether Ikemen internally
-   cross-validates the CLI `-s` stage against that list before accepting
-   it; since `-s` is already passed explicitly and resolved correctly in
-   the winning run, the risk is low but real. Worth doing for trace
-   cleanliness and extra headroom, not because anything is broken.
-3. **Collapse the wrapper chain.** I20 is a single-level string-patch
-   wrapper applying ten patches to `rig-ikemen-3.js` at runtime. Now that
-   the result is known-good, it is a reasonable moment to bake the
-   patched output into one flat file and retire the wrapper indirection.
-   Do this only with the PriZim harness green before and after, and keep
-   `rig-ikemen-3.js` untouched as the historical base.
-4. **GUI work.** Picker portraits, HUD styling to match the Prismatic
-   Veil visual language. Explicitly deferred since I13; nothing blocks it
-   now.
+1. **Play more pairings.** Still the highest-value input. hulk,
+   GoD_Ryu, BroliSSJ3 are the likely fat packages. Watch for an `EVICT`
+   line — it has not fired since I19, and it firing again is the signal
+   the 300MB budget is being approached.
+2. **Kineza v0.2 with a real palette.** Drop the pack in, refresh, done —
+   no re-upload, no zip surgery. That loop is now cheap, which was the
+   whole point of I21.
+3. **Collapse the wrapper chain.** Twelve runtime patches over
+   `rig-ikemen-3.js` is a lot of indirection for a known-good result.
+   Bake it flat, PriZim green before and after, leave the base untouched.
+4. **GUI work.** Picker portraits, HUD styling. Nothing blocks it.
 
-If a future build regresses, the fastest triage is still the same three
-signals in the trace, in this order: does `SELECT TRIM` fire with a
-sensible dropped count, does any un-picked character appear, and does
-own-VFS stay near the 238MB-ish shape the winning run had.
+Triage order for any future regression is unchanged: does `SELECT TRIM`
+fire with a sensible dropped count, does any un-picked character appear,
+does own-VFS hold the ~235MB/~50-asset shape.
+
 
 If quarter-circles still don't come out in actual play despite I14's fix
 holding for a hadouken already: that is very likely Ikemen's own
