@@ -1,0 +1,176 @@
+name: Build Kineza v0.3A Motion Pass
+
+on:
+  push:
+    paths:
+      - ".github/workflows/build-kineza-v03a.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build v0.3A from validated v0.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile, shutil, re, hashlib
+
+          repo=Path.cwd()
+          src=repo/"mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_2.zip"
+          if not src.exists(): raise SystemExit("missing v0.2 package")
+          work=Path("/tmp/kineza-v03a")
+          if work.exists(): shutil.rmtree(work)
+          work.mkdir(parents=True)
+          with zipfile.ZipFile(src) as z: z.extractall(work)
+          root=next(p.parent for p in work.rglob("kineza.def"))
+          airp=root/"kineza.air"
+          cnsp=root/"kineza.cns"
+          air=airp.read_text(errors="replace")
+          cns=cnsp.read_text(errors="replace")
+
+          def replace_action(src,num,new_body):
+              pat=rf"(?ims)(^\s*\[Begin\s+Action\s+{num}\s*\]\s*)(.*?)(?=^\s*\[Begin\s+Action\s+|\Z)"
+              m=re.search(pat,src)
+              if not m: raise SystemExit(f"missing action {num}")
+              return src[:m.start(2)] + new_body.rstrip()+"\n\n" + src[m.end(2):]
+
+          # Direct Punch: same validated art, faster cadence and tighter boxes.
+          a200="""Clsn2Default: 1
+  Clsn2[0] = -68,-300,68,0
+1000,0, 0,0, 2
+Clsn1: 1
+  Clsn1[0] = 18,-245,205,-65
+1002,0, 0,0, 2
+1003,0, 0,0, 3"""
+
+          # Momentum Fist: preserve source frames, reduce dead startup/recovery,
+          # keep the prototype travel streak fast, tighten the contact region.
+          a1000="""Clsn2Default: 1
+  Clsn2[0] = -72,-300,72,0
+1000,0, 0,0, 3
+1070,0, 0,0, 1
+1070,1, 0,0, 1
+1070,2, 0,0, 1
+1070,3, 0,0, 1
+1070,4, 0,0, 1
+1070,5, 0,0, 1
+1070,6, 0,0, 1
+Clsn1: 1
+  Clsn1[0] = 18,-255,220,-60
+1002,0, 0,0, 3
+1003,0, 0,0, 4"""
+
+          # Blitzer: classify the 18 frames into setup -> launch -> rush/contact
+          # -> brake -> recovery through timing alone. No art replacement yet.
+          a1070="""Clsn2Default: 1
+  Clsn2[0] = -74,-295,74,0
+1070,0, 0,0, 2
+1070,1, 0,0, 2
+1070,2, 0,0, 2
+1070,3, 0,0, 1
+1070,4, 0,0, 1
+1070,5, 0,0, 1
+1070,6, 0,0, 1
+Clsn1: 1
+  Clsn1[0] = 20,-245,185,-55
+1070,7, 0,0, 1
+Clsn1: 1
+  Clsn1[0] = 20,-250,205,-55
+1070,8, 0,0, 1
+Clsn1: 1
+  Clsn1[0] = 20,-255,220,-55
+1070,9, 0,0, 1
+Clsn1: 1
+  Clsn1[0] = 20,-250,205,-55
+1070,10, 0,0, 1
+Clsn1: 1
+  Clsn1[0] = 20,-245,185,-55
+1070,11, 0,0, 1
+1070,12, 0,0, 2
+1070,13, 0,0, 2
+1070,14, 0,0, 2
+1070,15, 0,0, 2
+1070,16, 0,0, 3
+1070,17, 0,0, 3"""
+
+          air=replace_action(air,200,a200)
+          air=replace_action(air,1000,a1000)
+          air=replace_action(air,1070,a1070)
+          airp.write_text(air)
+
+          # State tuning: keep move identity/data, only improve motion feel.
+          cns=cns.replace("pausetime = 7,7","pausetime = 6,7",1)
+          cns=cns.replace("x = 7.8\ny = 0","x = 8.2\ny = 0",1)
+          cns=cns.replace("x = .72","x = .68",1)
+          cns=cns.replace("pausetime = 10,12","pausetime = 9,11",1)
+          cns=cns.replace("x = 6.8\ny = 0","x = 7.4\ny = 0",1)
+          cns=cns.replace("x = .78","x = .72",1)
+          cns=cns.replace("pausetime = 8,9","pausetime = 7,9",1)
+          cnsp.write_text(cns)
+
+          # Preserve scale and original command route.
+          if not re.search(r"(?im)^\s*xscale\s*=\s*\.3\s*$",cns): raise SystemExit("xscale changed")
+          if not re.search(r"(?im)^\s*yscale\s*=\s*\.3\s*$",cns): raise SystemExit("yscale changed")
+          cmd=(root/"kineza.cmd").read_text(errors="replace")
+          if "prototype punch" not in cmd or re.search(r"(?im)^\s*command\s*=\s*x\s*$",cmd) is None:
+              raise SystemExit("original direct punch route missing")
+
+          out=repo/"mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_3A.zip"
+          with zipfile.ZipFile(out,"w",zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+              for p in sorted((work/"chars").rglob("*")):
+                  if p.is_file(): z.write(p,p.relative_to(work).as_posix())
+          live=repo/"mugen-lab/assets/ikemen-web/kineza-char-v03a.zip"
+          shutil.copy2(out,live)
+
+          # Compact report.
+          report=f"""# Kineza v0.3A Motion Pass
+
+Base: validated v0.2
+
+## What changed
+- No SFF/image bytes changed.
+- No command names changed.
+- Scale remains .3/.3.
+- Direct Punch AIR timing changed from 3/3/5 to 2/2/3.
+- Momentum Fist startup/recovery shortened while preserving its current source-frame sequence.
+- Blitzer 18-frame timing now has setup, 1-tick rush/contact, and slower brake/recovery phases instead of near-flat 2-tick timing.
+- CLSN1/CLSN2 regions tightened to follow the fighter rather than the full source-canvas footprint.
+- Velocity/braking and hit-pause were adjusted modestly for stronger forward momentum and cleaner recovery.
+
+## Intentionally not changed
+- Idle remains one frame.
+- Momentum Fist still borrows early Blitzer travel frames.
+- No new/generated art.
+- No browser/runtime/controller changes.
+
+## Phone gate
+1. Confirm Kineza renders correctly.
+2. Tap direct punch repeatedly and judge startup/contact/recovery smoothness.
+3. Test Momentum Fist and note whether travel feels too fast/slow.
+4. Test Blitzer and judge whether the rush now reads as setup -> burst -> contact -> brake.
+5. Report only concrete defects: ART / SCALE / AXIS / SMOOTHNESS / INPUT / FX.
+
+v0.3A ZIP SHA-256: `{hashlib.sha256(out.read_bytes()).hexdigest()}`
+"""
+          (repo/"mugen-lab/KINEZA_V0_3A_MOTION_PASS.md").write_text(report)
+          print(report)
+          PY
+
+      - name: Commit v0.3A
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_3A.zip mugen-lab/assets/ikemen-web/kineza-char-v03a.zip mugen-lab/KINEZA_V0_3A_MOTION_PASS.md
+          if git diff --cached --quiet; then echo "No changes"; else git commit -m "MOBMUGEN: build Kineza v0.3A motion pass"; git push; fi
