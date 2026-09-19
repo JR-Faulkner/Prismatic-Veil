@@ -3,16 +3,30 @@
 
 Mirrors tools/prizim/mobmugen/preflight.py's role for the BoxedWine lane:
 catch page/script regressions cheaply, before any browser or phone time
-is spent. Unlike the BoxedWine lane, this lane's rigs are single-level
-string-patch wrappers over a shared base (rig-ikemen-3.js) that fetch and
-rewrite the base's own source at runtime -- so what actually matters here
-is (1) the base's patch points the wrappers depend on still exist, and
-(2) no rig ships a stale build-number label baked into its own patch text.
+is spent. This lane has two valid build shapes for its current rig:
 
-That second check exists because it already happened twice in a row on
-this lane (I16 missed it in two spots; I17 caught them only by grepping
-generically). This preflight makes that generic grep permanent instead of
-something a human has to remember to do by hand each time.
+- WRAPPER (I4 through most builds, including DAI's Kineza input-gate
+  lineage): single-level string-patch wrappers over a shared base
+  (rig-ikemen-3.js) that fetch and rewrite the base's own source at
+  runtime. What matters here is (1) the base's patch points the
+  wrapper depends on still exist, and (2) the wrapper fetches the base
+  directly, never another numbered rig (wrapper-on-wrapper is what
+  broke I11).
+- COLLAPSED/STATIC (I29 on): a plain, self-contained HTML/JS pair with
+  no runtime fetch+patch step at all -- the file already contains the
+  fully materialized code. I29 was produced by mechanically running a
+  wrapper rig's own patch pipeline once, offline, rather than by hand,
+  specifically to retire the fetch+patch mechanism for this lane going
+  forward while DAI's automation (which still targets rig-ikemen-3.js
+  as its base) continues unaffected on its own numbered rigs. What
+  matters here is that the file itself -- not a separate base -- has
+  the essential runtime pieces the engine depends on.
+
+Across both shapes: no rig ships a stale build-number label baked into
+its own patch text. That check exists because it already happened twice
+in a row on this lane (I16 missed it in two spots; I17 caught them only
+by grepping generically). This preflight makes that generic grep
+permanent instead of something a human has to remember to do by hand.
 """
 from pathlib import Path
 import re, sys, json
@@ -38,6 +52,7 @@ def find_current_rig():
     return n, MUGEN_LAB / f'rig-ikemen-{n}.html', MUGEN_LAB / f'rig-ikemen-{n}.js'
 
 n, html_path, js_path = (None, None, None)
+is_wrapper = None
 result = find_current_rig()
 checks = {}
 failed_reasons = []
@@ -55,18 +70,42 @@ else:
     html_text = html_path.read_text(encoding='utf-8') if html_path.exists() else ''
     js_text = js_path.read_text(encoding='utf-8') if js_path.exists() else ''
 
-    # --- base patch points: the wrapper's own runtime throws a named
-    # error if any of these go missing, but that only surfaces in a
-    # browser. Catch it here first, for free.
-    base_path = MUGEN_LAB / 'rig-ikemen-3.js'
-    base_text = base_path.read_text(encoding='utf-8') if base_path.exists() else ''
-    checks['base_exists'] = base_path.exists()
-    checks['base_has_canvas_id'] = 'ikemen-canvas' in (MUGEN_LAB / 'rig-ikemen-3.html').read_text(encoding='utf-8')
-    checks['base_has_bindPress'] = 'function bindPress(el, codes)' in base_text
-    checks['base_has_selectItem'] = 'function selectItem(mode, idx)' in base_text
-    checks['base_has_lazyMaterialize'] = 'async function lazyMaterialize(path)' in base_text
-    checks['base_has_boot_anchor'] = "async function boot() {\n    if (started) return;" in base_text
-    checks['base_has_startMatch_hide'] = "document.getElementById('setup').classList.add('hide');\n    boot();" in base_text
+    # --- detect which of the two valid build shapes the current rig is.
+    # A wrapper's .js always declares its own base fetch target as
+    # `const base = './rig-ikemen-N.js...'`; a collapsed/static build has
+    # no such declaration because it never fetches anything.
+    is_wrapper = re.search(r"const base = '\./rig-ikemen-\d+\.js", js_text) is not None
+    # Metadata, not a pass/fail check -- surfaced in the report so it's
+    # visible which shape is current, without making one shape "wrong".
+
+    if is_wrapper:
+        # --- base patch points: the wrapper's own runtime throws a named
+        # error if any of these go missing, but that only surfaces in a
+        # browser. Catch it here first, for free.
+        base_path = MUGEN_LAB / 'rig-ikemen-3.js'
+        base_text = base_path.read_text(encoding='utf-8') if base_path.exists() else ''
+        checks['base_exists'] = base_path.exists()
+        checks['base_has_canvas_id'] = 'ikemen-canvas' in (MUGEN_LAB / 'rig-ikemen-3.html').read_text(encoding='utf-8')
+        checks['base_has_bindPress'] = 'function bindPress(el, codes)' in base_text
+        checks['base_has_selectItem'] = 'function selectItem(mode, idx)' in base_text
+        checks['base_has_lazyMaterialize'] = 'async function lazyMaterialize(path)' in base_text
+        checks['base_has_boot_anchor'] = "async function boot() {\n    if (started) return;" in base_text
+        checks['base_has_startMatch_hide'] = "document.getElementById('setup').classList.add('hide');\n    boot();" in base_text
+    else:
+        # --- a collapsed/static build has no separate base -- the file
+        # IS the base, so the same essential-pieces checks run directly
+        # against its own text instead of a fetched-and-patched target.
+        # Some patch-time renames (e.g. lazyMaterialize gaining an
+        # activity-ping call, boot() gaining a load-overlay helper ahead
+        # of it) are expected here and don't change what these checks
+        # actually verify: the named function/anchor still exists.
+        checks['base_exists'] = True  # no separate base file to require
+        checks['base_has_canvas_id'] = 'ikemen-canvas' in html_text
+        checks['base_has_bindPress'] = 'function bindPress(el, codes)' in js_text
+        checks['base_has_selectItem'] = 'function selectItem(mode, idx)' in js_text
+        checks['base_has_lazyMaterialize'] = 'async function lazyMaterialize(path)' in js_text
+        checks['base_has_boot_anchor'] = 'async function boot() {\n    if (started) return;' in js_text
+        checks['base_has_startMatch_hide'] = "document.getElementById('setup').classList.add('hide');" in js_text
 
     # --- the actual recurring trap: a stale I<N> (N < current) baked
     # into the CURRENT rig's own patch text. Two intentional exceptions:
@@ -96,30 +135,49 @@ else:
     # broken template).
     checks['current_rig_label_present'] = f'I{n} ' in js_text or f"'I{n}" in js_text
 
-    # The page wrapper must fetch base rig-ikemen-3.html directly -- never
-    # a prior numbered rig's own page. Wrapper-on-wrapper is what made I11
-    # fail to run at all (documented in the live notes); every rig since
-    # has deliberately stayed single-level.
-    fetch_match = re.search(r"fetch\('\./(rig-ikemen-\d+\.html)", html_text)
-    checks['html_fetches_a_rig_page'] = fetch_match is not None
-    if fetch_match:
-        checks['html_targets_base'] = fetch_match.group(1) == 'rig-ikemen-3.html'
-        if fetch_match.group(1) != 'rig-ikemen-3.html':
-            failed_reasons.append(
-                f'rig-ikemen-{n}.html fetches {fetch_match.group(1)} instead of the base rig-ikemen-3.html -- wrapper-on-wrapper, the exact pattern that broke I11')
-    else:
-        checks['html_targets_base'] = False
+    if is_wrapper:
+        # The page wrapper must fetch base rig-ikemen-3.html directly --
+        # never a prior numbered rig's own page. Wrapper-on-wrapper is
+        # what made I11 fail to run at all (documented in the live
+        # notes); every wrapper rig since has deliberately stayed
+        # single-level.
+        fetch_match = re.search(r"fetch\('\./(rig-ikemen-\d+\.html)", html_text)
+        checks['html_fetches_a_rig_page'] = fetch_match is not None
+        if fetch_match:
+            checks['html_targets_base'] = fetch_match.group(1) == 'rig-ikemen-3.html'
+            if fetch_match.group(1) != 'rig-ikemen-3.html':
+                failed_reasons.append(
+                    f'rig-ikemen-{n}.html fetches {fetch_match.group(1)} instead of the base rig-ikemen-3.html -- wrapper-on-wrapper, the exact pattern that broke I11')
+        else:
+            checks['html_targets_base'] = False
 
-    # Likewise the generated <script>'s own base fetch, inside the .js file.
-    js_base_match = re.search(r"const base = '\./(rig-ikemen-\d+\.js)", js_text)
-    checks['js_fetches_a_rig_script'] = js_base_match is not None
-    if js_base_match:
-        checks['js_targets_base'] = js_base_match.group(1) == 'rig-ikemen-3.js'
-        if js_base_match.group(1) != 'rig-ikemen-3.js':
-            failed_reasons.append(
-                f'rig-ikemen-{n}.js fetches {js_base_match.group(1)} instead of the base rig-ikemen-3.js -- wrapper-on-wrapper')
+        # Likewise the generated <script>'s own base fetch, inside the .js file.
+        js_base_match = re.search(r"const base = '\./(rig-ikemen-\d+\.js)", js_text)
+        checks['js_fetches_a_rig_script'] = js_base_match is not None
+        if js_base_match:
+            checks['js_targets_base'] = js_base_match.group(1) == 'rig-ikemen-3.js'
+            if js_base_match.group(1) != 'rig-ikemen-3.js':
+                failed_reasons.append(
+                    f'rig-ikemen-{n}.js fetches {js_base_match.group(1)} instead of the base rig-ikemen-3.js -- wrapper-on-wrapper')
+        else:
+            checks['js_targets_base'] = False
     else:
-        checks['js_targets_base'] = False
+        # A collapsed/static build's whole point is NOT fetching another
+        # rig at runtime -- verify that's actually true (proves it's
+        # genuinely self-contained, not just missing the `const base =`
+        # declaration while still fetching something ad hoc elsewhere).
+        stray_html_fetch = re.search(r"fetch\('\./rig-ikemen-\d+\.html", html_text)
+        stray_js_fetch = re.search(r"fetch\('\./rig-ikemen-\d+\.js", js_text)
+        checks['static_html_has_no_rig_fetch'] = stray_html_fetch is None
+        checks['static_js_has_no_rig_fetch'] = stray_js_fetch is None
+        if stray_html_fetch:
+            failed_reasons.append(
+                f'rig-ikemen-{n}.html is a collapsed/static build but still fetches another rig page at runtime -- '
+                'not actually self-contained')
+        if stray_js_fetch:
+            failed_reasons.append(
+                f'rig-ikemen-{n}.js is a collapsed/static build but still fetches another rig script at runtime -- '
+                'not actually self-contained')
 
     # --- cross-check against the live notes' own "Current anchor" so a
     # doc that's lost its pointer entirely gets caught. The anchor line
@@ -174,6 +232,7 @@ failed = [k for k, v in checks.items() if not v]
 report = {
     'suite': 'PriZim MOBMUGEN-IKEMEN preflight',
     'current_rig': f'I{n}' if n is not None else None,
+    'current_rig_shape': ('wrapper' if is_wrapper else 'collapsed-static') if is_wrapper is not None else None,
     'checks': checks,
     'passed': not failed,
     'failed': failed,
