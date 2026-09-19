@@ -40,8 +40,8 @@ body:before{
 }
 .wrap{max-width:980px;margin:auto;position:relative;z-index:1}
 .bar{
-  display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:8px;
-  min-height:58px;margin-bottom:8px;padding:0 2px;
+  display:grid;grid-template-columns:1fr;align-items:center;gap:4px;
+  min-height:38px;margin-bottom:4px;padding:0 2px;
 }
 .brand{
   display:flex;align-items:center;gap:10px;min-width:0;
@@ -224,14 +224,27 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 }
 
 .bad{color:var(--bad)}
-.dev-tools{
-  position:fixed;right:10px;bottom:max(10px,env(safe-area-inset-bottom));z-index:30;
-  display:flex;gap:6px;opacity:.72;transition:opacity .15s
+.test-dock{
+  position:fixed;right:8px;bottom:max(8px,env(safe-area-inset-bottom));z-index:40;
+  display:flex;flex-direction:column;align-items:flex-end;gap:6px
 }
-.dev-tools:active{opacity:1}
+.test-tab{
+  width:46px;height:46px;border-radius:50%;border:1px solid #264b66;
+  background:#071019e8;color:#7897ad;font:1000 8px ui-monospace;letter-spacing:.08em;
+  box-shadow:0 5px 18px #000a;opacity:.58
+}
+.test-tab[aria-expanded="true"]{opacity:1;border-color:#6a5520;color:#f4c64d}
+.test-panel{
+  width:min(270px,calc(100vw - 20px));padding:9px;border:1px solid #244b66;border-radius:9px;
+  background:#050b11f2;box-shadow:0 14px 40px #000d;backdrop-filter:blur(10px)
+}
+.test-title{font:1000 8px ui-monospace;letter-spacing:.14em;color:#66869c;margin-bottom:5px}
+.test-status{padding:4px 0!important}
+.test-pill{display:inline-block;margin:2px 0 7px!important}
+.test-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .dev-chip{
-  border:1px solid #234a65;background:#071019e8;color:#7f9bb0;border-radius:999px;
-  padding:7px 9px;font:900 8px ui-monospace;letter-spacing:.08em;box-shadow:0 5px 16px #0009
+  border:1px solid #234a65;background:#071019e8;color:#8fa8ba;border-radius:6px;
+  padding:7px 5px;font:900 7px ui-monospace;letter-spacing:.05em;box-shadow:none
 }
 .diag-head.compact{margin:0 0 4px;padding:0}
 .setup{padding:10px!important;align-items:start!important}
@@ -343,14 +356,11 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 </head>
 <body>
 <div class="wrap">
-  <div class="bar">
+  <div class="bar player-bar">
     <div class="brand">MobMugen</div>
-    <div id="runtimePill" class="pill">IDLE</div>
-    <button id="ctrlToggle" class="ctrlbtn" type="button">HIDE CTRL</button>
   </div>
 
   <div class="stage">
-    <div class="tag">Gameplay Viewport</div>
     <div id="setup" class="setup">
       <div class="card" id="setupCard">
         <h2>Graphite Arcade</h2>
@@ -421,8 +431,6 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
     <canvas id="ikemen-canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
   </div>
 
-  <div class="statusline">Runtime <b id="runtimeState">WAITING FOR ZIP</b></div>
-
   <div id="controls" class="controls">
     <div class="cz left"><div class="dpad">
       <button class="dir" data-macro="UL">↖</button><button class="dir" data-k="ArrowUp" data-key="ArrowUp">↑</button><button class="dir" data-macro="UR">↗</button>
@@ -441,9 +449,18 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
     <div id="diag" class="diag">I29 ready</div>
   </div>
 </div>
-<div class="dev-tools">
-  <button id="debugToggle" class="dev-chip" type="button">DEBUG</button>
-  <button id="copyTrace" class="dev-chip">COPY</button>
+<div id="testDock" class="test-dock">
+  <button id="testDockToggle" class="test-tab" type="button" aria-expanded="false">TEST</button>
+  <div id="testPanel" class="test-panel" hidden>
+    <div class="test-title">DEVELOPER / TESTING</div>
+    <div class="statusline test-status">Runtime <b id="runtimeState">WAITING FOR ZIP</b></div>
+    <div id="runtimePill" class="pill test-pill">IDLE</div>
+    <div class="test-actions">
+      <button id="ctrlToggle" class="dev-chip" type="button">HIDE CTRL</button>
+      <button id="debugToggle" class="dev-chip" type="button">SHOW DEBUG</button>
+      <button id="copyTrace" class="dev-chip" type="button">COPY TRACE</button>
+    </div>
+  </div>
 </div>
 <script src="./rig-ikemen-29.js"></script>
 <script>
@@ -485,6 +502,20 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
     new MutationObserver(syncStage).observe(stageName,{childList:true,subtree:true,characterData:true});
     syncStage();
   }
+})();
+</script>
+<script>
+(function(){
+  const btn = document.getElementById('testDockToggle');
+  const panel = document.getElementById('testPanel');
+  if(!btn || !panel) return;
+  btn.addEventListener('click', () => {
+    const open = panel.hasAttribute('hidden');
+    if(open) panel.removeAttribute('hidden'); else panel.setAttribute('hidden','');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.textContent = open ? 'CLOSE' : 'TEST';
+    if(typeof window.dispatchEvent === 'function') window.dispatchEvent(new Event('resize'));
+  });
 })();
 </script>
 </body>
