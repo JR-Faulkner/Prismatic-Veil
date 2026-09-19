@@ -6,9 +6,33 @@ This file is the short live handoff for FAI. It is deliberately scoped to the cu
 
 ## Current anchor
 
-**Test next: RIG I24 LEAN BOOT.**
+**Test next: RIG I28.**
 
-`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-24.html?v=i24-lean-boot`
+`https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-28.html`
+
+I28 (DAI, Kineza input-gate lineage) carries everything I24-I27 do --
+LEAN BOOT, QUIET STAGES, the repo-hosted Kineza merge, and the
+select.def trim -- plus a Kineza input watchdog gate and deterministic
+75ms attack pulses on top of I27's iPhone keyup-pulse fix. This is one
+continuously-advancing lineage, not two incompatible tracks: every
+numbered rig from I24 on fetches the same shared base
+(`rig-ikemen-3.html`/`.js`) fresh at runtime, so every GUI/sizing fix
+from that base (letterboxing, aspect-ratio stage sizing, roster
+auto-scroll, the 6-part GUI polish pass) is already live in I28 with no
+separate per-rig patch needed -- confirmed by diffing I24 through I28's
+own patch-anchor sets, which are identical aside from the input-gate
+wireOld/wireNew content and the EXTRA_CHAR_PACKS URL. The "two parallel
+tracks" framing in the FOR DAI section below (written while I25-27 were
+still being sorted out) overstated the divergence; correcting it here.
+
+Because two contributors are now advancing this same numbering
+sequence concurrently (this session's GUI/base-file work, and DAI's
+Kineza-lineage rig builds), `preflight.py`'s anchor check no longer
+hard-fails when this line is a build or two behind the actual highest
+`rig-ikemen-N.html` on disk -- only when the anchor names a rig that
+doesn't exist at all. A behind-the-edge anchor now prints as a
+non-blocking warning instead. Update this line when convenient; it is
+no longer a build gate.
 
 I24 carries everything from I23 (including Kineza v0.2 with the real
 palettes) and trims the eager load.
