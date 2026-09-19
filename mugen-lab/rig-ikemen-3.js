@@ -174,7 +174,10 @@
   }
 
   function classifyStatus(s) {
-    if (/CRASH|FAILED|EXITED/.test(s)) return 'error';
+    // "CRASHED" (an event that happened), not "CRASH" -- the healthy
+    // "STILL RUNNING AFTER 5s · NO JS CRASH" message contains the
+    // substring "CRASH" too and was being misclassified as an error.
+    if (/CRASHED|FAILED|EXITED/.test(s)) return 'error';
     if (/RUNNING/.test(s)) return 'running';
     if (/WAITING FOR ZIP|SELECT FIGHTERS/.test(s)) return 'idle';
     return 'loading';
