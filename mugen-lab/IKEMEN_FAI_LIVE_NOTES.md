@@ -1924,3 +1924,12 @@ Current beautification priority order:
 7. Then add **native motif UI sound extraction** from the loaded MUGEN package (cursor move, confirm, cancel/back, stage navigation/confirm where available).
 
 Link/build discipline remains unchanged: every test build handed to the user gets a fresh tappable cache-busted GitHub Pages URL.
+
+
+### 2026-09-19 · V13 portrait diagnosis
+- Root cause confirmed for at least Kineza: the validated Kineza SFF manifest contains **9000,0** and does **not** contain **9000,1**. V12 hard-coded 9000,1, so Kineza was guaranteed to fall back.
+- V13 now reads the loaded motif's configured portrait sprite references from `system.def` when available, then falls back through **9000,1 -> 9000,0** instead of assuming only 9000,1.
+- V13 adds a hidden developer portrait diagnostic in the TEST drawer so phone testing can report whether a selected fighter is: decoded, missing the expected sprite, SFF v2, missing its SFF path, or failing PCX/palette decode.
+- The portrait cache is now cleared when changing libraries so same-named fighters from different ZIPs cannot reuse stale artwork.
+- SFF v2 remains pending. Do not claim universal portrait support.
+- V13 is source-published and syntax-checked only until phone witness confirms actual artwork.
