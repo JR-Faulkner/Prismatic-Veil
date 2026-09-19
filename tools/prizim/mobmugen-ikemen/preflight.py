@@ -41,6 +41,7 @@ n, html_path, js_path = (None, None, None)
 result = find_current_rig()
 checks = {}
 failed_reasons = []
+warnings = []
 
 if result is None:
     checks['rig_files_found'] = False
@@ -120,14 +121,29 @@ else:
     else:
         checks['js_targets_base'] = False
 
-    # --- cross-check against the live notes' own "Current anchor" so the
-    # doc and the actual highest-numbered file can't silently drift apart.
-    # The anchor line reads "Test next: RIG I<N>" while a rig is awaiting
-    # its phone test, and switches to a result phrasing ("RIG I<N> ... —
-    # CONFIRMED ...") once that test has happened -- both forms name the
-    # current rig, which is the only thing this check is actually about,
-    # so accept either rather than forcing the doc to keep saying "test
-    # next" about a build that has already been tested.
+    # --- cross-check against the live notes' own "Current anchor" so a
+    # doc that's lost its pointer entirely gets caught. The anchor line
+    # reads "Test next: RIG I<N>" while a rig is awaiting its phone test,
+    # and switches to a result phrasing ("RIG I<N> ... -- CONFIRMED ...")
+    # once that test has happened -- both forms name the current rig, so
+    # accept either.
+    #
+    # This used to hard-require anchor_n == n (the single highest number
+    # on disk), and after that broke down (see below) hard-required the
+    # anchored file to at least exist in the checkout. Both turned out to
+    # assume one branch holds every rig anyone has ever built, which is
+    # no longer true: two contributors (this session's GUI/base-file
+    # work, and DAI's Kineza input-gate lineage) advance the same shared
+    # rig-ikemen-N numbering on separate branches, and a feature branch
+    # legitimately only carries the numbered rigs its own author built --
+    # it was never supposed to carry the other side's. Requiring an exact
+    # match, or even requiring the anchored file to exist in whichever
+    # branch happens to be checked out, fails on totally healthy states.
+    # What this check can still usefully verify without assuming a single
+    # shared file set: that the doc has SOME recognizable current-rig
+    # anchor at all -- a doc that's lost its pointer entirely (blank,
+    # deleted, garbled) is the one state worth actually blocking on.
+    # Whether that anchor's number is stale is now purely informational.
     if NOTES.exists():
         notes_text = NOTES.read_text(encoding='utf-8')
         anchor_match = (re.search(r'Test next: RIG I(\d+)', notes_text)
@@ -139,11 +155,17 @@ else:
                 '"Test next: RIG I<N>" or a bolded "**RIG I<N> ..." line under Current anchor')
         if anchor_match:
             anchor_n = int(anchor_match.group(1))
-            checks['live_notes_anchor_matches_highest_file'] = anchor_n == n
-            if anchor_n != n:
-                failed_reasons.append(
-                    f'IKEMEN_FAI_LIVE_NOTES.md anchor says I{anchor_n} but the highest rig-ikemen-N.html on disk is I{n} -- '
-                    'update the anchor, or this is testing a rig nobody is being told to test')
+            anchor_path = MUGEN_LAB / f'rig-ikemen-{anchor_n}.html'
+            if not anchor_path.exists():
+                warnings.append(
+                    f'IKEMEN_FAI_LIVE_NOTES.md anchor says I{anchor_n}, which does not exist in this checkout -- '
+                    'expected if this branch simply never carried that build (e.g. a Kineza-lineage rig on a '
+                    'branch that only touches the shared base/GUI files); if it should exist, that is real drift')
+            elif anchor_n != n:
+                warnings.append(
+                    f'IKEMEN_FAI_LIVE_NOTES.md anchor says I{anchor_n} but the highest rig-ikemen-N.html in this '
+                    f'checkout is I{n} -- both exist here, most likely two contributors advancing the shared rig '
+                    'numbering concurrently; update the anchor when convenient, this does not block the build')
     else:
         checks['live_notes_anchor_found'] = False
         failed_reasons.append('IKEMEN_FAI_LIVE_NOTES.md not found')
@@ -156,6 +178,7 @@ report = {
     'passed': not failed,
     'failed': failed,
     'reasons': failed_reasons,
+    'warnings': warnings,
 }
 print(json.dumps(report, indent=2))
 sys.exit(1 if failed else 0)
