@@ -1771,9 +1771,49 @@ status, and the READY trace line all read correctly; the stage-sizing
 fix from this session's own earlier work measured the same 1.779
 (16:9) aspect ratio I29 inherited by construction, since it was
 captured from I28 which itself fetches the shared base carrying that
-fix. Not yet phone-tested -- behaviorally it should be indistinguishable
-from I28 (same materialized code), so this is lower-priority to
-re-verify on hardware than genuinely new functionality, but flagging
-that gap rather than claiming full parity.
+fix.
+
+**Phone-tested and confirmed.** First real trace on I29 hit a hard
+freeze mid-match-load ("36 assets loaded — pal10.act", unresponsive
+even to Copy Trace) with a different character than any prior test --
+root-caused to the Zip64-sentinel bug documented in the next section
+below and fixed in both this file and the shared base. Re-tested after
+the fix on the same class of content: **no issues.** I29 and the
+Zip64 fix are both confirmed working on real hardware, not just headless.
 
 Live: `https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-29.html`
+
+## Zip64-sentinel freeze (real bug, reproduced headless, fixed and phone-confirmed)
+
+Reported from the I29 phone test above. Root cause: `listZipEntries()`
+read a zip entry's compressed/uncompressed size as a plain 32-bit
+central-directory field and never checked for the Zip64 sentinel value
+`0xFFFFFFFF` -- which means "the real 64-bit size lives in the Zip64
+extra field instead," not "this entry is ~4.29GB." Some zip encoders
+write Zip64 fields per-entry regardless of whether that entry actually
+needs 64-bit sizes, so an ordinary small palette file can carry it.
+`entryRaw()`'s `file.slice(start, start + ent.comp)` then gets silently
+clamped by the Blob spec to "the rest of the file" once `ent.comp` is
+bogus -- so a single Zip64-flagged entry anywhere in a multi-gigabyte
+zip made the very next read try to materialize the entire remainder of
+the archive into memory before decompression even started.
+
+Reproduced headless before touching any fix: a synthetic zip with one
+sentinel-flagged entry and a 150MB incompressible tail (simulating "the
+rest of a big real zip") took ~860ms just for the oversized read on a
+fast dev CPU -- fflate's `inflateSync` itself correctly stops at the
+stream's own BFINAL bit regardless of trailing garbage, so the hang is
+entirely in the read step, not decompression. Scaled to a real ~1.7GB
+zip on an iPhone, that predicted multi-second-plus of a fully blocked
+main thread with no JS error, matching the device report exactly.
+
+Fixed by parsing the Zip64 extra field (header id `0x0001`) for
+whichever of comp/uncomp/local-offset carried the sentinel, per the
+zip spec's field order. Re-ran the same synthetic repro with a proper
+Zip64 extra field attached: resolves the entry's true 52/820-byte size
+instead of the sentinel, drops the read from ~860ms to ~1ms, decodes to
+byte-identical content. A separate ordinary (non-Zip64) zip confirmed
+unaffected. Applied to both `rig-ikemen-3.js` (fixes every wrapper rig)
+and `rig-ikemen-29.js` directly (collapsed builds don't auto-inherit
+base fixes -- see the I29 section above). **Phone-confirmed fixed**:
+re-tested with the same class of content that froze, no issues.
