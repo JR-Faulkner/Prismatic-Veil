@@ -224,7 +224,154 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
   font:bold 9px ui-monospace;box-shadow:0 5px 18px #0008
 }
 
+
 .bad{color:var(--bad)}
+
+/* GUI depth pass */
+#charPickerSection{
+  border:0!important;
+  border-radius:14px!important;
+  background:
+    linear-gradient(180deg,#0d1824f4,#07101af8)!important;
+  box-shadow:
+    0 18px 38px #0008,
+    inset 0 1px #ffffff0d,
+    inset 0 -1px #000!important;
+  position:relative;
+  overflow:hidden;
+}
+#charPickerSection:before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(135deg,#1aa8ff13 0 12%,transparent 12% 82%,#f4c64d0b 82%),
+    linear-gradient(90deg,#1aa8ff00,#1aa8ff13 50%,#1aa8ff00);
+  border-top:1px solid #2b80b9;
+  border-bottom:1px solid #0d2e45;
+}
+#charPickerSection:after{
+  content:"";position:absolute;left:16px;right:16px;top:0;height:3px;
+  background:linear-gradient(90deg,#1aa8ff,transparent 42%,transparent 58%,#f4c64d);
+  box-shadow:0 0 14px #1aa8ff66;
+}
+.select-titlebar{
+  position:relative;z-index:1;
+  margin:0 -8px 8px!important;
+  padding:6px 12px 8px!important;
+  border-bottom:1px solid #183a54!important;
+  background:linear-gradient(90deg,#0f2231aa,#07101900 36%,#07101900 64%,#2a230faa);
+}
+.select-titlebar:before{content:"01";position:absolute;left:12px;top:50%;transform:translateY(-50%);font:1000 8px ui-monospace;color:#4dbaff}
+.select-titlebar:after{content:"FIGHTER SELECT";position:absolute;right:12px;top:50%;transform:translateY(-50%);font:900 7px ui-monospace;letter-spacing:.12em;color:#877331}
+.versus-banner{
+  position:relative;z-index:1;
+  padding:4px;
+  border-radius:10px;
+  background:linear-gradient(90deg,#0d2638 0 47%,#17212a 50%,#302612 53% 100%);
+  box-shadow:inset 0 0 0 1px #294a60,0 8px 18px #0007;
+}
+.fighter-card{
+  border:0!important;
+  box-shadow:inset 0 0 0 1px #265a7a,inset 0 14px 26px #ffffff05!important;
+}
+.p2-card{box-shadow:inset 0 0 0 1px #765f22,inset 0 14px 26px #ffffff04!important}
+.vs-core span{
+  border:0!important;
+  background:radial-gradient(circle at 35% 30%,#ffffff20,#0a0f15 52%,#030608)!important;
+  box-shadow:0 0 0 1px #738393,0 0 0 4px #05090d,0 0 18px #1aa8ff2e!important;
+}
+.fighter-pick-panel{
+  position:relative;padding:6px;border-radius:9px;
+  background:linear-gradient(180deg,#0a1621,#071019);
+  box-shadow:inset 0 0 0 1px #173a55;
+}
+.fighter-pick-panel:before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(#1aa8ff,transparent);
+  border-radius:9px 0 0 9px
+}
+.fighter-pick-panel:nth-child(2):before{background:linear-gradient(#f4c64d,transparent)}
+.picker-row-label{padding:0 3px 4px}
+.roster-grid{
+  border:0!important;
+  border-radius:7px!important;
+  background:#050c12!important;
+  box-shadow:inset 0 0 0 1px #16364e,inset 0 10px 24px #0008!important;
+}
+.roster-item{
+  position:relative;overflow:hidden;justify-content:flex-start!important;text-align:left!important;
+  min-height:54px!important;padding:6px 7px 6px 40px!important;
+  border:0!important;border-radius:6px!important;
+  background:linear-gradient(180deg,#111e2b,#09131d)!important;
+  box-shadow:inset 0 0 0 1px #1d435f,inset 0 1px #ffffff0a,0 2px 4px #0007!important;
+}
+.roster-item:before{
+  content:attr(data-badge);
+  position:absolute;left:6px;top:50%;transform:translateY(-50%);
+  width:28px;height:34px;border-radius:4px;
+  display:grid;place-items:center;
+  background:linear-gradient(160deg,#18364b,#09131d);
+  box-shadow:inset 0 0 0 1px #265f84;
+  color:#73caff;font:1000 9px ui-monospace;
+}
+.roster-item[data-mode="p2"]:before{
+  color:#f4d66a;background:linear-gradient(160deg,#3a3014,#151108);box-shadow:inset 0 0 0 1px #7d6320
+}
+.roster-item[data-mode="stage"]:before{
+  content:"◆";color:#9fc7df;background:linear-gradient(160deg,#20303e,#0b1117)
+}
+.roster-name{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.roster-item:after{
+  content:"";position:absolute;right:-12px;top:-12px;width:42px;height:42px;transform:rotate(45deg);
+  background:#1aa8ff08;
+}
+.roster-item.selected,.roster-item:focus{
+  transform:none!important;
+  background:linear-gradient(180deg,#2e2816,#151107)!important;
+  box-shadow:inset 0 0 0 2px var(--gold),inset 0 0 18px #f4c64d19,0 0 14px #f4c64d24!important;
+}
+.roster-item.selected:before,.roster-item:focus:before{
+  background:linear-gradient(160deg,#f4c64d,#a87309)!important;color:#08090a!important;
+  box-shadow:0 0 12px #f4c64d44!important;
+}
+.stage-bay{
+  border:0!important;border-radius:10px!important;
+  background:linear-gradient(180deg,#0b1721,#060c12)!important;
+  box-shadow:inset 0 0 0 1px #173d58,0 8px 18px #0006!important;
+  position:relative;overflow:hidden
+}
+.stage-bay:before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(120deg,#1aa8ff0c,transparent 38%,transparent 70%,#f4c64d0b)
+}
+.stage-preview{
+  border:0!important;border-radius:7px!important;
+  box-shadow:inset 0 0 0 1px #205775,inset 0 -22px 40px #0009,0 4px 12px #0008!important;
+}
+.stage-preview-name{
+  left:10px!important;bottom:8px!important;
+  padding:4px 7px;border-radius:4px;
+  background:#02070bc9;
+  border-left:2px solid var(--blue)
+}
+.stage-readout{
+  border:0!important;border-radius:6px!important;
+  background:linear-gradient(180deg,#12202b,#09121a)!important;
+  box-shadow:inset 0 0 0 1px #214760!important
+}
+.action-dock{
+  padding:5px;border-radius:8px;
+  background:#050b10;
+  box-shadow:inset 0 0 0 1px #15344c
+}
+.action-dock .change-btn{
+  border:0!important;background:linear-gradient(180deg,#142331,#0a131d)!important;
+  box-shadow:inset 0 0 0 1px #29506b!important
+}
+.action-dock .start-btn{
+  border:0!important;background:linear-gradient(90deg,#b77d0d,#f4c64d 48%,#bc8410)!important;
+  box-shadow:inset 0 1px #fff3a055,0 0 16px #f4c64d27!important
+}
+
 .test-dock{
   position:fixed;right:8px;top:max(8px,env(safe-area-inset-top));z-index:40;
   display:flex;flex-direction:column;align-items:flex-end;gap:5px;pointer-events:none
@@ -510,6 +657,33 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
     new MutationObserver(syncStage).observe(stageName,{childList:true,subtree:true,characterData:true});
     syncStage();
   }
+})();
+</script>
+<script>
+(function(){
+  const grids = ['p1Grid','p2Grid','stageGrid'];
+  function initials(name){
+    const parts=(name||'').replace(/[_-]+/g,' ').trim().split(/\s+/).filter(Boolean);
+    return parts.slice(0,2).map(x=>x[0]).join('').toUpperCase() || '?';
+  }
+  function decorate(grid){
+    if(!grid) return;
+    grid.querySelectorAll('.roster-item').forEach(btn=>{
+      if(btn.dataset.guiDecorated==='1') return;
+      const name=(btn.textContent||'').trim();
+      btn.dataset.badge = btn.dataset.mode==='stage' ? '◆' : initials(name);
+      btn.innerHTML='<span class="roster-name"></span>';
+      btn.querySelector('.roster-name').textContent=name;
+      btn.dataset.guiDecorated='1';
+    });
+  }
+  grids.forEach(id=>{
+    const grid=document.getElementById(id);
+    if(!grid) return;
+    const sync=()=>decorate(grid);
+    new MutationObserver(sync).observe(grid,{childList:true});
+    sync();
+  });
 })();
 </script>
 <script>
