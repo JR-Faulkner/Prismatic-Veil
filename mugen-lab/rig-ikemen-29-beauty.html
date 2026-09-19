@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MobMugen · Graphite Arcade · I29 Visual Candidate</title>
+<style>
+:root{
+  --bg:#05080d;
+  --panel:#09111b;
+  --panel2:#0d1724;
+  --panel3:#111e2d;
+  --line:#1d72b8;
+  --line-soft:#19344d;
+  --blue:#19a8ff;
+  --blue2:#69c7ff;
+  --gold:#f4c64d;
+  --gold2:#ffdd78;
+  --text:#f4f8ff;
+  --muted:#7f93a8;
+  --good:#6eff9b;
+  --bad:#ff6678;
+  --shadow:#000c;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:
+  radial-gradient(circle at 50% -12%,#0d2740 0,transparent 35%),
+  linear-gradient(180deg,#05080d 0,#070b11 60%,#030509 100%);
+  color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{
+  padding:max(env(safe-area-inset-top),10px) 10px max(env(safe-area-inset-bottom),10px);
+  overflow-x:hidden;
+}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;
+  background:
+    linear-gradient(135deg,transparent 0 23%,#17a8ff0d 23.3% 23.7%,transparent 24% 72%,#f4c64d08 72.3% 72.6%,transparent 73%),
+    repeating-linear-gradient(0deg,#fff0 0 3px,#fff008 4px);
+  mix-blend-mode:screen;
+}
+.wrap{max-width:980px;margin:auto;position:relative;z-index:1}
+.bar{
+  display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:8px;
+  min-height:58px;margin-bottom:8px;padding:0 2px;
+}
+.brand{
+  display:flex;align-items:center;gap:10px;min-width:0;
+  font-size:clamp(16px,4vw,27px);font-weight:1000;font-style:italic;letter-spacing:.02em;
+  text-transform:uppercase;white-space:nowrap;
+  background:linear-gradient(180deg,#ffffff 0,#b8c4d4 42%,#179ef0 55%,#65d4ff 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 22px #1aa8ff33;
+}
+.brand:after{
+  content:"";height:2px;min-width:26px;flex:1;
+  background:linear-gradient(90deg,#1eb0ff,transparent);
+  box-shadow:0 0 12px #1eb0ffaa;
+}
+.pill,.ctrlbtn{
+  border:1px solid var(--line-soft);background:linear-gradient(180deg,#111b27,#09111a);
+  color:#b9c9d9;border-radius:9px;padding:8px 11px;font:900 10px ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.04em;box-shadow:inset 0 1px #ffffff0a,0 6px 18px #0006;
+}
+.pill{color:var(--gold);border-color:#7d6320}
+.pill[data-state="loading"]{border-color:#9c7826;color:#ffd96d;animation:pulse 1.4s ease-in-out infinite}
+.pill[data-state="running"]{border-color:#237943;color:var(--good)}
+.pill[data-state="error"]{border-color:#8c2530;color:var(--bad)}
+@keyframes pulse{50%{opacity:.58}}
+
+.stage{
+  position:relative;margin:0 auto;border:1px solid #1d5f93;border-radius:12px;overflow:hidden;background:#000;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 1px #6cc9ff12,inset 0 0 36px #0a315544,0 20px 60px #0009;
+  clip-path:polygon(0 12px,12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px));
+}
+.stage:before{
+  content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  border:1px solid #23b1ff35;clip-path:inherit;
+}
+.tag{
+  position:absolute;z-index:8;left:10px;top:8px;
+  padding:5px 9px;border-left:3px solid var(--blue);border-radius:3px;
+  background:#06111bdd;color:#d7e8f7;font:900 9px ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.12em;text-transform:uppercase;
+}
+body[data-runtime-state="loading"] .stage{border-color:#9c7826}
+body[data-runtime-state="running"] .stage{border-color:#2a8e54}
+body[data-runtime-state="error"] .stage{border-color:#8c2530}
+#ikemen-canvas{display:block;width:100%;height:auto;image-rendering:pixelated;background:#000;outline:none;position:relative;z-index:1}
+
+.setup{
+  position:absolute;inset:0;z-index:7;display:grid;place-items:center;padding:18px;
+  background:
+    radial-gradient(circle at 50% 12%,#153a5d88 0,transparent 42%),
+    linear-gradient(180deg,#08111bee,#05080df7);
+  overflow-y:auto;
+}
+.card{width:min(680px,100%);text-align:center}
+.card h2{
+  margin:0 0 7px;font-size:clamp(17px,4vw,25px);font-weight:1000;font-style:italic;text-transform:uppercase;
+  color:#eef7ff;letter-spacing:.04em;text-shadow:0 0 18px #1ca8ff55
+}
+.card p{color:#92a6b8;line-height:1.45;font-size:11px;margin:6px auto;max-width:620px}
+.pick,.start-btn{
+  appearance:none;display:inline-block;margin-top:12px;padding:12px 20px;border-radius:6px;
+  border:1px solid #d5a82b;background:linear-gradient(90deg,#c18a13,#f4c64d 48%,#d69c1a);
+  color:#0a0b0d;font-weight:1000;letter-spacing:.04em;cursor:pointer;
+  box-shadow:0 0 0 1px #ffdf7b2e,0 0 22px #f4c64d26;
+}
+.start-btn{margin:6px 4px}
+.change-btn{
+  appearance:none;display:inline-block;margin:6px 4px;padding:10px 16px;border-radius:6px;
+  border:1px solid #214664;background:#0b1722;color:#bed5e7;font-weight:900;cursor:pointer;
+}
+.hint{margin-top:9px;font-size:10px;color:#71869a}
+.hide{display:none!important}
+
+#charPickerSection{
+  margin-top:12px;padding:12px;border:1px solid #173754;border-radius:10px;
+  background:linear-gradient(180deg,#0b1520e8,#071019ee);
+  box-shadow:inset 0 0 24px #1268a21f;
+}
+.picker-heading{
+  color:#dcecff!important;font-size:12px!important;font-weight:1000;letter-spacing:.12em!important;
+  margin:2px 0 10px!important;text-transform:uppercase;
+}
+.picker-row{text-align:left;margin:8px 0}
+.picker-row-label{
+  font-size:9px;color:#8da2b7;margin-bottom:5px;letter-spacing:.11em;font-weight:900;text-transform:uppercase;
+}
+.roster-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:6px;margin:0;
+  max-height:160px;overflow-y:auto;border:1px solid #15344f;border-radius:8px;padding:6px;background:#06101a;
+  scrollbar-width:thin;scrollbar-color:#1a83c5 #06101a;
+}
+.roster-item{
+  padding:8px 5px;min-height:46px;display:flex;align-items:center;justify-content:center;
+  border:1px solid #1e405c;border-radius:5px;background:linear-gradient(180deg,#111d2a,#0b1420);
+  color:#c2d2df;font-size:9px;font-weight:900;text-align:center;cursor:pointer;word-break:break-word;outline:none;
+  transition:.12s ease;
+}
+.roster-item:focus,.roster-item.selected{
+  border-color:var(--gold);background:linear-gradient(180deg,#302815,#181409);color:#ffe38c;
+  box-shadow:0 0 0 1px #f4c64d55,0 0 14px #f4c64d33;transform:translateY(-1px)
+}
+.selection-display{display:flex;gap:6px;justify-content:center;margin:10px 0;flex-wrap:wrap}
+.sel-item{
+  min-width:92px;border:1px solid #1c4b6c;background:#08131e;color:#dcecf7;border-radius:5px;padding:6px 9px;
+  font-size:9px;font-weight:900;
+}
+.sel-item.filled{border-color:var(--gold);color:#ffe38c;box-shadow:0 0 12px #f4c64d28}
+.sel-label{color:#5ebdff;font-size:8px;display:block;letter-spacing:.1em}
+.picker-actions{text-align:center}
+.roster-empty{grid-column:1/-1;color:#6f8294;font-size:9px;padding:6px}
+
+.statusline{
+  display:flex;align-items:center;gap:7px;padding:8px 4px 4px;font:800 9px ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.11em;color:#647b8f;text-transform:uppercase;
+}
+.statusline:before{content:"";width:5px;height:5px;border-radius:50%;background:#1ca8ff;box-shadow:0 0 9px #1ca8ff}
+.statusline b{color:#b8cadd}
+
+.controls{
+  position:relative;margin-top:5px;height:220px;border:1px solid #173b57;border-radius:12px;
+  background:
+    linear-gradient(135deg,#17324a20 0 18%,transparent 18% 82%,#f4c64d0b 82%),
+    radial-gradient(circle at 50% -20%,#174f793d,transparent 50%),
+    linear-gradient(180deg,#0a121c,#05080d);
+  overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;
+  box-shadow:inset 0 0 30px #0008,0 12px 32px #0007;
+}
+.controls.hidden,.diag-wrap.hidden{display:none}
+.controls:before{
+  content:"MOBMUGEN // TOUCH DECK";position:absolute;left:50%;top:7px;transform:translateX(-50%);
+  font:900 7px ui-monospace;letter-spacing:.22em;color:#5b8aa944
+}
+.cz{position:absolute;top:16px;bottom:38px;width:50%;display:flex;align-items:center;justify-content:center}
+.cz.left{left:0}.cz.right{right:0}
+.dpad{
+  width:min(35vw,146px);height:min(35vw,146px);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+  padding:7px;border-radius:50%;border:1px solid #62bfff65;
+  background:radial-gradient(circle,#0d1621 0 24%,#0b1723aa 25% 49%,#07101acc 50% 100%);
+  box-shadow:0 0 18px #1aa8ff1f,inset 0 0 22px #1b699b2e;
+  opacity:.72;transition:opacity .12s;
+}
+.dpad:active{opacity:1}
+.dir{appearance:none;border:0;background:transparent;color:#bfd9eb;font:950 20px ui-monospace;display:flex;align-items:center;justify-content:center;touch-action:none}
+.dir.center{pointer-events:none;font-size:7px;color:#47708b;border:1px solid #2e658766;border-radius:50%;margin:13%;background:#071019}
+.dir.on{background:radial-gradient(circle,#1ba9ff99,transparent 68%);transform:scale(.91);color:#fff}
+.acts{position:relative;width:min(44vw,190px);height:152px;opacity:.72;transition:opacity .12s}
+.acts:active{opacity:1}
+.act{
+  position:absolute;width:min(13vw,54px);height:min(13vw,54px);border-radius:50%;color:#dfeeff;
+  font:950 11px ui-monospace;touch-action:none;
+  background:radial-gradient(circle at 36% 28%,#ffffff24,#111d2a 45%,#060a0f 100%);
+  box-shadow:0 5px 12px #0009,inset 0 0 10px #ffffff0a;
+  transition:.08s ease;
+}
+.act.on{transform:scale(.9);filter:brightness(1.55);opacity:1;box-shadow:0 0 20px currentColor}
+.bx,.bz{border:1px solid #22a8ff}.by,.bx2{border:1px solid #f4c64d}.bz2,.bc{border:1px solid #e4505c}
+.bx{left:0;top:12%}.by{left:35%;top:0}.bz2{right:0;top:12%}.bz{left:0;bottom:0}.bx2{left:35%;bottom:10%}.bc{right:0;bottom:0}
+.util{
+  position:absolute;left:50%;bottom:6px;transform:translateX(-50%);width:92%;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:6px
+}
+.util button{
+  height:28px;border:1px solid #33536a;background:#0a121ad9;color:#9fb6c8;border-radius:5px;
+  font:950 8px ui-monospace;letter-spacing:.08em;touch-action:none
+}
+.util button.on{border-color:var(--gold);color:#ffe58d;background:#2a210d;transform:scale(.98)}
+
+.diag-head{display:flex;align-items:center;justify-content:space-between;margin-top:5px;padding:0 2px}
+.diag-head span{font:900 8px ui-monospace;color:#556d82;letter-spacing:.12em}
+.diag-toggle{border:1px solid #1d405b;background:#09131d;color:#8fa5b7;border-radius:6px;padding:5px 8px;font:900 8px ui-monospace}
+.diag-wrap{margin-top:4px}
+.diag{
+  margin-top:6px;border:1px solid #18354c;border-radius:7px;background:#050b11;padding:9px;max-height:160px;
+  overflow:auto;white-space:pre-wrap;font:9px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:#7f96aa
+}
+.copy{
+  position:fixed;right:10px;bottom:max(12px,env(safe-area-inset-bottom));z-index:20;
+  border:1px solid #2b5875;background:#09131ddd;color:#9bb6ca;border-radius:7px;padding:8px 10px;
+  font:bold 9px ui-monospace;box-shadow:0 5px 18px #0008
+}
+.bad{color:var(--bad)}
+@media(max-width:650px){
+  .bar{grid-template-columns:1fr auto auto;gap:5px}.brand{grid-column:1/-1;min-height:30px}
+  .pill{margin-right:auto}.ctrlbtn{padding:7px 8px}
+  .setup{padding:12px}.card h2{font-size:18px}
+  #charPickerSection{padding:9px}.roster-grid{max-height:130px;grid-template-columns:repeat(auto-fill,minmax(58px,1fr))}
+  .controls{height:212px}
+}
+@media(max-width:420px){
+  .bar{min-height:78px}.tag{font-size:8px}.controls{height:205px}
+  .dpad{width:138px;height:138px}.acts{width:176px;height:146px}
+}
+@media(min-width:1100px){.wrap{max-width:1200px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <div class="brand">MobMugen</div>
+    <div id="runtimePill" class="pill">IDLE</div>
+    <button id="ctrlToggle" class="ctrlbtn" type="button">HIDE CTRL</button>
+    <button id="debugToggle" class="ctrlbtn" type="button">SHOW DEBUG</button>
+  </div>
+
+  <div class="stage">
+    <div class="tag">Gameplay Viewport</div>
+    <div id="setup" class="setup">
+      <div class="card" id="setupCard">
+        <h2>Graphite Arcade</h2>
+        <p id="setupDesc">Load your MUGEN content zip, select fighters and stage, then launch the match.</p>
+        <label id="zipLabel" class="pick">CHOOSE MUGEN ZIP<input id="zipInput" type="file" accept=".zip,application/zip" hidden></label>
+        <div id="prepDiag" class="diag">Waiting for zip…</div>
+        <div id="charPickerSection" class="hide">
+          <p class="picker-heading">Select Fighters &amp; Stage</p>
+          <div class="picker-row"><div class="picker-row-label">Player 1</div><div id="p1Grid" class="roster-grid"></div></div>
+          <div class="picker-row"><div class="picker-row-label">Player 2 / CPU</div><div id="p2Grid" class="roster-grid"></div></div>
+          <div class="picker-row"><div class="picker-row-label">Stage</div><div id="stageGrid" class="roster-grid"></div></div>
+          <div class="selection-display">
+            <div class="sel-item"><span class="sel-label">P1</span><span id="selP1">-</span></div>
+            <div class="sel-item"><span class="sel-label">P2</span><span id="selP2">-</span></div>
+            <div class="sel-item"><span class="sel-label">STAGE</span><span id="selStage">-</span></div>
+          </div>
+          <div class="picker-actions">
+            <button id="startBtn" class="start-btn">START MATCH</button>
+            <button id="changeZipBtn" class="change-btn">CHANGE ZIP</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <canvas id="ikemen-canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+  </div>
+
+  <div class="statusline">Runtime <b id="runtimeState">WAITING FOR ZIP</b></div>
+
+  <div id="controls" class="controls">
+    <div class="cz left"><div class="dpad">
+      <button class="dir" data-macro="UL">↖</button><button class="dir" data-k="ArrowUp" data-key="ArrowUp">↑</button><button class="dir" data-macro="UR">↗</button>
+      <button class="dir" data-k="ArrowLeft" data-key="ArrowLeft">←</button><div class="dir center">P1</div><button class="dir" data-k="ArrowRight" data-key="ArrowRight">→</button>
+      <button class="dir" data-macro="DL">↙</button><button class="dir" data-k="ArrowDown" data-key="ArrowDown">↓</button><button class="dir" data-macro="DR">↘</button>
+    </div></div>
+    <div class="cz right"><div class="acts">
+      <button class="act bx" data-k="KeyA" data-key="a">X</button><button class="act by" data-k="KeyS" data-key="s">Y</button><button class="act bz2" data-k="KeyD" data-key="d">Z</button>
+      <button class="act bz" data-k="KeyZ" data-key="z">A</button><button class="act bx2" data-k="KeyX" data-key="x">B</button><button class="act bc" data-k="KeyC" data-key="c">C</button>
+    </div></div>
+    <div class="util"><button data-k="Enter" data-key="Enter">START</button><button data-k="Escape" data-key="Escape">ESC</button></div>
+  </div>
+
+  <div class="diag-head"><span>DEBUG TRACE</span><button id="diagInlineToggle" class="diag-toggle" type="button">EXPAND</button></div>
+  <div id="diagWrap" class="diag-wrap hidden"><div id="diag" class="diag">I29 ready</div></div>
+</div>
+<button id="copyTrace" class="copy">COPY TRACE</button>
+<script src="./rig-ikemen-29.js"></script>
+</body>
+</html>
