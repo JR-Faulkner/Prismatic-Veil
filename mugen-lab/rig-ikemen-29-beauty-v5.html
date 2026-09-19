@@ -608,7 +608,7 @@ body.match-live .test-dock{
   /* Match view: slightly taller cinema window using a controlled cover crop.
      This preserves sprite proportions; it crops a small amount from the far left/right instead of stretching. */
   body.match-live .stage{
-    height:min(43vh,500px)!important;
+    height:min(56vh,650px)!important;
     overflow:hidden!important;
     background:#000!important;
   }
@@ -623,6 +623,28 @@ body.match-live .test-dock{
   body.match-live .controls{
     margin-top:4px!important;
   }
+}
+
+
+/* Persistent selection markers across the shared roster handoff */
+.shared-grid .roster-item.p1-locked,
+.shared-grid .roster-item.p2-locked{position:relative}
+.shared-grid .roster-item.p1-locked:before,
+.shared-grid .roster-item.p2-locked:before{
+  display:grid!important;position:absolute;left:5px;top:5px;z-index:3;
+  min-width:20px;height:16px;padding:0 4px;border-radius:4px;place-items:center;
+  font:1000 7px ui-monospace;letter-spacing:.04em;
+}
+.shared-grid .roster-item.p1-locked:before{
+  content:"P1";background:#1488c9;color:#eaf8ff;box-shadow:0 0 8px #1aa8ff55
+}
+.shared-grid .roster-item.p2-locked:before{
+  content:"CPU";background:#a8780c;color:#fff2b4;box-shadow:0 0 8px #f4c64d44
+}
+.shared-grid .roster-item.p1-locked.p2-locked:after{
+  content:"P1 / CPU";position:absolute;right:5px;top:5px;z-index:3;
+  padding:2px 4px;border-radius:4px;background:#241d0c;color:#ffe58b;
+  font:1000 6px ui-monospace;letter-spacing:.03em
 }
 
 </style>
@@ -783,17 +805,57 @@ body.match-live .test-dock{
   const p2 = document.getElementById('p2Grid');
   const tabs = [...document.querySelectorAll('[data-roster-mode]')];
   if(!panel || !p1 || !p2) return;
+
   function show(mode){
     panel.dataset.mode = mode;
     p1.classList.toggle('hide', mode !== 'p1');
     p2.classList.toggle('hide', mode !== 'p2');
     tabs.forEach(t => t.classList.toggle('active', t.dataset.rosterMode === mode));
   }
-  tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.rosterMode)));
+
+  function selectedIdx(grid){
+    const el = grid.querySelector('.roster-item.selected');
+    return el ? el.dataset.idx : null;
+  }
+
+  function syncLocks(){
+    const p1Idx = selectedIdx(p1);
+    const p2Idx = selectedIdx(p2);
+    [p1,p2].forEach(grid => {
+      grid.querySelectorAll('.roster-item').forEach(el => {
+        el.classList.toggle('p1-locked', p1Idx !== null && el.dataset.idx === p1Idx);
+        el.classList.toggle('p2-locked', p2Idx !== null && el.dataset.idx === p2Idx);
+      });
+    });
+  }
+
+  tabs.forEach(t => t.addEventListener('click', () => {
+    show(t.dataset.rosterMode);
+    const grid = t.dataset.rosterMode === 'p1' ? p1 : p2;
+    const target = grid.querySelector('.roster-item.selected') || grid.querySelector('.roster-item');
+    if(target) target.focus();
+  }));
+
+  // Click/touch handoff.
   p1.addEventListener('click', e => {
-    if(e.target.closest('.roster-item')) setTimeout(() => show('p2'), 0);
+    if(e.target.closest('.roster-item')) setTimeout(() => { syncLocks(); show('p2'); }, 0);
   });
+  p2.addEventListener('click', e => {
+    if(e.target.closest('.roster-item')) setTimeout(syncLocks, 0);
+  });
+
+  // D-pad/keyboard handoff from the runtime focuses the next grid.
+  // Mirror that visually so the visible roster always follows actual focus.
+  p1.addEventListener('focusin', () => { show('p1'); syncLocks(); });
+  p2.addEventListener('focusin', () => { show('p2'); syncLocks(); });
+
+  // Keep lock markers current when the engine changes .selected classes.
+  const observer = new MutationObserver(syncLocks);
+  observer.observe(p1,{subtree:true,attributes:true,attributeFilter:['class'],childList:true});
+  observer.observe(p2,{subtree:true,attributes:true,attributeFilter:['class'],childList:true});
+
   show('p1');
+  syncLocks();
 })();
 </script>
 <script>
