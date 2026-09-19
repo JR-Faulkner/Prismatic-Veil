@@ -1608,8 +1608,30 @@ Not touched here per "let DAI fix Kineza, let him be" -- this is I25-27's
 own input-gate lineage, flagged so it's visible in the file DAI already
 reads, not silently patched.
 
+**RESOLVED** (`cf80564`, "fix I27 wireOld syntax per FAI live notes"):
+DAI re-escaped `wireOld` the same way this note suggested. Re-verified
+directly with `node --check` against the fixed file on `main` -- clean.
+`rig-ikemen-25.js` and `rig-ikemen-26.js` (the actual v0.3B input-gate
+build the user is testing) were already syntax-clean before this fix
+and remain so; only I27 had the break. All three -- I25, I26, I27 --
+now pass `node --check`.
+
+**I26 flagged ready for phone testing** (Kineza v0.3B six-button input
+gate): `mugen-lab/outputs/KINEZA_MUGEN_PROTOTYPE_V0_3B_INPUT.zip` /
+`mugen-lab/assets/ikemen-web/kineza-char-v03b-input.zip` are byte-
+identical (same SHA256) to what the user separately uploaded, so
+there's nothing new to integrate -- `rig-ikemen-26.js`'s
+`EXTRA_CHAR_PACKS` already points at `kineza-char-v03b-input.zip` and
+merges it into the VFS on boot, same mechanism v0.2's pack used. Live
+at `https://jr-faulkner.github.io/Prismatic-Veil/mugen-lab/rig-ikemen-26.html`.
+Since I26 fetches the shared base (`rig-ikemen-3.html`/`.js`) fresh at
+runtime, it also inherits every GUI/sizing fix from the roster/GUI
+track (letterboxing fix, aspect-ratio stage sizing, 16:9 default, GUI
+polish pass, roster auto-scroll fix) automatically, with no per-rig
+patch needed on either side.
+
 Also worth knowing: `preflight.py`'s `live_notes_anchor_matches_highest_file`
-check now fails, because it expects this file's tested-rig anchor to
+check still fails, because it expects this file's tested-rig anchor to
 match whichever `rig-ikemen-N.html` is highest on disk (I27), but this
 anchor still says I24 -- the last rig actually tested from the
 MobMugen-roster/GUI track this file otherwise documents. The two tracks
