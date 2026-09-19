@@ -240,6 +240,41 @@
     } catch (_) { return null; }
   }
 
+  // Zip64 sentinel: a 32-bit size/offset field of exactly this value means
+  // "the real value is 64-bit and lives in the Zip64 extra field instead"
+  // -- it is NOT a literal ~4.29GB size. Trusting it literally was a real,
+  // reproduced bug: entryRaw()'s file.slice(start, start + ent.comp) gets
+  // silently clamped by the Blob spec to "the rest of the file", so a
+  // single Zip64-flagged entry anywhere in a multi-gigabyte zip made the
+  // next read materialize the ENTIRE remainder of the archive into memory
+  // before decompression even started -- confirmed with a synthetic
+  // repro: an unrelated 150MB tail added ~860ms just to the file-read
+  // step on a fast dev machine; scaled to a real ~1.7GB zip on an iPhone,
+  // this is a multi-second-plus fully-blocked main thread with no error,
+  // matching a real device report exactly ("frozen, couldn't even tap
+  // Copy Trace"). Some zip encoders write Zip64 fields per-entry
+  // regardless of whether that entry actually needs 64-bit sizes.
+  const ZIP64_SENTINEL = 0xFFFFFFFF;
+  function readZip64Extra(cv, extraStart, extraLen, need) {
+    // need: {uncomp: bool, comp: bool, local: bool} -- which fields were
+    // sentinel'd in the main record and must be read from here instead,
+    // in this fixed order per the zip spec (only the needed ones appear).
+    let p = extraStart;
+    const end = extraStart + extraLen;
+    while (p + 4 <= end) {
+      const id = u16(cv, p), size = u16(cv, p + 2);
+      if (id === 0x0001) {
+        let q = p + 4;
+        const out = {};
+        if (need.uncomp && q + 8 <= p + 4 + size) { out.uncomp = Number(cv.getBigUint64(q, true)); q += 8; }
+        if (need.comp && q + 8 <= p + 4 + size) { out.comp = Number(cv.getBigUint64(q, true)); q += 8; }
+        if (need.local && q + 8 <= p + 4 + size) { out.local = Number(cv.getBigUint64(q, true)); q += 8; }
+        return out;
+      }
+      p += 4 + size;
+    }
+    return {};
+  }
   async function listZipEntries(file) {
     const tailStart = Math.max(0, file.size - 65557);
     const tb = await file.slice(tailStart).arrayBuffer();
@@ -253,9 +288,18 @@
     const dec = new TextDecoder();
     let p = 0, entries = [];
     while (p + 46 <= cv.byteLength && u32(cv, p) === 0x02014b50) {
-      const method = u16(cv, p + 10), comp = u32(cv, p + 20), uncomp = u32(cv, p + 24),
+      let method = u16(cv, p + 10), comp = u32(cv, p + 20), uncomp = u32(cv, p + 24),
         fn = u16(cv, p + 28), ex = u16(cv, p + 30), cm = u16(cv, p + 32), local = u32(cv, p + 42),
         name = dec.decode(new Uint8Array(cb, p + 46, fn));
+      const needZip64 = comp === ZIP64_SENTINEL || uncomp === ZIP64_SENTINEL || local === ZIP64_SENTINEL;
+      if (needZip64 && ex > 0) {
+        const real = readZip64Extra(cv, p + 46 + fn, ex, {
+          uncomp: uncomp === ZIP64_SENTINEL, comp: comp === ZIP64_SENTINEL, local: local === ZIP64_SENTINEL,
+        });
+        if (real.uncomp !== undefined) uncomp = real.uncomp;
+        if (real.comp !== undefined) comp = real.comp;
+        if (real.local !== undefined) local = real.local;
+      }
       entries.push({ name, method, comp, uncomp, local });
       p += 46 + fn + ex + cm;
     }
