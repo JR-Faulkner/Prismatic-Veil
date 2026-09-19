@@ -1945,3 +1945,15 @@ Link/build discipline remains unchanged: every test build handed to the user get
 - TEST portrait diagnostics now begin with the Kineza self-test result and then show independent P1/CPU results.
 - V14 still tries motif-configured portrait sprite IDs first, then 9000,1, then 9000,0.
 - SFF v2 remains pending. V14 is source-published / syntax-checked only until phone witness.
+
+
+### 2026-09-19 · V15 Kineza portrait authority correction
+- Phone witness on V14: **Kineza did populate**, proving the SFF v1 / PCX portrait extraction and browser image presentation path can work on the user's iPhone.
+- However, the sprite shown was the **wrong Kineza artwork for character select**. The validated Kineza SFF's available `9000,0` is not the desired select portrait.
+- User supplied the correct Kineza artwork again in chat on 2026-09-19. That image is now the **authoritative MobMugen Kineza select portrait**.
+- Repo asset added at `mugen-lab/assets/mobmugen/kineza-select-authority.jpg`.
+- V15 uses a character-specific portrait override for Kineza and keeps dynamic motif/SFF extraction for the rest of the roster.
+- The override does **not** replace or rewrite Kineza's gameplay SFF. It is UI-only.
+- The Kineza SFF decoder self-test remains separate and still tests raw SFF decoding so future generic portrait work is not masked by the override.
+- Portrait card framing uses the approved artwork as a cropped character-select image while preserving the approved portrait/select -> landscape-fight architecture.
+- Next portrait work remains generic roster portrait correctness and roster thumbnails; do not let the Kineza override become a substitute for the general extraction pipeline.
