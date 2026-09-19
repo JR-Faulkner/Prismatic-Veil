@@ -509,6 +509,32 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
   .dpad{width:138px;height:138px}.acts{width:176px;height:146px}
 }
 @media(min-width:1100px){.wrap{max-width:1200px}}
+
+/* MOCK-FIDELITY SELECT PASS */
+.fighter-grids,.fighter-pick-panel,.row-note{display:none!important}
+.shared-roster-panel{position:relative;z-index:1;padding:7px;border-radius:10px;background:linear-gradient(180deg,#0a1722,#061019);box-shadow:inset 0 0 0 1px #173a55,0 8px 18px #0006}
+.shared-roster-head{display:grid;grid-template-columns:58px 1fr 58px;align-items:center;gap:6px;margin-bottom:6px}
+.shared-roster-title{text-align:center;font:1000 10px ui-monospace;letter-spacing:.16em;color:#cfeaff}
+.roster-mode{height:28px;border:0;border-radius:6px;background:#0b1721;color:#6f879a;font:1000 8px ui-monospace;letter-spacing:.08em;box-shadow:inset 0 0 0 1px #21455f}
+.roster-mode.active{background:linear-gradient(180deg,#16314a,#0d1b28);color:#8bd3ff;box-shadow:inset 0 0 0 1px #2b8fc8,0 0 12px #1aa8ff20}
+.shared-roster-panel[data-mode="p2"] .roster-mode[data-roster-mode="p2"]{background:linear-gradient(180deg,#3a3118,#171208);color:#ffe287;box-shadow:inset 0 0 0 1px #a78428,0 0 12px #f4c64d20}
+.shared-roster-viewport{position:relative}
+.shared-grid{grid-template-columns:repeat(4,1fr)!important;max-height:142px!important}
+.shared-grid .roster-item{
+  min-height:58px!important;padding:7px!important;justify-content:center!important;text-align:center!important;
+  border:0!important;border-radius:7px!important;background:linear-gradient(180deg,#111e2b,#09131d)!important;
+  color:#d2dfeb!important;box-shadow:inset 0 0 0 1px #1d435f,inset 0 1px #ffffff0a,0 2px 4px #0007!important;
+  font-size:10px!important;white-space:normal;word-break:break-word
+}
+.shared-grid .roster-item:before{display:none!important}
+.shared-grid .roster-item.selected,.shared-grid .roster-item:focus{
+  transform:none!important;background:linear-gradient(180deg,#2e2816,#151107)!important;color:#ffe690!important;
+  box-shadow:inset 0 0 0 2px var(--gold),inset 0 0 18px #f4c64d19,0 0 14px #f4c64d24!important
+}
+.stage-preview{height:86px!important}
+.stage-grid{max-height:64px!important}
+@media(max-width:650px){.shared-grid{grid-template-columns:repeat(4,1fr)!important;max-height:128px!important}}
+
 </style>
 </head>
 <body>
@@ -547,14 +573,15 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
             </div>
           </div>
 
-          <div class="fighter-grids">
-            <div class="picker-row fighter-pick-panel">
-              <div class="picker-row-label"><span>P1 ROSTER</span><span class="row-note">BLUE CURSOR</span></div>
-              <div id="p1Grid" class="roster-grid"></div>
+          <div id="sharedRosterPanel" class="shared-roster-panel" data-mode="p1">
+            <div class="shared-roster-head">
+              <button class="roster-mode active" data-roster-mode="p1" type="button">P1</button>
+              <div class="shared-roster-title">ROSTER</div>
+              <button class="roster-mode" data-roster-mode="p2" type="button">CPU</button>
             </div>
-            <div class="picker-row fighter-pick-panel">
-              <div class="picker-row-label"><span>CPU ROSTER</span><span class="row-note">GOLD LOCK</span></div>
-              <div id="p2Grid" class="roster-grid"></div>
+            <div class="shared-roster-viewport">
+              <div id="p1Grid" class="roster-grid shared-grid"></div>
+              <div id="p2Grid" class="roster-grid shared-grid hide"></div>
             </div>
           </div>
 
@@ -661,29 +688,22 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 </script>
 <script>
 (function(){
-  const grids = ['p1Grid','p2Grid','stageGrid'];
-  function initials(name){
-    const parts=(name||'').replace(/[_-]+/g,' ').trim().split(/\s+/).filter(Boolean);
-    return parts.slice(0,2).map(x=>x[0]).join('').toUpperCase() || '?';
+  const panel = document.getElementById('sharedRosterPanel');
+  const p1 = document.getElementById('p1Grid');
+  const p2 = document.getElementById('p2Grid');
+  const tabs = [...document.querySelectorAll('[data-roster-mode]')];
+  if(!panel || !p1 || !p2) return;
+  function show(mode){
+    panel.dataset.mode = mode;
+    p1.classList.toggle('hide', mode !== 'p1');
+    p2.classList.toggle('hide', mode !== 'p2');
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.rosterMode === mode));
   }
-  function decorate(grid){
-    if(!grid) return;
-    grid.querySelectorAll('.roster-item').forEach(btn=>{
-      if(btn.dataset.guiDecorated==='1') return;
-      const name=(btn.textContent||'').trim();
-      btn.dataset.badge = btn.dataset.mode==='stage' ? '◆' : initials(name);
-      btn.innerHTML='<span class="roster-name"></span>';
-      btn.querySelector('.roster-name').textContent=name;
-      btn.dataset.guiDecorated='1';
-    });
-  }
-  grids.forEach(id=>{
-    const grid=document.getElementById(id);
-    if(!grid) return;
-    const sync=()=>decorate(grid);
-    new MutationObserver(sync).observe(grid,{childList:true});
-    sync();
+  tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.rosterMode)));
+  p1.addEventListener('click', e => {
+    if(e.target.closest('.roster-item')) setTimeout(() => show('p2'), 0);
   });
+  show('p1');
 })();
 </script>
 <script>
