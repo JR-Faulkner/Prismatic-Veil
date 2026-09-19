@@ -1817,3 +1817,44 @@ unaffected. Applied to both `rig-ikemen-3.js` (fixes every wrapper rig)
 and `rig-ikemen-29.js` directly (collapsed builds don't auto-inherit
 base fixes -- see the I29 section above). **Phone-confirmed fixed**:
 re-tested with the same class of content that froze, no issues.
+
+## FOR DAI -- heads up: a beautification / image-quality pass is coming
+
+The user is planning to have DAI run a beautification pass on MobMugen
+next -- specifically improving overall visual polish and image quality
+(the roster/GUI track's own polish work is documented earlier in this
+file: status-pill/frame state coloring, roster touch targets and
+selected-state contrast, selection-chip fill states, the debug-panel
+default-collapse, and the aspect-ratio-based stage sizing that replaced
+the old flat vh guess -- all of that lives in the shared base
+`rig-ikemen-3.html`/`.js` and is already inherited by every rig that
+fetches it fresh, I24 through I28, plus I29 by construction since it
+was captured from that base).
+
+This session (the roster/GUI + base-file track) is being put on hold
+for now while that beautification work is scoped/run. Nothing further
+is expected from this side until picked back up.
+
+Two things worth knowing before that pass starts, both from this
+session's own history on this file:
+
+- **I29 is a collapsed/static build** (`rig-ikemen-29.html`/`.js`,
+  no runtime fetch+patch) and does NOT auto-inherit fixes made to the
+  shared base going forward -- any base-file fix (including the two
+  above: the healthy-status color bug and the Zip64-sentinel freeze)
+  had to be applied to `rig-ikemen-3.*` AND `rig-ikemen-29.js`
+  separately. If beautification work touches image/asset loading or
+  anything else `rig-ikemen-3.*` owns, check whether I29 needs the same
+  change mirrored in, same as this session did for both fixes above.
+- **Art/asset traps already documented in `CLAUDE.md`** are worth a
+  re-read before an image-quality pass specifically: the "authored UI
+  sheets ship fake transparency" entry (checkerboard baked into pixel
+  data, not real alpha), the "texture rendered far smaller than its
+  source resolution reads as translucent" entry (linear-downscale alpha
+  averaging plus genuinely-semi-transparent art both look identical and
+  need different fixes), and the tint-based outline/backing-layer entry
+  (tinting doesn't normalize alpha) -- all three were real, previously-
+  shipped bugs on the battle-v2/tactical side of this repo, not
+  hypothetical, and the same failure modes are exactly what an image-
+  quality pass risks reintroducing if source-resolution and alpha-
+  channel handling aren't checked explicitly.
