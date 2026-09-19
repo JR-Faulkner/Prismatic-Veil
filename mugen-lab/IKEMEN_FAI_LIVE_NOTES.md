@@ -1906,3 +1906,21 @@ What V12 adds:
 Current limitation:
 - **SFF v2 portrait decoding is not enabled in V12 yet.** V2 characters fall back cleanly to the monogram and log the reason in debug. Do not claim universal portrait support until the v2 path is added and witnessed.
 - Roster-tile thumbnails and real stage preview extraction are still pending.
+
+
+### 2026-09-19 · V12 phone witness + beautification queue correction
+- User phone witness: **no real fighter portraits populated in V12**.
+- Therefore V12 portrait extraction is **not approved / not considered working**. Do not describe the portrait lane as complete.
+- Immediate portrait-lane task remains to diagnose whether the loaded roster is predominantly SFF v2, whether the SFF path resolver is missing the actual files, or whether the 9000,1 decoder itself needs correction. Preserve V11/V12 UI architecture while diagnosing.
+- The user's later request to reuse the loaded MUGEN motif's original character-select navigation / confirm sounds is **added to the backlog only** and must **not displace the previously agreed beautification order**.
+
+Current beautification priority order:
+1. Fix and verify **real fighter portrait extraction**.
+2. Add **real roster thumbnails** where practical from the same character art pipeline.
+3. Add **real stage imagery / stage preview extraction** and clean player-facing stage names.
+4. Polish the **landscape side-gutter touch controller skin** while preserving the centered true 16:9 playfield.
+5. Implement **real engine pause/freeze on portrait rotation during an active match**, with rotate-to-resume gate and held-input cleanup.
+6. Add **selection / transition micro-polish** (lock flash, cursor treatment, VS transition, loading treatment).
+7. Then add **native motif UI sound extraction** from the loaded MUGEN package (cursor move, confirm, cancel/back, stage navigation/confirm where available).
+
+Link/build discipline remains unchanged: every test build handed to the user gets a fresh tappable cache-busted GitHub Pages URL.
