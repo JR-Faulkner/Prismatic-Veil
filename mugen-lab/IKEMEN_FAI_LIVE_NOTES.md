@@ -1957,3 +1957,13 @@ Link/build discipline remains unchanged: every test build handed to the user get
 - The Kineza SFF decoder self-test remains separate and still tests raw SFF decoding so future generic portrait work is not masked by the override.
 - Portrait card framing uses the approved artwork as a cropped character-select image while preserving the approved portrait/select -> landscape-fight architecture.
 - Next portrait work remains generic roster portrait correctness and roster thumbnails; do not let the Kineza override become a substitute for the general extraction pipeline.
+
+
+### 2026-09-19 · V16 Kineza portrait asset correction
+- User phone screenshot of V15 showed the Kineza fighter card still displaying the question-mark fallback. V15 is therefore **not approved**.
+- Root cause in our handoff asset: the repo file previously written at `mugen-lab/assets/mobmugen/kineza-select-authority.jpg` was **not the actual user-supplied Kineza image**.
+- The correct supplied image was re-read from the mounted conversation asset and replaced at the same repo path.
+- Correct portrait asset commit: `a80b64225f2e724bc6def3760b291157d6c648e4`.
+- V16 uses a new page/runtime filename and a new asset cache-buster so Safari cannot reuse the bad V15 asset URL.
+- V16 also logs explicit portrait IMG load success/failure and restores the fallback mark if the image request itself fails.
+- Do not call the Kineza select portrait fixed until the user witnesses the correct supplied art on iPhone.
