@@ -121,8 +121,8 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
   box-shadow:inset 0 0 24px #1268a21f;
 }
 .picker-heading{
-  color:#dcecff!important;font-size:12px!important;font-weight:1000;letter-spacing:.12em!important;
-  margin:2px 0 10px!important;text-transform:uppercase;
+  color:#dcecff!important;font-size:11px!important;font-weight:1000;letter-spacing:.12em!important;
+  margin:0!important;text-transform:uppercase;
 }
 .picker-row{text-align:left;margin:8px 0}
 .picker-row-label{
@@ -266,9 +266,10 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 .controls{margin-top:3px!important}
 
 
-.select-titlebar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-bottom:9px;padding-bottom:8px;border-bottom:1px solid #183d5a}
-.select-kicker,.select-step{font:900 8px ui-monospace;letter-spacing:.14em;color:#5bbcff;text-transform:uppercase}
-.select-step{text-align:right;color:#7f93a8}
+.setup:has(#charPickerSection:not(.hide)) .setup-title,
+.setup:has(#charPickerSection:not(.hide)) #setupDesc{display:none}
+.setup:has(#charPickerSection:not(.hide)) .card{padding-top:0}
+.select-titlebar{display:block;margin-bottom:5px;padding-bottom:5px;border-bottom:1px solid #183d5a}
 .select-titlebar .picker-heading{margin:0!important;text-align:center}
 .versus-banner{display:grid;grid-template-columns:1fr 52px 1fr;gap:8px;align-items:stretch;margin:8px 0 10px}
 .fighter-card{position:relative;min-height:88px!important;padding:12px 12px 10px!important;display:flex;flex-direction:column;justify-content:flex-end;text-align:left;overflow:hidden;
@@ -340,7 +341,7 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
   .pill{margin-right:auto}.ctrlbtn{padding:7px 8px}
   .setup{padding:12px}.card h2{font-size:18px}
   #charPickerSection{padding:9px}.roster-grid{max-height:112px;grid-template-columns:repeat(auto-fill,minmax(58px,1fr))}
-  .select-titlebar{grid-template-columns:1fr auto}.select-step{display:none}.select-titlebar .picker-heading{text-align:right}
+  .select-titlebar .picker-heading{text-align:center}
   .versus-banner{grid-template-columns:1fr 38px 1fr}.fighter-card{min-height:76px!important;padding:9px!important}.vs-core span{width:31px;height:31px;font-size:12px}
   .fighter-grids{grid-template-columns:1fr}.stage-bay-head{align-items:center}.stage-readout{min-width:120px}
   .action-dock{grid-template-columns:1fr 1.35fr}
@@ -369,9 +370,7 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
         <div id="prepDiag" class="diag">Waiting for zip…</div>
         <div id="charPickerSection" class="hide">
           <div class="select-titlebar">
-            <span class="select-kicker">ARCADE LINK</span>
             <p class="picker-heading">Select Fighters</p>
-            <span class="select-step">01 / FIGHTERS</span>
           </div>
 
           <div class="versus-banner">
