@@ -1858,3 +1858,51 @@ session's own history on this file:
   hypothetical, and the same failure modes are exactly what an image-
   quality pass risks reintroducing if source-resolution and alpha-
   channel handling aren't checked explicitly.
+
+
+---
+
+## 2026-09-19 · MobMugen beautification / orientation authority (DAI continuation)
+
+### Phone-witnessed UI anchor
+- **V11** `mugen-lab/rig-ikemen-29-beauty-v11.html` is the current user-approved beautification/setup anchor before the portrait pass.
+- User explicitly said the V11 setup "looks good thus far."
+- Keep the stable I29 runtime logic underneath unless a visual feature requires a narrowly scoped hook.
+
+### Locked screen architecture
+- **Portrait is the front-end mode**: load/library, fighter select, stage select, and related setup.
+- **Landscape is the fight mode**.
+- Pressing FIGHT in portrait is gated by a rotate prompt; the match should not begin until landscape is confirmed.
+- Gameplay remains **true 16:9**. Do not crop or stretch the fight image to fake more portrait height.
+- In landscape, center the 16:9 fight canvas and use the phone's extra-wide left/right gutters for touch controls.
+- Touch is the default assumption. Bluetooth/controller support is optional enhancement, not a prerequisite.
+- D-pad belongs at the far left edge; attack cluster at the far right; keep the center combat lane clear.
+- If a running fight rotates back to portrait, next runtime pass should trigger a **real engine pause/freeze**, show "ROTATE TO LANDSCAPE TO RESUME", clear held touch inputs, and resume cleanly after returning to landscape. This true pause behavior is **queued, not yet implemented**.
+
+### Handoff/link discipline
+- Every test build handed to the user must include a **fresh, tappable, cache-busted GitHub Pages URL**.
+- Prefer a fresh filename for major architecture changes.
+- Never call a build phone-approved/live-stable until the user has actually witnessed it on iPhone/iPad Safari.
+
+### Beautification direction
+- The approved visual language remains graphite/dark metallic + electric blue + restrained gold.
+- Mocks are implementation targets, not loose inspiration. Do not substitute cheap placeholder UI when a feature is not ready.
+- Highest-impact next lane is **real fighter imagery**, then real stage imagery, then landscape controller-skin polish, then transitions/micro-polish.
+
+### V12 source-published portrait pass · awaiting phone witness
+Files:
+- `mugen-lab/rig-ikemen-29-beauty-v12.html`
+- `mugen-lab/rig-ikemen-29-beauty-v12.js`
+
+What V12 adds:
+- Beauty-specific runtime copy so the frozen I29 base file is not modified.
+- Resolves each selected character's `.def`, reads `[Files] sprite = ...`, and prefers `defname_preload.sff` when present.
+- Native browser decoder for **SFF v1 / PCX** select portrait **group 9000, image 1**.
+- Handles SFF v1 linked sprites and previous embedded palettes.
+- Converts decoded portrait pixels to an in-memory PNG data URL and places the real artwork into the large P1/CPU fighter cards.
+- Keeps the prior monogram treatment as fallback if no usable 9000,1 portrait is available.
+- Portrait loading is lazy and cached: only currently selected P1/P2 artwork is decoded, avoiding a full-roster memory spike.
+
+Current limitation:
+- **SFF v2 portrait decoding is not enabled in V12 yet.** V2 characters fall back cleanly to the monogram and log the reason in debug. Do not claim universal portrait support until the v2 path is added and witnessed.
+- Roster-tile thumbnails and real stage preview extraction are still pending.
