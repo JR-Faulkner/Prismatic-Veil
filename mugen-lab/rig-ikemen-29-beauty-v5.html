@@ -593,6 +593,38 @@ body.match-live .test-dock{
   body.match-live .controls{height:188px!important}
 }
 
+
+/* PHONE COMPOSITION PASS: more vertical presence without stretching gameplay */
+@media(max-width:650px){
+  /* Give select actions breathing room above the touch deck / home indicator. */
+  .setup:has(#charPickerSection:not(.hide)) #charPickerSection{
+    padding-bottom:18px!important;
+  }
+  .setup:has(#charPickerSection:not(.hide)) .action-dock{
+    margin-top:10px!important;
+    margin-bottom:10px!important;
+  }
+
+  /* Match view: slightly taller cinema window using a controlled cover crop.
+     This preserves sprite proportions; it crops a small amount from the far left/right instead of stretching. */
+  body.match-live .stage{
+    height:min(43vh,500px)!important;
+    overflow:hidden!important;
+    background:#000!important;
+  }
+  body.match-live #ikemen-canvas{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+    object-position:center center!important;
+  }
+
+  /* Pull the control deck closer to the game so the composition reads as one unit. */
+  body.match-live .controls{
+    margin-top:4px!important;
+  }
+}
+
 </style>
 </head>
 <body>
