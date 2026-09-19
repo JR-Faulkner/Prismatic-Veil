@@ -535,6 +535,64 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 .stage-grid{max-height:64px!important}
 @media(max-width:650px){.shared-grid{grid-template-columns:repeat(4,1fr)!important;max-height:128px!important}}
 
+
+/* MATCH MODE: prioritize gameplay viewport */
+body.match-live{
+  padding-left:0!important;
+  padding-right:0!important;
+}
+body.match-live .wrap{
+  max-width:none!important;
+  width:100%!important;
+}
+body.match-live .player-bar{
+  position:absolute;
+  left:max(8px,env(safe-area-inset-left));
+  top:max(6px,env(safe-area-inset-top));
+  z-index:12;
+  min-height:0!important;
+  margin:0!important;
+  pointer-events:none;
+}
+body.match-live .brand{
+  font-size:12px!important;
+  opacity:.42;
+  text-shadow:none!important;
+}
+body.match-live .brand:after{display:none!important}
+body.match-live .stage{
+  width:100vw!important;
+  max-width:100vw!important;
+  margin:0!important;
+  border-left:0!important;
+  border-right:0!important;
+  border-radius:0!important;
+  clip-path:none!important;
+  box-shadow:0 10px 34px #0009!important;
+}
+body.match-live .stage:before{display:none!important}
+body.match-live #ikemen-canvas{
+  width:100%!important;
+  height:auto!important;
+}
+body.match-live .controls{
+  width:calc(100% - 12px)!important;
+  margin:6px 6px 0!important;
+  border-radius:14px!important;
+}
+body.match-live .test-dock{
+  top:auto!important;
+  bottom:max(8px,env(safe-area-inset-bottom))!important;
+}
+@media(max-width:650px){
+  body.match-live .stage{
+    width:100vw!important;
+    height:auto!important;
+    min-height:0!important;
+  }
+  body.match-live .controls{height:188px!important}
+}
+
 </style>
 </head>
 <body>
@@ -704,6 +762,19 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
     if(e.target.closest('.roster-item')) setTimeout(() => show('p2'), 0);
   });
   show('p1');
+})();
+</script>
+<script>
+(function(){
+  const setup = document.getElementById('setup');
+  if(!setup) return;
+  const sync = () => {
+    const live = setup.classList.contains('hide');
+    document.body.classList.toggle('match-live', live);
+    if(live) setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
+  };
+  new MutationObserver(sync).observe(setup,{attributes:true,attributeFilter:['class']});
+  sync();
 })();
 </script>
 <script>
