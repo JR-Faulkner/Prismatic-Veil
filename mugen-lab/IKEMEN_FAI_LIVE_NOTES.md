@@ -1933,3 +1933,15 @@ Link/build discipline remains unchanged: every test build handed to the user get
 - The portrait cache is now cleared when changing libraries so same-named fighters from different ZIPs cannot reuse stale artwork.
 - SFF v2 remains pending. Do not claim universal portrait support.
 - V13 is source-published and syntax-checked only until phone witness confirms actual artwork.
+
+
+### 2026-09-19 · V14 portrait verification pass
+- Continued portrait work without changing the approved V11 portrait-select / landscape-fight architecture.
+- V14 adds a deterministic **repo-hosted Kineza portrait self-test** before scanning the user's library. Kineza is useful here because the existing validated sprite manifest proves that its SFF contains **9000,0**.
+- The self-test isolates decoder failure from user-ZIP path/motif failure:
+  - `KINEZA PASS` means SFF v1 + PCX + palette + data-URL conversion are functioning on the phone.
+  - `KINEZA FAIL` means the decoder path itself is still wrong and the reason is logged/pinned.
+- Decoded portrait art is now displayed through an explicit `<img>` inside each fighter card rather than only a CSS `background-image`. This removes a Safari/CSS presentation variable from diagnosis.
+- TEST portrait diagnostics now begin with the Kineza self-test result and then show independent P1/CPU results.
+- V14 still tries motif-configured portrait sprite IDs first, then 9000,1, then 9000,0.
+- SFF v2 remains pending. V14 is source-published / syntax-checked only until phone witness.
