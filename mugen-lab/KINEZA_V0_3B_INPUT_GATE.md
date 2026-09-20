@@ -14,4 +14,4 @@ Browser controller unchanged. Visible X/Y/Z use keyboard A/S/D; visible A/B/C us
 
 No SFF/AIR/CNS change in this gate.
 
-ZIP SHA-256: `cbdf4f3ce86802364f795c57a1c4ae9661f25f1d05331ecd7cbe5b2b8caa5b60`
+ZIP SHA-256: `3d8ad3352c254e90b5efcc8396096e8173a4846739ed7a53f089c56784071fa7`

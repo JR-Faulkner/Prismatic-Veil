@@ -14,4 +14,4 @@ Base: validated v0.2
 - Momentum Fist still borrows early Blitzer travel art.
 - No generated art.
 
-ZIP SHA-256: `239dcc8f39284edb964e52f3f8ff82f48dfe1e3cfe5ae7d8dc15f6bef08ce6a2`
+ZIP SHA-256: `cdc7a4a01db101b2d9a81aff3329568c21c1eb6a865dce7e1cd7764eba21dc7d`
