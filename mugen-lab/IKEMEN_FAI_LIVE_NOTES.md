@@ -1967,3 +1967,12 @@ Link/build discipline remains unchanged: every test build handed to the user get
 - V16 uses a new page/runtime filename and a new asset cache-buster so Safari cannot reuse the bad V15 asset URL.
 - V16 also logs explicit portrait IMG load success/failure and restores the fallback mark if the image request itself fails.
 - Do not call the Kineza select portrait fixed until the user witnesses the correct supplied art on iPhone.
+
+
+### 2026-09-19 · V17 portrait correction after phone screenshot
+- User screenshot showed the Kineza card still on the question-mark fallback. The prior V15/V16 binary override asset path is not trusted and is no longer used.
+- The repo already contains a dedicated `kineza_portrait.png` at repository root (560x560, blob `795244980095adef4fe8485009453316edd852a9`).
+- V17 points the Kineza select override directly at that established repo portrait with a fresh asset cache-buster.
+- TEST diagnostics now include `BUILD: V17` so phone screenshots can prove the loaded runtime version.
+- Generic SFF extraction remains intact for non-Kineza roster characters.
+- Do not mark this portrait visually approved until user confirms the displayed art is the supplied/desired Kineza art.
