@@ -2243,3 +2243,10 @@ Do not move on to thumbnails, stage art, controller skin, pause, or sounds until
 - PriZim V24 fixture includes a real synthetic `system.snd` container with 100,0 / 100,1 / 100,2 WAV entries and matching motif declarations.
 - PriZim V24 must prove native SND cues are resolved, the controller skin is active in landscape, the touch D-pad remains interactive, and the polished loading overlay is present before existing match/control checks.
 - V24 is not phone-approved until real iPhone witness.
+
+
+### 2026-09-20 · V24 PriZim first-run loading-overlay race
+- First V24 browser run reached the V24 loading selector and Playwright explicitly reported the new `.match-load-vs` element as **visible**, but the overlay completed/removal raced the visibility wait before the assertion settled.
+- This occurred after the earlier V24 native-motif-SND and skin-marker checks, so those did not trigger the failure.
+- Added `LOAD_OVERLAY_MIN_MS = 1400` so the polished battle-link presentation remains perceptible rather than flashing away on a fast/synthetic load.
+- The existing asset-settle and 180s hard-cap behavior remain intact; only a minimum presentation dwell was added.

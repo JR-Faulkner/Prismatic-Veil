@@ -2285,6 +2285,7 @@
   }
 
   const LOAD_OVERLAY_QUIET_MS = 900;
+  const LOAD_OVERLAY_MIN_MS = 1400;
   const LOAD_OVERLAY_MAX_MS = 180000;
   let loadOverlayEl = null, loadOverlayCountEl = null, loadOverlaySettleTimer = null, loadOverlayHardTimer = null, loadOverlayListener = null;
   function showMatchLoadingOverlay() {
@@ -2333,6 +2334,11 @@
     reportMemory('match load starting');
     const remove = reason => {
       if (!loadOverlayEl) return;
+      const minRemaining = LOAD_OVERLAY_MIN_MS - (performance.now() - shownAt);
+      if (minRemaining > 0) {
+        setTimeout(() => remove(reason), minRemaining + 8);
+        return;
+      }
       if (loadOverlaySettleTimer) { clearTimeout(loadOverlaySettleTimer); loadOverlaySettleTimer = null; }
       if (loadOverlayHardTimer) { clearTimeout(loadOverlayHardTimer); loadOverlayHardTimer = null; }
       if (loadOverlayListener) { const i = lazyActivity.listeners.indexOf(loadOverlayListener); if (i >= 0) lazyActivity.listeners.splice(i, 1); loadOverlayListener = null; }
