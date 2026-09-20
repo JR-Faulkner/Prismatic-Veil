@@ -2168,3 +2168,25 @@ Do not move on to thumbnails, stage art, controller skin, pause, or sounds until
 - Added a synthetic non-Kineza fighter (`g.ken`) whose DEF points to a generated SFF v2 RLE8 file containing a real 24x24 sprite at 9000,1.
 - PriZim Beauty V22 must now prove that **both** Kineza's repo-authority thumbnail and the generic SFF v2 `g.ken` thumbnail reach `thumbState=ready` with non-zero image dimensions.
 - Stage-preview work remains paused behind this portrait-completion pass.
+
+
+### 2026-09-20 · V22 phone witness rejected
+- Real iPhone witness: **none of the user's normal roster portraits rendered; only Kineza did**.
+- Therefore V22's synthetic RLE8 success did not establish real-roster portrait coverage. Beautification #2 remains open.
+- Do not advance to stage previews.
+
+### 2026-09-20 · V23 real SFF v2 compatibility correction
+- Cross-checked V22 against real MUGEN/IKEMEN SFF v2 implementations after the phone failure.
+- Corrected **RLE8** marker handling: the reference codec tests bit 6 (`byte & 0x40`), with a zero lower-six-bit run meaning 256 pixels. V22's narrower `0xC0 === 0x40` check was wrong for valid marker bytes.
+- Added reference-faithful **RLE5** decoding.
+- Added reference-faithful **LZ5** decoding, including LSB-first control bytes, short/long literal runs, short/long backreferences, and recycled high distance bits.
+- Corrected SFF v2 data-block selection to use **flags bit 0** rather than treating every nonzero flags value as TData.
+- Corrected SFF v2 palette treatment: the fourth on-disk palette byte is reserved/padding; index 0 is transparent and other in-range colors are forced opaque.
+- Linked sprites now use the actual data-owning sprite's palette index.
+- Raw indexed v2 sprites no longer guess at a four-byte decompressed-size prefix; raw payload is consumed directly.
+- PriZim fixture now carries three non-Kineza real-layout SFF v2 portraits:
+  - `mole` = RLE5
+  - `g.ken` = RLE8
+  - `lz5dummy` = LZ5
+- Beauty V23 must render all three to real 24x24 image thumbnails, in addition to Kineza, before the browser probe can pass.
+- V22 is not an approved phone build. V21 remains the last phone-confirmed roster-thumbnail lane while V23 is tested.

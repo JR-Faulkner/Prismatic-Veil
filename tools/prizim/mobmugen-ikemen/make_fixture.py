@@ -27,6 +27,7 @@ select_def = (
     "zzznotreal2\n"
     "mole\n"
     "g.ken\n"
+    "lz5dummy\n"
     "zzznotreal3\n"
     "\n"
     "[ExtraStages]\n"
@@ -43,28 +44,67 @@ system_def = (
     "foo = 1\n"
 )
 
-def build_sff2_rle8_portrait(width=24, height=24):
-    """Minimal SFF v2.0 with one 9000,1 RLE8 indexed portrait."""
+def _rle8_constant(pixel_count, color):
+    out = bytearray(struct.pack("<I", pixel_count))
+    remain = pixel_count
+    while remain:
+        if remain >= 256:
+            out.extend((0x40, color))
+            remain -= 256
+        else:
+            run = min(remain, 63)
+            out.extend((0x40 | run, color))
+            remain -= run
+    return bytes(out)
+
+def _rle5_constant(pixel_count, color):
+    out = bytearray(struct.pack("<I", pixel_count))
+    remain = pixel_count
+    while remain:
+        run = min(remain, 256)
+        out.extend((run - 1, 0x80, color))
+        remain -= run
+    return bytes(out)
+
+def _lz5_constant(pixel_count, color):
+    tokens = []
+    remain = pixel_count
+    while remain:
+        run = min(remain, 7)
+        tokens.append((run << 5) | (color & 0x1f))
+        remain -= run
+    stream = bytearray()
+    for i in range(0, len(tokens), 8):
+        stream.append(0x00)  # eight literal-run tokens, LSB-first control bits
+        stream.extend(tokens[i:i+8])
+    return struct.pack("<I", pixel_count) + bytes(stream)
+
+def build_sff2_portrait(codec, width=24, height=24, color=2):
+    """Minimal real-layout SFF v2.0 with one 9000,1 compressed portrait."""
     header_size = 512
     sprite_off = header_size
     sprite_count = 1
     palette_off = sprite_off + 28
     palette_count = 1
     ldata_off = palette_off + 16
+    pixel_count = width * height
 
-    # RLE8 allows literal bytes except 0x40..0x7f. Keep indices 1..3.
-    pixels = bytes(1 + ((x // 4 + y // 4) % 3)
-                   for y in range(height) for x in range(width))
-    image_data = struct.pack("<I", width * height) + pixels
+    if codec == "rle8":
+        fmt, depth, image_data = 2, 8, _rle8_constant(pixel_count, color)
+    elif codec == "rle5":
+        fmt, depth, image_data = 3, 5, _rle5_constant(pixel_count, color)
+    elif codec == "lz5":
+        fmt, depth, image_data = 4, 5, _lz5_constant(pixel_count, color)
+    else:
+        raise ValueError(codec)
 
-    palette = bytes([
-        0, 0, 0, 0,
-        50, 180, 255, 255,
-        255, 90, 80, 255,
-        255, 220, 80, 255,
-    ])
+    colors = 32
+    palette = bytearray(colors * 4)
+    palette[4:8] = bytes((40, 180, 255, 0))
+    palette[8:12] = bytes((255, 90, 80, 0))
+    palette[12:16] = bytes((255, 220, 80, 0))
     palette_data_off = len(image_data)
-    ldata = image_data + palette
+    ldata = image_data + bytes(palette)
     tdata_off = ldata_off + len(ldata)
 
     header = bytearray(header_size)
@@ -82,11 +122,11 @@ def build_sff2_rle8_portrait(width=24, height=24):
     sprite = struct.pack(
         "<HHHHhhHBBIIHH",
         9000, 1, width, height, 0, 0, 0,
-        2, 8, 0, len(image_data), 0, 0
+        fmt, depth, 0, len(image_data), 0, 0
     )
     pal = struct.pack(
         "<HHHHII",
-        9000, 1, 4, 0, palette_data_off, len(palette)
+        9000, 1, colors, 0, palette_data_off, len(palette)
     )
     return bytes(header) + sprite + pal + ldata
 
@@ -95,9 +135,12 @@ files = {
     'Winmugen/mugen.cfg': b'[Config]\n',
     'Winmugen/data/system.def': system_def.encode(),
     'Winmugen/data/select.def': select_def.encode(),
-    'Winmugen/chars/mole/mole.def': b'x',
+    'Winmugen/chars/mole/mole.def': b'[Info]\nname = "Mole"\n[Files]\nsprite = mole.sff\n',
+    'Winmugen/chars/mole/mole.sff': build_sff2_portrait("rle5", color=1),
     'Winmugen/chars/g.ken/g.ken.def': b'[Info]\nname = "G.Ken"\n[Files]\nsprite = gken.sff\n',
-    'Winmugen/chars/g.ken/gken.sff': build_sff2_rle8_portrait(),
+    'Winmugen/chars/g.ken/gken.sff': build_sff2_portrait("rle8", color=2),
+    'Winmugen/chars/lz5dummy/lz5dummy.def': b'[Info]\nname = "LZ5 Dummy"\n[Files]\nsprite = lz5dummy.sff\n',
+    'Winmugen/chars/lz5dummy/lz5dummy.sff': build_sff2_portrait("lz5", color=3),
     'Winmugen/stages/cfjed_warzard.def': b'x',
     'Winmugen/stages/cfjed_warzard.sff': b'x',
     'Winmugen/font/f-4x6.fnt': b'x',

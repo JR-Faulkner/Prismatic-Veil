@@ -118,33 +118,40 @@ if (probePage.beauty !== null) {
   });
 }
 
-let genericSff2RosterThumbnail = null;
-if (probePage.beauty !== null && probePage.beauty >= 22) {
-  const genericName = 'g.ken';
-  await page.evaluate(name => {
-    const el = [...document.querySelectorAll('#p1Grid .roster-item')]
-      .find(x => (x.dataset.charName || '').toLowerCase() === name);
-    if (el) el.scrollIntoView({ block:'nearest' });
-  }, genericName);
-  await page.waitForFunction(name => {
-    const el = [...document.querySelectorAll('#p1Grid .roster-item')]
-      .find(x => (x.dataset.charName || '').toLowerCase() === name);
-    if (!el) return false;
-    const img = el.querySelector('.roster-thumb-img');
-    return el.dataset.thumbState === 'ready' && !!img && img.naturalWidth === 24 && img.naturalHeight === 24;
-  }, genericName, { timeout: 5000 });
-  genericSff2RosterThumbnail = await page.evaluate(name => {
-    const el = [...document.querySelectorAll('#p1Grid .roster-item')]
-      .find(x => (x.dataset.charName || '').toLowerCase() === name);
-    const img = el && el.querySelector('.roster-thumb-img');
-    return el ? {
-      fighter: name,
-      state: el.dataset.thumbState,
-      naturalWidth: img ? img.naturalWidth : 0,
-      naturalHeight: img ? img.naturalHeight : 0,
-      srcPrefix: img ? (img.getAttribute('src') || '').slice(0, 32) : ''
-    } : null;
-  }, genericName);
+let genericSff2RosterThumbnails = null;
+if (probePage.beauty !== null && probePage.beauty >= 23) {
+  const expected = [
+    ['mole', 'rle5'],
+    ['g.ken', 'rle8'],
+    ['lz5dummy', 'lz5'],
+  ];
+  genericSff2RosterThumbnails = [];
+  for (const [fighter, codec] of expected) {
+    await page.evaluate(name => {
+      const el = [...document.querySelectorAll('#p1Grid .roster-item')]
+        .find(x => (x.dataset.charName || '').toLowerCase() === name);
+      if (el) el.scrollIntoView({ block:'nearest' });
+    }, fighter);
+    await page.waitForFunction(name => {
+      const el = [...document.querySelectorAll('#p1Grid .roster-item')]
+        .find(x => (x.dataset.charName || '').toLowerCase() === name);
+      if (!el) return false;
+      const img = el.querySelector('.roster-thumb-img');
+      return el.dataset.thumbState === 'ready' && !!img && img.naturalWidth === 24 && img.naturalHeight === 24;
+    }, fighter, { timeout: 5000 });
+    genericSff2RosterThumbnails.push(await page.evaluate(([name, kind]) => {
+      const el = [...document.querySelectorAll('#p1Grid .roster-item')]
+        .find(x => (x.dataset.charName || '').toLowerCase() === name);
+      const img = el && el.querySelector('.roster-thumb-img');
+      return el ? {
+        fighter:name, codec:kind, state:el.dataset.thumbState,
+        naturalWidth:img ? img.naturalWidth : 0,
+        naturalHeight:img ? img.naturalHeight : 0,
+        srcPrefix:img ? (img.getAttribute('src') || '').slice(0,32) : '',
+        fallbackReason:el.dataset.thumbReason || ''
+      } : null;
+    }, [fighter, codec]));
+  }
 }
 
 // --- drive P1's pick via touch, BEFORE any direct .click() -- focus
@@ -304,7 +311,7 @@ const report = {
   page_url: pageUrl,
   beauty_build: probePage.beauty,
   beauty_roster_thumbnail: beautyRosterThumbnail,
-  generic_sff2_roster_thumbnail: genericSff2RosterThumbnail,
+  generic_sff2_roster_thumbnails: genericSff2RosterThumbnails,
   match_started: inMatch,
   refcount_fix_intact: true,
   roll_fix_intact: true,
