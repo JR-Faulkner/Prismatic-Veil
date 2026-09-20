@@ -2110,3 +2110,22 @@ Do not move on to thumbnails, stage art, controller skin, pause, or sounds until
 - Source commits: JS `91aa7ede3b2aa123ac2df99842739057c22183e6`; HTML/main head `1e5af676313232cc9167cd6558bf0ee50c6e4e28`.
 - At post-commit verification, both **PriZim MOBMUGEN-IKEMEN validation** and **GitHub Pages build/deployment** had picked up the V19 head and were in progress.
 - V19 is source/provenance/syntax verified only. **Do not mark the Kineza select portrait approved until the user visibly confirms the intended art on iPhone.**
+
+
+### 2026-09-19 · User witness · Kineza select authority confirmed
+- User confirmed the **V19 Kineza character-select photo is correct and visibly rendering on phone**.
+- The select-photo defect is therefore closed for Kineza. Preserve the V19 `kineza_full.png` authority path unless the user explicitly supersedes it.
+- User clarified that the still-wrong Kineza art is the **actual in-fight fighter sprite**, not the character-select photo.
+- That gameplay fighter sprite/package correction is intentionally **not folded into the beautification sprint mid-stream**.
+- Queue it as the **next focused pass after the locked beautification sprint completes**, so the current UI work is not destabilized.
+
+### 2026-09-19 · V20 beautification item #2 · roster thumbnails
+- Began locked beautification priority **#2: roster thumbnails from the existing portrait pipeline**.
+- V20 is based directly on the phone-confirmed V19 select-art build; Kineza select authority remains untouched.
+- Character roster cells now own a thumbnail well plus fighter name.
+- Thumbnail loading is **lazy** through `IntersectionObserver`, so off-screen fighters do not all decode at once.
+- Portrait hydration is capped at **2 concurrent jobs** to protect iPhone Safari memory/CPU on very large rosters.
+- Kineza reuses the confirmed repo override; other fighters reuse the generic motif/SFF portrait pipeline and cache.
+- SFF v2 / unavailable portraits keep a clean initials fallback rather than blocking selection.
+- Stage cells remain text-only; real stage art is still beautification priority #3 and is not being pulled forward.
+- V20 diagnostic build label is `BUILD: V20`.
