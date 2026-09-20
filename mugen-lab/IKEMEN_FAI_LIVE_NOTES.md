@@ -2008,3 +2008,91 @@ Link/build discipline remains unchanged: every test build handed to the user get
 - TEST diagnostics identify `BUILD: V18` and report the repo portrait dimensions when loaded.
 - Generic SFF extraction remains intact for non-Kineza fighters.
 - V18 is source/syntax validated only until the user witnesses the correct art on iPhone.
+
+
+---
+
+## 2026-09-19 · MobMugen continuation authority · end-of-chat handoff
+
+### Current user-approved architecture
+- Keep **portrait mode for front-end/select** and **landscape mode for actual fights**.
+- FIGHT from portrait must gate on rotation; do not begin the match until landscape is confirmed.
+- Gameplay remains **true 16:9**, centered, with no crop/stretch.
+- Extra-wide landscape phone space is reserved for touch-control gutters:
+  - D-pad at far left
+  - attack buttons at far right
+  - center combat lane unobstructed
+- Touch is the default control assumption. Bluetooth/controller support is optional.
+- Portrait rotation during an active fight still needs a **real engine pause/freeze** with held-input cleanup and rotate-to-resume behavior.
+- V11 remains the last UI/setup architecture the user explicitly said “looks good.”
+
+### Beautification priority remains locked
+Do not allow later side requests to reorder this queue:
+1. Fix and verify **real fighter portraits**.
+2. Add **roster thumbnails** from the same portrait pipeline where practical.
+3. Add **real stage preview imagery** and clean player-facing stage names.
+4. Polish the **landscape side-gutter touch controller skin**.
+5. Implement **real portrait-rotation pause/freeze** during an active fight.
+6. Add **selection / VS / loading micro-polish**.
+7. Add **native motif UI sound extraction** from the loaded MUGEN ZIP:
+   - cursor move
+   - confirm/lock
+   - cancel/back
+   - stage navigation/confirm
+   This sound request is backlog only and must not displace the portrait/stage/controller/pause work above.
+
+### Portrait work: what is proven
+- V12 failed because it assumed **9000,1**.
+- Kineza’s validated SFF manifest proves his current SFF has **9000,0** and not 9000,1.
+- V13 added motif-configured portrait lookup plus 9000,1 -> 9000,0 fallback and TEST diagnostics.
+- V14 added:
+  - a deterministic repo-hosted Kineza SFF decoder self-test
+  - explicit IMG-based portrait rendering
+- **Phone witness on V14 proved the generic SFF v1/PCX portrait pipeline can render a real image on iPhone.**
+- However, the sprite that rendered for Kineza was the wrong artwork for the desired MobMugen select portrait.
+- Therefore the remaining problem is **portrait asset correctness / authority**, not basic SFF-v1 decode viability.
+
+### Kineza select portrait authority
+- User supplied the intended Kineza select artwork again in chat on 2026-09-19:
+  - young Kineza
+  - black/red/gold armor
+  - red cape
+  - glowing green gauntlets
+  - full-body illustration on a light background
+- That supplied artwork is the intended **MobMugen character-select authority** for Kineza.
+- Do **not** substitute a random SFF sprite just because it decodes successfully.
+- The gameplay SFF should remain untouched; select portrait authority is UI-only.
+
+### V15 / V16 status
+- V15 attempted to wire an approved Kineza override.
+- User phone screenshot showed the Kineza card still displaying the **question-mark fallback**.
+- Therefore **V15 is not approved**.
+- V16 attempted to correct the asset handoff and add explicit IMG load/error logging.
+- User screenshot/current witness still does **not** show the intended portrait, so **V16 is not approved either**.
+- Do not claim the select portrait is fixed until the intended artwork is visibly present on the phone.
+
+### Important discovery before continuing
+The repository already contains several Kineza image assets that may be useful for a deterministic next pass:
+- `kineza_portrait.png` — 560x560
+- `kineza_full.png` — 560x533
+- `assets/party_formation/KINEZA_JRPG_NORMALIZED_900x900.png`
+- `assets/ui/portrait_kineza.png`
+- `assets/ui/portrait_kineza_k9.png`
+- multiple Kineza battle/pose assets under `assets/characters/`, `assets/party_formation/`, and `assets/poses/`
+
+Before another build:
+1. Inspect the existing repo portrait assets visually / by source provenance.
+2. Identify whether one is exactly the user-approved Kineza image already.
+3. If yes, wire that existing repo asset directly instead of re-uploading/re-encoding the chat image.
+4. If not, import the exact user-supplied image correctly and verify the repo asset bytes/path before wiring it.
+5. Use a fresh HTML/JS filename and a fresh asset cache-buster.
+6. Keep the V14 self-test separate from the approved-art override so generic SFF diagnostics remain useful.
+
+### Immediate next build objective
+**One defect only:** make the P1 Kineza card visibly show the correct approved Kineza select artwork on the user’s iPhone.
+Do not move on to thumbnails, stage art, controller skin, pause, or sounds until that single phone witness succeeds.
+
+### Build/link discipline
+- Every MobMugen build/change handed to the user must include a **fresh tappable cache-busted GitHub Pages URL**.
+- Prefer a fresh filename for major/diagnostic iterations.
+- Never call a build live/stable/approved until the user actually witnesses it on iPhone/iPad Safari.
