@@ -87,6 +87,22 @@ await fc.setFiles(fixture);
 await page.waitForSelector('#charPickerSection:not(.hide)', { timeout: 20000 });
 await page.waitForTimeout(300);
 
+let v24UiSounds = null;
+if (probePage.beauty !== null && probePage.beauty >= 24) {
+  v24UiSounds = await page.evaluate(() => ({
+    state: document.body.dataset.uiSoundState || '',
+    count: Number(document.body.dataset.uiSoundCount || 0),
+    source: document.body.dataset.uiSoundSource || '',
+    skin: document.getElementById('controls')?.dataset.skin || ''
+  }));
+  if (v24UiSounds.state !== 'ready' || v24UiSounds.count < 3) {
+    throw new Error('V24 native motif UI sounds not ready: ' + JSON.stringify(v24UiSounds));
+  }
+  if (v24UiSounds.skin !== 'fighter-v24') {
+    throw new Error('V24 controller skin marker missing');
+  }
+}
+
 // Beautification witness: when the latest page is a beauty build, prove
 // the repo-authority Kineza roster cell actually becomes an image.
 let beautyRosterThumbnail = null;
@@ -208,6 +224,20 @@ if (probePage.beauty !== null) {
     throw new Error('beauty rotation regression: FIGHT did not raise the portrait rotate gate');
   }
   await page.setViewportSize({ width: 844, height: 390 });
+  await page.waitForSelector('#matchLoadOverlay.match-load-overlay-v24 .match-load-vs', { timeout: 5000 });
+  await page.waitForSelector('#matchLoadOverlay .match-load-rail', { timeout: 5000 });
+  const controlDeck = await page.evaluate(() => {
+    const controls = document.getElementById('controls');
+    const dpad = document.querySelector('#controls .dpad');
+    return {
+      controlsDisplay: getComputedStyle(controls).display,
+      dpadPointerEvents: getComputedStyle(dpad).pointerEvents,
+      skin: controls?.dataset.skin || ''
+    };
+  });
+  if (controlDeck.controlsDisplay === 'none' || controlDeck.dpadPointerEvents === 'none') {
+    throw new Error('V24 landscape touch deck is not active: ' + JSON.stringify(controlDeck));
+  }
   await page.waitForTimeout(350);
 }
 await page.waitForTimeout(2000);
@@ -310,6 +340,7 @@ const report = {
   rig: `I${rigNum}`,
   page_url: pageUrl,
   beauty_build: probePage.beauty,
+  v24_ui_sounds: v24UiSounds,
   beauty_roster_thumbnail: beautyRosterThumbnail,
   generic_sff2_roster_thumbnails: genericSff2RosterThumbnails,
   match_started: inMatch,

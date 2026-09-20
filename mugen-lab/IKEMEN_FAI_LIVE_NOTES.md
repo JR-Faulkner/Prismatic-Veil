@@ -2213,3 +2213,33 @@ Do not move on to thumbnails, stage art, controller skin, pause, or sounds until
   - validate at least two real non-Kineza fighters on the phone before marking the item complete.
 - Preserve the working Kineza select portrait and Kineza roster thumbnail exactly as-is.
 - Beautification sprint continues around this hold. Next active item is **#3 real stage preview images + clean stage names**.
+
+
+### 2026-09-20 · USER REPRIORITIZATION · work #4 + #6 + #7 now
+- User explicitly chose beautification items **#4 landscape controller skin**, **#6 selection/VS/loading micro-polish**, and **#7 native motif UI sounds**.
+- #2 other roster portraits remains **ON HOLD** after V20-V23 real-phone failures.
+- #3 real stage preview images + clean names is deferred for now, not cancelled.
+- #5 real rotation pause/freeze remains pending.
+- Kineza in-fight fighter sprite/package correction remains queued after the beautification sprint unless reprioritized.
+
+### 2026-09-20 · V24 combat-polish implementation
+- **#4 landscape controller skin**
+  - touch remains the default phone input in landscape; removed the stale core assumption that landscape automatically means external controller.
+  - controller/gamepad support remains optional and engine-native.
+  - true 16:9 fight viewport remains centered with dedicated left/right controller gutters.
+  - side-gutter plates, segmented illuminated D-pad, metallic six-button strike bank, and stronger press feedback added.
+  - center START/ESC utility stays low-profile and outside the primary combat lane.
+- **#6 selection / VS / loading micro-polish**
+  - selection commits flash the selected roster/fighter/stage module.
+  - VS core enters a restrained ready pulse once both fighters are selected.
+  - FIGHT button gains a READY state.
+  - match loading overlay now shows P1 vs CPU, selected arena, animated loading rail, and live materialized-asset status.
+- **#7 native motif UI sounds**
+  - active motif `system.def` supplies the [Files] `snd` archive and UI cue coordinates.
+  - honors `cursor.move.snd`, `cursor.done.snd`, `cancel.snd`, `stage.move.snd`, and `stage.done.snd`.
+  - parses Elecbyte SND linked entries and exposes only real RIFF/WAVE payloads through browser audio.
+  - no synthetic fallback beep is used when a motif does not provide a usable cue.
+  - cues are wired to roster movement, fighter confirm, stage move/confirm, library cancel, and fight confirm.
+- PriZim V24 fixture includes a real synthetic `system.snd` container with 100,0 / 100,1 / 100,2 WAV entries and matching motif declarations.
+- PriZim V24 must prove native SND cues are resolved, the controller skin is active in landscape, the touch D-pad remains interactive, and the polished loading overlay is present before existing match/control checks.
+- V24 is not phone-approved until real iPhone witness.

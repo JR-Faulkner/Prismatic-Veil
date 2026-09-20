@@ -35,10 +35,18 @@ select_def = (
     "stages/cfjed_warzard.def\n"
 )
 system_def = (
+    "[Files]\n"
+    "snd = system.snd\n"
+    "\n"
     "[Select Info]\n"
     "rows = 5\n"
     "columns = 6\n"
     "showemptyboxes = 1\n"
+    "cursor.move.snd = 100, 0\n"
+    "cursor.done.snd = 100, 1\n"
+    "cancel.snd = 100, 2\n"
+    "stage.move.snd = 100, 0\n"
+    "stage.done.snd = 100, 1\n"
     "\n"
     "[Next]\n"
     "foo = 1\n"
@@ -130,10 +138,41 @@ def build_sff2_portrait(codec, width=24, height=24, color=2):
     )
     return bytes(header) + sprite + pal + ldata
 
+
+def tiny_wav(sample_value):
+    pcm = bytes([sample_value] * 48)
+    riff_size = 36 + len(pcm)
+    return (
+        b"RIFF" + struct.pack("<I", riff_size) + b"WAVE" +
+        b"fmt " + struct.pack("<IHHIIHH", 16, 1, 1, 8000, 8000, 1, 8) +
+        b"data" + struct.pack("<I", len(pcm)) + pcm
+    )
+
+def build_system_snd():
+    entries = [
+        (100, 0, tiny_wav(136)),
+        (100, 1, tiny_wav(176)),
+        (100, 2, tiny_wav(96)),
+    ]
+    offsets = []
+    cursor = 24
+    for group, sample, payload in entries:
+        offsets.append(cursor)
+        cursor += 16 + len(payload)
+    out = bytearray()
+    out += b"ElecbyteSnd\x00"
+    out += struct.pack("<III", 4, len(entries), offsets[0])
+    for i, (group, sample, payload) in enumerate(entries):
+        next_off = offsets[i + 1] if i + 1 < len(offsets) else cursor
+        out += struct.pack("<IIII", next_off, len(payload), group, sample)
+        out += payload
+    return bytes(out)
+
 files = {
     'Winmugen/Winmugen.exe': b'MZ' + b'PRIZIM-IKEMEN-FIXTURE' * 64,
     'Winmugen/mugen.cfg': b'[Config]\n',
     'Winmugen/data/system.def': system_def.encode(),
+    'Winmugen/data/system.snd': build_system_snd(),
     'Winmugen/data/select.def': select_def.encode(),
     'Winmugen/chars/mole/mole.def': b'[Info]\nname = "Mole"\n[Files]\nsprite = mole.sff\n',
     'Winmugen/chars/mole/mole.sff': build_sff2_portrait("rle5", color=1),
