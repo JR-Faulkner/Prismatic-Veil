@@ -2276,3 +2276,28 @@ Do not move on to thumbnails, stage art, controller skin, pause, or sounds until
 - #3 real stage preview images + clean names remains deferred.
 - #5 real rotation pause/freeze remains pending.
 - Kineza in-fight fighter sprite/package correction remains queued after beautification unless reprioritized.
+
+
+### 2026-09-20 · PROCESS LOCK · LIVE-FIRST / ONE SHARED CONTINUITY LINE
+This project does **not** use separate continuation lanes for ChatGPT vs FAI.
+
+The shared repository and this notes file are the common continuity authority for everyone working on MobMugen.
+
+#### Mandatory start-of-work sequence
+Before any new MobMugen implementation, regardless of who is doing the work:
+1. Pull/read the **current live `main` HEAD** from GitHub.
+2. Read the latest `mugen-lab/IKEMEN_FAI_LIVE_NOTES.md` from that same HEAD.
+3. Compare the current live HEAD with any previously remembered/local/context build.
+4. If they differ, the live repository wins unless the user explicitly says to restore/revert something.
+5. Build **forward from the current live tree only**. Do not start from a previously cached V-build, old local branch, stale handoff, or remembered commit.
+6. Before push/commit, re-check that `main` has not moved during the work. If it moved, inspect/compare first and rebase/reapply safely instead of creating a parallel fork.
+7. After implementation: validate -> deploy -> phone witness -> update this same shared notes file.
+
+#### Anti-fork rule
+- Never create a new MobMugen line by copying an older approved build if a newer live build already exists.
+- Version numbers alone are not authority. The **current live GitHub HEAD + current shared notes** are authority.
+- If another agent/process has moved `main`, inspect that commit before writing. Do not overwrite, reset, or branch around it without understanding the change.
+- Any handoff should point back to this same shared notes file instead of creating a separate competing continuity document unless the user explicitly requests one.
+
+#### Reason for this lock
+A recent FAI switchover started from the previous build instead of the live current build, creating a fork that had to be corrected. This process lock exists specifically to prevent that recurrence.
