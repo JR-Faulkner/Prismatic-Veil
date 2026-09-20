@@ -1859,7 +1859,6 @@ session's own history on this file:
   quality pass risks reintroducing if source-resolution and alpha-
   channel handling aren't checked explicitly.
 
-
 ---
 
 ## 2026-09-19 · MobMugen beautification / orientation authority (DAI continuation)
@@ -2301,3 +2300,51 @@ Before any new MobMugen implementation, regardless of who is doing the work:
 
 #### Reason for this lock
 A recent FAI switchover started from the previous build instead of the live current build, creating a fork that had to be corrected. This process lock exists specifically to prevent that recurrence.
+
+---
+
+## rig-ikemen-29.html/.js reconciled with DAI's beauty-v24 (2026-09-20)
+
+Real problem, caught by the user, not by either side's own process: this
+session built Screen Wake Lock and PWA installability directly onto its
+own `rig-ikemen-29.html`/`.js`, without noticing DAI's parallel
+`rig-ikemen-29-beauty-v3` through `v24` chain had *also* become a
+collapsed/static build (zero `fetch()` calls, confirmed by grep) somewhere
+along the way -- meaning the two sides' `rig-ikemen-29`-lineage builds
+silently stopped being the same file the moment either side stopped
+fetching the shared base, and nothing about `git fetch`/`pull` on its own
+would ever surface that, since both sides' commits merge cleanly (they
+touch different filenames) while the actual *feature content* quietly
+diverges underneath.
+
+Confirmed exactly what was where before touching anything: DAI's v24
+had all of his phone-approved beautification (landscape controller
+skin, VS/loading polish, native motif UI sounds) that this session's
+own `rig-ikemen-29.*` never got; this session's `rig-ikemen-29.*` had
+Wake Lock and the PWA manifest/icons that v24 never got. Both sides
+already shared the classifyStatus and Zip64-sentinel fixes, confirming
+v24 forked from this lineage after those landed but before Wake
+Lock/PWA did.
+
+**Reconciled by making v24 the new base for this session's canonical
+`rig-ikemen-29.html`/`.js`**, then porting the two isolated additions
+(Wake Lock block + its one call site in `startMatch()`; the PWA
+manifest/icon `<link>`/`<meta>` tags) on top -- the same "small,
+isolated diff, ported by hand but verified, not the whole file
+rewritten from scratch" pattern, since these two features are compact
+and don't need the eval-capture trick I29's original creation used.
+Fixed the HTML's own `<script src>` (was still pointing at
+`rig-ikemen-29-beauty-v24.js`) to point at `rig-ikemen-29.js` since this
+is now that file. Verified: `node --check` clean, real headless boot
+with zero page errors, PWA manifest still resolves 200, `requestWakeLock`
+present in the merged file, `preflight.py` passes.
+
+**Process fix going forward, per explicit user instruction:** before
+starting new feature work on this lineage, check this live-notes file
+for what the other side (DAI) has shipped recently -- not just `git
+pull`/`fetch`, since two independently-collapsed static builds don't
+self-merge just by being in the same repo. The notes file is the actual
+coordination channel; a silent fork like this one should not recur.
+If DAI's chain advances again (v25+), diff it against this file's
+`rig-ikemen-29.*` before adding new features to either side, the same
+way this reconciliation did.

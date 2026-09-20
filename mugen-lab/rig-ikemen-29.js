@@ -859,6 +859,774 @@
     return candidates.find(c => zipIndexLower.has(c.toLowerCase()) || vfsFilesLower.has(c.toLowerCase()));
   }
 
+  // ---------------------------------------------------------------------
+  // MobMugen beauty lane: real character portraits from the character SFF.
+  // This first pass intentionally supports legacy SFF v1 / PCX only. That
+  // covers WinMUGEN-era rosters without adding a second WASM runtime or a
+  // heavy image library to the proven I29 boot path. SFF v2 falls back to
+  // the existing monogram until a dedicated decoder is added.
+  // Standard large select portrait convention: group 9000, image 1.
+  // ---------------------------------------------------------------------
+  function findAnyVfsKey(path) {
+    path = normPath(path);
+    const lower = path.toLowerCase();
+    return vfsFilesLower.get(lower) || zipIndexLower.get(lower) || null;
+  }
+
+  function findCharDefPath(name) {
+    name = String(name || '').replace(/\\/g, '/');
+    const base = name.includes('/') ? name.split('/').pop().replace(/\.def$/i, '') : name.replace(/\.def$/i, '');
+    const candidates = name.toLowerCase().endsWith('.def')
+      ? [name, 'chars/' + name]
+      : [name + '/' + base + '.def', 'chars/' + name + '/' + base + '.def'];
+    for (const c of candidates) {
+      const key = findAnyVfsKey(c);
+      if (key) return key;
+    }
+    return null;
+  }
+
+  async function portraitBytes(path) {
+    let key = findAnyVfsKey(path);
+    if (!key) return null;
+    if (!vfsFiles.has(key)) {
+      const ok = await lazyMaterialize(key);
+      if (!ok) return null;
+      key = findAnyVfsKey(key) || key;
+    }
+    const rec = vfsFiles.get(key);
+    return rec ? rec.data : null;
+  }
+
+  function parseSpriteRefFromDef(text) {
+    let section = '';
+    for (const raw of text.split(/\r?\n/)) {
+      const sm = raw.match(/^\s*\[(.+?)\]/);
+      if (sm) { section = sm[1].trim().toLowerCase(); continue; }
+      if (section !== 'files') continue;
+      const noComment = raw.split(';')[0];
+      const m = noComment.match(/^\s*sprite\s*=\s*(.+?)\s*$/i);
+      if (!m) continue;
+      return m[1].trim().replace(/^["']|["']$/g, '').replace(/\\/g, '/');
+    }
+    return null;
+  }
+
+  async function resolveCharSffPath(name) {
+    const defPath = findCharDefPath(name);
+    if (!defPath) return null;
+    const defBytes = await portraitBytes(defPath);
+    if (!defBytes) return null;
+
+    // Ikemen supports a compact defname_preload.sff for portraits. Prefer it
+    // when present so the beauty pass doesn't wake a huge full character SFF.
+    const preload = defPath.replace(/\.def$/i, '_preload.sff');
+    const preloadKey = findAnyVfsKey(preload);
+    if (preloadKey) return preloadKey;
+
+    const ref = parseSpriteRefFromDef(decoder.decode(defBytes));
+    if (!ref) return null;
+    const dir = defPath.includes('/') ? defPath.slice(0, defPath.lastIndexOf('/')) : '';
+    const candidates = [];
+    if (dir) candidates.push(dir + '/' + ref);
+    candidates.push(ref);
+    if (!/^chars\//i.test(ref)) candidates.push('chars/' + ref);
+    for (const c of candidates) {
+      const key = findAnyVfsKey(c);
+      if (key) return key;
+    }
+    return null;
+  }
+
+  function sff1Entries(bytes) {
+    if (!bytes || bytes.length < 544) return null;
+    const sig = String.fromCharCode(...bytes.subarray(0, 11));
+    if (sig !== 'ElecbyteSpr') return null;
+    const major = bytes[12];
+    if (major !== 1) return { version: major, entries: [] };
+
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const imageCount = dv.getUint32(20, true);
+    let off = dv.getUint32(24, true);
+    let subHeader = dv.getUint32(28, true);
+    if (subHeader < 32 || subHeader > 256) subHeader = 32;
+    const entries = [];
+    const seen = new Set();
+
+    for (let i = 0; i < imageCount && off > 0 && off + 32 <= bytes.length; i++) {
+      if (seen.has(off)) break;
+      seen.add(off);
+      const next = dv.getUint32(off, true);
+      const length = dv.getUint32(off + 4, true);
+      const group = dv.getInt16(off + 12, true);
+      const image = dv.getInt16(off + 14, true);
+      const link = dv.getUint16(off + 16, true);
+      const samePalette = bytes[off + 18] !== 0;
+      const dataStart = off + subHeader;
+      const dataEnd = Math.min(bytes.length, dataStart + length);
+      entries.push({ off, next, length, group, image, link, samePalette, dataStart, dataEnd });
+      if (!next) break;
+      off = next;
+    }
+    return { version: major, entries };
+  }
+
+  function resolveSff1Linked(entries, idx) {
+    let cur = idx, guard = 0;
+    while (guard++ < entries.length) {
+      const e = entries[cur];
+      if (!e) return null;
+      if (e.length > 0) return { entry: e, index: cur };
+      if (e.link === cur || e.link >= entries.length) return null;
+      cur = e.link;
+    }
+    return null;
+  }
+
+  function pcxPalette(bytes, entry) {
+    if (!entry || entry.dataEnd - entry.dataStart < 769) return null;
+    const marker = entry.dataEnd - 769;
+    if (bytes[marker] !== 12) return null;
+    return bytes.subarray(marker + 1, marker + 769);
+  }
+
+  function findSff1Palette(bytes, entries, startIdx) {
+    for (let i = startIdx; i >= 0; i--) {
+      const linked = resolveSff1Linked(entries, i);
+      if (!linked) continue;
+      const pal = pcxPalette(bytes, linked.entry);
+      if (pal) return pal;
+    }
+    return null;
+  }
+
+  function decodePcx8(bytes, entry, palette) {
+    const start = entry.dataStart, end = entry.dataEnd;
+    if (end - start < 128 || bytes[start] !== 10) return null;
+    const dv = new DataView(bytes.buffer, bytes.byteOffset + start, end - start);
+    const encoding = bytes[start + 2], bpp = bytes[start + 3];
+    const xmin = dv.getUint16(4, true), ymin = dv.getUint16(6, true);
+    const xmax = dv.getUint16(8, true), ymax = dv.getUint16(10, true);
+    const planes = bytes[start + 65];
+    const bytesPerLine = dv.getUint16(66, true);
+    const width = xmax - xmin + 1, height = ymax - ymin + 1;
+    if (encoding !== 1 || bpp !== 8 || planes !== 1 || width <= 0 || height <= 0 || width > 4096 || height > 4096) return null;
+
+    const palMarker = end - 769 >= start + 128 && bytes[end - 769] === 12 ? end - 769 : end;
+    const decoded = new Uint8Array(bytesPerLine * height);
+    let p = start + 128, out = 0;
+    while (p < palMarker && out < decoded.length) {
+      const b = bytes[p++];
+      if ((b & 0xC0) === 0xC0) {
+        const count = b & 0x3F;
+        if (p >= palMarker) break;
+        const value = bytes[p++];
+        const n = Math.min(count, decoded.length - out);
+        decoded.fill(value, out, out + n);
+        out += n;
+      } else {
+        decoded[out++] = b;
+      }
+    }
+    if (out < Math.min(decoded.length, width * height)) return null;
+    if (!palette || palette.length < 768) return null;
+
+    const rgba = new Uint8ClampedArray(width * height * 4);
+    let q = 0;
+    for (let y = 0; y < height; y++) {
+      const row = y * bytesPerLine;
+      for (let x = 0; x < width; x++) {
+        const idx = decoded[row + x];
+        const pi = idx * 3;
+        rgba[q++] = palette[pi];
+        rgba[q++] = palette[pi + 1];
+        rgba[q++] = palette[pi + 2];
+        rgba[q++] = idx === 0 ? 0 : 255;
+      }
+    }
+    return { width, height, rgba };
+  }
+
+  function rgbaToDataUrl(decoded) {
+    const c = document.createElement('canvas');
+    c.width = decoded.width; c.height = decoded.height;
+    const ctx = c.getContext('2d', { alpha: true });
+    if (!ctx) return null;
+    const image = new ImageData(decoded.rgba, decoded.width, decoded.height);
+    ctx.putImageData(image, 0, 0);
+    return c.toDataURL('image/png');
+  }
+
+  // ---------------------------------------------------------------------
+  // SFF v2 portrait decode: common MUGEN 1.x cases.
+  // v2 uses a 512-byte header, 28-byte sprite records, 16-byte palette
+  // records, and stores the major version in header byte 15.
+  // Supported here: raw indexed, RLE8, RLE5, LZ5, and embedded PNG8/24/32.
+  // ---------------------------------------------------------------------
+  function detectSffVersion(bytes) {
+    if (!bytes || bytes.length < 16) return 0;
+    const sig = String.fromCharCode(...bytes.subarray(0, 11));
+    if (sig !== 'ElecbyteSpr') return 0;
+    if (bytes[15] === 2) return 2;
+    if (bytes[12] === 1) return 1;
+    return 0;
+  }
+
+  function sff2Directory(bytes) {
+    if (!bytes || bytes.length < 512 || detectSffVersion(bytes) !== 2) return null;
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const spriteOffset = dv.getUint32(36, true);
+    const spriteTotal = dv.getUint32(40, true);
+    const paletteOffset = dv.getUint32(44, true);
+    const paletteTotal = dv.getUint32(48, true);
+    const ldataOffset = dv.getUint32(52, true);
+    const ldataLength = dv.getUint32(56, true);
+    const tdataOffset = dv.getUint32(60, true);
+    const tdataLength = dv.getUint32(64, true);
+    if (spriteTotal > 200000 || paletteTotal > 200000) return null;
+    if (spriteOffset + spriteTotal * 28 > bytes.length) return null;
+    if (paletteOffset + paletteTotal * 16 > bytes.length) return null;
+
+    const sprites = [];
+    for (let i = 0; i < spriteTotal; i++) {
+      const o = spriteOffset + i * 28;
+      sprites.push({
+        group: dv.getUint16(o, true),
+        image: dv.getUint16(o + 2, true),
+        width: dv.getUint16(o + 4, true),
+        height: dv.getUint16(o + 6, true),
+        axisX: dv.getInt16(o + 8, true),
+        axisY: dv.getInt16(o + 10, true),
+        link: dv.getUint16(o + 12, true),
+        format: bytes[o + 14],
+        depth: bytes[o + 15],
+        dataOffset: dv.getUint32(o + 16, true),
+        dataLength: dv.getUint32(o + 20, true),
+        paletteIndex: dv.getUint16(o + 24, true),
+        flags: dv.getUint16(o + 26, true)
+      });
+    }
+
+    const palettes = [];
+    for (let i = 0; i < paletteTotal; i++) {
+      const o = paletteOffset + i * 16;
+      palettes.push({
+        group: dv.getUint16(o, true),
+        item: dv.getUint16(o + 2, true),
+        colors: dv.getUint16(o + 4, true),
+        link: dv.getUint16(o + 6, true),
+        dataOffset: dv.getUint32(o + 8, true),
+        dataLength: dv.getUint32(o + 12, true)
+      });
+    }
+    return { sprites, palettes, ldataOffset, ldataLength, tdataOffset, tdataLength };
+  }
+
+  function resolveSff2Sprite(dir, idx) {
+    let cur = idx, guard = 0;
+    while (guard++ < dir.sprites.length) {
+      const e = dir.sprites[cur];
+      if (!e) return null;
+      if (e.dataLength > 0) return { entry:e, index:cur };
+      if (e.link === cur || e.link >= dir.sprites.length) return null;
+      cur = e.link;
+    }
+    return null;
+  }
+
+  function resolveSff2Palette(dir, idx) {
+    let cur = idx, guard = 0;
+    while (guard++ < dir.palettes.length) {
+      const e = dir.palettes[cur];
+      if (!e) return null;
+      if (e.dataLength > 0) return { entry:e, index:cur };
+      if (e.link === cur || e.link >= dir.palettes.length) return null;
+      cur = e.link;
+    }
+    return null;
+  }
+
+  function sff2Palette(bytes, dir, paletteIndex) {
+    const linked = resolveSff2Palette(dir, paletteIndex);
+    if (!linked) return null;
+    const p = linked.entry;
+    const start = dir.ldataOffset + p.dataOffset;
+    const count = Math.min(p.colors || 256, Math.floor(p.dataLength / 4), 256);
+    if (start < 0 || start + count * 4 > bytes.length || count <= 0) return null;
+    const out = new Uint8Array(256 * 4);
+    for (let i = 0; i < count; i++) {
+      const s = start + i * 4, d = i * 4;
+      out[d] = bytes[s];
+      out[d + 1] = bytes[s + 1];
+      out[d + 2] = bytes[s + 2];
+      // SFF v2's fourth palette byte is reserved/padding, not alpha.
+      out[d + 3] = i === 0 ? 0 : 255;
+    }
+    return out;
+  }
+
+  function indexedToRgba(indices, width, height, palette) {
+    if (!indices || !palette || indices.length < width * height) return null;
+    const rgba = new Uint8ClampedArray(width * height * 4);
+    for (let i = 0; i < width * height; i++) {
+      const pi = indices[i] * 4, q = i * 4;
+      rgba[q] = palette[pi];
+      rgba[q + 1] = palette[pi + 1];
+      rgba[q + 2] = palette[pi + 2];
+      rgba[q + 3] = palette[pi + 3];
+    }
+    return { width, height, rgba };
+  }
+
+  function sff2DeclaredSize(bytes, start, length) {
+    if (length < 4 || start < 0 || start + length > bytes.length) return null;
+    return new DataView(bytes.buffer, bytes.byteOffset + start, 4).getUint32(0, true);
+  }
+
+  function decodeSff2Rle8(bytes, start, length, pixelCount) {
+    const declared = sff2DeclaredSize(bytes, start, length);
+    if (declared === null || declared < pixelCount || declared > 64 * 1024 * 1024) return null;
+    let p = start + 4, out = 0;
+    const end = start + length;
+    const indices = new Uint8Array(pixelCount);
+    while (p < end && out < pixelCount) {
+      const b = bytes[p++];
+      if ((b & 0x40) !== 0) {
+        let run = b & 0x3F;
+        if (run === 0) run = 256;
+        if (p >= end) return null;
+        const value = bytes[p++];
+        const n = Math.min(run, pixelCount - out);
+        indices.fill(value, out, out + n);
+        out += n;
+      } else {
+        indices[out++] = b;
+      }
+    }
+    return out === pixelCount ? indices : null;
+  }
+
+  function decodeSff2Rle5(bytes, start, length, pixelCount) {
+    const declared = sff2DeclaredSize(bytes, start, length);
+    if (declared === null || declared < pixelCount || declared > 64 * 1024 * 1024) return null;
+    const stream = bytes.subarray(start + 4, start + length);
+    const out = new Uint8Array(pixelCount);
+    if (!stream.length) return out;
+
+    let i = 0, j = 0;
+    const next = () => { if (i < stream.length - 1) i++; };
+
+    while (j < pixelCount) {
+      let rl = stream[i];
+      next();
+      let dl = stream[i] & 0x7F;
+      let color = 0;
+      if ((stream[i] >> 7) !== 0) {
+        next();
+        color = stream[i];
+      }
+      next();
+
+      while (true) {
+        if (j < pixelCount) out[j++] = color;
+        rl--;
+        if (rl < 0) {
+          dl--;
+          if (dl < 0) break;
+          color = stream[i] & 0x1F;
+          rl = stream[i] >> 5;
+          next();
+        }
+      }
+    }
+    return out;
+  }
+
+  function decodeSff2Lz5(bytes, start, length, pixelCount) {
+    const declared = sff2DeclaredSize(bytes, start, length);
+    if (declared === null || declared < pixelCount || declared > 64 * 1024 * 1024) return null;
+    const stream = bytes.subarray(start + 4, start + length);
+    const out = new Uint8Array(pixelCount);
+    if (!stream.length) return out;
+
+    let i = 0, j = 0;
+    let rb = 0, rbc = 0;
+    const next = () => { if (i < stream.length - 1) i++; };
+    let control = stream[i], controlShift = 0;
+    next();
+
+    while (j < pixelCount) {
+      const d = stream[i];
+      next();
+
+      if ((control & (1 << controlShift)) !== 0) {
+        let distance, n;
+        if ((d & 0x3F) === 0) {
+          distance = ((d << 2) | stream[i]) + 1;
+          next();
+          n = stream[i] + 2;
+          next();
+        } else {
+          rb |= (d & 0xC0) >> rbc;
+          rbc += 2;
+          n = d & 0x3F;
+          if (rbc < 8) {
+            distance = stream[i] + 1;
+            next();
+          } else {
+            distance = rb + 1;
+            rb = 0;
+            rbc = 0;
+          }
+        }
+
+        while (true) {
+          if (j < pixelCount) {
+            out[j] = distance <= j ? out[j - distance] : 0;
+            j++;
+          }
+          if (n === 0) break;
+          n--;
+        }
+      } else {
+        if ((d & 0xE0) === 0) {
+          let n = stream[i] + 8;
+          next();
+          while (n-- > 0 && j < pixelCount) out[j++] = 0;
+        } else {
+          let n = d >> 5;
+          const color = d & 0x1F;
+          while (n-- > 0 && j < pixelCount) out[j++] = color;
+        }
+      }
+
+      controlShift++;
+      if (controlShift >= 8 && j < pixelCount) {
+        control = stream[i];
+        controlShift = 0;
+        next();
+      }
+    }
+    return out;
+  }
+
+  function pngPayloadUrl(bytes, start, length) {
+    if (start < 0 || start + length > bytes.length || length < 8) return null;
+    const png = [0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a];
+    const at = off => png.every((v,i) => bytes[off+i] === v);
+    let p = start;
+    if (!at(p) && length >= 12 && at(p + 4)) p += 4;
+    if (!at(p)) return null;
+    const payload = bytes.slice(p, start + length);
+    return URL.createObjectURL(new Blob([payload], { type:'image/png' }));
+  }
+
+  function decodeSff2Portrait(bytes, dir, cand) {
+    const requested = dir.sprites[cand.idx];
+    const linked = resolveSff2Sprite(dir, cand.idx);
+    if (!requested || !linked) return { url:null, reason:'linked sprite unresolved' };
+    const e = linked.entry;
+    const width = requested.width || e.width, height = requested.height || e.height;
+    if (width <= 0 || height <= 0 || width > 4096 || height > 4096) {
+      return { url:null, reason:'invalid dimensions' };
+    }
+    const base = (e.flags & 1) !== 0 ? dir.tdataOffset : dir.ldataOffset;
+    const start = base + e.dataOffset;
+    if (start < 0 || start + e.dataLength > bytes.length) return { url:null, reason:'pixel range out of bounds' };
+
+    if (e.format === 10 || e.format === 11 || e.format === 12) {
+      const url = pngPayloadUrl(bytes, start, e.dataLength);
+      return url ? { url, width, height, format:e.format, kind:'png' } : { url:null, reason:'PNG payload not found' };
+    }
+
+    const need = width * height;
+    let indices = null, kind = 'unknown';
+    if (e.format === 0) {
+      if (e.dataLength >= need) {
+        indices = bytes.slice(start, start + need);
+        kind = 'raw';
+      }
+    } else if (e.format === 2) {
+      indices = decodeSff2Rle8(bytes, start, e.dataLength, need);
+      kind = 'rle8';
+    } else if (e.format === 3) {
+      indices = decodeSff2Rle5(bytes, start, e.dataLength, need);
+      kind = 'rle5';
+    } else if (e.format === 4) {
+      indices = decodeSff2Lz5(bytes, start, e.dataLength, need);
+      kind = 'lz5';
+    } else {
+      return { url:null, reason:'SFF v2 format ' + e.format + '/depth ' + e.depth + ' unsupported', format:e.format };
+    }
+
+    if (!indices || indices.length < need) return { url:null, reason:kind + ' pixel decode failed', format:e.format };
+    const palette = sff2Palette(bytes, dir, e.paletteIndex);
+    const decoded = indexedToRgba(indices, width, height, palette);
+    if (!decoded) return { url:null, reason:'palette resolve failed', format:e.format };
+    const url = rgbaToDataUrl(decoded);
+    return url ? { url, width, height, format:e.format, kind } : { url:null, reason:'canvas encode failed' };
+  }
+
+  const portraitCache = new Map();
+
+  function motifPortraitRefs() {
+    const refs = [];
+    const rec = motifPath ? vfsFiles.get(motifPath) : null;
+    if (rec) {
+      const text = decoder.decode(rec.data);
+      // Screenpacks commonly define the large select faces here. Read the
+      // loaded motif rather than assuming one hard-coded sprite pair.
+      const re = /^\s*(p1\.face\.spr|p2\.face\.spr|portrait\.spr)\s*=\s*(-?\d+)\s*,\s*(-?\d+)/gim;
+      let m;
+      while ((m = re.exec(text))) refs.push([Number(m[2]), Number(m[3]), m[1]]);
+    }
+    // Standard big portrait first, then standard small portrait as an honest
+    // fallback. Kineza's current validated SFF has 9000,0 but no 9000,1.
+    refs.push([9000, 1, 'standard-big'], [9000, 0, 'standard-small']);
+    const seen = new Set();
+    return refs.filter(([g,i]) => {
+      const k = g + ',' + i;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }
+
+  async function loadSffPortraitForCharacter(name) {
+    name = String(name || '');
+    if (!name) return { url:null, status:'empty name' };
+    if (portraitCache.has(name)) return portraitCache.get(name);
+
+    const promise = (async () => {
+      try {
+        const sffPath = await resolveCharSffPath(name);
+        if (!sffPath) throw new Error('sprite SFF not found');
+        const bytes = await portraitBytes(sffPath);
+        if (!bytes) throw new Error('sprite SFF unreadable');
+
+        const version = detectSffVersion(bytes);
+        const refs = motifPortraitRefs();
+
+        if (version === 2) {
+          const dir = sff2Directory(bytes);
+          if (!dir) throw new Error('SFF v2 directory invalid');
+          const available = refs.map(([g,i,label]) => ({
+            g, i, label,
+            idx: dir.sprites.findIndex(e => e.group === g && e.image === i)
+          }));
+          const failures = [];
+          for (const cand of available) {
+            if (cand.idx < 0) continue;
+            const decoded = decodeSff2Portrait(bytes, dir, cand);
+            if (!decoded || !decoded.url) {
+              failures.push(cand.g + ',' + cand.i + ': ' + ((decoded && decoded.reason) || 'decode failed'));
+              continue;
+            }
+            const ref = cand.g + ',' + cand.i;
+            const status = 'SFF v2 ' + ref + ' ' + decoded.width + 'x' + decoded.height + ' ' + decoded.kind;
+            log('I29 PORTRAIT · ' + name + ' ' + status + ' from ' + sffPath + ' via ' + cand.label);
+            return {
+              url: decoded.url, status, sffPath, version:2,
+              group:cand.g, image:cand.i, source:cand.label, format:decoded.format
+            };
+          }
+          const found = available.filter(x => x.idx >= 0).map(x => x.g + ',' + x.i).join(' / ');
+          throw new Error(found
+            ? 'SFF v2 portrait found but unsupported/failed · ' + failures.join(' | ')
+            : 'no configured/standard SFF v2 portrait found; tried ' + refs.map(r => r[0] + ',' + r[1]).join(' / '));
+        }
+
+        if (version !== 1) throw new Error('unrecognized SFF version');
+        const parsed = sff1Entries(bytes);
+        if (!parsed || parsed.version !== 1) throw new Error('SFF v1 directory invalid');
+
+        const available = refs.map(([g,i,label]) => {
+          const idx = parsed.entries.findIndex(e => e.group === g && e.image === i);
+          return { g, i, label, idx };
+        });
+
+        for (const cand of available) {
+          if (cand.idx < 0) continue;
+          const linked = resolveSff1Linked(parsed.entries, cand.idx);
+          if (!linked) continue;
+          const palette = pcxPalette(bytes, linked.entry) || findSff1Palette(bytes, parsed.entries, cand.idx);
+          const decoded = decodePcx8(bytes, linked.entry, palette);
+          if (!decoded) continue;
+          const url = rgbaToDataUrl(decoded);
+          if (!url) continue;
+
+          const ref = cand.g + ',' + cand.i;
+          const status = 'SFF v1 ' + ref + ' ' + decoded.width + 'x' + decoded.height;
+          log('I29 PORTRAIT · ' + name + ' ' + status + ' from ' + sffPath + ' via ' + cand.label);
+          return { url, status, sffPath, version:1, group:cand.g, image:cand.i, source:cand.label };
+        }
+
+        const found = available.filter(x => x.idx >= 0).map(x => x.g + ',' + x.i).join(' / ');
+        throw new Error(found
+          ? 'SFF v1 portrait sprite(s) found (' + found + ') but PCX/palette decode failed'
+          : 'no configured/standard SFF v1 portrait found; tried ' + refs.map(r => r[0] + ',' + r[1]).join(' / '));
+      } catch (e) {
+        const msg = ((e && e.message) || e);
+        log('I29 PORTRAIT · ' + name + ' fallback -- ' + msg);
+        return { url:null, status:msg };
+      }
+    })();
+
+    portraitCache.set(name, promise);
+    return promise;
+  }
+
+  let portraitRefreshToken = 0;
+  let portraitSelfTestResult = 'not run';
+
+  function setPortraitWell(well, result) {
+    if (!well) return;
+    const img = well.querySelector('.portrait-art');
+    const span = well.querySelector('span');
+    if (result && result.url) {
+      if (img) {
+        img.onload = () => {
+          well.dataset.imageState = 'loaded';
+          const dims = (img.naturalWidth || 0) + 'x' + (img.naturalHeight || 0);
+          well.dataset.imageDimensions = dims;
+          log('I29 PORTRAIT IMG · loaded ' + result.url + ' (' + dims + ')');
+        };
+        img.onerror = () => {
+          well.dataset.imageState = 'error';
+          log('I29 PORTRAIT IMG · failed ' + result.url);
+          if (span) span.hidden = false;
+          img.hidden = true;
+          well.classList.remove('has-art');
+          well.classList.remove('portrait-authority');
+        };
+        img.src = result.url;
+        img.hidden = false;
+      }
+      if (span) span.hidden = true;
+      well.classList.add('has-art');
+      well.classList.toggle('portrait-authority', result.source === 'approved-asset');
+      well.dataset.portraitSource = result.status || 'loaded';
+      return;
+    }
+    if (img) {
+      img.removeAttribute('src');
+      img.hidden = true;
+    }
+    if (span) span.hidden = false;
+    well.classList.remove('has-art');
+    well.classList.remove('portrait-authority');
+    well.dataset.portraitSource = (result && result.status) || 'fallback';
+  }
+
+  async function runPortraitSelfTest() {
+    // Kineza is repo-hosted and its validated manifest proves 9000,0 exists.
+    // Decode it before the user's library is scanned so a phone test tells us
+    // whether the SFF/PCX decoder itself works independently of roster paths.
+    try {
+      portraitCache.delete('kineza');
+      const result = await loadSffPortraitForCharacter('kineza');
+      portraitSelfTestResult = result && result.url
+        ? 'KINEZA PASS · ' + (result.status || 'decoded')
+        : 'KINEZA FAIL · ' + ((result && result.status) || 'unknown');
+      pin('PORTRAIT SELFTEST', portraitSelfTestResult);
+      log('I29 PORTRAIT SELFTEST · ' + portraitSelfTestResult);
+      // Do not let the self-test cache dictate later motif-aware selection.
+      portraitCache.delete('kineza');
+      return !!(result && result.url);
+    } catch (e) {
+      portraitSelfTestResult = 'KINEZA FAIL · ' + ((e && e.message) || e);
+      pin('PORTRAIT SELFTEST', portraitSelfTestResult);
+      log('I29 PORTRAIT SELFTEST · ' + portraitSelfTestResult);
+      portraitCache.delete('kineza');
+      return false;
+    }
+  }
+
+  const PORTRAIT_OVERRIDES = Object.freeze({
+    // Repo-root full-body authority from the original character-select art drop; independently versioned.
+    kineza: '../kineza_full.png?v=579cf39e-v23'
+  });
+
+  function portraitOverrideKey(name) {
+    const clean = String(name || '').replace(/\\/g, '/').replace(/\.def$/i, '');
+    return clean.split('/').pop().toLowerCase();
+  }
+
+  const portraitOverrideLoadCache = new Map();
+
+  async function preloadPortraitOverride(url) {
+    if (portraitOverrideLoadCache.has(url)) return portraitOverrideLoadCache.get(url);
+    const promise = new Promise(resolve => {
+      const probe = new Image();
+      probe.onload = () => resolve({
+        ok: true,
+        width: probe.naturalWidth || 0,
+        height: probe.naturalHeight || 0
+      });
+      probe.onerror = () => resolve({ ok: false, width: 0, height: 0 });
+      probe.src = url;
+    });
+    portraitOverrideLoadCache.set(url, promise);
+    return promise;
+  }
+
+  async function loadPortraitForCharacter(name) {
+    const key = portraitOverrideKey(name);
+    const override = PORTRAIT_OVERRIDES[key];
+    if (override) {
+      const probe = await preloadPortraitOverride(override);
+      if (!probe.ok) {
+        return {
+          url: null,
+          status: 'REPO FULL LOAD FAILED',
+          source: 'approved-asset'
+        };
+      }
+      return {
+        url: override,
+        status: 'REPO FULL AUTH ' + probe.width + 'x' + probe.height,
+        source: 'approved-asset'
+      };
+    }
+    return loadSffPortraitForCharacter(name);
+  }
+
+  async function refreshSelectedPortraits() {
+    const token = ++portraitRefreshToken;
+    const diagEl = document.getElementById('portraitDiag');
+    const pairs = [
+      ['P1', document.getElementById('selP1'), document.getElementById('p1Portrait')],
+      ['CPU', document.getElementById('selP2'), document.getElementById('p2Portrait')],
+    ];
+    const diagParts = ['BUILD: V23', 'SELFTEST: ' + portraitSelfTestResult];
+
+    await Promise.all(pairs.map(async ([slot, label, well]) => {
+      if (!label || !well) return;
+      const name = (label.textContent || '').trim();
+      if (!name || name === '-' || /choose/i.test(name)) {
+        setPortraitWell(well, null);
+        diagParts.push(slot + ': waiting');
+        return;
+      }
+
+      const result = await loadPortraitForCharacter(name);
+      if (token !== portraitRefreshToken) return;
+      const current = (label.textContent || '').trim();
+      if (current !== name) return;
+
+      setPortraitWell(well, result);
+      if (result && result.url) {
+        diagParts.push(slot + ': ' + name + ' ✓ ' + (result.status || 'loaded'));
+      } else {
+        diagParts.push(slot + ': ' + name + ' · ' + ((result && result.status) || 'fallback'));
+      }
+    }));
+
+    if (token === portraitRefreshToken && diagEl) {
+      diagEl.textContent = diagParts.join('\n');
+    }
+  }
+
   async function loadZipIntoVfs(file) {
     status('READING ZIP');
     log('I29 ZIP · reading central directory of ' + file.name + ' (' + (file.size / 1048576).toFixed(1) + ' MB)');
@@ -970,7 +1738,9 @@
       await ensureFflate();
       await loadRuntimeAssets();
       await loadExtraChars();
+      await runPortraitSelfTest();
       await loadZipIntoVfs(file);
+      await initMotifUiSounds();
       showCharacterPicker();
 
       // Persist AFTER the picker is up. The zip is already indexed and
@@ -1001,6 +1771,167 @@
     await loadAndShowPicker(f, false);
   });
 
+
+  // ---------------------------------------------------------------------
+  // V24 native motif UI sounds.
+  // ---------------------------------------------------------------------
+  const motifUiSoundUrls = new Map();
+  let motifUiSoundSource = '';
+
+  function motifDefValue(text, wantedKey) {
+    const key = String(wantedKey || '').trim().toLowerCase();
+    for (const raw of String(text || '').split(/\r?\n/)) {
+      const line = raw.split(';')[0].trim();
+      if (!line) continue;
+      const eq = line.indexOf('=');
+      if (eq < 0) continue;
+      if (line.slice(0, eq).trim().toLowerCase() !== key) continue;
+      return line.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
+    }
+    return null;
+  }
+
+  function motifSoundPair(text, key, fallback) {
+    const raw = motifDefValue(text, key);
+    if (!raw) return fallback || null;
+    const parts = raw.split(',').map(v => Number(v.trim()));
+    if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) return fallback || null;
+    return [parts[0], parts[1]];
+  }
+
+  function motifRelativeKey(ref) {
+    ref = normPath(String(ref || ''));
+    if (!ref) return null;
+    const dir = motifPath && motifPath.includes('/') ? motifPath.slice(0, motifPath.lastIndexOf('/')) : '';
+    const candidates = [];
+    if (dir) candidates.push(dir + '/' + ref);
+    candidates.push(ref);
+    if (!ref.toLowerCase().startsWith('data/')) candidates.push('data/' + ref);
+    for (const c of candidates) {
+      const key = findAnyVfsKey(c);
+      if (key) return key;
+    }
+    return null;
+  }
+
+  async function uiAssetBytes(path) {
+    let key = findAnyVfsKey(path);
+    if (!key) return null;
+    if (!vfsFiles.has(key)) {
+      const ok = await lazyMaterialize(key);
+      if (!ok) return null;
+      key = findAnyVfsKey(key) || key;
+    }
+    const rec = vfsFiles.get(key);
+    return rec ? rec.data : null;
+  }
+
+  function sndPayload(bytes, group, sample) {
+    if (!bytes || bytes.length < 24) return null;
+    const sig = String.fromCharCode(...bytes.subarray(0, 11));
+    if (sig !== 'ElecbyteSnd') return null;
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const count = dv.getUint32(16, true);
+    let off = dv.getUint32(20, true);
+    const seen = new Set();
+    for (let i = 0; i < count && off > 0 && off + 16 <= bytes.length; i++) {
+      if (seen.has(off)) break;
+      seen.add(off);
+      const next = dv.getUint32(off, true);
+      const len = dv.getUint32(off + 4, true);
+      const g = dv.getUint32(off + 8, true);
+      const s = dv.getUint32(off + 12, true);
+      const start = off + 16;
+      const end = start + len;
+      if (end > bytes.length) break;
+      if (g === group && s === sample) {
+        const payload = bytes.slice(start, end);
+        const magic = payload.length >= 4 ? String.fromCharCode(...payload.subarray(0, 4)) : '';
+        return magic === 'RIFF' ? payload : null;
+      }
+      if (!next || next <= off || next >= bytes.length) break;
+      off = next;
+    }
+    return null;
+  }
+
+  function clearMotifUiSounds() {
+    for (const url of new Set(motifUiSoundUrls.values())) {
+      try { URL.revokeObjectURL(url); } catch (_) {}
+    }
+    motifUiSoundUrls.clear();
+    motifUiSoundSource = '';
+    document.body.dataset.uiSoundState = 'cleared';
+    document.body.dataset.uiSoundCount = '0';
+    delete document.body.dataset.uiSoundSource;
+    delete document.body.dataset.lastUiSound;
+  }
+
+  async function initMotifUiSounds() {
+    clearMotifUiSounds();
+    try {
+      const motifRec = motifPath ? vfsFiles.get(motifPath) : null;
+      if (!motifRec) throw new Error('motif system.def unavailable');
+      const text = decoder.decode(motifRec.data);
+      const sndRef = motifDefValue(text, 'snd');
+      const sndKey = motifRelativeKey(sndRef);
+      if (!sndKey) throw new Error('motif SND path not resolvable');
+      const bytes = await uiAssetBytes(sndKey);
+      if (!bytes) throw new Error('motif SND unreadable');
+
+      const movePair = motifSoundPair(text, 'cursor.move.snd', [100, 0]);
+      const donePair = motifSoundPair(text, 'cursor.done.snd', [100, 1]);
+      const pairs = {
+        move: movePair,
+        confirm: donePair,
+        cancel: motifSoundPair(text, 'cancel.snd', [100, 2]),
+        stageMove: motifSoundPair(text, 'stage.move.snd', movePair),
+        stageDone: motifSoundPair(text, 'stage.done.snd', donePair),
+      };
+      const urlByPair = new Map();
+      for (const [kind, pair] of Object.entries(pairs)) {
+        if (!pair || pair[0] < 0 || pair[1] < 0) continue;
+        const pk = pair[0] + ',' + pair[1];
+        let url = urlByPair.get(pk);
+        if (!url) {
+          const wav = sndPayload(bytes, pair[0], pair[1]);
+          if (!wav) continue;
+          url = URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }));
+          urlByPair.set(pk, url);
+        }
+        motifUiSoundUrls.set(kind, url);
+      }
+
+      motifUiSoundSource = sndKey;
+      document.body.dataset.uiSoundCount = String(motifUiSoundUrls.size);
+      document.body.dataset.uiSoundSource = sndKey;
+      document.body.dataset.uiSoundState = motifUiSoundUrls.size ? 'ready' : 'empty';
+      log('I29 UI SND · ' + motifUiSoundUrls.size + ' native motif cue(s) · ' + sndKey);
+      pin('UI SND', motifUiSoundUrls.size + ' native motif cue(s) · ' + sndKey);
+    } catch (e) {
+      document.body.dataset.uiSoundState = 'unavailable';
+      document.body.dataset.uiSoundCount = '0';
+      log('I29 UI SND · unavailable · ' + ((e && e.message) || e));
+    }
+  }
+
+  function playMotifUiSound(kind) {
+    document.body.dataset.lastUiSound = kind;
+    const url = motifUiSoundUrls.get(kind);
+    if (!url) return false;
+    try {
+      const audio = new Audio(url);
+      audio.preload = 'auto';
+      audio.volume = 0.82;
+      const p = audio.play();
+      if (p && p.catch) p.catch(() => {});
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+  window.mobMugenPlayUiSound = playMotifUiSound;
+
   // Character picker UI
   // ---------------------------------------------------------------------
   const SETUP_DESC = 'Load a MUGEN content zip. It stays saved in this browser, ' +
@@ -1030,7 +1961,10 @@
     // would then fire startMatch() once per zip the user had ever loaded.
     if (!pickerWired) {
       document.getElementById('startBtn').addEventListener('click', startMatch);
-      document.getElementById('changeZipBtn').addEventListener('click', resetForNewZip);
+      document.getElementById('changeZipBtn').addEventListener('click', () => {
+        playMotifUiSound('cancel');
+        resetForNewZip();
+      });
       pickerWired = true;
     }
 
@@ -1042,17 +1976,157 @@
     log('I29 PICKER · ' + allChars.length + ' characters / ' + allStages.length + ' stages offered');
   }
 
+  const rosterThumbQueue = [];
+  let rosterThumbActive = 0;
+  const ROSTER_THUMB_CONCURRENCY = 2;
+
+  function rosterInitials(name) {
+    const clean = String(name || '').replace(/\\/g, '/').replace(/\.def$/i, '').split('/').pop();
+    const words = clean.replace(/[_-]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+    return (words.slice(0, 2).map(w => w[0]).join('') || '?').toUpperCase();
+  }
+
+  function pumpRosterThumbQueue() {
+    while (rosterThumbActive < ROSTER_THUMB_CONCURRENCY && rosterThumbQueue.length) {
+      const btn = rosterThumbQueue.shift();
+      if (!btn || !btn.isConnected || btn.dataset.thumbState !== 'queued') continue;
+      rosterThumbActive++;
+      btn.dataset.thumbState = 'loading';
+      const name = btn.dataset.charName || '';
+      log('I29 THUMB · loading ' + name);
+      Promise.resolve(loadPortraitForCharacter(name)).then(result => {
+        if (!btn.isConnected || btn.dataset.charName !== name) return;
+        const img = btn.querySelector('.roster-thumb-img');
+        if (result && result.url && img) {
+          img.onload = () => {
+            if (!btn.isConnected) return;
+            btn.classList.add('thumb-ready');
+            btn.classList.remove('thumb-fallback');
+            btn.dataset.thumbState = 'ready';
+            log('I29 THUMB · ready ' + name + ' · ' + (result.status || 'loaded'));
+          };
+          img.onerror = () => {
+            if (!btn.isConnected) return;
+            img.hidden = true;
+            btn.classList.add('thumb-fallback');
+            btn.dataset.thumbState = 'fallback';
+            log('I29 THUMB · image error ' + name);
+          };
+          img.src = result.url;
+          img.hidden = false;
+        } else {
+          btn.classList.add('thumb-fallback');
+          btn.dataset.thumbState = 'fallback';
+          btn.dataset.thumbReason = (result && result.status) || 'no portrait';
+          log('I29 THUMB · fallback ' + name + ' · ' + btn.dataset.thumbReason);
+        }
+      }).catch(err => {
+        if (btn && btn.isConnected) {
+          btn.classList.add('thumb-fallback');
+          btn.dataset.thumbState = 'fallback';
+          log('I29 THUMB · exception ' + name + ' · ' + ((err && err.message) || err));
+        }
+      }).finally(() => {
+        rosterThumbActive--;
+        pumpRosterThumbQueue();
+      });
+    }
+  }
+
+  function enqueueRosterThumbnail(btn) {
+    if (!btn || btn.dataset.thumbState) return;
+    btn.dataset.thumbState = 'queued';
+    rosterThumbQueue.push(btn);
+    pumpRosterThumbQueue();
+  }
+
+  function rosterCellNearViewport(btn, grid) {
+    if (!btn || !grid || !btn.isConnected) return false;
+    const r = btn.getBoundingClientRect();
+    const g = grid.getBoundingClientRect();
+    return r.bottom >= g.top - 90 && r.top <= g.bottom + 90;
+  }
+
+  function hydrateRosterGrid(grid, forceSelected) {
+    if (!grid || !grid.isConnected) return;
+    if (forceSelected) {
+      const selected = grid.querySelector('.roster-item.selected');
+      if (selected) enqueueRosterThumbnail(selected);
+    }
+    grid.querySelectorAll('.roster-item.has-roster-thumb').forEach(btn => {
+      if (rosterCellNearViewport(btn, grid)) enqueueRosterThumbnail(btn);
+    });
+  }
+
+  function scheduleRosterHydration(grid, forceSelected) {
+    if (!grid) return;
+    requestAnimationFrame(() => hydrateRosterGrid(grid, !!forceSelected));
+  }
+
+  function wireRosterScrollHydration(grid) {
+    if (!grid || grid.dataset.thumbScrollWired === '1') return;
+    grid.dataset.thumbScrollWired = '1';
+    let scheduled = false;
+    grid.addEventListener('scroll', () => {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => {
+        scheduled = false;
+        hydrateRosterGrid(grid, false);
+      });
+    }, { passive: true });
+  }
+
+  function wireRosterThumbnail(btn, name) {
+    btn.classList.add('has-roster-thumb');
+    btn.dataset.charName = name;
+
+    const thumb = document.createElement('span');
+    thumb.className = 'roster-thumb';
+
+    const img = document.createElement('img');
+    img.className = 'roster-thumb-img';
+    img.alt = '';
+    img.hidden = true;
+
+    const fallback = document.createElement('span');
+    fallback.className = 'roster-thumb-fallback';
+    fallback.textContent = rosterInitials(name);
+
+    const label = document.createElement('span');
+    label.className = 'roster-name';
+    label.textContent = name;
+
+    thumb.append(img, fallback);
+    btn.append(thumb, label);
+  }
+
   function buildRosterGrid(mode, names, selectedIdx) {
     const grid = document.getElementById(GRID_IDS[mode]);
     grid.innerHTML = '';
     names.forEach((name, idx) => {
       const btn = document.createElement('button');
       btn.className = 'roster-item' + (idx === selectedIdx ? ' selected' : '');
-      btn.textContent = name;
       btn.dataset.mode = mode;
       btn.dataset.idx = idx;
+
+      if (mode === 'stage') {
+        const label = document.createElement('span');
+        label.className = 'roster-name';
+        label.textContent = name;
+        btn.appendChild(label);
+      } else {
+        wireRosterThumbnail(btn, name);
+      }
+
       btn.addEventListener('click', () => selectItem(mode, idx));
       grid.appendChild(btn);
+
+      // V21 phone path: hydrate the first visible row immediately instead
+      // of waiting for IntersectionObserver to notice a newly-attached cell.
+      if (mode !== 'stage' && (idx < 4 || idx === selectedIdx)) {
+        enqueueRosterThumbnail(btn);
+      }
     });
     if (!names.length) {
       const empty = document.createElement('div');
@@ -1062,6 +2136,19 @@
         : 'no characters found in this zip';
       grid.appendChild(empty);
     }
+    if (mode !== 'stage') {
+      wireRosterScrollHydration(grid);
+      scheduleRosterHydration(grid, true);
+      setTimeout(() => hydrateRosterGrid(grid, true), 180);
+    }
+  }
+
+  function v24Flash(el) {
+    if (!el) return;
+    el.classList.remove('v24-confirm');
+    void el.offsetWidth;
+    el.classList.add('v24-confirm');
+    setTimeout(() => el.classList.remove('v24-confirm'), 260);
   }
 
   function selectItem(mode, idx) {
@@ -1071,7 +2158,18 @@
     const grid = document.getElementById(GRID_IDS[mode]);
     grid.querySelectorAll('.roster-item.selected').forEach(el => el.classList.remove('selected'));
     const chosen = grid.querySelector('.roster-item[data-idx="' + idx + '"]');
-    if (chosen) chosen.classList.add('selected');
+    if (chosen) {
+      chosen.classList.add('selected');
+      if (mode !== 'stage') enqueueRosterThumbnail(chosen);
+      v24Flash(chosen);
+    }
+    if (mode === 'stage') {
+      playMotifUiSound('stageDone');
+      v24Flash(document.querySelector('.stage-bay'));
+    } else {
+      playMotifUiSound('confirm');
+      v24Flash(document.querySelector(mode === 'p1' ? '.p1-card' : '.p2-card'));
+    }
     updateSelectionDisplay();
     if (mode === 'p1') {
       focusPickerMode('p2');
@@ -1103,12 +2201,23 @@
     selP1.closest('.sel-item').classList.toggle('filled', !!p1Name);
     selP2.closest('.sel-item').classList.toggle('filled', !!p2Name);
     selStage.closest('.sel-item').classList.toggle('filled', !!stageName);
+    const picker = document.getElementById('charPickerSection');
+    const duelReady = !!p1Name && !!p2Name;
+    const fightReady = duelReady && (!allStages.length || !!stageName);
+    if (picker) picker.classList.toggle('duel-ready', duelReady);
+    const start = document.getElementById('startBtn');
+    if (start) {
+      start.classList.toggle('v24-ready', fightReady);
+      start.textContent = fightReady ? 'FIGHT · READY' : 'FIGHT';
+    }
+    refreshSelectedPortraits();
   }
 
   function startMatch() {
     const p1 = allChars[pickerState.p1Idx];
     const p2 = allChars[pickerState.p2Idx];
     if (!p1) { log('I29 PICKER · no character selected -- nothing to start'); return; }
+    playMotifUiSound('confirm');
     charNames[0] = p1;
     charNames[1] = p2 || p1;
     const stageName = allStages[pickerState.stageIdx];
@@ -1136,6 +2245,9 @@
     vfsDirs.clear();
     runtimeAssetsLoaded = false;
     extraCharsLoaded = false;
+    portraitCache.clear();
+    portraitOverrideLoadCache.clear();
+    clearMotifUiSounds();
     motifPath = null;
     stagePath = null;
 
@@ -1203,6 +2315,7 @@
   }
 
   const LOAD_OVERLAY_QUIET_MS = 900;
+  const LOAD_OVERLAY_MIN_MS = 1400;
   const LOAD_OVERLAY_MAX_MS = 180000;
   let loadOverlayEl = null, loadOverlayCountEl = null, loadOverlaySettleTimer = null, loadOverlayHardTimer = null, loadOverlayListener = null;
   function showMatchLoadingOverlay() {
@@ -1211,15 +2324,39 @@
     if (!stageEl) return;
     const el = document.createElement('div');
     el.id = 'matchLoadOverlay';
-    el.style.cssText = 'position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#070b13;color:#f1bf55;font:900 13px ui-monospace;letter-spacing:.08em;text-align:center;padding:20px';
+    el.className = 'match-load-overlay-v24';
+    const kicker = document.createElement('div');
+    kicker.className = 'match-load-kicker';
+    kicker.textContent = 'MOBMUGEN // BATTLE LINK';
     const title = document.createElement('div');
-    title.textContent = 'LOADING MATCH\u2026';
+    title.className = 'match-load-title';
+    title.textContent = 'FIGHT LOADING';
+    const vs = document.createElement('div');
+    vs.className = 'match-load-vs';
+    const left = document.createElement('div');
+    left.className = 'match-load-fighter';
+    left.textContent = charNames[0] || 'P1';
+    const core = document.createElement('div');
+    core.className = 'match-load-vs-core';
+    core.textContent = 'VS';
+    const right = document.createElement('div');
+    right.className = 'match-load-fighter';
+    right.textContent = charNames[1] || charNames[0] || 'CPU';
+    vs.append(left, core, right);
+    const stageLine = document.createElement('div');
+    stageLine.className = 'match-load-stage';
+    stageLine.textContent = 'ARENA · ' + ((allStages[pickerState.stageIdx] || stagePath || 'ENGINE DEFAULT').replace(/\\/g, '/').split('/').pop());
+    const rail = document.createElement('div');
+    rail.className = 'match-load-rail';
     const count = document.createElement('div');
-    count.style.cssText = 'font-size:10px;color:#8390a4;letter-spacing:.04em;max-width:90%;overflow-wrap:anywhere';
-    count.textContent = 'preparing\u2026';
-    el.appendChild(title);
-    el.appendChild(count);
+    count.className = 'match-load-count';
+    count.textContent = 'assembling match assets…';
+    el.append(kicker, title, vs, stageLine, rail, count);
     stageEl.appendChild(el);
+    document.body.classList.add('match-loading-v24');
+    document.body.dataset.v24LoadOverlaySeen = 'ready';
+    document.body.dataset.v24LoadOverlayParts =
+      el.querySelector('.match-load-vs') && el.querySelector('.match-load-rail') ? 'complete' : 'incomplete';
     loadOverlayEl = el;
     loadOverlayCountEl = count;
     const shownAt = performance.now();
@@ -1230,10 +2367,16 @@
     reportMemory('match load starting');
     const remove = reason => {
       if (!loadOverlayEl) return;
+      const minRemaining = LOAD_OVERLAY_MIN_MS - (performance.now() - shownAt);
+      if (minRemaining > 0) {
+        setTimeout(() => remove(reason), minRemaining + 8);
+        return;
+      }
       if (loadOverlaySettleTimer) { clearTimeout(loadOverlaySettleTimer); loadOverlaySettleTimer = null; }
       if (loadOverlayHardTimer) { clearTimeout(loadOverlayHardTimer); loadOverlayHardTimer = null; }
       if (loadOverlayListener) { const i = lazyActivity.listeners.indexOf(loadOverlayListener); if (i >= 0) lazyActivity.listeners.splice(i, 1); loadOverlayListener = null; }
       loadOverlayEl.remove();
+      document.body.classList.remove('match-loading-v24');
       loadOverlayEl = null; loadOverlayCountEl = null;
       const elapsedMs = Math.round(performance.now() - shownAt);
       const removedMsg = 'removed after ' + elapsedMs + 'ms (' + reason + '), ' + (lazyActivity.count - startCount) + ' lazy asset(s) materialized during load';
@@ -1251,7 +2394,7 @@
     let lastPinnedAt = 0;
     loadOverlayListener = key => {
       const n = lazyActivity.count - startCount;
-      if (loadOverlayCountEl) loadOverlayCountEl.textContent = n + ' asset' + (n === 1 ? '' : 's') + ' loaded' + (key ? ' \u2014 ' + key.split('/').pop() : '');
+      if (loadOverlayCountEl) loadOverlayCountEl.textContent = n + ' battle asset' + (n === 1 ? '' : 's') + ' linked' + (key ? ' · ' + key.split('/').pop() : '');
       if (n > 0 && n % 15 === 0 && performance.now() - lastPinnedAt > 4000) {
         lastPinnedAt = performance.now();
         pin('LOAD OVERLAY', 'still loading \u2014 ' + n + ' asset(s) so far, ' + Math.round(performance.now() - shownAt) + 'ms elapsed');
@@ -1743,22 +2886,23 @@
       // call -- confirmed by testing, not assumed. block:'nearest' keeps
       // horizontal position untouched and only scrolls the axis needed.
       items[next].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      const mode = items[next].dataset.mode || '';
+      playMotifUiSound(mode === 'stage' ? 'stageMove' : 'move');
     }
   });
 
-  // Landscape usually means a Bluetooth/USB controller is in hand (the
-  // engine already polls navigator.getGamepads() every frame on its own --
-  // no code needed there), so the touch D-pad is just dead weight blocking
-  // the view. Auto-hide it on rotation to landscape, auto-show back in
-  // portrait. HIDE/SHOW CTRL still works as a manual override in either
-  // orientation on top of this.
+  // V24: touch is the primary phone control surface. Gamepads remain optional,
+  // but entering landscape must never auto-hide the side-gutter touch deck.
   const landscapeMq = window.matchMedia('(orientation: landscape)');
-  function applyOrientation(isLandscape) { setControlsHidden(isLandscape); }
+  function applyOrientation(isLandscape) {
+    if (isLandscape && document.body.classList.contains('match-live')) setControlsHidden(false);
+    document.body.dataset.controlOrientation = isLandscape ? 'landscape' : 'portrait';
+  }
   applyOrientation(landscapeMq.matches);
   landscapeMq.addEventListener('change', e => applyOrientation(e.matches));
 
   // Try to load stored zip on page load
   autoLoadStoredZip();
 
-  log('I29 READY · COLLAPSED STATIC BUILD -- this file is the direct, non-wrapper materialization of the prior wrapper rig\'s real runtime output (no fetch+patch step; captured mechanically from that rig\'s own tested code path, not hand-rewritten): INPUT WATCHDOG (fixed 75ms action pulses with forced key-up, action sequence tracing), LEAN BOOT (defers engine-config files at or above 4MB out of the eager load), QUIET STAGES (trims [ExtraStages] to the picked stage as well as [Characters]), KINEZA (merges repo-hosted character packs into the VFS over HTTP), and SELECT.DEF TRIM (rewrites select.def to only the two picked characters right before boot), on top of I13/I14/I15/I16/I17/I18/I19 fixes');
+  log('I29 READY · V24 COMBAT POLISH · COLLAPSED STATIC BUILD -- this file is the direct, non-wrapper materialization of the prior wrapper rig\'s real runtime output (no fetch+patch step; captured mechanically from that rig\'s own tested code path, not hand-rewritten): INPUT WATCHDOG (fixed 75ms action pulses with forced key-up, action sequence tracing), LEAN BOOT (defers engine-config files at or above 4MB out of the eager load), QUIET STAGES (trims [ExtraStages] to the picked stage as well as [Characters]), KINEZA (merges repo-hosted character packs into the VFS over HTTP), and SELECT.DEF TRIM (rewrites select.def to only the two picked characters right before boot), on top of I13/I14/I15/I16/I17/I18/I19 fixes');
 })();
