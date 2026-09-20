@@ -2260,3 +2260,19 @@ Do not move on to thumbnails, stage art, controller skin, pause, or sounds until
   - `v24LoadOverlayParts = complete` only when both the VS module and loading rail exist.
 - PriZim now waits for that persistent construction witness and for `body.match-live`, then separately asserts the landscape touch deck is displayed and pointer-active.
 - The native motif SND assertion occurs earlier in the same browser flow; both prior V24 runs advanced past it without failure.
+
+
+### 2026-09-20 · USER PHONE WITNESS · V24 APPROVED
+- User tested V24 on the real phone and confirmed **the combined #4 / #6 / #7 polish pass was all good**.
+- User specifically called out the **native motif UI sounds** as a strong improvement.
+- Mark beautification **#4 landscape controller skin = PHONE-APPROVED / CLOSED**.
+- Mark beautification **#6 selection / VS / loading micro-polish = PHONE-APPROVED / CLOSED**.
+- Mark beautification **#7 native motif UI sounds = PHONE-APPROVED / CLOSED**.
+- V24 phone-approved baseline:
+  - beauty page: `mugen-lab/rig-ikemen-29-beauty-v24.html`
+  - validated authority head at time of witness: `b4b2da282cf36b8033f9b45adadb2676ac347034`
+- Preserve V24 controller skin, VS/loading treatment, and motif-sound wiring exactly unless user explicitly requests a change.
+- #2 other roster portraits remains ON HOLD.
+- #3 real stage preview images + clean names remains deferred.
+- #5 real rotation pause/freeze remains pending.
+- Kineza in-fight fighter sprite/package correction remains queued after beautification unless reprioritized.
