@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MobMugen">
+<meta name="mobile-web-app-capable" content="yes">
 <title>MobMugen · Beauty V24 Combat Polish</title>
 <style>
 :root{
@@ -36,6 +37,7 @@ html,body{margin:0;min-height:100%;background:
 body{
   padding:max(env(safe-area-inset-top),10px) 10px max(env(safe-area-inset-bottom),10px);
   overflow-x:hidden;
+  overscroll-behavior:none;
 }
 body:before{
   content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;

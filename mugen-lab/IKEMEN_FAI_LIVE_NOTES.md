@@ -2348,3 +2348,33 @@ coordination channel; a silent fork like this one should not recur.
 If DAI's chain advances again (v25+), diff it against this file's
 `rig-ikemen-29.*` before adding new features to either side, the same
 way this reconciliation did.
+
+---
+
+## Crash recovery overlay added (2026-09-20)
+
+Small isolated follow-up on top of the v24 reconciliation, same
+`rig-ikemen-3.js`/`.html` base plus this session's `rig-ikemen-29.js`/`.html`
+canonical build. Before this, the only signal on a real CRASHED/FAILED/EXITED
+failure was `classifyStatus`'s existing 'error' state quietly tinting the
+status pill red -- and in V24's player-facing layout that pill lives inside
+the collapsed dev-only TEST dock, so a real player had zero visible
+in-game affordance on an actual crash, only a dead canvas.
+
+Hooked `showCrashOverlay()` into the same `status()` choke point that
+already classifies 'error': first entry into that state shows a full
+overlay over `.stage` (same card-over-canvas pattern the existing
+match-loading overlay uses) with the failure text and a RELOAD & TRY AGAIN
+button that calls `location.reload()`. Guarded with a one-shot flag so
+multiple failure signals in the same session don't stack overlays. Themed
+separately per file: base gold/dark (`rig-ikemen-3`) and V24 dark
+blue/gold (`rig-ikemen-29`, `.crash-overlay-v24`).
+
+Verified via a temporary test harness (window-exposed the closure function,
+confirmed render/duplicate-guard, then deleted -- not shipped) plus a real
+headless boot with zero page errors on both `rig-ikemen-29.html` and the
+live `rig-ikemen-24.html`. Committed and merged to `main` as `b6377a4`.
+
+Next up per the standing improvement list: Android Chrome/Firefox mobile
+coverage (WebGL context, audio-unlock, touch/pointer quirks against a
+codebase built primarily against iOS Safari).
