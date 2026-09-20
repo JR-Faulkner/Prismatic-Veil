@@ -2129,3 +2129,15 @@ Do not move on to thumbnails, stage art, controller skin, pause, or sounds until
 - SFF v2 / unavailable portraits keep a clean initials fallback rather than blocking selection.
 - Stage cells remain text-only; real stage art is still beautification priority #3 and is not being pulled forward.
 - V20 diagnostic build label is `BUILD: V20`.
+
+
+### 2026-09-19 · V20 phone witness failed · roster thumbnails
+- User phone witness: **V20 roster thumbnails did not populate**.
+- Keep beautification priority #2 open. Do not advance to stage previews yet.
+- Important validation correction: the existing PriZim runtime probe targeted only `rig-ikemen-N.html`, so V20's successful PriZim run validated the underlying I29 lane rather than the `rig-ikemen-29-beauty-v20.html` thumbnail layer.
+- V21 removes `IntersectionObserver` as the gate for thumbnail hydration on phone.
+- V21 immediately queues the selected fighter and first visible roster row, then hydrates additional cells from each roster grid's own scroll event using geometry checks.
+- Thumbnail decode concurrency remains capped at 2.
+- Kineza's JS portrait override uses the equivalent relative URL `../kineza_full.png?v=579cf39e-v21`, which resolves correctly on GitHub Pages and on the local PriZim server.
+- The already phone-confirmed large Kineza select-card authority remains unchanged.
+- PriZim runtime probe now prefers the latest `rig-ikemen-*-beauty-v*.html` build and explicitly requires the synthetic fixture's Kineza roster cell to reach `thumbState=ready` with a non-zero natural image size.

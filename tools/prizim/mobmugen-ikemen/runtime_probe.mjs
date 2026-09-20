@@ -20,20 +20,32 @@ const MUGEN_LAB = path.join(ROOT, 'mugen-lab');
 const base = process.env.PZ_BASE_URL || 'http://127.0.0.1:8000';
 const fixture = process.env.PZ_FIXTURE || path.join(__dirname, 'fixtures', 'prizim_ikemen_fixture.zip');
 
-function findCurrentRig() {
+function findCurrentProbePage() {
   const files = fs.readdirSync(MUGEN_LAB);
-  const nums = files
-    .map(f => f.match(/^rig-ikemen-(\d+)\.html$/))
+  const beauty = files
+    .map(f => {
+      const m = f.match(/^rig-ikemen-(\d+)-beauty-v(\d+)\.html$/);
+      return m ? { file:f, rig:parseInt(m[1],10), beauty:parseInt(m[2],10) } : null;
+    })
     .filter(Boolean)
-    .map(m => parseInt(m[1], 10));
-  if (!nums.length) throw new Error('no rig-ikemen-N.html found under mugen-lab/');
-  const n = Math.max(...nums);
-  return n;
+    .sort((a,b) => (b.beauty - a.beauty) || (b.rig - a.rig));
+  if (beauty.length) return { ...beauty[0], label:'I' + beauty[0].rig + ' Beauty V' + beauty[0].beauty };
+
+  const numeric = files
+    .map(f => {
+      const m = f.match(/^rig-ikemen-(\d+)\.html$/);
+      return m ? { file:f, rig:parseInt(m[1],10), beauty:null } : null;
+    })
+    .filter(Boolean)
+    .sort((a,b) => b.rig - a.rig);
+  if (!numeric.length) throw new Error('no rig-ikemen page found under mugen-lab/');
+  return { ...numeric[0], label:'I' + numeric[0].rig };
 }
 
-const rigNum = findCurrentRig();
-const pageUrl = `${base}/mugen-lab/rig-ikemen-${rigNum}.html`;
-console.log(`PriZim Ikemen probe targeting I${rigNum}: ${pageUrl}`);
+const probePage = findCurrentProbePage();
+const rigNum = probePage.rig;
+const pageUrl = `${base}/mugen-lab/${probePage.file}`;
+console.log(`PriZim Ikemen probe targeting ${probePage.label}: ${pageUrl}`);
 
 // PZ_CHROMIUM_PATH is for local/sandboxed runs against a pre-installed
 // browser outside Playwright's own managed install (CI installs its own
@@ -74,6 +86,37 @@ const [fc] = await Promise.all([
 await fc.setFiles(fixture);
 await page.waitForSelector('#charPickerSection:not(.hide)', { timeout: 20000 });
 await page.waitForTimeout(300);
+
+// Beautification witness: when the latest page is a beauty build, prove
+// the repo-authority Kineza roster cell actually becomes an image.
+let beautyRosterThumbnail = null;
+if (probePage.beauty !== null) {
+  const kinezaHandle = await page.evaluateHandle(() => {
+    return [...document.querySelectorAll('#p1Grid .roster-item')]
+      .find(el => (el.dataset.charName || '').toLowerCase() === 'kineza') || null;
+  });
+  const hasKineza = await kinezaHandle.evaluate(el => !!el);
+  if (!hasKineza) throw new Error('beauty probe fixture does not expose a Kineza roster cell');
+  await kinezaHandle.evaluate(el => el.scrollIntoView({ block:'nearest' }));
+  await page.waitForFunction(() => {
+    const el = [...document.querySelectorAll('#p1Grid .roster-item')]
+      .find(x => (x.dataset.charName || '').toLowerCase() === 'kineza');
+    if (!el) return false;
+    const img = el.querySelector('.roster-thumb-img');
+    return el.dataset.thumbState === 'ready' && !!img && img.naturalWidth > 0;
+  }, { timeout: 5000 });
+  beautyRosterThumbnail = await page.evaluate(() => {
+    const el = [...document.querySelectorAll('#p1Grid .roster-item')]
+      .find(x => (x.dataset.charName || '').toLowerCase() === 'kineza');
+    const img = el && el.querySelector('.roster-thumb-img');
+    return el ? {
+      state: el.dataset.thumbState,
+      naturalWidth: img ? img.naturalWidth : 0,
+      naturalHeight: img ? img.naturalHeight : 0,
+      src: img ? img.getAttribute('src') : ''
+    } : null;
+  });
+}
 
 // --- drive P1's pick via touch, BEFORE any direct .click() -- focus
 // starts on the first P1 roster-item, so an attack-key tap here commits
@@ -216,6 +259,8 @@ const report = {
   suite: 'PriZim MOBMUGEN-IKEMEN runtime probe',
   rig: `I${rigNum}`,
   page_url: pageUrl,
+  beauty_build: probePage.beauty,
+  beauty_roster_thumbnail: beautyRosterThumbnail,
   match_started: inMatch,
   refcount_fix_intact: true,
   roll_fix_intact: true,
