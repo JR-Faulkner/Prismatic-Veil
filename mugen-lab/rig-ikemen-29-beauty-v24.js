@@ -2324,6 +2324,9 @@
     el.append(kicker, title, vs, stageLine, rail, count);
     stageEl.appendChild(el);
     document.body.classList.add('match-loading-v24');
+    document.body.dataset.v24LoadOverlaySeen = 'ready';
+    document.body.dataset.v24LoadOverlayParts =
+      el.querySelector('.match-load-vs') && el.querySelector('.match-load-rail') ? 'complete' : 'incomplete';
     loadOverlayEl = el;
     loadOverlayCountEl = count;
     const shownAt = performance.now();

@@ -224,17 +224,28 @@ if (probePage.beauty !== null) {
     throw new Error('beauty rotation regression: FIGHT did not raise the portrait rotate gate');
   }
   await page.setViewportSize({ width: 844, height: 390 });
-  await page.waitForSelector('#matchLoadOverlay.match-load-overlay-v24 .match-load-vs', { timeout: 5000 });
-  await page.waitForSelector('#matchLoadOverlay .match-load-rail', { timeout: 5000 });
+  if (probePage.beauty >= 24) {
+    await page.waitForFunction(() =>
+      document.body.dataset.v24LoadOverlaySeen === 'ready' &&
+      document.body.dataset.v24LoadOverlayParts === 'complete',
+      { timeout: 5000 });
+  }
+  await page.waitForFunction(() => document.body.classList.contains('match-live'), { timeout: 5000 });
   const controlDeck = await page.evaluate(() => {
     const controls = document.getElementById('controls');
     const dpad = document.querySelector('#controls .dpad');
     return {
       controlsDisplay: getComputedStyle(controls).display,
       dpadPointerEvents: getComputedStyle(dpad).pointerEvents,
-      skin: controls?.dataset.skin || ''
+      skin: controls?.dataset.skin || '',
+      loadingSeen: document.body.dataset.v24LoadOverlaySeen || '',
+      loadingParts: document.body.dataset.v24LoadOverlayParts || ''
     };
   });
+  if (probePage.beauty >= 24 &&
+      (controlDeck.loadingSeen !== 'ready' || controlDeck.loadingParts !== 'complete')) {
+    throw new Error('V24 loading polish witness missing: ' + JSON.stringify(controlDeck));
+  }
   if (controlDeck.controlsDisplay === 'none' || controlDeck.dpadPointerEvents === 'none') {
     throw new Error('V24 landscape touch deck is not active: ' + JSON.stringify(controlDeck));
   }

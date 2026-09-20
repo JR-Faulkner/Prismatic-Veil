@@ -2250,3 +2250,13 @@ Do not move on to thumbnails, stage art, controller skin, pause, or sounds until
 - This occurred after the earlier V24 native-motif-SND and skin-marker checks, so those did not trigger the failure.
 - Added `LOAD_OVERLAY_MIN_MS = 1400` so the polished battle-link presentation remains perceptible rather than flashing away on a fast/synthetic load.
 - The existing asset-settle and 180s hard-cap behavior remain intact; only a minimum presentation dwell was added.
+
+
+### 2026-09-20 · V24 probe stabilization after visible-overlay race
+- A second PriZim run again logged the new V24 loading module as **visible** before Playwright's `waitForSelector(... visible)` timed out, confirming the selector wait itself was flaky rather than the overlay being absent.
+- Kept the 1400ms minimum loading-presentation dwell for phone readability.
+- Added a persistent runtime witness on `document.body.dataset` when the V24 loading DOM is constructed:
+  - `v24LoadOverlaySeen = ready`
+  - `v24LoadOverlayParts = complete` only when both the VS module and loading rail exist.
+- PriZim now waits for that persistent construction witness and for `body.match-live`, then separately asserts the landscape touch deck is displayed and pointer-active.
+- The native motif SND assertion occurs earlier in the same browser flow; both prior V24 runs advanced past it without failure.
