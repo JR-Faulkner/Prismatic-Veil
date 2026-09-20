@@ -2148,3 +2148,23 @@ Do not move on to thumbnails, stage art, controller skin, pause, or sounds until
 - That run then failed later at the old base-I29 match-start assertion because the beauty architecture correctly gates portrait FIGHT behind `ROTATE TO LANDSCAPE`.
 - The runtime probe now treats that gate as required behavior for beauty builds: it asserts the gate appears, switches the synthetic phone viewport to landscape, then continues the existing match/control checks.
 - This separates the two authorities cleanly: roster thumbnail hydration must pass before match start, and the portrait-to-landscape fight gate must also remain intact.
+
+
+### 2026-09-20 · V21 phone witness · roster thumbnail lane confirmed
+- User confirmed **V21 roster thumbnails are visibly working on the real phone**.
+- Correction to completion status: beautification priority #2 remains open until non-Kineza roster fighters are covered, not merely the repo-authority Kineza case.
+- Do not advance to stage previews yet.
+
+### 2026-09-20 · V22 other-character portrait coverage
+- Added generic **SFF v2** portrait decoding to the existing roster portrait pipeline.
+- SFF v2 detection uses the format's major-version byte at offset 15.
+- V22 parses the 512-byte v2 header, 28-byte sprite table entries, 16-byte palette table entries, linked sprites and linked palettes.
+- Supported v2 portrait payloads in this pass:
+  - format 0 raw indexed / 8-bit
+  - format 2 RLE8 indexed / 8-bit
+  - formats 10/11/12 embedded PNG8/PNG24/PNG32 through the browser's native PNG decoder
+- Formats 3 (RLE5) and 4 (LZ5) remain explicit safe fallbacks for a later codec extension; they do not crash or block selection.
+- Motif-aware portrait preference remains 9000,1 first, then 9000,0.
+- Added a synthetic non-Kineza fighter (`g.ken`) whose DEF points to a generated SFF v2 RLE8 file containing a real 24x24 sprite at 9000,1.
+- PriZim Beauty V22 must now prove that **both** Kineza's repo-authority thumbnail and the generic SFF v2 `g.ken` thumbnail reach `thumbState=ready` with non-zero image dimensions.
+- Stage-preview work remains paused behind this portrait-completion pass.

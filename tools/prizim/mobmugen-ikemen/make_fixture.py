@@ -9,6 +9,7 @@ rosters carry), the top-level wrapper-folder strip, the lazy VFS index,
 and the character/stage picker -- not to validate real character content.
 """
 from pathlib import Path
+import struct
 import zipfile
 
 out = Path(__file__).with_name('fixtures') / 'prizim_ikemen_fixture.zip'
@@ -42,13 +43,61 @@ system_def = (
     "foo = 1\n"
 )
 
+def build_sff2_rle8_portrait(width=24, height=24):
+    """Minimal SFF v2.0 with one 9000,1 RLE8 indexed portrait."""
+    header_size = 512
+    sprite_off = header_size
+    sprite_count = 1
+    palette_off = sprite_off + 28
+    palette_count = 1
+    ldata_off = palette_off + 16
+
+    # RLE8 allows literal bytes except 0x40..0x7f. Keep indices 1..3.
+    pixels = bytes(1 + ((x // 4 + y // 4) % 3)
+                   for y in range(height) for x in range(width))
+    image_data = struct.pack("<I", width * height) + pixels
+
+    palette = bytes([
+        0, 0, 0, 0,
+        50, 180, 255, 255,
+        255, 90, 80, 255,
+        255, 220, 80, 255,
+    ])
+    palette_data_off = len(image_data)
+    ldata = image_data + palette
+    tdata_off = ldata_off + len(ldata)
+
+    header = bytearray(header_size)
+    header[0:12] = b"ElecbyteSpr\x00"
+    header[12:16] = bytes([0, 0, 0, 2])
+    struct.pack_into("<I", header, 36, sprite_off)
+    struct.pack_into("<I", header, 40, sprite_count)
+    struct.pack_into("<I", header, 44, palette_off)
+    struct.pack_into("<I", header, 48, palette_count)
+    struct.pack_into("<I", header, 52, ldata_off)
+    struct.pack_into("<I", header, 56, len(ldata))
+    struct.pack_into("<I", header, 60, tdata_off)
+    struct.pack_into("<I", header, 64, 0)
+
+    sprite = struct.pack(
+        "<HHHHhhHBBIIHH",
+        9000, 1, width, height, 0, 0, 0,
+        2, 8, 0, len(image_data), 0, 0
+    )
+    pal = struct.pack(
+        "<HHHHII",
+        9000, 1, 4, 0, palette_data_off, len(palette)
+    )
+    return bytes(header) + sprite + pal + ldata
+
 files = {
     'Winmugen/Winmugen.exe': b'MZ' + b'PRIZIM-IKEMEN-FIXTURE' * 64,
     'Winmugen/mugen.cfg': b'[Config]\n',
     'Winmugen/data/system.def': system_def.encode(),
     'Winmugen/data/select.def': select_def.encode(),
     'Winmugen/chars/mole/mole.def': b'x',
-    'Winmugen/chars/g.ken/g.ken.def': b'x',
+    'Winmugen/chars/g.ken/g.ken.def': b'[Info]\nname = "G.Ken"\n[Files]\nsprite = gken.sff\n',
+    'Winmugen/chars/g.ken/gken.sff': build_sff2_rle8_portrait(),
     'Winmugen/stages/cfjed_warzard.def': b'x',
     'Winmugen/stages/cfjed_warzard.sff': b'x',
     'Winmugen/font/f-4x6.fnt': b'x',
