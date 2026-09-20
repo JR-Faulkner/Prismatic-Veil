@@ -1,0 +1,1254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>MobMugen · Beauty V17 Kineza Portrait</title>
+<style>
+:root{
+  --bg:#05080d;
+  --panel:#09111b;
+  --panel2:#0d1724;
+  --panel3:#111e2d;
+  --line:#1d72b8;
+  --line-soft:#19344d;
+  --blue:#19a8ff;
+  --blue2:#69c7ff;
+  --gold:#f4c64d;
+  --gold2:#ffdd78;
+  --text:#f4f8ff;
+  --muted:#7f93a8;
+  --good:#6eff9b;
+  --bad:#ff6678;
+  --shadow:#000c;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:
+  radial-gradient(circle at 50% -12%,#0d2740 0,transparent 35%),
+  linear-gradient(180deg,#05080d 0,#070b11 60%,#030509 100%);
+  color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{
+  padding:max(env(safe-area-inset-top),10px) 10px max(env(safe-area-inset-bottom),10px);
+  overflow-x:hidden;
+}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;
+  background:
+    linear-gradient(135deg,transparent 0 23%,#17a8ff0d 23.3% 23.7%,transparent 24% 72%,#f4c64d08 72.3% 72.6%,transparent 73%),
+    repeating-linear-gradient(0deg,#fff0 0 3px,#fff008 4px);
+  mix-blend-mode:screen;
+}
+.wrap{max-width:980px;margin:auto;position:relative;z-index:1}
+.bar{
+  display:grid;grid-template-columns:1fr;align-items:center;gap:4px;
+  min-height:30px;margin-bottom:2px;padding:0 2px;
+}
+.brand{
+  display:flex;align-items:center;gap:10px;min-width:0;
+  font-size:clamp(16px,4vw,27px);font-weight:1000;font-style:italic;letter-spacing:.02em;
+  text-transform:uppercase;white-space:nowrap;
+  background:linear-gradient(180deg,#ffffff 0,#b8c4d4 42%,#179ef0 55%,#65d4ff 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 22px #1aa8ff33;
+}
+.brand:after{
+  content:"";height:2px;min-width:26px;flex:1;
+  background:linear-gradient(90deg,#1eb0ff,transparent);
+  box-shadow:0 0 12px #1eb0ffaa;
+}
+.pill,.ctrlbtn{
+  border:1px solid var(--line-soft);background:linear-gradient(180deg,#111b27,#09111a);
+  color:#b9c9d9;border-radius:9px;padding:8px 11px;font:900 10px ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.04em;box-shadow:inset 0 1px #ffffff0a,0 6px 18px #0006;
+}
+.pill{color:var(--gold);border-color:#7d6320}
+.pill[data-state="loading"]{border-color:#9c7826;color:#ffd96d;animation:pulse 1.4s ease-in-out infinite}
+.pill[data-state="running"]{border-color:#237943;color:var(--good)}
+.pill[data-state="error"]{border-color:#8c2530;color:var(--bad)}
+@keyframes pulse{50%{opacity:.58}}
+
+.stage{
+  position:relative;margin:0 auto;border:1px solid #1d5f93;border-radius:12px;overflow:hidden;background:#000;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 1px #6cc9ff12,inset 0 0 36px #0a315544,0 20px 60px #0009;
+  clip-path:polygon(0 12px,12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px));
+}
+.stage:before{
+  content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  border:1px solid #23b1ff35;clip-path:inherit;
+}
+.tag{
+  position:absolute;z-index:8;left:10px;top:8px;
+  padding:5px 9px;border-left:3px solid var(--blue);border-radius:3px;
+  background:#06111bdd;color:#d7e8f7;font:900 9px ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.12em;text-transform:uppercase;
+}
+body[data-runtime-state="loading"] .stage{border-color:#9c7826}
+body[data-runtime-state="running"] .stage{border-color:#2a8e54}
+body[data-runtime-state="error"] .stage{border-color:#8c2530}
+#ikemen-canvas{display:block;width:100%;height:auto;image-rendering:pixelated;background:#000;outline:none;position:relative;z-index:1}
+
+.setup{
+  position:absolute;inset:0;z-index:7;display:grid;place-items:center;padding:18px;
+  background:
+    radial-gradient(circle at 50% 12%,#153a5d88 0,transparent 42%),
+    linear-gradient(180deg,#08111bee,#05080df7);
+  overflow-y:auto;
+}
+.card{width:min(680px,100%);text-align:center}
+.card h2{
+  margin:0 0 7px;font-size:clamp(17px,4vw,25px);font-weight:1000;font-style:italic;text-transform:uppercase;
+  color:#eef7ff;letter-spacing:.04em;text-shadow:0 0 18px #1ca8ff55
+}
+.card p{color:#92a6b8;line-height:1.45;font-size:11px;margin:6px auto;max-width:620px}
+.pick,.start-btn{
+  appearance:none;display:inline-block;margin-top:12px;padding:12px 20px;border-radius:6px;
+  border:1px solid #d5a82b;background:linear-gradient(90deg,#c18a13,#f4c64d 48%,#d69c1a);
+  color:#0a0b0d;font-weight:1000;letter-spacing:.04em;cursor:pointer;
+  box-shadow:0 0 0 1px #ffdf7b2e,0 0 22px #f4c64d26;
+}
+.start-btn{margin:6px 4px}
+.change-btn{
+  appearance:none;display:inline-block;margin:6px 4px;padding:10px 16px;border-radius:6px;
+  border:1px solid #214664;background:#0b1722;color:#bed5e7;font-weight:900;cursor:pointer;
+}
+.hint{margin-top:9px;font-size:10px;color:#71869a}
+.hide{display:none!important}
+
+#charPickerSection{
+  margin-top:12px;padding:12px;border:1px solid #173754;border-radius:10px;
+  background:linear-gradient(180deg,#0b1520e8,#071019ee);
+  box-shadow:inset 0 0 24px #1268a21f;
+}
+.picker-heading{
+  color:#dcecff!important;font-size:11px!important;font-weight:1000;letter-spacing:.12em!important;
+  margin:0!important;text-transform:uppercase;
+}
+.picker-row{text-align:left;margin:8px 0}
+.picker-row-label{
+  font-size:9px;color:#8da2b7;margin-bottom:5px;letter-spacing:.11em;font-weight:900;text-transform:uppercase;
+}
+.roster-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:6px;margin:0;
+  max-height:160px;overflow-y:auto;border:1px solid #15344f;border-radius:8px;padding:6px;background:#06101a;
+  scrollbar-width:thin;scrollbar-color:#1a83c5 #06101a;
+}
+.roster-item{
+  padding:8px 5px;min-height:46px;display:flex;align-items:center;justify-content:center;
+  border:1px solid #1e405c;border-radius:5px;background:linear-gradient(180deg,#111d2a,#0b1420);
+  color:#c2d2df;font-size:9px;font-weight:900;text-align:center;cursor:pointer;word-break:break-word;outline:none;
+  transition:.12s ease;
+}
+.roster-item:focus,.roster-item.selected{
+  border-color:var(--gold);background:linear-gradient(180deg,#302815,#181409);color:#ffe38c;
+  box-shadow:0 0 0 1px #f4c64d55,0 0 14px #f4c64d33;transform:translateY(-1px)
+}
+.selection-display{display:flex;gap:6px;justify-content:center;margin:10px 0;flex-wrap:wrap}
+.sel-item{
+  min-width:92px;border:1px solid #1c4b6c;background:#08131e;color:#dcecf7;border-radius:5px;padding:6px 9px;
+  font-size:9px;font-weight:900;
+}
+.sel-item.filled{border-color:var(--gold);color:#ffe38c;box-shadow:0 0 12px #f4c64d28}
+.sel-label{color:#5ebdff;font-size:8px;display:block;letter-spacing:.1em}
+.picker-actions{text-align:center}
+.roster-empty{grid-column:1/-1;color:#6f8294;font-size:9px;padding:6px}
+
+.statusline{
+  display:flex;align-items:center;gap:7px;padding:8px 4px 4px;font:800 9px ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.11em;color:#647b8f;text-transform:uppercase;
+}
+.statusline:before{content:"";width:5px;height:5px;border-radius:50%;background:#1ca8ff;box-shadow:0 0 9px #1ca8ff}
+.statusline b{color:#b8cadd}
+
+.controls{
+  position:relative;margin-top:5px;height:220px;border:1px solid #173b57;border-radius:12px;
+  background:
+    linear-gradient(135deg,#17324a20 0 18%,transparent 18% 82%,#f4c64d0b 82%),
+    radial-gradient(circle at 50% -20%,#174f793d,transparent 50%),
+    linear-gradient(180deg,#0a121c,#05080d);
+  overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;
+  box-shadow:inset 0 0 30px #0008,0 12px 32px #0007;
+}
+.controls.hidden,.diag-wrap.hidden{display:none}
+.controls:after{content:"";position:absolute;left:50%;top:18%;bottom:18%;width:1px;background:linear-gradient(transparent,#1a6a9a55,transparent);pointer-events:none}
+.controls:before{
+  content:"MOBMUGEN // TOUCH DECK";position:absolute;left:50%;top:7px;transform:translateX(-50%);
+  font:900 7px ui-monospace;letter-spacing:.22em;color:#5b8aa944
+}
+.cz{position:absolute;top:8px;bottom:28px;width:50%;display:flex;align-items:center;justify-content:center}
+.cz.left{left:0}.cz.right{right:0}
+.dpad{
+  width:min(35vw,146px);height:min(35vw,146px);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+  padding:7px;border-radius:50%;border:1px solid #62bfff65;
+  background:radial-gradient(circle,#0d1621 0 24%,#0b1723aa 25% 49%,#07101acc 50% 100%);
+  box-shadow:0 0 18px #1aa8ff1f,inset 0 0 22px #1b699b2e;
+  opacity:.72;transition:opacity .12s;
+}
+.dpad:active{opacity:1}
+.dir{appearance:none;border:0;background:transparent;color:#bfd9eb;font:950 20px ui-monospace;display:flex;align-items:center;justify-content:center;touch-action:none}
+.dir.center{pointer-events:none;font-size:7px;color:#47708b;border:1px solid #2e658766;border-radius:50%;margin:13%;background:#071019}
+.dir.on{background:radial-gradient(circle,#1ba9ff99,transparent 68%);transform:scale(.91);color:#fff}
+.acts{position:relative;width:min(44vw,190px);height:148px;opacity:.70;transition:opacity .12s}
+.acts:active{opacity:1}
+.act{
+  position:absolute;width:min(13vw,54px);height:min(13vw,54px);border-radius:50%;color:#dfeeff;
+  font:950 11px ui-monospace;touch-action:none;
+  background:radial-gradient(circle at 36% 28%,#ffffff24,#111d2a 45%,#060a0f 100%);
+  box-shadow:0 5px 12px #0009,inset 0 0 10px #ffffff0a;
+  transition:.08s ease;
+}
+.act.on{transform:scale(.9);filter:brightness(1.55);opacity:1;box-shadow:0 0 20px currentColor}
+.bx,.bz{border:1px solid #22a8ff}.by,.bx2{border:1px solid #f4c64d}.bz2,.bc{border:1px solid #e4505c}
+.bx{left:0;top:12%}.by{left:35%;top:0}.bz2{right:0;top:12%}.bz{left:0;bottom:0}.bx2{left:35%;bottom:10%}.bc{right:0;bottom:0}
+.util{
+  position:absolute;left:50%;bottom:7px;transform:translateX(-50%);width:34%;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:5px;z-index:3
+}
+.util button{
+  height:26px;border:1px solid #33536a;background:#0a121ad9;color:#9fb6c8;border-radius:999px;
+  font:950 7px ui-monospace;letter-spacing:.08em;touch-action:none
+}
+.util button.on{border-color:var(--gold);color:#ffe58d;background:#2a210d;transform:scale(.98)}
+
+.diag-head{display:flex;align-items:center;justify-content:space-between;margin-top:5px;padding:0 2px}
+.diag-head span{font:900 8px ui-monospace;color:#556d82;letter-spacing:.12em}
+.diag-toggle{border:1px solid #1d405b;background:#09131d;color:#8fa5b7;border-radius:6px;padding:5px 8px;font:900 8px ui-monospace}
+.diag-wrap{margin-top:4px}
+.diag{
+  margin-top:6px;border:1px solid #18354c;border-radius:7px;background:#050b11;padding:9px;max-height:160px;
+  overflow:auto;white-space:pre-wrap;font:9px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:#7f96aa
+}
+.copy{
+  position:fixed;right:10px;bottom:max(12px,env(safe-area-inset-bottom));z-index:20;
+  border:1px solid #2b5875;background:#09131ddd;color:#9bb6ca;border-radius:7px;padding:8px 10px;
+  font:bold 9px ui-monospace;box-shadow:0 5px 18px #0008
+}
+
+
+.bad{color:var(--bad)}
+
+/* GUI depth pass */
+#charPickerSection{
+  border:0!important;
+  border-radius:14px!important;
+  background:
+    linear-gradient(180deg,#0d1824f4,#07101af8)!important;
+  box-shadow:
+    0 18px 38px #0008,
+    inset 0 1px #ffffff0d,
+    inset 0 -1px #000!important;
+  position:relative;
+  overflow:hidden;
+}
+#charPickerSection:before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(135deg,#1aa8ff13 0 12%,transparent 12% 82%,#f4c64d0b 82%),
+    linear-gradient(90deg,#1aa8ff00,#1aa8ff13 50%,#1aa8ff00);
+  border-top:1px solid #2b80b9;
+  border-bottom:1px solid #0d2e45;
+}
+#charPickerSection:after{
+  content:"";position:absolute;left:16px;right:16px;top:0;height:3px;
+  background:linear-gradient(90deg,#1aa8ff,transparent 42%,transparent 58%,#f4c64d);
+  box-shadow:0 0 14px #1aa8ff66;
+}
+.select-titlebar{
+  position:relative;z-index:1;
+  margin:0 -8px 8px!important;
+  padding:6px 12px 8px!important;
+  border-bottom:1px solid #183a54!important;
+  background:linear-gradient(90deg,#0f2231aa,#07101900 36%,#07101900 64%,#2a230faa);
+}
+.select-titlebar:before{content:"01";position:absolute;left:12px;top:50%;transform:translateY(-50%);font:1000 8px ui-monospace;color:#4dbaff}
+.select-titlebar:after{content:"FIGHTER SELECT";position:absolute;right:12px;top:50%;transform:translateY(-50%);font:900 7px ui-monospace;letter-spacing:.12em;color:#877331}
+.versus-banner{
+  position:relative;z-index:1;
+  padding:4px;
+  border-radius:10px;
+  background:linear-gradient(90deg,#0d2638 0 47%,#17212a 50%,#302612 53% 100%);
+  box-shadow:inset 0 0 0 1px #294a60,0 8px 18px #0007;
+}
+.fighter-card{
+  border:0!important;
+  box-shadow:inset 0 0 0 1px #265a7a,inset 0 14px 26px #ffffff05!important;
+}
+.p2-card{box-shadow:inset 0 0 0 1px #765f22,inset 0 14px 26px #ffffff04!important}
+.vs-core span{
+  border:0!important;
+  background:radial-gradient(circle at 35% 30%,#ffffff20,#0a0f15 52%,#030608)!important;
+  box-shadow:0 0 0 1px #738393,0 0 0 4px #05090d,0 0 18px #1aa8ff2e!important;
+}
+.fighter-pick-panel{
+  position:relative;padding:6px;border-radius:9px;
+  background:linear-gradient(180deg,#0a1621,#071019);
+  box-shadow:inset 0 0 0 1px #173a55;
+}
+.fighter-pick-panel:before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(#1aa8ff,transparent);
+  border-radius:9px 0 0 9px
+}
+.fighter-pick-panel:nth-child(2):before{background:linear-gradient(#f4c64d,transparent)}
+.picker-row-label{padding:0 3px 4px}
+.roster-grid{
+  border:0!important;
+  border-radius:7px!important;
+  background:#050c12!important;
+  box-shadow:inset 0 0 0 1px #16364e,inset 0 10px 24px #0008!important;
+}
+.roster-item{
+  position:relative;overflow:hidden;justify-content:flex-start!important;text-align:left!important;
+  min-height:54px!important;padding:6px 7px 6px 40px!important;
+  border:0!important;border-radius:6px!important;
+  background:linear-gradient(180deg,#111e2b,#09131d)!important;
+  box-shadow:inset 0 0 0 1px #1d435f,inset 0 1px #ffffff0a,0 2px 4px #0007!important;
+}
+.roster-item:before{
+  content:attr(data-badge);
+  position:absolute;left:6px;top:50%;transform:translateY(-50%);
+  width:28px;height:34px;border-radius:4px;
+  display:grid;place-items:center;
+  background:linear-gradient(160deg,#18364b,#09131d);
+  box-shadow:inset 0 0 0 1px #265f84;
+  color:#73caff;font:1000 9px ui-monospace;
+}
+.roster-item[data-mode="p2"]:before{
+  color:#f4d66a;background:linear-gradient(160deg,#3a3014,#151108);box-shadow:inset 0 0 0 1px #7d6320
+}
+.roster-item[data-mode="stage"]:before{
+  content:"◆";color:#9fc7df;background:linear-gradient(160deg,#20303e,#0b1117)
+}
+.roster-name{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.roster-item:after{
+  content:"";position:absolute;right:-12px;top:-12px;width:42px;height:42px;transform:rotate(45deg);
+  background:#1aa8ff08;
+}
+.roster-item.selected,.roster-item:focus{
+  transform:none!important;
+  background:linear-gradient(180deg,#2e2816,#151107)!important;
+  box-shadow:inset 0 0 0 2px var(--gold),inset 0 0 18px #f4c64d19,0 0 14px #f4c64d24!important;
+}
+.roster-item.selected:before,.roster-item:focus:before{
+  background:linear-gradient(160deg,#f4c64d,#a87309)!important;color:#08090a!important;
+  box-shadow:0 0 12px #f4c64d44!important;
+}
+.stage-bay{
+  border:0!important;border-radius:10px!important;
+  background:linear-gradient(180deg,#0b1721,#060c12)!important;
+  box-shadow:inset 0 0 0 1px #173d58,0 8px 18px #0006!important;
+  position:relative;overflow:hidden
+}
+.stage-bay:before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(120deg,#1aa8ff0c,transparent 38%,transparent 70%,#f4c64d0b)
+}
+.stage-preview{
+  border:0!important;border-radius:7px!important;
+  box-shadow:inset 0 0 0 1px #205775,inset 0 -22px 40px #0009,0 4px 12px #0008!important;
+}
+.stage-preview-name{
+  left:10px!important;bottom:8px!important;
+  padding:4px 7px;border-radius:4px;
+  background:#02070bc9;
+  border-left:2px solid var(--blue)
+}
+.stage-readout{
+  border:0!important;border-radius:6px!important;
+  background:linear-gradient(180deg,#12202b,#09121a)!important;
+  box-shadow:inset 0 0 0 1px #214760!important
+}
+.action-dock{
+  padding:5px;border-radius:8px;
+  background:#050b10;
+  box-shadow:inset 0 0 0 1px #15344c
+}
+.action-dock .change-btn{
+  border:0!important;background:linear-gradient(180deg,#142331,#0a131d)!important;
+  box-shadow:inset 0 0 0 1px #29506b!important
+}
+.action-dock .start-btn{
+  border:0!important;background:linear-gradient(90deg,#b77d0d,#f4c64d 48%,#bc8410)!important;
+  box-shadow:inset 0 1px #fff3a055,0 0 16px #f4c64d27!important
+}
+
+.test-dock{
+  position:fixed;right:8px;top:max(8px,env(safe-area-inset-top));z-index:40;
+  display:flex;flex-direction:column;align-items:flex-end;gap:5px;pointer-events:none
+}
+.test-tab{
+  width:34px;height:34px;border-radius:50%;border:1px solid #264b66;
+  background:#071019d9;color:#7897ad;font:1000 7px ui-monospace;letter-spacing:.04em;
+  box-shadow:0 4px 14px #0009;opacity:.48;pointer-events:auto
+}
+.test-tab[aria-expanded="true"]{opacity:1;border-color:#6a5520;color:#f4c64d}
+.test-panel{
+  width:min(248px,calc(100vw - 20px));padding:8px;border:1px solid #244b66;border-radius:9px;
+  background:#050b11f2;box-shadow:0 14px 40px #000d;backdrop-filter:blur(10px);pointer-events:auto
+}
+.test-title{font:1000 8px ui-monospace;letter-spacing:.14em;color:#66869c;margin-bottom:5px}
+.test-status{padding:4px 0!important}
+.test-pill{display:inline-block;margin:2px 0 7px!important}
+.test-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.dev-chip{
+  border:1px solid #234a65;background:#071019e8;color:#8fa8ba;border-radius:6px;
+  padding:7px 5px;font:900 7px ui-monospace;letter-spacing:.05em;box-shadow:none
+}
+.diag-head.compact{margin:0 0 4px;padding:0}
+.setup{padding:10px!important;align-items:start!important}
+.card{width:min(720px,100%);padding-top:4px}
+.card h2{margin-bottom:3px}
+.card p{margin:3px auto 6px;line-height:1.3}
+#charPickerSection{margin-top:7px!important;padding:8px!important}
+.select-titlebar{margin-bottom:6px!important;padding-bottom:6px!important}
+.versus-banner{margin:5px 0 6px!important}
+.fighter-card{min-height:70px!important}
+.fighter-grids{gap:6px}
+.roster-grid{max-height:96px!important}
+.stage-bay{margin-top:6px!important;padding:7px!important}
+.stage-preview{height:62px!important;margin-bottom:6px!important}
+.stage-grid{max-height:76px!important}
+.action-dock{margin-top:7px!important}
+.action-dock .start-btn,.action-dock .change-btn{height:36px!important}
+.statusline{padding:5px 4px 3px!important}
+.controls{margin-top:3px!important}
+
+
+.setup:has(#charPickerSection:not(.hide)) .setup-title,
+.setup:has(#charPickerSection:not(.hide)) #setupDesc{display:none}
+.setup:has(#charPickerSection:not(.hide)) .card{padding-top:0}
+.select-titlebar{display:block;margin-bottom:5px;padding-bottom:5px;border-bottom:1px solid #183d5a}
+.select-titlebar .picker-heading{margin:0!important;text-align:center}
+.versus-banner{display:grid;grid-template-columns:1fr 52px 1fr;gap:8px;align-items:stretch;margin:8px 0 10px}
+.fighter-card{position:relative;min-height:88px!important;padding:12px 12px 10px!important;display:flex;flex-direction:column;justify-content:flex-end;text-align:left;overflow:hidden;
+  background:
+    linear-gradient(145deg,#0d2030 0 58%,transparent 58%),
+    linear-gradient(180deg,#0d1824,#081019)!important;
+  border-color:#1f5278!important;clip-path:polygon(0 0,92% 0,100% 20%,100% 100%,8% 100%,0 80%)}
+.fighter-card:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 0 62%,#1aa8ff10 62% 66%,transparent 66%)}
+
+.portrait-well{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:.88}
+.portrait-well:before{content:"";position:absolute;width:76%;aspect-ratio:1;border-radius:50%;right:-12%;bottom:-42%;
+  background:radial-gradient(circle at 42% 38%,#49bfff55 0 9%,#1475ad38 10% 30%,#08131e00 67%);
+  filter:blur(.2px);box-shadow:0 0 42px #1aa8ff33}
+.p2-card .portrait-well:before{left:-12%;right:auto;background:radial-gradient(circle at 58% 38%,#f4c64d4f 0 9%,#8c6c2038 10% 30%,#17120800 67%);box-shadow:0 0 42px #f4c64d22}
+.portrait-well span{position:absolute;right:7%;bottom:-10%;font-size:clamp(58px,15vw,112px);line-height:.85;font-weight:1000;font-style:italic;
+  color:#d9f3ff0f;-webkit-text-stroke:1px #6ed0ff38;text-shadow:0 0 18px #1aa8ff35;transform:skew(-8deg)}
+.p2-card .portrait-well span{right:auto;left:7%;color:#ffe6990d;-webkit-text-stroke-color:#f4c64d3b;text-shadow:0 0 18px #f4c64d25}
+.stage-preview{position:relative;height:82px;margin-bottom:8px;overflow:hidden;border:1px solid #1a4564;border-radius:6px;
+  background:
+    radial-gradient(circle at 68% 38%,#1b5d8744,transparent 22%),
+    linear-gradient(180deg,#102334 0 48%,#07131d 49% 100%);
+  box-shadow:inset 0 0 32px #0009}
+.stage-preview:before,.stage-preview:after{content:"";position:absolute;bottom:0;background:#0a1017;opacity:.96}
+.stage-preview:before{left:-5%;width:48%;height:48%;clip-path:polygon(0 60%,30% 18%,45% 58%,58% 30%,78% 67%,100% 35%,100% 100%,0 100%)}
+.stage-preview:after{right:-4%;width:47%;height:54%;clip-path:polygon(0 57%,18% 24%,38% 62%,56% 10%,75% 65%,100% 30%,100% 100%,0 100%)}
+.stage-preview-grid{position:absolute;inset:0;background:
+  linear-gradient(#54bdff0e 1px,transparent 1px),
+  linear-gradient(90deg,#54bdff0e 1px,transparent 1px);
+  background-size:18px 18px;transform:perspective(180px) rotateX(61deg) translateY(36px) scale(1.35);transform-origin:center bottom}
+.stage-preview-name{position:absolute;left:9px;bottom:7px;z-index:2;font:1000 9px ui-monospace;letter-spacing:.12em;color:#cfeaff;text-shadow:0 2px 10px #000}
+
+.p2-card{background:
+    linear-gradient(215deg,#2b2412 0 58%,transparent 58%),
+    linear-gradient(180deg,#15140f,#090c0f)!important;border-color:#7d6320!important;text-align:right;align-items:flex-end;clip-path:polygon(8% 0,100% 0,100% 80%,92% 100%,0 100%,0 20%)}
+.p2-card:before{background:linear-gradient(245deg,transparent 0 62%,#f4c64d10 62% 66%,transparent 66%)}
+.slot-mark{position:absolute;top:8px;left:10px;font:1000 8px ui-monospace;letter-spacing:.14em;color:#5bc3ff}
+.p2-card .slot-mark{left:auto;right:10px;color:#f4c64d}
+.fighter-role{font:900 7px ui-monospace;letter-spacing:.13em;color:#6e8496;margin-bottom:3px}
+.fighter-name{font-size:clamp(13px,3vw,19px);font-weight:1000;font-style:italic;letter-spacing:.025em;color:#edf8ff;text-transform:uppercase;line-height:1}
+.fighter-state{margin-top:5px;font:900 7px ui-monospace;letter-spacing:.12em;color:#5ebdff}
+.p2-card .fighter-state{color:#f4c64d}
+.fighter-card.filled{box-shadow:0 0 0 1px #1aa8ff88,0 0 20px #1aa8ff24!important}
+.p2-card.filled{box-shadow:0 0 0 1px #f4c64d88,0 0 20px #f4c64d24!important}
+.vs-core{display:grid;place-items:center;position:relative}
+.vs-core:before,.vs-core:after{content:"";position:absolute;left:50%;width:1px;height:28%;background:linear-gradient(transparent,#6a7f91)}
+.vs-core:before{top:0}.vs-core:after{bottom:0}
+.vs-core span{display:grid;place-items:center;width:38px;height:38px;border:1px solid #5a6f80;border-radius:50%;background:#080d13;color:#fff;
+  font-weight:1000;font-style:italic;box-shadow:0 0 18px #1aa8ff1a}
+.fighter-grids{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fighter-pick-panel{margin:0}
+.picker-row-label{display:flex;justify-content:space-between;align-items:center}
+.row-note{font-size:7px;color:#486d89}
+.fighter-pick-panel:nth-child(2) .row-note{color:#8d772f}
+.stage-bay{margin-top:9px;padding:9px;border:1px solid #173a56;border-radius:8px;background:linear-gradient(180deg,#08131d,#060d14)}
+.stage-bay-head{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-bottom:7px}
+.stage-label-big{font-size:14px;font-weight:1000;font-style:italic;text-transform:uppercase;letter-spacing:.03em;color:#eef7ff}
+.stage-readout{margin:0!important;min-width:150px;text-align:right;background:#0b1721!important}
+.stage-grid{max-height:104px!important;grid-template-columns:repeat(auto-fill,minmax(86px,1fr))!important}
+.action-dock{display:grid;grid-template-columns:auto minmax(150px,1fr);gap:8px;margin-top:10px}
+.action-dock .start-btn,.action-dock .change-btn{margin:0;height:42px}
+.action-dock .start-btn{font-size:13px;letter-spacing:.11em;clip-path:polygon(0 0,94% 0,100% 50%,94% 100%,0 100%,6% 50%)}
+.action-dock .change-btn{font-size:9px}
+
+@media(max-width:650px){
+  .stage:has(#setup:not(.hide)){height:min(58vh,560px)!important;min-height:0!important}
+  .stage:has(#setup:not(.hide)) .setup{overflow:auto}
+
+  .bar{grid-template-columns:1fr auto;gap:5px}.brand{grid-column:1/-1;min-height:30px}
+  .pill{margin-right:auto}.ctrlbtn{padding:7px 8px}
+  .setup{padding:12px}.card h2{font-size:18px}
+  #charPickerSection{padding:9px}.roster-grid{max-height:112px;grid-template-columns:repeat(auto-fill,minmax(58px,1fr))}
+  .select-titlebar .picker-heading{text-align:center}
+  .versus-banner{grid-template-columns:1fr 38px 1fr}.fighter-card{min-height:76px!important;padding:9px!important}.vs-core span{width:31px;height:31px;font-size:12px}
+  .fighter-grids{grid-template-columns:1fr}.stage-bay-head{align-items:center}.stage-readout{min-width:120px}
+  .action-dock{grid-template-columns:1fr 1.35fr}
+  .controls{height:190px}
+}
+
+@media(max-width:650px){
+  .cz.left{justify-content:flex-start;padding-left:8px}
+  .cz.right{justify-content:flex-end;padding-right:8px}
+  .util{width:30%}
+  .controls:before{top:4px}
+}
+
+@media(max-width:420px){
+  .bar{min-height:78px}.tag{font-size:8px}.controls{height:205px}
+  .fighter-name{font-size:11px}.fighter-role,.fighter-state{font-size:6px}.stage-readout{min-width:110px}.stage-label-big{font-size:12px}
+  .dpad{width:138px;height:138px}.acts{width:176px;height:146px}
+}
+@media(min-width:1100px){.wrap{max-width:1200px}}
+
+/* MOCK-FIDELITY SELECT PASS */
+.fighter-grids,.fighter-pick-panel,.row-note{display:none!important}
+.shared-roster-panel{position:relative;z-index:1;padding:7px;border-radius:10px;background:linear-gradient(180deg,#0a1722,#061019);box-shadow:inset 0 0 0 1px #173a55,0 8px 18px #0006}
+.shared-roster-head{display:grid;grid-template-columns:58px 1fr 58px;align-items:center;gap:6px;margin-bottom:6px}
+.shared-roster-title{text-align:center;font:1000 10px ui-monospace;letter-spacing:.16em;color:#cfeaff}
+.roster-mode{height:28px;border:0;border-radius:6px;background:#0b1721;color:#6f879a;font:1000 8px ui-monospace;letter-spacing:.08em;box-shadow:inset 0 0 0 1px #21455f}
+.roster-mode.active{background:linear-gradient(180deg,#16314a,#0d1b28);color:#8bd3ff;box-shadow:inset 0 0 0 1px #2b8fc8,0 0 12px #1aa8ff20}
+.shared-roster-panel[data-mode="p2"] .roster-mode[data-roster-mode="p2"]{background:linear-gradient(180deg,#3a3118,#171208);color:#ffe287;box-shadow:inset 0 0 0 1px #a78428,0 0 12px #f4c64d20}
+.shared-roster-viewport{position:relative}
+.shared-grid{grid-template-columns:repeat(4,1fr)!important;max-height:142px!important}
+.shared-grid .roster-item{
+  min-height:58px!important;padding:7px!important;justify-content:center!important;text-align:center!important;
+  border:0!important;border-radius:7px!important;background:linear-gradient(180deg,#111e2b,#09131d)!important;
+  color:#d2dfeb!important;box-shadow:inset 0 0 0 1px #1d435f,inset 0 1px #ffffff0a,0 2px 4px #0007!important;
+  font-size:10px!important;white-space:normal;word-break:break-word
+}
+.shared-grid .roster-item:before{display:none!important}
+.shared-grid .roster-item.selected,.shared-grid .roster-item:focus{
+  transform:none!important;background:linear-gradient(180deg,#2e2816,#151107)!important;color:#ffe690!important;
+  box-shadow:inset 0 0 0 2px var(--gold),inset 0 0 18px #f4c64d19,0 0 14px #f4c64d24!important
+}
+.stage-preview{height:86px!important}
+.stage-grid{max-height:64px!important}
+@media(max-width:650px){.shared-grid{grid-template-columns:repeat(4,1fr)!important;max-height:128px!important}}
+
+
+/* MATCH MODE: prioritize gameplay viewport */
+body.match-live{
+  padding-left:0!important;
+  padding-right:0!important;
+}
+body.match-live .wrap{
+  max-width:none!important;
+  width:100%!important;
+}
+body.match-live .player-bar{display:none!important}
+body.match-live .brand{
+  font-size:12px!important;
+  opacity:.42;
+  text-shadow:none!important;
+}
+body.match-live .brand:after{display:none!important}
+body.match-live .stage{
+  width:100vw!important;
+  max-width:100vw!important;
+  margin:0!important;
+  border-left:0!important;
+  border-right:0!important;
+  border-radius:0!important;
+  clip-path:none!important;
+  box-shadow:0 10px 34px #0009!important;
+}
+body.match-live .stage:before{display:none!important}
+body.match-live #ikemen-canvas{
+  width:100%!important;
+  height:auto!important;
+}
+body.match-live .controls{
+  width:calc(100% - 12px)!important;
+  margin:6px 6px 0!important;
+  border-radius:14px!important;
+}
+body.match-live .test-dock{
+  top:auto!important;
+  bottom:max(8px,env(safe-area-inset-bottom))!important;
+}
+@media(max-width:650px){
+  body.match-live .stage{
+    width:100vw!important;
+    height:auto!important;
+    min-height:0!important;
+  }
+  body.match-live .controls{height:188px!important}
+}
+
+
+/* PHONE COMPOSITION PASS: more vertical presence without stretching gameplay */
+@media(max-width:650px){
+  /* Give select actions breathing room above the touch deck / home indicator. */
+  .setup:has(#charPickerSection:not(.hide)) #charPickerSection{
+    padding-bottom:18px!important;
+  }
+  .setup:has(#charPickerSection:not(.hide)) .action-dock{
+    margin-top:10px!important;
+    margin-bottom:10px!important;
+  }
+
+  /* Match view: slightly taller cinema window using a controlled cover crop.
+     This preserves sprite proportions; it crops a small amount from the far left/right instead of stretching. */
+  body.match-live .stage{
+    width:100vw!important;
+    height:auto!important;
+    min-height:0!important;
+    overflow:hidden!important;
+    background:#000!important;
+  }
+  body.match-live #ikemen-canvas{
+    display:block!important;
+    width:100%!important;
+    height:auto!important;
+    max-width:100%!important;
+    object-fit:contain!important;
+    object-position:center center!important;
+  }
+
+  /* Pull the control deck closer to the game so the composition reads as one unit. */
+  body.match-live .controls{
+    margin-top:4px!important;
+  }
+}
+
+
+/* Persistent selection markers across the shared roster handoff */
+.shared-grid .roster-item.p1-locked,
+.shared-grid .roster-item.p2-locked{position:relative}
+.shared-grid .roster-item.p1-locked:before,
+.shared-grid .roster-item.p2-locked:before{
+  display:grid!important;position:absolute;left:5px;top:5px;z-index:3;
+  min-width:20px;height:16px;padding:0 4px;border-radius:4px;place-items:center;
+  font:1000 7px ui-monospace;letter-spacing:.04em;
+}
+.shared-grid .roster-item.p1-locked:before{
+  content:"P1";background:#1488c9;color:#eaf8ff;box-shadow:0 0 8px #1aa8ff55
+}
+.shared-grid .roster-item.p2-locked:before{
+  content:"CPU";background:#a8780c;color:#fff2b4;box-shadow:0 0 8px #f4c64d44
+}
+.shared-grid .roster-item.p1-locked.p2-locked:after{
+  content:"P1 / CPU";position:absolute;right:5px;top:5px;z-index:3;
+  padding:2px 4px;border-radius:4px;background:#241d0c;color:#ffe58b;
+  font:1000 6px ui-monospace;letter-spacing:.03em
+}
+
+
+/* Focus-safe shared roster layers */
+.shared-roster-viewport{position:relative;min-height:128px}
+.shared-grid{transition:opacity .12s ease}
+.shared-grid.roster-off{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+.shared-grid:not(.roster-off){position:relative!important;opacity:1!important;pointer-events:auto!important}
+
+
+/* LANDSCAPE TOUCH MODE: visible by default, edge-mounted, center lane clear */
+@media (orientation:landscape) and (max-height:650px){
+  body.match-live{padding:0!important;overflow:hidden!important}
+
+  body.match-live .stage{
+    width:100vw!important;
+    max-width:100vw!important;
+    height:auto!important;
+    margin:0 auto!important;
+  }
+
+  /* Zero-height shell so I29 fitStage does not reserve a 190px deck below
+     the game. Actual touch targets are edge-mounted with fixed positioning. */
+  body.match-live .controls{
+    display:block!important;
+    position:fixed!important;
+    inset:0!important;
+    width:100vw!important;
+    height:0!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+    pointer-events:none!important;
+    z-index:30!important;
+  }
+  body.match-live .controls:before,
+  body.match-live .controls:after{display:none!important}
+
+  body.match-live .cz{
+    position:fixed!important;
+    top:auto!important;
+    bottom:max(8px,env(safe-area-inset-bottom))!important;
+    width:auto!important;
+    height:auto!important;
+    display:block!important;
+    pointer-events:none!important;
+  }
+  body.match-live .cz.left{
+    left:max(8px,env(safe-area-inset-left))!important;
+    right:auto!important;
+    padding:0!important;
+  }
+  body.match-live .cz.right{
+    right:max(8px,env(safe-area-inset-right))!important;
+    left:auto!important;
+    padding:0!important;
+  }
+
+  body.match-live .dpad{
+    width:min(31vh,142px)!important;
+    height:min(31vh,142px)!important;
+    opacity:.52!important;
+    pointer-events:auto!important;
+    backdrop-filter:blur(2px);
+  }
+  body.match-live .acts{
+    width:min(40vh,184px)!important;
+    height:min(30vh,142px)!important;
+    opacity:.52!important;
+    pointer-events:auto!important;
+  }
+  body.match-live .dpad:active,
+  body.match-live .acts:active{opacity:.92!important}
+
+  body.match-live .act{
+    width:min(11vh,50px)!important;
+    height:min(11vh,50px)!important;
+    pointer-events:auto!important;
+  }
+  body.match-live .dir{pointer-events:auto!important}
+  body.match-live .dir.center{pointer-events:none!important}
+
+  body.match-live .util{
+    position:fixed!important;
+    left:50%!important;
+    bottom:max(6px,env(safe-area-inset-bottom))!important;
+    transform:translateX(-50%)!important;
+    width:min(150px,24vw)!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,1fr)!important;
+    gap:5px!important;
+    pointer-events:auto!important;
+    opacity:.42!important;
+  }
+  body.match-live .util button{pointer-events:auto!important}
+
+  /* TEST stays away from the primary touch zones. */
+  body.match-live .test-dock{
+    top:max(6px,env(safe-area-inset-top))!important;
+    right:50%!important;
+    bottom:auto!important;
+    transform:translateX(50%)!important;
+  }
+}
+
+
+/* V10 ORIENTATION ARCHITECTURE
+   Portrait = front end. Landscape = 16:9 fight arena with side-gutter touch controls. */
+.rotate-gate{
+  position:fixed;inset:0;z-index:1000;
+  display:grid;place-items:center;
+  padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right))
+          max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+  background:
+    radial-gradient(circle at 50% 35%,#0d2b46 0,transparent 38%),
+    linear-gradient(180deg,#05080df4,#020407fa);
+  backdrop-filter:blur(10px);
+}
+.rotate-gate[hidden]{display:none!important}
+.rotate-gate-card{
+  width:min(360px,88vw);text-align:center;padding:22px 18px;
+  border-radius:16px;background:linear-gradient(180deg,#0b1723,#071019);
+  box-shadow:inset 0 0 0 1px #285574,0 18px 60px #000b;
+}
+.rotate-phone{
+  margin:0 auto 14px;width:72px;height:44px;display:grid;place-items:center;
+  border:2px solid #66c9ff;border-radius:9px;color:#66c9ff;font-size:28px;
+  transform:rotate(90deg);box-shadow:0 0 22px #1aa8ff35;
+}
+.rotate-gate-title{
+  font:1000 18px/1 ui-sans-serif,system-ui;text-transform:uppercase;
+  letter-spacing:.05em;color:#f2f8ff
+}
+.rotate-gate-text{
+  margin-top:9px;font:800 11px/1.45 ui-sans-serif,system-ui;
+  color:#8fa8bc
+}
+
+/* Selection/front-end remains portrait-friendly. */
+body:not(.match-live) .controls{display:none!important}
+body:not(.match-live):has(#charPickerSection:not(.hide)) .controls{
+  display:block!important;
+}
+
+/* Landscape match: keep the game truly 16:9, max it by HEIGHT,
+   and let the phone's extra width become dedicated controller gutters. */
+@media (orientation:landscape){
+  body.match-live{
+    padding:0!important;
+    overflow:hidden!important;
+    background:#020407!important;
+  }
+  body.match-live .wrap{
+    width:100vw!important;max-width:none!important;height:100dvh!important;
+    margin:0!important;
+  }
+  body.match-live .player-bar{display:none!important}
+
+  body.match-live .stage{
+    position:fixed!important;
+    left:50%!important;top:50%!important;
+    transform:translate(-50%,-50%)!important;
+    width:min(77vw,calc(100dvh * 16 / 9))!important;
+    height:auto!important;
+    aspect-ratio:16/9!important;
+    max-width:calc(100vw - 132px)!important;
+    max-height:100dvh!important;
+    margin:0!important;
+    border:0!important;border-radius:0!important;clip-path:none!important;
+    overflow:hidden!important;box-shadow:0 0 34px #000b!important;
+    background:#000!important;
+  }
+  body.match-live #ikemen-canvas{
+    display:block!important;
+    width:100%!important;height:100%!important;
+    max-width:100%!important;max-height:100%!important;
+    object-fit:contain!important;object-position:center!important;
+  }
+
+  /* Make the parent deck layout-free. Touch targets live in side gutters. */
+  body.match-live .controls{
+    display:block!important;
+    position:fixed!important;inset:0!important;
+    width:100vw!important;height:100dvh!important;
+    margin:0!important;padding:0!important;border:0!important;
+    background:transparent!important;box-shadow:none!important;
+    overflow:visible!important;pointer-events:none!important;z-index:40!important;
+  }
+  body.match-live .controls:before,
+  body.match-live .controls:after{display:none!important}
+
+  body.match-live .cz{
+    position:fixed!important;top:0!important;bottom:0!important;
+    width:18vw!important;max-width:155px!important;
+    display:flex!important;align-items:center!important;
+    pointer-events:none!important;
+  }
+  body.match-live .cz.left{
+    left:max(4px,env(safe-area-inset-left))!important;
+    justify-content:flex-start!important;padding-left:4px!important;
+  }
+  body.match-live .cz.right{
+    right:max(4px,env(safe-area-inset-right))!important;
+    justify-content:flex-end!important;padding-right:4px!important;
+  }
+
+  body.match-live .dpad{
+    width:min(17vw,142px)!important;height:min(17vw,142px)!important;
+    min-width:112px!important;min-height:112px!important;
+    opacity:.58!important;pointer-events:auto!important;
+  }
+  body.match-live .acts{
+    width:min(21vw,184px)!important;height:min(17vw,142px)!important;
+    min-width:150px!important;min-height:116px!important;
+    opacity:.58!important;pointer-events:auto!important;
+  }
+  body.match-live .dpad:active,
+  body.match-live .acts:active{opacity:.96!important}
+
+  body.match-live .act{
+    width:min(6.2vw,50px)!important;height:min(6.2vw,50px)!important;
+    min-width:42px!important;min-height:42px!important;
+    pointer-events:auto!important;
+  }
+  body.match-live .dir{pointer-events:auto!important}
+  body.match-live .dir.center{pointer-events:none!important}
+
+  body.match-live .util{
+    position:fixed!important;left:50%!important;
+    bottom:max(4px,env(safe-area-inset-bottom))!important;
+    transform:translateX(-50%)!important;
+    width:min(140px,18vw)!important;
+    display:grid!important;grid-template-columns:repeat(2,1fr)!important;
+    gap:5px!important;pointer-events:auto!important;opacity:.36!important;
+  }
+  body.match-live .util button{height:24px!important;pointer-events:auto!important}
+
+  body.match-live .test-dock{display:none!important}
+}
+
+/* Portrait during an active match is gated. */
+@media (orientation:portrait){
+  body.match-live .controls{display:none!important}
+}
+
+
+/* V12 real portrait presentation. The monogram remains the honest fallback. */
+.portrait-well.has-art{
+  opacity:1!important;
+  background-repeat:no-repeat!important;
+  background-size:auto 118%!important;
+  background-position:92% 100%!important;
+  image-rendering:auto;
+}
+.p2-card .portrait-well.has-art{background-position:8% 100%!important}
+.portrait-well.has-art span{opacity:0!important}
+.portrait-well.has-art:before{opacity:.28}
+.fighter-card .slot-mark,
+.fighter-card .fighter-role,
+.fighter-card .fighter-name,
+.fighter-card .fighter-state{z-index:3}
+
+
+.portrait-diag{
+  margin:4px 0 7px;padding:6px;border-radius:6px;
+  background:#071019;color:#8fb4cc;font:800 7px/1.4 ui-monospace;
+  white-space:pre-wrap;box-shadow:inset 0 0 0 1px #173b55
+}
+
+/* V14 uses an actual IMG for decoded SFF art. More deterministic on mobile Safari. */
+.portrait-art{
+  position:absolute;z-index:1;display:block;
+  right:-2%;bottom:-8%;height:122%;width:auto;max-width:none;
+  object-fit:contain;object-position:right bottom;
+  filter:drop-shadow(0 8px 12px #000b);
+}
+.p2-card .portrait-art{right:auto;left:-2%;object-position:left bottom}
+.portrait-art[hidden]{display:none!important}
+.portrait-well.has-art{background-image:none!important}
+
+
+/* V15: user-approved Kineza select art is framed as a character-select crop. */
+.portrait-well.portrait-authority .portrait-art{
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  object-fit:cover!important;
+  object-position:50% 30%!important;
+  filter:saturate(1.04) contrast(1.02) drop-shadow(0 8px 12px #0007)!important;
+}
+.p2-card .portrait-well.portrait-authority .portrait-art{
+  left:0!important;right:0!important;object-position:50% 30%!important;
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar player-bar">
+    <div class="brand">MobMugen</div>
+  </div>
+
+  <div class="stage">
+    <div id="setup" class="setup">
+      <div class="card" id="setupCard">
+        
+        <p id="setupDesc">Load your MUGEN content zip, select fighters and stage, then launch the match.</p>
+        <label id="zipLabel" class="pick">CHOOSE MUGEN ZIP<input id="zipInput" type="file" accept=".zip,application/zip" hidden></label>
+        <div id="prepDiag" class="diag">Waiting for zip…</div>
+        <div id="charPickerSection" class="hide">
+          <div class="select-titlebar">
+            <p class="picker-heading">Select Fighters</p>
+          </div>
+
+          <div class="versus-banner">
+            <div class="sel-item fighter-card p1-card">
+              <div id="p1Portrait" class="portrait-well" aria-hidden="true"><img class="portrait-art" alt="" hidden><span>?</span></div>
+              <span class="slot-mark">P1</span>
+              <span class="fighter-role">PLAYER ONE</span>
+              <span id="selP1" class="fighter-name">CHOOSE FIGHTER</span>
+              <span class="fighter-state">PRIMARY</span>
+            </div>
+            <div class="vs-core"><span>VS</span></div>
+            <div class="sel-item fighter-card p2-card">
+              <div id="p2Portrait" class="portrait-well" aria-hidden="true"><img class="portrait-art" alt="" hidden><span>?</span></div>
+              <span class="slot-mark">CPU</span>
+              <span class="fighter-role">PLAYER TWO</span>
+              <span id="selP2" class="fighter-name">CHOOSE FIGHTER</span>
+              <span class="fighter-state">RIVAL</span>
+            </div>
+          </div>
+
+          <div id="sharedRosterPanel" class="shared-roster-panel" data-mode="p1">
+            <div class="shared-roster-head">
+              <button class="roster-mode active" data-roster-mode="p1" type="button">P1</button>
+              <div class="shared-roster-title">ROSTER</div>
+              <button class="roster-mode" data-roster-mode="p2" type="button">CPU</button>
+            </div>
+            <div class="shared-roster-viewport">
+              <div id="p1Grid" class="roster-grid shared-grid"></div>
+              <div id="p2Grid" class="roster-grid shared-grid hide"></div>
+            </div>
+          </div>
+
+          <div class="stage-bay">
+            <div id="stagePreview" class="stage-preview" aria-hidden="true">
+              <div class="stage-preview-grid"></div>
+              <div class="stage-preview-name">ARENA PREVIEW</div>
+            </div>
+            <div class="stage-bay-head">
+              <div>
+                <span class="select-kicker">02 / ARENA</span>
+                <div class="stage-label-big">Stage Select</div>
+              </div>
+              <div class="sel-item stage-readout">
+                <span class="sel-label">SELECTED STAGE</span>
+                <span id="selStage">CHOOSE STAGE</span>
+              </div>
+            </div>
+            <div id="stageGrid" class="roster-grid stage-grid"></div>
+          </div>
+
+          <div class="picker-actions action-dock">
+            <button id="changeZipBtn" class="change-btn">CHANGE LIBRARY</button>
+            <button id="startBtn" class="start-btn">FIGHT</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <canvas id="ikemen-canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+  </div>
+
+  <div id="controls" class="controls">
+    <div class="cz left"><div class="dpad">
+      <button class="dir" data-macro="UL">↖</button><button class="dir" data-k="ArrowUp" data-key="ArrowUp">↑</button><button class="dir" data-macro="UR">↗</button>
+      <button class="dir" data-k="ArrowLeft" data-key="ArrowLeft">←</button><div class="dir center">P1</div><button class="dir" data-k="ArrowRight" data-key="ArrowRight">→</button>
+      <button class="dir" data-macro="DL">↙</button><button class="dir" data-k="ArrowDown" data-key="ArrowDown">↓</button><button class="dir" data-macro="DR">↘</button>
+    </div></div>
+    <div class="cz right"><div class="acts">
+      <button class="act bx" data-k="KeyA" data-key="a">X</button><button class="act by" data-k="KeyS" data-key="s">Y</button><button class="act bz2" data-k="KeyD" data-key="d">Z</button>
+      <button class="act bz" data-k="KeyZ" data-key="z">A</button><button class="act bx2" data-k="KeyX" data-key="x">B</button><button class="act bc" data-k="KeyC" data-key="c">C</button>
+    </div></div>
+    <div class="util"><button data-k="Enter" data-key="Enter">START</button><button data-k="Escape" data-key="Escape">ESC</button></div>
+  </div>
+
+  <div id="diagWrap" class="diag-wrap hidden">
+    <div class="diag-head compact"><span>DEBUG TRACE</span><button id="diagInlineToggle" class="diag-toggle" type="button">COLLAPSE</button></div>
+    <div id="diag" class="diag">I29 ready</div>
+  </div>
+</div>
+
+<div id="rotateGate" class="rotate-gate" hidden>
+  <div class="rotate-gate-card">
+    <div class="rotate-phone" aria-hidden="true">▭</div>
+    <div id="rotateGateTitle" class="rotate-gate-title">ROTATE TO LANDSCAPE</div>
+    <div id="rotateGateText" class="rotate-gate-text">Rotate your phone to begin the match.</div>
+  </div>
+</div>
+<div id="testDock" class="test-dock">
+  <button id="testDockToggle" class="test-tab" type="button" aria-expanded="false">TEST</button>
+  <div id="testPanel" class="test-panel" hidden>
+    <div class="test-title">DEVELOPER / TESTING</div>
+    <div class="statusline test-status">Runtime <b id="runtimeState">WAITING FOR ZIP</b></div>
+    <div id="runtimePill" class="pill test-pill">IDLE</div>
+    <div id="portraitDiag" class="portrait-diag">PORTRAIT: waiting</div>
+    <div class="test-actions">
+      <button id="ctrlToggle" class="dev-chip" type="button">HIDE CTRL</button>
+      <button id="debugToggle" class="dev-chip" type="button">SHOW DEBUG</button>
+      <button id="copyTrace" class="dev-chip" type="button">COPY TRACE</button>
+    </div>
+  </div>
+</div>
+<script src="./rig-ikemen-29-beauty-v17.js"></script>
+<script>
+(function(){
+  const clean = v => {
+    v = (v || '').trim();
+    return (!v || v === '-' || /choose/i.test(v)) ? '' : v;
+  };
+  const initials = name => {
+    const words = name.replace(/[_-]+/g,' ').trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return '?';
+    return words.slice(0,2).map(w => w[0]).join('').toUpperCase();
+  };
+  function bindPreview(textId, portraitId, emptyText){
+    const src = document.getElementById(textId);
+    const portrait = document.getElementById(portraitId);
+    if (!src || !portrait) return;
+    const sync = () => {
+      const name = clean(src.textContent);
+      portrait.querySelector('span').textContent = name ? initials(name) : '?';
+      portrait.dataset.fighter = name || emptyText;
+      portrait.closest('.fighter-card')?.classList.toggle('preview-live', !!name);
+    };
+    new MutationObserver(sync).observe(src,{childList:true,subtree:true,characterData:true});
+    sync();
+  }
+  bindPreview('selP1','p1Portrait','P1');
+  bindPreview('selP2','p2Portrait','CPU');
+
+  const stageName = document.getElementById('selStage');
+  const preview = document.getElementById('stagePreview');
+  if(stageName && preview){
+    const label = preview.querySelector('.stage-preview-name');
+    const syncStage = () => {
+      const name = clean(stageName.textContent);
+      label.textContent = name || 'ARENA PREVIEW';
+      preview.classList.toggle('preview-live',!!name);
+    };
+    new MutationObserver(syncStage).observe(stageName,{childList:true,subtree:true,characterData:true});
+    syncStage();
+  }
+})();
+</script>
+<script>
+(function(){
+  const panel = document.getElementById('sharedRosterPanel');
+  const p1 = document.getElementById('p1Grid');
+  const p2 = document.getElementById('p2Grid');
+  const tabs = [...document.querySelectorAll('[data-roster-mode]')];
+  if(!panel || !p1 || !p2) return;
+
+  // Keep both grids rendered/focusable. I29's own selectItem() immediately
+  // focuses P2 after P1 commits; display:none prevented that focus handoff.
+  p2.classList.remove('hide');
+
+  function show(mode){
+    panel.dataset.mode = mode;
+    p1.classList.toggle('roster-off', mode !== 'p1');
+    p2.classList.toggle('roster-off', mode !== 'p2');
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.rosterMode === mode));
+  }
+
+  function selectedIdx(grid){
+    const el = grid.querySelector('.roster-item.selected');
+    return el ? el.dataset.idx : null;
+  }
+
+  function syncLocks(){
+    const p1Idx = selectedIdx(p1);
+    const p2Idx = selectedIdx(p2);
+    [p1,p2].forEach(grid => {
+      grid.querySelectorAll('.roster-item').forEach(el => {
+        el.classList.toggle('p1-locked', p1Idx !== null && el.dataset.idx === p1Idx);
+        el.classList.toggle('p2-locked', p2Idx !== null && el.dataset.idx === p2Idx);
+      });
+    });
+  }
+
+  tabs.forEach(t => t.addEventListener('click', () => {
+    const mode = t.dataset.rosterMode;
+    show(mode);
+    const grid = mode === 'p1' ? p1 : p2;
+    const target = grid.querySelector('.roster-item.selected') || grid.querySelector('.roster-item');
+    if(target) target.focus();
+  }));
+
+  // Base I29 owns selection and actual focus movement.
+  // We only mirror whichever grid receives focus.
+  p1.addEventListener('focusin', () => { show('p1'); syncLocks(); });
+  p2.addEventListener('focusin', () => { show('p2'); syncLocks(); });
+
+  // Touch/click commits run base handlers first; refresh markers one tick later.
+  p1.addEventListener('click', () => setTimeout(syncLocks, 0));
+  p2.addEventListener('click', () => setTimeout(syncLocks, 0));
+
+  show('p1');
+  syncLocks();
+})();
+</script>
+<script>
+(function(){
+  const gate = document.getElementById('rotateGate');
+  const title = document.getElementById('rotateGateTitle');
+  const text = document.getElementById('rotateGateText');
+  const start = document.getElementById('startBtn');
+  const setup = document.getElementById('setup');
+  const landscape = window.matchMedia('(orientation: landscape)');
+  let pendingStart = false;
+  let bypassGate = false;
+
+  function showGate(kind){
+    if(!gate) return;
+    if(kind === 'start'){
+      title.textContent = 'ROTATE TO LANDSCAPE';
+      text.textContent = 'Rotate your phone to begin the match.';
+    } else {
+      title.textContent = 'ROTATE TO LANDSCAPE';
+      text.textContent = 'Match paused. Rotate to landscape to resume.';
+    }
+    gate.hidden = false;
+  }
+  function hideGate(){ if(gate) gate.hidden = true; }
+
+  // Capture the FIGHT press before I29's startMatch listener.
+  start?.addEventListener('click', e => {
+    if(bypassGate){ bypassGate = false; return; }
+    if(!landscape.matches){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      pendingStart = true;
+      showGate('start');
+    }
+  }, true);
+
+  function onOrientation(){
+    const live = setup && setup.classList.contains('hide');
+
+    if(landscape.matches){
+      hideGate();
+      document.getElementById('controls')?.classList.remove('hidden');
+
+      if(pendingStart){
+        pendingStart = false;
+        bypassGate = true;
+        // Allow layout to settle in landscape before the real I29 start.
+        setTimeout(() => start?.click(), 60);
+      } else if(live){
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
+      }
+    } else if(live){
+      // Visual/input pause gate. The engine remains behind the overlay;
+      // no gameplay input is accepted until landscape returns.
+      showGate('resume');
+    }
+  }
+
+  landscape.addEventListener('change', onOrientation);
+  window.addEventListener('orientationchange', () => setTimeout(onOrientation, 80));
+  onOrientation();
+})();
+</script>
+<script>
+(function(){
+  const setup = document.getElementById('setup');
+  if(!setup) return;
+  const sync = () => {
+    const live = setup.classList.contains('hide');
+    document.body.classList.toggle('match-live', live);
+    if(live) setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
+  };
+  new MutationObserver(sync).observe(setup,{attributes:true,attributeFilter:['class']});
+  sync();
+})();
+</script>
+<script>
+(function(){
+  const btn = document.getElementById('testDockToggle');
+  const panel = document.getElementById('testPanel');
+  if(!btn || !panel) return;
+  btn.addEventListener('click', () => {
+    const open = panel.hasAttribute('hidden');
+    if(open) panel.removeAttribute('hidden'); else panel.setAttribute('hidden','');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.textContent = open ? 'CLOSE' : 'TEST';
+    if(typeof window.dispatchEvent === 'function') window.dispatchEvent(new Event('resize'));
+  });
+})();
+</script>
+</body>
+</html>
