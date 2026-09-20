@@ -1996,3 +1996,15 @@ Link/build discipline remains unchanged: every test build handed to the user get
 - When selection moves away from Kineza, the direct override is cleared and the generic motif/SFF portrait pipeline resumes ownership.
 - Gameplay SFF is unchanged. This remains a select-screen-only presentation override.
 - V18 is source-published and syntax-checked only until iPhone witness confirms the intended Kineza portrait is visible.
+
+
+### 2026-09-19 · V18 Kineza portrait hardwire / preload gate
+- Continued the portrait lane after the V15/V16 phone screenshot showed a question-mark fallback.
+- The project already contains repo-root `kineza_portrait.png`, blob SHA `795244980095adef4fe8485009453316edd852a9`, measured at **560x560**.
+- V18 bypasses the failed handoff asset entirely and points Kineza to `/Prismatic-Veil/kineza_portrait.png?v=79524498`.
+- Both select-card `<img>` elements are seeded with that URL so Safari can begin fetching it immediately.
+- Kineza's override now runs an explicit `Image()` preload and reports success only after real natural dimensions are returned.
+- Failure reports `REPO PORTRAIT LOAD FAILED` instead of silently presenting the question-mark fallback.
+- TEST diagnostics identify `BUILD: V18` and report the repo portrait dimensions when loaded.
+- Generic SFF extraction remains intact for non-Kineza fighters.
+- V18 is source/syntax validated only until the user witnesses the correct art on iPhone.
