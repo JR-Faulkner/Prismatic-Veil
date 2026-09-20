@@ -2096,3 +2096,17 @@ Do not move on to thumbnails, stage art, controller skin, pause, or sounds until
 - Every MobMugen build/change handed to the user must include a **fresh tappable cache-busted GitHub Pages URL**.
 - Prefer a fresh filename for major/diagnostic iterations.
 - Never call a build live/stable/approved until the user actually witnesses it on iPhone/iPad Safari.
+
+
+### 2026-09-19 · V19 Kineza full-art authority pass
+- Continued from the end-of-chat handoff by inspecting the existing repo Kineza assets by source provenance before making another portrait build.
+- Root `kineza_portrait.png` and `kineza_full.png` originated together in the original UI STYLE PASS 01 art drop. That pass explicitly treated the former as portrait/card art and the latter as its staged full-body companion asset.
+- The user-approved MobMugen Kineza select authority is explicitly the full-body young Kineza artwork: black/red/gold armor, red cape, glowing green gauntlets, light background. V19 therefore stops using the cropped repo-root `kineza_portrait.png` and wires the repo-root full-body companion `kineza_full.png` instead.
+- Verified `kineza_full.png` directly from repo bytes: PNG, **560x533**, RGBA, blob `579cf39e4deb7035b5d39866b8c3d96a9bbc8d9c`.
+- V19 direct Kineza URL: `/Prismatic-Veil/kineza_full.png?v=579cf39e-v19`.
+- V19 HTML contains three direct Kineza full-art references and **zero** `kineza_portrait.png` references. V19 JS contains one full-art override and **zero** old portrait references.
+- V14's deterministic Kineza SFF decoder self-test remains intact, and the generic SFF portrait pipeline still owns non-Kineza fighters.
+- V19 JS passed syntax parsing before publication.
+- Source commits: JS `91aa7ede3b2aa123ac2df99842739057c22183e6`; HTML/main head `1e5af676313232cc9167cd6558bf0ee50c6e4e28`.
+- At post-commit verification, both **PriZim MOBMUGEN-IKEMEN validation** and **GitHub Pages build/deployment** had picked up the V19 head and were in progress.
+- V19 is source/provenance/syntax verified only. **Do not mark the Kineza select portrait approved until the user visibly confirms the intended art on iPhone.**
