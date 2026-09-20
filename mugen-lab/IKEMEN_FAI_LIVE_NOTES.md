@@ -2190,3 +2190,26 @@ Do not move on to thumbnails, stage art, controller skin, pause, or sounds until
   - `lz5dummy` = LZ5
 - Beauty V23 must render all three to real 24x24 image thumbnails, in addition to Kineza, before the browser probe can pass.
 - V22 is not an approved phone build. V21 remains the last phone-confirmed roster-thumbnail lane while V23 is tested.
+
+
+### 2026-09-20 · USER PHONE WITNESS · V23 REJECTED · ROSTER PORTRAITS ON HOLD
+- Real phone witness after V23: **still only Kineza shows a portrait; the rest of the real roster remains fallback/initials**.
+- Therefore beautification priority #2 (**roster thumbnails / other character portraits**) is **ON HOLD**.
+- Do not spend further time on generic portrait decoding until this item is deliberately resumed.
+- Do not treat V20, V21, V22, or V23 as successful generic-roster portrait completion. Only the Kineza thumbnail/select portrait is phone-confirmed working.
+- What was tried:
+  - V20: lazy roster thumbnails via IntersectionObserver. Phone: failed to populate.
+  - V21: immediate visible-row hydration + scroll hydration. Phone: Kineza thumbnail confirmed working.
+  - V22: generic SFF v2 raw/RLE8/PNG decode. Synthetic PriZim passed; phone still showed only Kineza.
+  - V23: corrected real SFF v2 handling plus RLE5/RLE8/LZ5, palette flags, TData/LData handling. Synthetic PriZim passed all codec fixtures; phone still showed only Kineza.
+- Key unresolved issue:
+  - The user's actual roster packages still do not resolve through the browser portrait extraction path even though synthetic SFF v1/v2 fixtures do.
+  - This means the remaining defect is likely **real-roster package/path/DEF/SFF resolution or content-specific structure**, not the visible thumbnail UI itself.
+  - Synthetic codec success is not accepted as authority for the user's real roster.
+- Resume requirements when #2 is reopened:
+  - inspect real failing character DEF/SFF paths from the user's loaded roster,
+  - capture per-character fallback diagnostics from the phone/runtime,
+  - identify the exact real package structure/version/compression/path mismatch before adding more decoder code,
+  - validate at least two real non-Kineza fighters on the phone before marking the item complete.
+- Preserve the working Kineza select portrait and Kineza roster thumbnail exactly as-is.
+- Beautification sprint continues around this hold. Next active item is **#3 real stage preview images + clean stage names**.
