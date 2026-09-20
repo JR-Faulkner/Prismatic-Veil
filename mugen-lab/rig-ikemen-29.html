@@ -92,6 +92,21 @@ body:before{
 body[data-runtime-state="loading"] .stage{border-color:#9c7826}
 body[data-runtime-state="running"] .stage{border-color:#2a8e54}
 body[data-runtime-state="error"] .stage{border-color:#8c2530}
+.crash-overlay-v24{
+  position:absolute;inset:0;z-index:7;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:11px;overflow:hidden;padding:24px;text-align:center;
+  background:radial-gradient(circle at 50% 44%,#3a121866,transparent 34%),linear-gradient(135deg,#1a0608,#060304 58%,#150707);
+  color:#ffe9ea;font-family:ui-monospace,SFMono-Regular,Menlo,monospace
+}
+.crash-kicker{position:relative;z-index:1;font:1000 8px ui-monospace;letter-spacing:.24em;color:#ff8f9a}
+.crash-title{position:relative;z-index:1;font:1000 clamp(16px,4vw,26px) ui-monospace;letter-spacing:.08em;color:#fff}
+.crash-detail{position:relative;z-index:1;max-width:min(440px,86%);font:800 9px ui-monospace;letter-spacing:.04em;line-height:1.6;color:#e3aeb3}
+.crash-reload-btn{
+  position:relative;z-index:1;margin-top:6px;padding:11px 22px;border:0;border-radius:999px;
+  background:linear-gradient(180deg,#ff5f6b,#c8232f);color:#fff;font:1000 11px ui-monospace;letter-spacing:.1em;
+  box-shadow:0 8px 20px #0009,inset 0 1px #ffffff33;cursor:pointer
+}
+.crash-reload-btn:active{transform:translateY(1px);filter:brightness(.95)}
 #ikemen-canvas{display:block;width:100%;height:auto;image-rendering:pixelated;background:#000;outline:none;position:relative;z-index:1}
 
 .setup{

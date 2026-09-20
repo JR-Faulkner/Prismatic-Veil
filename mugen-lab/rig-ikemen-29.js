@@ -211,12 +211,46 @@
     if (/WAITING FOR ZIP|SELECT FIGHTERS/.test(s)) return 'idle';
     return 'loading';
   }
+  // A crash/failure leaves the WASM instance dead -- there is no real
+  // "un-crash" transition back to running, so the only actual recovery
+  // is a full page reload. The runtime pill/status line that used to
+  // carry this signal now lives inside the collapsed dev-only TEST dock
+  // in V24's player-facing layout, so a real crash previously had zero
+  // visible affordance for an actual player beyond the .stage border
+  // quietly tinting red. Shown once, over the canvas, the same way the
+  // existing match-loading overlay already is.
+  let crashOverlayShown = false;
+  function showCrashOverlay(reason) {
+    if (crashOverlayShown) return;
+    const stageEl = document.querySelector('.stage');
+    if (!stageEl) return;
+    crashOverlayShown = true;
+    const el = document.createElement('div');
+    el.className = 'crash-overlay-v24';
+    const kicker = document.createElement('div');
+    kicker.className = 'crash-kicker';
+    kicker.textContent = 'MOBMUGEN ·· RUNTIME';
+    const title = document.createElement('div');
+    title.className = 'crash-title';
+    title.textContent = 'SOMETHING WENT WRONG';
+    const detail = document.createElement('div');
+    detail.className = 'crash-detail';
+    detail.textContent = reason ? String(reason).slice(0, 220) : 'The fight engine stopped unexpectedly.';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'crash-reload-btn';
+    btn.textContent = 'RELOAD & TRY AGAIN';
+    btn.addEventListener('click', () => location.reload());
+    el.append(kicker, title, detail, btn);
+    stageEl.appendChild(el);
+  }
   function status(s) {
     state.textContent = s;
     const cls = classifyStatus(s);
     if (pill) { pill.textContent = s; pill.dataset.state = cls; }
     document.body.dataset.runtimeState = cls;
     if (prepDiag) prepDiag.textContent = s;
+    if (cls === 'error') showCrashOverlay(s);
   }
   function log(s) {
     s = String(s);
