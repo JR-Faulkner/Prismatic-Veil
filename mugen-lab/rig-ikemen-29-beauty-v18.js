@@ -1120,7 +1120,9 @@
       if (img) {
         img.onload = () => {
           well.dataset.imageState = 'loaded';
-          log('I29 PORTRAIT IMG · loaded ' + result.url);
+          const dims = (img.naturalWidth || 0) + 'x' + (img.naturalHeight || 0);
+          well.dataset.imageDimensions = dims;
+          log('I29 PORTRAIT IMG · loaded ' + result.url + ' (' + dims + ')');
         };
         img.onerror = () => {
           well.dataset.imageState = 'error';
@@ -1174,7 +1176,8 @@
   }
 
   const PORTRAIT_OVERRIDES = Object.freeze({
-    kineza: '/Prismatic-Veil/kineza_portrait.png'
+    // Repo-root authority, already present in the project and independently versioned.
+    kineza: '/Prismatic-Veil/kineza_portrait.png?v=79524498'
   });
 
   function portraitOverrideKey(name) {
@@ -1182,13 +1185,39 @@
     return clean.split('/').pop().toLowerCase();
   }
 
+  const portraitOverrideLoadCache = new Map();
+
+  async function preloadPortraitOverride(url) {
+    if (portraitOverrideLoadCache.has(url)) return portraitOverrideLoadCache.get(url);
+    const promise = new Promise(resolve => {
+      const probe = new Image();
+      probe.onload = () => resolve({
+        ok: true,
+        width: probe.naturalWidth || 0,
+        height: probe.naturalHeight || 0
+      });
+      probe.onerror = () => resolve({ ok: false, width: 0, height: 0 });
+      probe.src = url;
+    });
+    portraitOverrideLoadCache.set(url, promise);
+    return promise;
+  }
+
   async function loadPortraitForCharacter(name) {
     const key = portraitOverrideKey(name);
     const override = PORTRAIT_OVERRIDES[key];
     if (override) {
+      const probe = await preloadPortraitOverride(override);
+      if (!probe.ok) {
+        return {
+          url: null,
+          status: 'REPO PORTRAIT LOAD FAILED',
+          source: 'approved-asset'
+        };
+      }
       return {
-        url: override + '?v=79524498',
-        status: 'REPO PORTRAIT 560x560',
+        url: override,
+        status: 'REPO PORTRAIT ' + probe.width + 'x' + probe.height,
         source: 'approved-asset'
       };
     }
@@ -1202,7 +1231,7 @@
       ['P1', document.getElementById('selP1'), document.getElementById('p1Portrait')],
       ['CPU', document.getElementById('selP2'), document.getElementById('p2Portrait')],
     ];
-    const diagParts = ['BUILD: V17', 'SELFTEST: ' + portraitSelfTestResult];
+    const diagParts = ['BUILD: V18', 'SELFTEST: ' + portraitSelfTestResult];
 
     await Promise.all(pairs.map(async ([slot, label, well]) => {
       if (!label || !well) return;
@@ -1510,6 +1539,7 @@
     runtimeAssetsLoaded = false;
     extraCharsLoaded = false;
     portraitCache.clear();
+    portraitOverrideLoadCache.clear();
     motifPath = null;
     stagePath = null;
 
