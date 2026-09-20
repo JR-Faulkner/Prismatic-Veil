@@ -1987,3 +1987,12 @@ Link/build discipline remains unchanged: every test build handed to the user get
 - Generic motif/SFF portrait extraction remains active for all other fighters.
 - TEST diagnostics still report the raw Kineza decoder self-test plus independent P1/CPU portrait status.
 - V17 is source-published and syntax-checked only until the user witnesses the intended Kineza art on iPhone.
+
+
+### 2026-09-19 · V18 Kineza direct-select portrait hardening
+- V17 already points at the existing repo-native `kineza_portrait.png`, but V18 removes another failure point: the beauty-layer select observer now directly renders that asset whenever the selected fighter name is `kineza`.
+- Direct asset URL is same-origin and explicit: `/Prismatic-Veil/kineza_portrait.png?v=79524498-v18`.
+- This direct Kineza UI path is independent of async SFF extraction, so a Kineza select card should not remain on the `?` fallback while the generic portrait pipeline is still resolving.
+- When selection moves away from Kineza, the direct override is cleared and the generic motif/SFF portrait pipeline resumes ownership.
+- Gameplay SFF is unchanged. This remains a select-screen-only presentation override.
+- V18 is source-published and syntax-checked only until iPhone witness confirms the intended Kineza portrait is visible.
