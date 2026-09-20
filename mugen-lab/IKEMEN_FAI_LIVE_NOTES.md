@@ -1976,3 +1976,14 @@ Link/build discipline remains unchanged: every test build handed to the user get
 - TEST diagnostics now include `BUILD: V17` so phone screenshots can prove the loaded runtime version.
 - Generic SFF extraction remains intact for non-Kineza roster characters.
 - Do not mark this portrait visually approved until user confirms the displayed art is the supplied/desired Kineza art.
+
+
+### 2026-09-19 · V17 Kineza portrait direct repo wiring
+- Continued the portrait lane after V15/V16 failed to show the intended Kineza image on iPhone.
+- V17 now uses the existing repo-native `kineza_portrait.png` at repository root instead of the chat-upload mirror asset.
+- Verified repo metadata: `kineza_portrait.png` is **560x560**, blob SHA `795244980095adef4fe8485009453316edd852a9`.
+- V17 references that same-origin asset as `../kineza_portrait.png?v=79524498`, removing the previous asset-path uncertainty.
+- Kineza keeps a UI-only portrait override; gameplay SFF remains untouched.
+- Generic motif/SFF portrait extraction remains active for all other fighters.
+- TEST diagnostics still report the raw Kineza decoder self-test plus independent P1/CPU portrait status.
+- V17 is source-published and syntax-checked only until the user witnesses the intended Kineza art on iPhone.
