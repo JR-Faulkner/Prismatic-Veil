@@ -2141,3 +2141,10 @@ Do not move on to thumbnails, stage art, controller skin, pause, or sounds until
 - Kineza's JS portrait override uses the equivalent relative URL `../kineza_full.png?v=579cf39e-v21`, which resolves correctly on GitHub Pages and on the local PriZim server.
 - The already phone-confirmed large Kineza select-card authority remains unchanged.
 - PriZim runtime probe now prefers the latest `rig-ikemen-*-beauty-v*.html` build and explicitly requires the synthetic fixture's Kineza roster cell to reach `thumbState=ready` with a non-zero natural image size.
+
+
+### 2026-09-19 · V21 PriZim beauty-probe correction
+- The first upgraded V21 browser run **cleared the new Kineza roster-thumbnail assertion**. The run proceeded beyond the explicit requirement that the Kineza roster cell reach `thumbState=ready` with a non-zero image size.
+- That run then failed later at the old base-I29 match-start assertion because the beauty architecture correctly gates portrait FIGHT behind `ROTATE TO LANDSCAPE`.
+- The runtime probe now treats that gate as required behavior for beauty builds: it asserts the gate appears, switches the synthetic phone viewport to landscape, then continues the existing match/control checks.
+- This separates the two authorities cleanly: roster thumbnail hydration must pass before match start, and the portrait-to-landscape fight gate must also remain intact.

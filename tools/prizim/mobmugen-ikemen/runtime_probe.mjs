@@ -160,6 +160,20 @@ if (stageCount > 0) await page.evaluate(() => document.querySelectorAll('#stageG
   await page.waitForTimeout(150);
   if (controlsWereHidden) await page.evaluate(() => document.getElementById('controls').classList.add('hidden'));
 }
+
+// Beauty builds intentionally gate FIGHT behind portrait -> landscape.
+// Honor that contract before applying the base I29 "match started" checks.
+if (probePage.beauty !== null) {
+  const gateShown = await page.evaluate(() => {
+    const gate = document.getElementById('rotateGate');
+    return !!gate && !gate.hidden;
+  });
+  if (!gateShown) {
+    throw new Error('beauty rotation regression: FIGHT did not raise the portrait rotate gate');
+  }
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.waitForTimeout(350);
+}
 await page.waitForTimeout(2000);
 
 const inMatch = await page.evaluate(() => document.getElementById('setup').classList.contains('hide'));
