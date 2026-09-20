@@ -67,6 +67,35 @@
   let zipLoaded = false;
 
   // -------------------------------------------------------------------
+  // Screen Wake Lock: once a match actually starts, keep the display
+  // from dimming/locking just because the player's fingers are on the
+  // touch controller rather than tapping the screen surface directly --
+  // WebKit doesn't count controller taps as the kind of activity that
+  // resets the idle timer the way native app input does. Requested only
+  // at match start (not before, so the setup/picker screen doesn't hold
+  // the display awake for no reason), and the OS releases the lock
+  // automatically whenever the tab is backgrounded -- re-request it on
+  // return to foreground if a match is still the reason we wanted it.
+  // Unsupported browsers (no navigator.wakeLock) just silently no-op.
+  // -------------------------------------------------------------------
+  let wakeLock = null;
+  let wakeLockWanted = false;
+  async function requestWakeLock() {
+    wakeLockWanted = true;
+    if (!('wakeLock' in navigator) || wakeLock) return;
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      log('I29 WAKE LOCK · acquired -- screen will stay on for the match');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } catch (e) {
+      log('I29 WAKE LOCK · request failed (' + ((e && e.message) || e) + ') -- continuing without it');
+    }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && wakeLockWanted && !wakeLock) requestWakeLock();
+  });
+
+  // -------------------------------------------------------------------
   // IndexedDB persistence for the picked content zip.
   //
   // The record stores the File object ITSELF, never file.arrayBuffer().
@@ -1089,6 +1118,7 @@
     pin('PICKED', 'P1=' + charNames[0] + ' P2=' + charNames[1] + ' stage=' + stagePath);
     if (typeof releaseAllControlKeys === 'function') releaseAllControlKeys('match start');
     document.getElementById('setup').classList.add('hide');
+    requestWakeLock();
     showMatchLoadingOverlay();
     trimSelectDefForMatch([charNames[0], charNames[1]], stageName);
     boot();
