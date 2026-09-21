@@ -1,7 +1,7 @@
 {
-  "name": "Alterations of Transformations",
+  "name": "Alterations of Transformations: The Verdant",
   "short_name": "A+T",
-  "description": "Alterations of Transformations · A Pure-RPG Series",
+  "description": "A+T: The Verdant · A Pure-RPG Series",
   "start_url": "./at-start.html?launch=app",
   "scope": "./",
   "display": "standalone",
@@ -20,5 +20,9 @@
   "display_override": [
     "standalone",
     "minimal-ui"
+  ],
+  "categories": [
+    "games",
+    "entertainment"
   ]
 }
