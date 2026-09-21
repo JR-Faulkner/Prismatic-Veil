@@ -2297,6 +2297,11 @@
     }
   }
 
+  function enqueueStageThumbnail(btn, name, img) {
+    stageThumbQueue.push({ btn, name, img });
+    pumpStageThumbQueue();
+  }
+
   function wireStageThumbnail(btn, name) {
     btn.classList.add('has-stage-thumb');
     btn.dataset.stageName = name;
@@ -2321,8 +2326,11 @@
       if (display && btn.isConnected && btn.dataset.stageName === name) label.textContent = display;
     });
 
-    stageThumbQueue.push({ btn, name, img });
-    pumpStageThumbQueue();
+    // Do NOT enqueue here -- this runs before the button is appended to the
+    // grid, so job.btn.isConnected would read false and pumpStageThumbQueue()
+    // would silently drop the job forever. Caller enqueues after appendChild,
+    // same as the character thumbnail path (enqueueRosterThumbnail).
+    return img;
   }
 
   function buildRosterGrid(mode, names, selectedIdx) {
@@ -2334,8 +2342,9 @@
       btn.dataset.mode = mode;
       btn.dataset.idx = idx;
 
+      let stageImg = null;
       if (mode === 'stage') {
-        wireStageThumbnail(btn, name);
+        stageImg = wireStageThumbnail(btn, name);
       } else {
         wireRosterThumbnail(btn, name);
       }
@@ -2343,9 +2352,11 @@
       btn.addEventListener('click', () => selectItem(mode, idx));
       grid.appendChild(btn);
 
-      // V21 phone path: hydrate the first visible row immediately instead
-      // of waiting for IntersectionObserver to notice a newly-attached cell.
-      if (mode !== 'stage' && (idx < 4 || idx === selectedIdx)) {
+      if (mode === 'stage') {
+        enqueueStageThumbnail(btn, name, stageImg);
+      } else if (idx < 4 || idx === selectedIdx) {
+        // V21 phone path: hydrate the first visible row immediately instead
+        // of waiting for IntersectionObserver to notice a newly-attached cell.
         enqueueRosterThumbnail(btn);
       }
     });

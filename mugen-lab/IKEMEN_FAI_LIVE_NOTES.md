@@ -2537,3 +2537,60 @@ reason as the portrait fix above -- no real stage content in this repo
 to test the decode-and-render path end to end, only the parsing logic.
 Next real-roster phone pass should check stage thumbnails alongside
 character portraits.
+
+---
+
+## Real-roster phone witness: two real bugs found, one still open (2026-09-21)
+
+User loaded a real full-roster zip and reported: no character portraits
+for anyone, no stage pictures either, and a crash on rotating to
+landscape mid-fight. Rather than guess at fixes, built a synthetic but
+structurally real full content zip (select.def, two characters, two
+stages, genuine binary SFF v2 files with a properly-encoded RLE8
+stream -- including a pixel value >=0xC0 specifically to exercise the
+decode fix above) and drove it through the actual page with Playwright
+route-interception standing in for the fflate CDN (this sandbox's
+network can't reach it directly; real phones have no such problem).
+
+**Bug found and fixed: stage thumbnails were queued before their
+button was attached to the DOM.** `buildRosterGrid()`'s stage branch
+called `wireStageThumbnail(btn, name)` -- which synchronously pushed
+the thumbnail job onto the load queue and pumped it immediately --
+*before* `grid.appendChild(btn)` ran. `pumpStageThumbQueue()` checks
+`job.btn.isConnected` before starting a decode, found `false` every
+time (the button wasn't in the document yet), and silently dropped the
+job forever via a bare `continue` -- no retry, no log line, nothing.
+This is exactly why the diagnostic log showed zero `STAGE PREVIEW`
+lines even after several seconds: the function was never called at
+all. The character-thumbnail path already got this right
+(`enqueueRosterThumbnail(btn)` is called *after* `grid.appendChild`)
+-- the stage path just didn't follow the same order. Fixed by splitting
+`wireStageThumbnail()` (DOM-building only, now returns the `<img>`
+element) from a new `enqueueStageThumbnail(btn, name, img)`, called
+from `buildRosterGrid` right after `grid.appendChild(btn)`, mirroring
+the character pattern exactly.
+
+**Confirmed via the same repro that the RLE8/LZ5 decode fix above is
+correct**, not just unit-test-correct: the synthetic alpha/beta
+characters' portraits decoded successfully end to end (`PORTRAIT ·
+alpha SFF v2 9000,0 16x16 rle8`), and stage previews decoded
+successfully once the queue bug was fixed (`STAGE PREVIEW ·
+stages/coolstage.def SFF v2 0,0 16x16 rle8`). Both grids rendered with
+real art, zero page errors, `bodyState: idle`.
+
+**Rotation-crash report: still open, not reproducible from here.**
+Headless Chromium has no real device orientation/WebGL context to
+rotate, and this sandbox can't simulate the kind of mid-render
+canvas/WebGL context churn a real phone rotation can trigger in an
+Ebiten/Go-WASM game (a known real class of bug in that ecosystem, not
+specific to this codebase). This may simply be the pre-existing,
+already-flagged gap ("priority #5, real rotation pause/freeze remains
+pending" -- the landscape gate only shows a please-rotate overlay, it
+was never a genuine pause/resume) becoming *visible* for the first time
+because this session's own crash-overlay work (see above) now surfaces
+failures that previously failed silently behind the collapsed TEST
+dock. Whoever hits this next: **please capture the crash overlay's
+own failure text** (or the `diag` panel's tail) at the moment it
+happens -- that's the one thing this sandbox cannot generate on its
+own, and it's what turns "rotation sometimes crashes" into an
+actionable bug.
