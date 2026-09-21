@@ -2,20 +2,25 @@
   if(window.__PRPG_AUDIO__) return;
   window.__PRPG_AUDIO__=true;
 
-  const BASE='./assets/party_battle_audio/legacy_reference_sfx/';
+  const MENU='./assets/audio/overworld/menu_sfx/';
+  const LEGACY='./assets/party_battle_audio/legacy_reference_sfx/';
   const sounds={
-    select:new Audio(BASE+'legacy_select.wav'),
-    confirm:new Audio(BASE+'legacy_restore.wav'),
-    reject:new Audio(BASE+'legacy_reject.wav'),
-    step:new Audio(BASE+'legacy_step.wav'),
-    unlock:new Audio(BASE+'legacy_win.wav')
+    select:new Audio(MENU+'pv_menu_move_harvest.m4a'),
+    confirm:new Audio(MENU+'pv_menu_confirm_harvest.m4a'),
+    back:new Audio(MENU+'pv_menu_back_harvest.m4a'),
+    reject:new Audio(MENU+'pv_menu_locked_harvest.m4a'),
+    step:new Audio(MENU+'pv_menu_tab_harvest.m4a'),
+    alter:new Audio(LEGACY+'legacy_restore.wav'),
+    unlock:new Audio(LEGACY+'legacy_win.wav')
   };
-  sounds.select.volume=.28;
-  sounds.confirm.volume=.34;
-  sounds.reject.volume=.28;
+  sounds.select.volume=.22;
+  sounds.confirm.volume=.28;
+  sounds.back.volume=.22;
+  sounds.reject.volume=.24;
   sounds.step.volume=.20;
-  sounds.unlock.volume=.34;
-  Object.values(sounds).forEach(a=>{a.preload='auto';});
+  sounds.alter.volume=.27;
+  sounds.unlock.volume=.32;
+  Object.values(sounds).forEach(a=>a.preload='auto');
 
   let enabled=localStorage.getItem('prpg.sfx')!=='0';
   let primed=false;
@@ -35,31 +40,60 @@
     primed=true;
     const a=sounds.select;
     try{
+      const old=a.volume;
       a.volume=0;
       const p=a.play();
-      if(p&&p.then) p.then(()=>{a.pause();a.currentTime=0;a.volume=.28}).catch(()=>{a.volume=.28});
-      else {a.pause();a.currentTime=0;a.volume=.28;}
-    }catch(e){a.volume=.28}
+      if(p&&p.then) p.then(()=>{a.pause();a.currentTime=0;a.volume=old}).catch(()=>{a.volume=old});
+      else {a.pause();a.currentTime=0;a.volume=old}
+    }catch(e){}
+  }
+
+  function resultText(){
+    const game=document.getElementById('result')?.textContent||'';
+    const logs=[...document.querySelectorAll('.log')].filter(x=>x.offsetParent!==null).map(x=>x.textContent).join(' ');
+    return (game+' '+logs).toLowerCase();
   }
 
   function resultTone(){
-    const t=(document.getElementById('result')?.textContent||'').toLowerCase();
-    if(/⚠|not enough|only \d+ remains|cannot|does not know|more cash|no ap|no new category/.test(t)) play('reject');
-    else if(/worth unlocked|new sense|unlocked/.test(t)) play('unlock');
-    else if(/✦|improved|purchased|learned|success/.test(t)) play('confirm');
+    const t=resultText();
+    if(/⚠|not enough|cannot|no ap|locked|does not know|more cash|no new category/.test(t)) play('reject');
+    else if(/worth unlocked|new sense|unlocked|tutorial complete/.test(t)) play('unlock');
+    else if(/✦|altered|improved|purchased|learned|success|claim established/.test(t)) play('alter');
   }
 
-  function addToggle(){
-    const top=document.querySelector('.top');
-    if(!top||document.getElementById('prpgSfx')) return;
+  function makeToggle(){
+    if(document.getElementById('prpgSfx')) return;
     const b=document.createElement('button');
     b.id='prpgSfx';
     b.type='button';
     b.textContent=enabled?'🔊':'🔇';
     b.setAttribute('aria-label','Toggle sound effects');
-    Object.assign(b.style,{border:'1px solid #ffffff66',background:'#1b173777',color:'#fff',borderRadius:'999px',padding:'8px 10px',fontSize:'12px',fontWeight:'900',backdropFilter:'blur(8px)',marginLeft:'auto'});
-    const back=top.querySelector('.back');
-    if(back) top.insertBefore(b,back); else top.appendChild(b);
+    Object.assign(b.style,{
+      border:'1px solid #ffffff66',
+      background:'#1b1737cc',
+      color:'#fff',
+      borderRadius:'999px',
+      padding:'8px 10px',
+      fontSize:'12px',
+      fontWeight:'900',
+      backdropFilter:'blur(8px)',
+      zIndex:'40'
+    });
+
+    const top=document.querySelector('.top');
+    if(top){
+      b.style.marginLeft='auto';
+      const back=top.querySelector('.back');
+      if(back) top.insertBefore(b,back); else top.appendChild(b);
+    }else{
+      Object.assign(b.style,{
+        position:'fixed',
+        right:'calc(12px + env(safe-area-inset-right))',
+        top:'calc(12px + env(safe-area-inset-top))'
+      });
+      document.body.appendChild(b);
+    }
+
     b.addEventListener('click',e=>{
       e.stopPropagation();
       enabled=!enabled;
@@ -70,34 +104,70 @@
   }
 
   document.addEventListener('pointerdown',prime,{once:true,capture:true});
+
   document.addEventListener('click',e=>{
     const el=e.target.closest('button,a');
     if(!el||el.id==='prpgSfx') return;
-    if(el.id==='end'){play('step');return;}
-    if(el.classList.contains('alterChoice')){
-      play('select');
-      setTimeout(resultTone,35);
+
+    if(el.classList.contains('back')){
+      play('back');
       return;
     }
+
+    if(['newTutorial','newGame','continueGame','enterVerdant','start','begin'].includes(el.id)){
+      play('confirm');
+      return;
+    }
+
+    if(el.id==='finishLesson'){
+      play('unlock');
+      return;
+    }
+
+    if(el.id==='end'||el.dataset.next){
+      play('step');
+      return;
+    }
+
     if(el.classList.contains('choice')){
       play('select');
-      setTimeout(resultTone,35);
+      setTimeout(resultTone,45);
       return;
     }
-    if(el.classList.contains('prop')||el.closest('.nav')){play('select');return;}
-    if(el.id==='start'){play('confirm');return;}
-    if(el.classList.contains('primary')){
+
+    if(el.classList.contains('alterChoice')){
       play('select');
-      setTimeout(resultTone,35);
+      setTimeout(resultTone,45);
       return;
     }
-    if(el.classList.contains('back')) play('step');
+
+    if(el.classList.contains('prop')||el.closest('.nav')){
+      play('select');
+      return;
+    }
+
+    if(el.classList.contains('primary')){
+      play('confirm');
+      setTimeout(resultTone,45);
+      return;
+    }
+
+    if(el.disabled){
+      play('reject');
+      return;
+    }
+
+    play('select');
   },true);
 
   const obs=new MutationObserver(()=>{
     const u=document.getElementById('worthUnlock');
-    if(u&&!u.classList.contains('hidden')&&!u.dataset.sounded){u.dataset.sounded='1';play('unlock')}
+    if(u&&!u.classList.contains('hidden')&&!u.dataset.sounded){
+      u.dataset.sounded='1';
+      play('unlock');
+    }
   });
   obs.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['class']});
-  addToggle();
+
+  makeToggle();
 })();
