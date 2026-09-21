@@ -7,12 +7,14 @@
     select:new Audio(BASE+'legacy_select.wav'),
     activate:new Audio(BASE+'legacy_restore.wav'),
     step:new Audio(BASE+'legacy_step.wav'),
-    reject:new Audio(BASE+'legacy_reject.wav')
+    reject:new Audio(BASE+'legacy_reject.wav'),
+    refresh:new Audio(BASE+'legacy_hush.wav')
   };
   sounds.select.volume=.28;
   sounds.activate.volume=.34;
   sounds.step.volume=.20;
   sounds.reject.volume=.27;
+  sounds.refresh.volume=.30;
   Object.values(sounds).forEach(a=>a.preload='auto');
 
   let enabled=localStorage.getItem('prpg.sfx')!=='0';
@@ -59,7 +61,9 @@
     if(!el||el.id==='prpgSfx')return;
     if(el.disabled){play('reject');return}
 
-    const pageChange=el.classList.contains('back')||['newTutorial','newGame','continueGame','enterVerdant','start','begin','end','finishLesson'].includes(el.id)||!!el.dataset.next||!!el.closest('.nav');
+    if(el.id==='end'){play('refresh');return}
+
+    const pageChange=el.classList.contains('back')||['newTutorial','newGame','continueGame','enterVerdant','start','begin','finishLesson'].includes(el.id)||!!el.dataset.next||!!el.closest('.nav');
     if(pageChange){play('step');return}
 
     const activates=el.classList.contains('choice')||el.classList.contains('alterChoice')||el.classList.contains('primary');
