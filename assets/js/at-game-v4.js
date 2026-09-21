@@ -24,6 +24,59 @@ const EVENTS=[
 {id:'beacon',thread:'RANDOM EVENT',mood:'📡 CLAIM QUESTION',title:'Something Old Beside The Road',text:'Half under a wall of vines sits an obsolete survey beacon with a faded abandonment mark. No active owner is listed on the public tag. When you focus on it, the Alter sense stays quiet. When you think, very deliberately, “mine,” something almost answers.',chip:'You found an apparently abandoned survey beacon.',choices:[['Stake a recovery claim','Treat the abandonment mark as permission','event:beacon:claim','AUTO'],['Inspect it without claiming','See what ordinary observation tells you','event:beacon:inspect','AUTO'],['Photograph the tag','Verify it later','event:beacon:photo','AUTO'],['Leave it alone','Not every mystery needs touching','event:beacon:leave','AUTO'],['Sit with that almost-answer','Study the Claim sensation itself','study:claim sense','90%']]},
 {id:'weather',thread:'RANDOM EVENT',mood:'🌧️ VERDANT WEATHER',title:'Rain Changes The Road',text:'A hard warm rain hits fast enough to turn a side road into flowing mud. The maintained corridor is fine. The interesting road is not.',chip:'Heavy rain changed access to the side roads.',choices:[['Stay on maintained roads','Adventure can wait one day','event:weather:safe','AUTO'],['Inspect the car','See what it can safely handle','inspect:car','AUTO'],['Improve traction indirectly','Alter performance modestly · 2 AP','alter:car:performance:2','80%'],['Study local road conditions','Learn before improvising','study:verdant roads','94%'],['Turn back and relax','No shame in not drowning a coupe','life:rest','AUTO']]}
 ];
+const INTERNALS={
+ car:{
+  basic:'The car resolves as systems rather than a single Performance number: powertrain, cooling, electrical, braking, steering, suspension, tires, cabin systems and structural shell.',
+  deep:'Focusing deeper separates the powertrain from its support systems, the suspension into spring/damper geometry and mounting points, braking into friction hardware and hydraulic/control paths, and the body into load-bearing structure versus exterior panels. Alter does not yet hand you engineering answers automatically; it shows you what is there well enough to ask better questions.'
+ },
+ console:{
+  basic:'Inside the gaming system you can distinguish the main board, processor package, memory, storage, cooling assembly, power delivery, wireless hardware, ports and the physical shell.',
+  deep:'The read sharpens into thermal paths, power-delivery stages, board traces, memory and storage interfaces, fan and heat-sink geometry, shielding, connectors and firmware-controlled components. You understand the layout more clearly than the design theory behind every part.'
+ },
+ tools:{
+  basic:'The starter kit is not one object to the power. It is a collection: sockets and drivers, cutters, pliers, a pry bar, compact meter, work light, straps, gloves and a handful of recovery hardware.',
+  deep:'When you focus, each piece separates by material, wear surface, joint, grip, fastener interface and intended load. The meter is its own little system of probes, protection, display electronics and power. The straps read as fibers, stitching, hooks and load paths. “Tool kit” was only your human shorthand.'
+ },
+ beacon:{
+  basic:'Under the weathered shell are an old power cell, transmitter board, sensor package, calibration hardware, antenna feed, sealed connectors and a surprisingly dense central mounting block.',
+  deep:'The beacon separates into power, sensing, timing, transmission and environmental sealing. Corrosion is worst around the lower connector bank. One sealed central module is physically intact but still semantically fuzzy to your Alter sense, as if you know where it is without yet knowing what category to call it.'
+ }
+};
+function sceneFocus(){
+ if(S.day===6)return'cabinet';
+ if(S.day===4&&!S.items.beacon)return'beacon_unclaimed';
+ return S.selected;
+}
+function resolveTargetFromText(low){
+ if(/maintenance cabinet|cabinet/.test(low))return'cabinet';
+ if(/survey beacon|beacon/.test(low))return S.items.beacon?'beacon':'beacon_unclaimed';
+ if(/car|vehicle|coupe/.test(low))return'car';
+ if(/game|console|gaming system/.test(low))return'console';
+ if(/tool|gear|kit/.test(low))return'tools';
+ if(/\bit\b|inside|internals?|components?|composition|made of|detail/.test(low))return sceneFocus();
+ return S.selected;
+}
+function deepInspect(id){
+ if(id==='cabinet'){
+  S.result='You stop treating the cabinet like a stat block and actually examine it. Behind the sealed doors are old switchgear, heavy bus bars, control relays, bundled service cable, fused disconnects and faded maintenance labels. Several circuits have been physically removed. One smaller sealed module sits deeper in the cabinet with no readable purpose marking. Your ordinary eyes can see all of that. The strange part is what Alter does not do: there is no stable Claim readout, only the memory of that impossible one-word flicker: CONDITION.';
+  S.journal.unshift('Day '+S.day+' · Examined the maintenance cabinet in physical detail.');
+  return;
+ }
+ if(id==='beacon_unclaimed'){
+  S.result='You examine the abandoned beacon as an object rather than asking Alter for ownership stats. The housing is a weather-sealed composite shell over a metal frame. Through the service panel you can make out an old power cell, transmitter board, sensor hardware, antenna feed and several sealed connectors. None of it becomes fully legible to Alter yet. Visually you can tell what the pieces are; the power still refuses to organize them into a writable Claim.';
+  S.journal.unshift('Day '+S.day+' · Examined the unclaimed survey beacon in physical detail.');
+  return;
+ }
+ const x=S.items[id];
+ if(!x){S.result='You can look closer, but there is no stable object in the current scene for the interpreter to resolve.';return}
+ const info=INTERNALS[id];
+ if(!info){S.result='You focus past the surface readout. Alter separates the object into materials, assemblies, connections and wear points, but this prototype does not yet have a authored internal map for '+x.name+'.';return}
+ const lv=(S.knowledge[x.category+' systems']||0)+(S.knowledge['practical systems']||0);
+ S.selected=id;
+ S.result=x.icon+' '+x.name+' · INTERNAL READ\n\n'+info.basic+(lv>=2?'\n\nDEEPER RESOLUTION: '+info.deep:'\n\nYou can tell there is more resolution available, but you do not yet have enough relevant knowledge to name every subsystem confidently.');
+ S.journal.unshift('Day '+S.day+' · Read the internal composition of '+x.name+'.');
+}
+
 const thresholds=[170,280,430,650,900,1250];let S=null;
 const clone=id=>JSON.parse(JSON.stringify(LIB[id]));
 function fresh(name){return{name:name||'Jace',premise:BACKGROUND,day:1,money:4800,baseAP:6,ap:6,maxAP:6,items:{car:clone('car'),console:clone('console'),tools:clone('tools')},selected:'tools',knowledge:{'alteration sense':1,'claim sense':1},journal:['Day 1 · Crossed into the Verdant to begin a recovery and salvage operation.','Day 1 · The family believes the move is about honest blue-collar work. That is only half true.'],alterations:0,worthUnlocked:false,currentEvent:null,lastEvent:null,claims:['car','console','tools'],threads:{business:true,serviceSpur:false,oldTraveler:false,uncle:false},result:'The last staffed post disappears in the mirror. For the first time, nobody at home is close enough to tell you to leave the power alone.'}}
@@ -98,15 +151,33 @@ function life(type){
 }
 function handle(action){if(!action)return;const p=action.split(':');if(p[0]==='inspect')inspect(p[1]);else if(p[0]==='study')study(p.slice(1).join(':'));else if(p[0]==='alter')alter(p[1],p[2],p[3]);else if(p[0]==='life')life(p[1]);else if(p[0]==='event')resolveEvent(p[1],p[2]);render()}
 function freeAction(text){
- const t=text.trim();if(!t){render();return}const low=t.toLowerCase();let handled=false;
- const target=/car|vehicle|coupe/.test(low)?'car':/game|console|system/.test(low)?'console':/tool|gear/.test(low)?'tools':/beacon/.test(low)&&S.items.beacon?'beacon':S.selected;
- if(/inspect|look at|check|examine/.test(low)){inspect(target);handled=true}
- if(/study|research|read about|learn/.test(low)){let topic=low.replace(/^.*?(study|research|read about|learn)\s*/,'').slice(0,60)||'verdant fieldcraft';study(topic);handled=true}
- if(/\bclaim\b|stake claim|make it mine/.test(low)){if(/beacon/.test(low)){if(S.currentEvent==='beacon'||S.items.beacon)establishClaim('beacon');else S.result='You remember the idea, but there is no survey beacon in front of you to Claim right now.'}else S.result='You reach for the sense you have been calling Claim. It wants a definite target, something you can point to and mean when you think: mine.';handled=true}
- if(/alter|improve|upgrade|change|modify/.test(low)){const m=low.match(/(\d+)\s*(?:ap|point)/),cost=m?clamp(+m[1],1,6):1,stat=/comfort/.test(low)?'comfort':/perform|power|speed|traction/.test(low)?'performance':/efficien|cool|airflow|energy/.test(low)?'efficiency':/integr|strong|durab/.test(low)?'integrity':'condition';alter(target,stat,cost);handled=true}
- if(/drive|explore|go out|walk|rest|sleep|eat|call family/.test(low)&&!/alter|improve|upgrade/.test(low)){S.result='You do it. The Verdant does not require a skill check for every ordinary decision.';S.journal.unshift('Day '+S.day+' · '+t.slice(0,100));handled=true}
- if(!handled){S.result='You attempt: “'+t+'” The action is accepted as part of your life in the Verdant, but this build does not yet attach a specific mechanical consequence to it. No fake failure roll was added.';S.journal.unshift('Day '+S.day+' · '+t.slice(0,100))}
- render();
+ const t=text.trim();if(!t){render();return}
+ const low=t.toLowerCase(),target=resolveTargetFromText(low);
+ const wantsDeep=/more detail|more detailed|what(?:'s| is) (?:inside|in) (?:it|this|that)|what is it made of|what(?:'s| is) it made of|look inside|open it|internals?|components?|composition|inside it|inside this|inside that|break it down|what is in it/.test(low);
+ const wantsStats=/stats?|numbers?|readout|condition|integrity|efficiency|performance|worth/.test(low)&&!/what(?:'s| is) (?:inside|in)|components?|composition|internals?/.test(low);
+ if(wantsDeep){deepInspect(target);render();return}
+ if(/\bclaim\b|stake claim|make it mine/.test(low)){
+  if(target==='beacon'||target==='beacon_unclaimed'){if(S.day===4||S.items.beacon)establishClaim('beacon');else S.result='You remember the idea, but there is no survey beacon in front of you to Claim right now.'}
+  else S.result='You reach for the sense you have been calling Claim. It wants a definite target, something you can point to and mean when you think: mine.';
+  render();return
+ }
+ if(/study|research|read about|learn/.test(low)){
+  let topic=low.replace(/^.*?(study|research|read about|learn)\s*/,'').slice(0,60)||'verdant fieldcraft';study(topic);render();return
+ }
+ if(/alter|improve|upgrade|change|modify/.test(low)){
+  const itemTarget=(target==='cabinet'||target==='beacon_unclaimed')?S.selected:target;
+  const m=low.match(/(\d+)\s*(?:ap|point)/),cost=m?clamp(+m[1],1,6):1,stat=/comfort/.test(low)?'comfort':/perform|power|speed|traction/.test(low)?'performance':/efficien|cool|airflow|energy/.test(low)?'efficiency':/integr|strong|durab/.test(low)?'integrity':'condition';
+  alter(itemTarget,stat,cost);render();return
+ }
+ if(wantsStats||/inspect|look at|check|examine/.test(low)){
+  if(target==='cabinet'||target==='beacon_unclaimed'){deepInspect(target)}else inspect(target);
+  render();return
+ }
+ if(/drive|explore|go out|walk|rest|sleep|eat|call family/.test(low)&&!/alter|improve|upgrade/.test(low)){
+  S.result='You do it. The Verdant does not require a skill check for every ordinary decision.';S.journal.unshift('Day '+S.day+' · '+t.slice(0,100));render();return
+ }
+ S.result='You attempt: “'+t+'” The action is accepted as part of your life in the Verdant, but this build does not yet attach a specific mechanical consequence to it. No fake failure roll was added.';
+ S.journal.unshift('Day '+S.day+' · '+t.slice(0,100));render();
 }
 function newDay(){
  S.day++;S.maxAP=S.baseAP+worthBonus();S.ap=S.maxAP;S.result='Day '+S.day+'. Alteration capacity returns to '+S.maxAP+' AP. Nothing says you need to spend it.';
