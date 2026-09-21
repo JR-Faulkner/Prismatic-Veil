@@ -2,7 +2,7 @@
   "name": "Alterations of Transformations",
   "short_name": "A+T",
   "description": "Alterations of Transformations · A Pure-RPG Series",
-  "start_url": "./at-start.html",
+  "start_url": "./at-start.html?launch=app",
   "scope": "./",
   "display": "standalone",
   "background_color": "#111437",
@@ -14,5 +14,11 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
+  ],
+  "id": "./at-start.html",
+  "orientation": "portrait-primary",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
   ]
 }
