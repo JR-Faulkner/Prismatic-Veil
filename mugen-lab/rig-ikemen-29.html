@@ -342,6 +342,16 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 .roster-item[data-mode="stage"]:before{
   content:"◆";color:#9fc7df;background:linear-gradient(160deg,#20303e,#0b1117)
 }
+.roster-item[data-mode="stage"]{padding-left:54px!important}
+.stage-thumb{
+  position:absolute;left:6px;top:50%;transform:translateY(-50%);
+  width:42px;height:30px;border-radius:4px;overflow:hidden;
+  background:linear-gradient(160deg,#20303e,#0b1117);
+  box-shadow:inset 0 0 0 1px #265f84;
+}
+.stage-thumb-img{width:100%;height:100%;object-fit:cover;display:block}
+.stage-thumb-img[hidden]{display:none!important}
+.roster-item.has-stage-thumb.thumb-ready:before{display:none}
 .roster-name{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .roster-item:after{
   content:"";position:absolute;right:-12px;top:-12px;width:42px;height:42px;transform:rotate(45deg);

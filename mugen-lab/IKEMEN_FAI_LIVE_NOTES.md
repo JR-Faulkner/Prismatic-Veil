@@ -2493,3 +2493,47 @@ priority #2 can be marked resolved rather than "should now work." DAI or
 whoever next loads a real full-roster zip on device: check whether
 generic characters now get real portraits instead of initials, and
 report back here either way.
+
+---
+
+## Priority #3: stage clean names + real preview thumbnails (2026-09-21)
+
+Stage picker previously showed the raw `select.def` token verbatim
+(`stages/kfmstage.def`) and a static "◆" glyph for every entry -- no
+name cleanup, no art, unlike the character grid which already had real
+portraits (well, real for SFF v1; see the fix above for v2). Built the
+stage-side equivalent of that same pipeline:
+
+- `parseStageDefInfo()` reads the stage's own `.def` `[Info]` section
+  and prefers `displayname` over `name`, falling back to a cleaned-up
+  version of the raw token (underscores/dashes to spaces, path and
+  `.def` stripped) if the def can't be read at all -- the label is never
+  blank, just less pretty.
+- `parseStageSpriteRefFromDef()` / `resolveStageSffPath()` mirror the
+  character-side `parseSpriteRefFromDef()` / `resolveCharSffPath()`
+  pattern exactly, but read `[BGdef] spr = ...` instead of `[Files]
+  sprite = ...`.
+- `loadStagePreview()` decodes sprite group **0, image 0** -- the
+  stage's base background layer -- as the preview art, reusing every
+  existing SFF v1 (PCX) and v2 (raw/RLE8/RLE5/LZ5/PNG) decode primitive
+  the character portrait path already has. No new decode logic; group
+  0/image 0 is the closest thing to a universal "cover art" convention
+  a stage def has, since MUGEN doesn't standardize a dedicated stage
+  preview sprite the way it does `9000,0`/`9000,1` for characters.
+- Stage buttons get their own small thumbnail (`wireStageThumbnail`,
+  `.stage-thumb` CSS) sized for landscape stage art rather than reusing
+  the character grid's square portrait chip, and their own tiny
+  concurrency-capped load queue -- skipped the character grid's
+  viewport-lazy `IntersectionObserver`-style hydration entirely, since a
+  select.def's extra-stages list is a handful of entries, not a full
+  roster.
+
+**Verified:** unit-tested `parseStageDefInfo`/`parseStageSpriteRefFromDef`
+against synthetic `.def` text covering quoted/unquoted values, inline
+comments, and the no-displayname fallback -- all pass. `node --check`
+clean, `preflight.py` passes, real headless boot with zero page errors.
+**Not yet witnessed against a real stage's actual SFF** for the same
+reason as the portrait fix above -- no real stage content in this repo
+to test the decode-and-render path end to end, only the parsing logic.
+Next real-roster phone pass should check stage thumbnails alongside
+character portraits.
