@@ -275,6 +275,25 @@ function render(){
  $('choices').innerHTML='';sc.choices.slice(0,5).forEach((c,i)=>{const key=choiceKey(c[2]),used=!!(S.usedChoices&&S.usedChoices[key]),b=document.createElement('button');b.className='choice'+(used?' used':'');b.type='button';b.disabled=used;b.innerHTML='<span class="num">'+(used?'✓':(i+1))+'</span><span><strong>'+c[0]+'</strong><small>'+c[1]+'</small></span><span class="chance">'+(used?'USED':c[3])+'</span>';b.onclick=()=>{S.usedChoices=S.usedChoices||{};S.usedChoices[key]=true;handle(c[2])};$('choices').appendChild(b)});
  renderCategories();renderSelected();renderGrowth();renderJournal();save();
 }
+function alterStage(){
+ if(S.worthUnlocked||S.day>=15||knowledgeTotal()>=9)return 2;
+ if(S.day>=8||S.alterations>=3||knowledgeTotal()>=5)return 1;
+ return 0;
+}
+function updateAlterSense(){
+ const st=alterStage();
+ if(!$('alterSenseTitle'))return;
+ if(st===0){
+  $('alterSenseTitle').textContent='CLAIM · BASIC READ';
+  $('alterSenseHint').textContent='Owned things feel clear. Start with broad changes and questions.';
+ }else if(st===1){
+  $('alterSenseTitle').textContent='CLAIM · WORKING MODEL';
+  $('alterSenseHint').textContent='Field experience is separating broad properties into useful choices.';
+ }else{
+  $('alterSenseTitle').textContent=S.worthUnlocked?'ALTERATION · EXPANDED SENSE':'CLAIM · DEEPER CONTROL';
+  $('alterSenseHint').textContent=S.worthUnlocked?'A new layer of value and resonance has become legible.':'You can now read and manipulate more of a Claim deliberately.';
+ }
+}
 function renderCategories(){
  const box=$('categories');box.innerHTML='';const st=alterStage();
  if(st===0){
