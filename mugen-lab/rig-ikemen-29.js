@@ -2420,6 +2420,10 @@
     }
   }
 
+  function cleanStageFallbackName(token) {
+    return String(token || '').replace(/\\/g, '/').replace(/\.def$/i, '').split('/').pop().replace(/[_-]+/g, ' ');
+  }
+
   function updateSelectionDisplay() {
     const p1Name = allChars[pickerState.p1Idx];
     const p2Name = allChars[pickerState.p2Idx];
@@ -2429,7 +2433,17 @@
     const selStage = document.getElementById('selStage');
     selP1.textContent = p1Name || '-';
     selP2.textContent = p2Name || '-';
-    selStage.textContent = stageName || '(engine default)';
+    // The raw select.def token ("stages/kfmstage.def") was showing here
+    // verbatim -- only the picker grid's own button label was ever getting
+    // the clean displayname swap. Show the same cleaned fallback immediately,
+    // then swap in the stage def's real name once it resolves, guarding
+    // against the selection having moved on by then.
+    selStage.textContent = stageName ? cleanStageFallbackName(stageName) : '(engine default)';
+    if (stageName) {
+      loadStageDisplayName(stageName).then(display => {
+        if (display && allStages[pickerState.stageIdx] === stageName) selStage.textContent = display;
+      });
+    }
     selP1.closest('.sel-item').classList.toggle('filled', !!p1Name);
     selP2.closest('.sel-item').classList.toggle('filled', !!p2Name);
     selStage.closest('.sel-item').classList.toggle('filled', !!stageName);

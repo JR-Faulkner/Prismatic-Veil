@@ -2594,3 +2594,41 @@ own failure text** (or the `diag` panel's tail) at the moment it
 happens -- that's the one thing this sandbox cannot generate on its
 own, and it's what turns "rotation sometimes crashes" into an
 actionable bug.
+
+---
+
+## Real-phone screenshot after the stage-queue fix: still not fixed (2026-09-21)
+
+User's own real roster confirms the stage-queue fix above did NOT fully
+resolve things: screenshots show real character portraits still
+missing for most of the roster (kineza's repo-hosted art aside, `mole`/
+`G.Ken`/`GoD_Ryu` all show plain letter-initial fallback), and the
+stage-select tiles still show a placeholder icon instead of real
+preview art. Also caught a genuinely separate, previously-missed bug
+from the same screenshots: the "SELECTED STAGE" readout in the fighter-
+select header still showed the raw `stages/Deserted_woods.def` token
+verbatim -- `updateSelectionDisplay()` never got the clean-name swap
+priority #3 added; only the picker grid's own button label did. Fixed:
+`updateSelectionDisplay()` now shows the same cleaned fallback
+immediately and swaps in the stage def's real displayname/name once
+`loadStageDisplayName()` resolves, same pattern as the grid buttons,
+guarded against the selection having moved on by the time it resolves.
+
+**The portrait/stage-art gap itself is still open and not something
+this sandbox can diagnose further without real data.** The synthetic
+SFF v2 fixture built for the previous fix's repro clearly isn't
+representative enough of whatever real MUGEN character/stage export
+tooling actually produces -- it proved the decode math is right for a
+correctly-formed RLE8 stream, but real files evidently hit something
+the fixture didn't: could be a different sprite format entirely (many
+real 1.1 rosters mix RLE8 with LZ5 or even PNG groups depending on what
+tool exported them), a `sprite=`/`spr=` path that resolves differently
+than assumed, a `[Files]`/`[BGdef]` field this parser doesn't expect,
+or something else not yet considered. Guessing further without
+evidence risks another round-trip like this one. **What's actually
+needed next: the debug log's own `PORTRAIT ·` and `STAGE PREVIEW ·`
+lines for the specific characters/stages that are failing** (SHOW
+DEBUG panel, or the pinned summary) -- those lines say exactly which
+step failed and why (decode format, missing sprite, unresolved path,
+etc.) for that specific real file, which is the one piece of signal
+this sandbox has no way to manufacture on its own.
