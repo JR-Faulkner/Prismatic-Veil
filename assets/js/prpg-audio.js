@@ -56,9 +56,10 @@
 
   function resultTone(){
     const t=resultText();
-    if(/⚠|not enough|cannot|no ap|locked|does not know|more cash|no new category/.test(t)) play('reject');
-    else if(/worth unlocked|new sense|unlocked|tutorial complete/.test(t)) play('unlock');
-    else if(/✦|altered|improved|purchased|learned|success|claim established/.test(t)) play('alter');
+    if(/⚠|not enough|cannot|no ap|locked|does not know|more cash|no new category|does not become writable|does not resolve|nothing changes|never settles|no stable writable/.test(t)){play('reject');return 'reject'}
+    if(/worth unlocked|new sense|unlocked|tutorial complete/.test(t)){play('unlock');return 'unlock'}
+    if(/✦|altered|improved|purchased|learned|success|claim established|completed|paid|earned/.test(t)){play('alter');return 'alter'}
+    return null;
   }
 
   function makeToggle(){
@@ -114,41 +115,27 @@
       return;
     }
 
+    // Navigation and page changes get exactly one page/confirm tone.
     if(['newTutorial','newGame','continueGame','enterVerdant','start','begin'].includes(el.id)){
       play('confirm');
       return;
     }
-
     if(el.id==='finishLesson'){
-      play('unlock');
+      play('confirm');
       return;
     }
-
-    if(el.id==='end'||el.dataset.next){
+    if(el.id==='end'||el.dataset.next||el.closest('.nav')||el.classList.contains('prop')){
       play('step');
       return;
     }
 
-    if(el.classList.contains('choice')){
-      play('select');
-      setTimeout(resultTone,45);
-      return;
-    }
-
-    if(el.classList.contains('alterChoice')){
-      play('select');
-      setTimeout(resultTone,45);
-      return;
-    }
-
-    if(el.classList.contains('prop')||el.closest('.nav')){
-      play('select');
-      return;
-    }
-
-    if(el.classList.contains('primary')){
-      play('confirm');
-      setTimeout(resultTone,45);
+    // Result-producing actions do not play an immediate click tone.
+    // Wait for the action to resolve, then play positive OR negative once.
+    if(el.classList.contains('choice')||el.classList.contains('alterChoice')||el.classList.contains('primary')){
+      setTimeout(()=>{
+        const tone=resultTone();
+        if(!tone) play('confirm');
+      },55);
       return;
     }
 
@@ -160,11 +147,13 @@
     play('select');
   },true);
 
+  let lastUnlockSound=0;
   const obs=new MutationObserver(()=>{
     const u=document.getElementById('worthUnlock');
     if(u&&!u.classList.contains('hidden')&&!u.dataset.sounded){
       u.dataset.sounded='1';
-      play('unlock');
+      const now=Date.now();
+      if(now-lastUnlockSound>250){lastUnlockSound=now;play('unlock')}
     }
   });
   obs.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['class']});
