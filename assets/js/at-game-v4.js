@@ -187,7 +187,7 @@ function totalWorth(){return Object.values(S.items).reduce((n,x)=>n+(x.worth||0)
 function worthBonus(){if(!S.worthUnlocked)return 0;const t=totalWorth();return thresholds.filter(x=>t>=x).length}
 function nextThreshold(){const t=totalWorth();return thresholds.find(x=>x>t)||null}
 function knowledgeTotal(){return Object.values(S.knowledge||{}).reduce((a,b)=>a+b,0)}
-function maybeUnlockWorth(){if(!S.worthUnlocked&&S.alterations>=4&&knowledgeTotal()>=5){S.worthUnlocked=true;S.journal.unshift('Day '+S.day+' · New sense unlocked: Worth.');$('worthUnlock').classList.remove('hidden');S.result='✦ WORTH UNLOCKED. This is not a price tag. Claimed things carry a deeper weight, and you can suddenly feel the total.';return true}return false}
+function maybeUnlockWorth(){if(!S.worthUnlocked&&S.day>=12&&S.alterations>=5&&knowledgeTotal()>=7){S.worthUnlocked=true;S.journal.unshift('Day '+S.day+' · New sense unlocked: Worth.');$('worthUnlock').classList.remove('hidden');S.result='✦ WORTH UNLOCKED. This is not a price tag. Claimed things carry a deeper weight, and you can suddenly feel the total.';return true}return false}
 function scene(){if(S.currentEvent)return EVENTS.find(e=>e.id===S.currentEvent)||NORMAL[0];return NORMAL[Math.min(S.day-1,NORMAL.length-1)]}
 function choiceKey(action){return S.day+'|'+(S.currentEvent||'day')+'|'+action}
 function markUsedAction(action){
@@ -268,7 +268,7 @@ function render(){
  if($('weekTrack'))$('weekTrack').style.width=(S.day<=21?((((S.day-1)%7)+1)/7)*100:100)+'%';
  S.maxAP=S.baseAP+worthBonus();if(S.ap>S.maxAP)S.ap=S.maxAP;$('apText').textContent=S.ap+'/'+S.maxAP;$('apdots').innerHTML='';
  for(let i=0;i<S.maxAP;i++){const d=document.createElement('i');d.className='dot'+(i<S.ap?' on':'');$('apdots').appendChild(d)}
- const tw=totalWorth();$('worthTotal').textContent=tw;$('worthTotalTop').textContent=tw;$('stats').classList.toggle('hasWorth',S.worthUnlocked);$('worthStat').classList.toggle('hidden',!S.worthUnlocked);$('worthSummary').classList.toggle('show',S.worthUnlocked);
+ const tw=totalWorth();$('worthTotal').textContent=tw;$('worthTotalTop').textContent=tw;$('stats').classList.toggle('hasWorth',S.worthUnlocked);const showWorth=S.worthUnlocked&&alterStage()>=2;$('worthStat').classList.toggle('hidden',!showWorth);$('worthSummary').classList.toggle('show',showWorth);
  if(S.worthUnlocked){const nx=nextThreshold();$('worthNext').innerHTML=nx?'NEXT RESONANCE<br><b>'+(nx-tw)+' WORTH AWAY</b>':'KNOWN RESONANCE<br><b>MAXED FOR NOW</b>'}
  const sc=scene();updateSceneWindow();$('thread').textContent=sc.thread;$('mood').textContent=sc.mood;$('sceneTitle').textContent=sc.title;$('sceneText').textContent=sc.text;$('result').textContent=S.result||'';
  $('eventChip').className='eventChip'+(S.currentEvent?' show':'');$('eventChip').textContent=S.currentEvent?'✦ '+sc.chip:'';
@@ -276,21 +276,58 @@ function render(){
  renderCategories();renderSelected();renderGrowth();renderJournal();save();
 }
 function renderCategories(){
- const box=$('categories');box.innerHTML='';
- [...new Set(Object.values(S.items).map(x=>x.category))].forEach(cat=>{const meta=CAT[cat]||CAT.other,entries=categoryItems(cat),stat=categoryStat(cat,entries),worth=entries.reduce((n,[,x])=>n+x.worth,0),sel=S.items[S.selected]&&S.items[S.selected].category===cat,d=document.createElement('details');d.className='cat';d.open=sel;
- d.innerHTML='<summary><span class="catIcon">'+meta.icon+'</span><span><strong>'+meta.name+'</strong><span class="catMeta">'+entries.length+' '+(entries.length===1?'claim':'claims')+' · '+meta.focus.toUpperCase()+' '+stat+'</span></span><span class="catValue">'+(S.worthUnlocked?'W '+worth:'DETAILS')+'</span></summary><div class="catItems"></div>';
- const inner=d.querySelector('.catItems');entries.forEach(([id,x])=>{const b=document.createElement('button');b.className='prop'+(id===S.selected?' active':'');b.type='button';b.innerHTML='<span class="icon">'+x.icon+'</span><span><strong>'+x.name+'</strong><small>'+(x.mods.length?x.mods.slice(-2).join(' · '):(x.claimType==='recovered'?'Recovered claim':'Established claim'))+'</small></span><span class="mini">'+(S.worthUnlocked?'W '+x.worth:'COND '+x.condition)+'</span>';b.onclick=()=>{S.selected=id;render()};inner.appendChild(b)});box.appendChild(d)
+ const box=$('categories');box.innerHTML='';const st=alterStage();
+ if(st===0){
+  const wrap=document.createElement('div');wrap.className='simpleClaims';
+  Object.entries(S.items).forEach(([id,x])=>{
+   const b=document.createElement('button');b.className='simpleClaim'+(id===S.selected?' active':'');b.type='button';
+   b.innerHTML='<span class="icon">'+x.icon+'</span><span><strong>'+x.name+'</strong><small>'+((x.claimType==='recovered')?'Recovered Claim':'Established Claim')+'</small></span><span class="claimMark">CLAIM</span>';
+   b.onclick=()=>{S.selected=id;render()};
+   wrap.appendChild(b);
+  });
+  box.appendChild(wrap);return;
+ }
+ [...new Set(Object.values(S.items).map(x=>x.category))].forEach(cat=>{
+  const meta=CAT[cat]||CAT.other,entries=categoryItems(cat),stat=categoryStat(cat,entries),worth=entries.reduce((n,[,x])=>n+x.worth,0),sel=S.items[S.selected]&&S.items[S.selected].category===cat,d=document.createElement('details');d.className='cat';d.open=sel;
+  d.innerHTML='<summary><span class="catIcon">'+meta.icon+'</span><span><strong>'+meta.name+'</strong><span class="catMeta">'+entries.length+' '+(entries.length===1?'claim':'claims')+(st>=2?' · '+meta.focus.toUpperCase()+' '+stat:'')+'</span></span><span class="catValue">'+(S.worthUnlocked&&st>=2?'W '+worth:'DETAILS')+'</span></summary><div class="catItems"></div>';
+  const inner=d.querySelector('.catItems');entries.forEach(([id,x])=>{const b=document.createElement('button');b.className='prop'+(id===S.selected?' active':'');b.type='button';b.innerHTML='<span class="icon">'+x.icon+'</span><span><strong>'+x.name+'</strong><small>'+(x.mods.length?x.mods.slice(-2).join(' · '):(x.claimType==='recovered'?'Recovered claim':'Established claim'))+'</small></span><span class="mini">'+(S.worthUnlocked&&st>=2?'W '+x.worth:'COND '+x.condition)+'</span>';b.onclick=()=>{S.selected=id;render()};inner.appendChild(b)});box.appendChild(d)
  });
 }
 function renderSelected(){
- const x=S.items[S.selected]||Object.values(S.items)[0];if(!x)return;$('propName').textContent=x.name;$('propMods').textContent=x.mods.length?(x.mods.length+' MOD'+(x.mods.length===1?'':'S')):'CLAIMED';
- const stats=[['Condition',x.condition],['Integrity',x.integrity],['Efficiency',x.efficiency]];if(x.performance)stats.push(['Performance',x.performance]);if(x.comfort)stats.push(['Comfort',x.comfort]);if(S.worthUnlocked)stats.push(['Worth',x.worth]);$('readout').innerHTML=stats.map(v=>'<div class="meter">'+v[0]+'<b>'+v[1]+'</b></div>').join('');
- $('alterChoices').innerHTML='';alterOptions(S.selected,x).slice(0,5).forEach(o=>{const b=document.createElement('button');b.className='alterChoice';b.type='button';b.innerHTML='<strong>'+o[0]+'</strong><small>'+o[1]+'</small>';b.onclick=()=>handle(o[2]);$('alterChoices').appendChild(b)});
+ const x=S.items[S.selected]||Object.values(S.items)[0];if(!x)return;const st=alterStage();updateAlterSense();
+ $('propName').textContent=x.name;$('propMods').textContent=st===0?'CLAIMED':(x.mods.length?(x.mods.length+' MOD'+(x.mods.length===1?'':'S')):'CLAIMED');
+ let stats=[['Condition',x.condition],['Integrity',x.integrity],['Efficiency',x.efficiency]];
+ if(st>=1&&x.performance)stats.push(['Performance',x.performance]);
+ if(st>=2&&x.comfort)stats.push(['Comfort',x.comfort]);
+ if(st>=2&&S.worthUnlocked)stats.push(['Worth',x.worth]);
+ $('readout').innerHTML=stats.map(v=>'<div class="meter">'+v[0]+'<b>'+v[1]+'</b></div>').join('');
+ $('alterChoices').innerHTML='';alterOptions(S.selected,x).forEach(o=>{const b=document.createElement('button');b.className='alterChoice';b.type='button';b.innerHTML='<strong>'+o[0]+'</strong><small>'+o[1]+'</small>';b.onclick=()=>handle(o[2]);$('alterChoices').appendChild(b)});
 }
-function alterOptions(id,x){const o=[['Restore / Refine','Broad physical improvement · 1 AP','alter:'+id+':condition:1'],['Improve Efficiency','Reduce waste or friction · 2 AP','alter:'+id+':efficiency:2']];if(x.performance)o.push(['Improve Performance','Push capability upward · 2 AP','alter:'+id+':performance:2']);else o.push(['Improve Integrity','Strengthen what already exists · 2 AP','alter:'+id+':integrity:2']);o.push(['Inspect Deeper','Spend no AP. See what you currently understand.','inspect:'+id]);const deep=knowledgeTotal()>=7;o.push([deep?'Explore Another Approach':'Study This Category',deep?'Knowledge may reveal a different route instead of a stronger version of the obvious one.':'Learning widens what Alter can perceive.','study:'+x.category+' '+(deep?'alternatives':'systems')]);return o}
+function alterOptions(id,x){
+ const st=alterStage();
+ if(st===0)return[
+  ['ALTER','Make a small broad refinement · 1 AP','alter:'+id+':condition:1'],
+  ['Inspect Deeper','Ask what is actually here. No AP.','inspect:'+id]
+ ];
+ if(st===1){
+  const o=[
+   ['Restore / Refine','Improve overall physical condition · 1 AP','alter:'+id+':condition:1'],
+   ['Improve Efficiency','Reduce waste or friction · 2 AP','alter:'+id+':efficiency:2'],
+   ['Inspect Deeper','See what your current knowledge can resolve.','inspect:'+id]
+  ];
+  if(x.performance)o.splice(2,0,['Improve Performance','Push useful capability upward · 2 AP','alter:'+id+':performance:2']);
+  else o.splice(2,0,['Improve Integrity','Strengthen what is already there · 2 AP','alter:'+id+':integrity:2']);
+  return o;
+ }
+ const o=[['Restore / Refine','Broad physical improvement · 1 AP','alter:'+id+':condition:1'],['Improve Efficiency','Reduce waste or friction · 2 AP','alter:'+id+':efficiency:2']];
+ if(x.performance)o.push(['Improve Performance','Push capability upward · 2 AP','alter:'+id+':performance:2']);else o.push(['Improve Integrity','Strengthen what already exists · 2 AP','alter:'+id+':integrity:2']);
+ o.push(['Inspect Deeper','Spend no AP. See what you currently understand.','inspect:'+id]);
+ const deep=knowledgeTotal()>=7;o.push([deep?'Explore Another Approach':'Study This Category',deep?'Knowledge may reveal a different route instead of only improving the obvious property.':'Learning widens what Alter can perceive.','study:'+x.category+' '+(deep?'alternatives':'systems')]);
+ return o;
+}
 function renderGrowth(){
  const box=$('knowledge');box.innerHTML='';
- if(S.worthUnlocked){const tw=totalWorth(),nx=nextThreshold(),w=document.createElement('div');w.className='worthCard';w.innerHTML='<strong>✦ RESONANT WORTH · '+tw+' TOTAL</strong><small>'+(nx?('The next known increase in Alteration capacity appears near '+nx+' total Worth. Current daily capacity: '+S.maxAP+' AP.'):'No further Worth threshold is currently understood. Daily capacity: '+S.maxAP+' AP.')+'</small><div class="bar"><i style="width:'+(nx?Math.min(100,(tw/nx)*100):100)+'%"></i></div>';box.appendChild(w)}
+ if(S.worthUnlocked&&alterStage()>=2){const tw=totalWorth(),nx=nextThreshold(),w=document.createElement('div');w.className='worthCard';w.innerHTML='<strong>✦ RESONANT WORTH · '+tw+' TOTAL</strong><small>'+(nx?('The next known increase in Alteration capacity appears near '+nx+' total Worth. Current daily capacity: '+S.maxAP+' AP.'):'No further Worth threshold is currently understood. Daily capacity: '+S.maxAP+' AP.')+'</small><div class="bar"><i style="width:'+(nx?Math.min(100,(tw/nx)*100):100)+'%"></i></div>';box.appendChild(w)}
  Object.entries(S.knowledge).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{const d=document.createElement('div');d.className='krow';d.innerHTML='<strong>'+title(k)+' · Lv '+v+'</strong><small>'+knowledgeDesc(k,v)+'</small><div class="bar"><i style="width:'+Math.min(100,v*14)+'%"></i></div>';box.appendChild(d)})
 }
 function renderJournal(){$('journalList').innerHTML=(S.journal||[]).slice(0,30).map(x=>'<div class="jrow"><strong>'+escapeHtml(x)+'</strong></div>').join('')}
