@@ -2422,3 +2422,74 @@ your own side confirms nothing still points at them -- just don't
 regenerate a new `v25+` off one of these instead of off
 `rig-ikemen-29.*`, since that would silently re-fork the exact way the
 v24 reconciliation above had to fix.
+
+---
+
+## SFF v2 RLE8/LZ5 decode bugs found and fixed (2026-09-21)
+
+Root cause finally found for beautification priority #2 (roster portraits
+ON HOLD): **Kineza's portrait was never proof that the SFF v2 decoder in
+`rig-ikemen-29.js` worked.** Kineza's SFF is legacy SFF v1/PCX (per
+`kineza-char.PROVENANCE.txt` -- "SFF v1 had no palette... A PCX 8-bit
+image..."), decoded by the completely separate `sff1Entries`/PCX path.
+The SFF v2 path (`decodeSff2Rle8`/`decodeSff2Lz5`/`decodeSff2Rle5`,
+`rig-ikemen-29.js` ~line 1220+) -- the format essentially every standard
+MUGEN 1.1 / Ikemen-authored character actually ships in -- was never
+exercised by the one portrait that had ever been confirmed working. Real
+roster testing was reporting "everyone but Kineza falls back to
+initials" and it was never going to be anything else, because the v2
+decoder had two real bugs no amount of re-running V20-V23 would surface
+without a genuine v2 character to test against (which this repo doesn't
+have one of).
+
+Did not want to ship a guess on undocumented binary format internals, so
+fetched the actual reference decoder (github.com/bmarquismarkail/SFFv2,
+`src/sff2.cpp` -- documented as reading real SFF 2.0/2.0.1 files) via
+WebFetch and pulled the RLE8, RLE5, and LZ5 functions out as sequential
+verbatim quotes, then diffed our JS against them line by line before
+touching anything.
+
+**Bug 1 (RLE8, the one that actually matters for real content):** the
+run-vs-literal test was `(b & 0x40) !== 0`, which is also true for any
+byte in `0xC0-0xFF` (bits `11xxxxxx` -- bit 6 is set there too). The
+correct test, per the reference, is `(b & 0xC0) === 0x40` (bits exactly
+`01xxxxxx`). Any literal pixel-index byte >= 0xC0 -- i.e. any real
+portrait actually using the upper quarter of a 256-color palette, which
+is normal for full-color character art -- was silently misread as a run
+marker and corrupted every byte after it in the stream. This is almost
+certainly the actual reason "the rest of the real roster" never
+rendered: RLE8 is the default/most common SFF v2 sprite format, so this
+one bug plausibly explains the whole ON HOLD status by itself. Also
+fixed the zero-run-length case to fail closed (`return null`) instead of
+silently wrapping to a run of 256 -- the reference treats a zero count
+as a malformed stream, not a special value.
+
+**Bug 2 (LZ5, lower-impact -- rarer format):** the extended literal-run
+branch (control bit clear, `packet & 0xE0 === 0`, count from the next
+byte) hardcoded its fill color to `0` (always transparent) instead of
+`packet & 0x1F`, same as the short-form literal branch right next to it.
+Traced the backreference count math too (both branches) against the
+reference and confirmed those were already correct once you account for
+this file's postfix-decrement loop style implicitly adding the spec's
+"+1"/"+3" -- no change needed there, only the literal-color line.
+
+**Verification:** extracted the four decode functions into a standalone
+Node harness (no browser APIs needed for the pure-buffer logic) and
+tested against hand-built byte streams matching the spec: a literal
+`0xC5` byte no longer misreads as a run marker, a genuine run marker
+still works, a zero-count run now fails closed, and the LZ5 extended
+literal run now fills with the correct color. All four assertions pass.
+Also confirmed by tracing the provenance docs that this change cannot
+regress Kineza specifically, since Kineza's decode path never touches
+this code at all (SFF v1/PCX, not SFF v2). Real headless boot on
+`rig-ikemen-29.html`: zero page errors, `node --check` clean,
+`preflight.py` passes.
+
+**What's still open:** this repo has no real SFF v2 character content to
+test end-to-end (only Kineza's SFF v1 asset). The fix is verified
+correct against the documented format and against a real reference
+decoder, but **still needs an actual real-roster phone witness** before
+priority #2 can be marked resolved rather than "should now work." DAI or
+whoever next loads a real full-roster zip on device: check whether
+generic characters now get real portraits instead of initials, and
+report back here either way.

@@ -1225,10 +1225,14 @@
     const indices = new Uint8Array(pixelCount);
     while (p < end && out < pixelCount) {
       const b = bytes[p++];
-      if ((b & 0x40) !== 0) {
-        let run = b & 0x3F;
-        if (run === 0) run = 256;
-        if (p >= end) return null;
+      // Run marker is bits 7:6 == 01 exactly (b & 0xC0 === 0x40), not just bit
+      // 6 set -- a literal pixel-index byte in 0xC0-0xFF also has bit 6 set
+      // and was being misread as a run control byte, corrupting the rest of
+      // the stream for any real portrait that actually uses palette indices
+      // that high (which most full 256-color character art does).
+      if ((b & 0xC0) === 0x40) {
+        const run = b & 0x3F;
+        if (run === 0 || p >= end) return null;
         const value = bytes[p++];
         const n = Math.min(run, pixelCount - out);
         indices.fill(value, out, out + n);
@@ -1324,9 +1328,14 @@
         }
       } else {
         if ((d & 0xE0) === 0) {
+          // Extended literal run: the count comes from the next byte, but
+          // the fill color is still packet & 0x1F, same as the short-form
+          // branch below -- this was hardcoded to 0 (always transparent),
+          // corrupting any long non-transparent literal run.
+          const color = d & 0x1F;
           let n = stream[i] + 8;
           next();
-          while (n-- > 0 && j < pixelCount) out[j++] = 0;
+          while (n-- > 0 && j < pixelCount) out[j++] = color;
         } else {
           let n = d >> 5;
           const color = d & 0x1F;
