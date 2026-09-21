@@ -893,12 +893,60 @@
     return candidates.find(c => zipIndexLower.has(c.toLowerCase()) || vfsFilesLower.has(c.toLowerCase()));
   }
 
+  // Beautification #3: clean stage names + a real preview thumbnail instead
+  // of the raw select.def token ("stages/kfm.def") and a bare diamond glyph.
+  function parseStageDefInfo(text) {
+    let section = '', name = null, displayname = null;
+    for (const raw of text.split(/\r?\n/)) {
+      const sm = raw.match(/^\s*\[(.+?)\]/);
+      if (sm) { section = sm[1].trim().toLowerCase(); continue; }
+      if (section !== 'info') continue;
+      const noComment = raw.split(';')[0];
+      let m = noComment.match(/^\s*displayname\s*=\s*(.+?)\s*$/i);
+      if (m) { displayname = m[1].trim().replace(/^["']|["']$/g, ''); continue; }
+      m = noComment.match(/^\s*name\s*=\s*(.+?)\s*$/i);
+      if (m) name = m[1].trim().replace(/^["']|["']$/g, '');
+    }
+    return displayname || name || null;
+  }
+
+  function parseStageSpriteRefFromDef(text) {
+    let section = '';
+    for (const raw of text.split(/\r?\n/)) {
+      const sm = raw.match(/^\s*\[(.+?)\]/);
+      if (sm) { section = sm[1].trim().toLowerCase(); continue; }
+      if (section !== 'bgdef') continue;
+      const noComment = raw.split(';')[0];
+      const m = noComment.match(/^\s*spr\s*=\s*(.+?)\s*$/i);
+      if (!m) continue;
+      return m[1].trim().replace(/^["']|["']$/g, '').replace(/\\/g, '/');
+    }
+    return null;
+  }
+
+  async function resolveStageSffPath(stageDefKey) {
+    const defBytes = await portraitBytes(stageDefKey);
+    if (!defBytes) return null;
+    const ref = parseStageSpriteRefFromDef(decoder.decode(defBytes));
+    if (!ref) return null;
+    const dir = stageDefKey.includes('/') ? stageDefKey.slice(0, stageDefKey.lastIndexOf('/')) : '';
+    const candidates = [];
+    if (dir) candidates.push(dir + '/' + ref);
+    candidates.push(ref);
+    if (!/^stages\//i.test(ref)) candidates.push('stages/' + ref);
+    for (const c of candidates) {
+      const key = findAnyVfsKey(c);
+      if (key) return key;
+    }
+    return null;
+  }
+
   // ---------------------------------------------------------------------
   // MobMugen beauty lane: real character portraits from the character SFF.
-  // This first pass intentionally supports legacy SFF v1 / PCX only. That
-  // covers WinMUGEN-era rosters without adding a second WASM runtime or a
-  // heavy image library to the proven I29 boot path. SFF v2 falls back to
-  // the existing monogram until a dedicated decoder is added.
+  // Supports legacy SFF v1/PCX and SFF v2 (raw/RLE8/RLE5/LZ5/PNG8-24-32);
+  // see decodeSff2Portrait below. A portrait falls back to the monogram
+  // only when its own decode genuinely fails, not because the version is
+  // unsupported.
   // Standard large select portrait convention: group 9000, image 1.
   // ---------------------------------------------------------------------
   function findAnyVfsKey(path) {
@@ -1411,6 +1459,83 @@
   }
 
   const portraitCache = new Map();
+  const stagePreviewCache = new Map();
+  const STAGE_PREVIEW_REF = [0, 0]; // base background layer -- the closest thing to a universal "cover art" convention a stage def has.
+
+  async function loadStagePreview(stageToken) {
+    const key = String(stageToken || '');
+    if (!key) return { url:null, status:'empty stage' };
+    if (stagePreviewCache.has(key)) return stagePreviewCache.get(key);
+
+    const promise = (async () => {
+      try {
+        const defKey = findStageDefKey(key);
+        if (!defKey) throw new Error('stage def not found');
+        const sffPath = await resolveStageSffPath(defKey);
+        if (!sffPath) throw new Error('stage sprite SFF not found');
+        const bytes = await portraitBytes(sffPath);
+        if (!bytes) throw new Error('stage SFF unreadable');
+
+        const version = detectSffVersion(bytes);
+        const [g, i] = STAGE_PREVIEW_REF;
+
+        if (version === 2) {
+          const dir = sff2Directory(bytes);
+          if (!dir) throw new Error('SFF v2 directory invalid');
+          const idx = dir.sprites.findIndex(e => e.group === g && e.image === i);
+          if (idx < 0) throw new Error('no ' + g + ',' + i + ' sprite in stage SFF');
+          const decoded = decodeSff2Portrait(bytes, dir, { idx });
+          if (!decoded || !decoded.url) throw new Error((decoded && decoded.reason) || 'decode failed');
+          const status = 'SFF v2 ' + g + ',' + i + ' ' + decoded.width + 'x' + decoded.height + ' ' + decoded.kind;
+          log('I29 STAGE PREVIEW · ' + key + ' ' + status + ' from ' + sffPath);
+          return { url: decoded.url, status };
+        }
+
+        if (version !== 1) throw new Error('unrecognized SFF version');
+        const parsed = sff1Entries(bytes);
+        if (!parsed || parsed.version !== 1) throw new Error('SFF v1 directory invalid');
+        const idx = parsed.entries.findIndex(e => e.group === g && e.image === i);
+        if (idx < 0) throw new Error('no ' + g + ',' + i + ' sprite in stage SFF');
+        const linked = resolveSff1Linked(parsed.entries, idx);
+        if (!linked) throw new Error('sprite link unresolved');
+        const palette = pcxPalette(bytes, linked.entry) || findSff1Palette(bytes, parsed.entries, idx);
+        const decoded = decodePcx8(bytes, linked.entry, palette);
+        if (!decoded) throw new Error('PCX decode failed');
+        const url = rgbaToDataUrl(decoded);
+        if (!url) throw new Error('canvas encode failed');
+        const status = 'SFF v1 ' + g + ',' + i + ' ' + decoded.width + 'x' + decoded.height;
+        log('I29 STAGE PREVIEW · ' + key + ' ' + status + ' from ' + sffPath);
+        return { url, status };
+      } catch (e) {
+        const msg = (e && e.message) || e;
+        log('I29 STAGE PREVIEW · ' + key + ' fallback -- ' + msg);
+        return { url:null, status: msg };
+      }
+    })();
+
+    stagePreviewCache.set(key, promise);
+    return promise;
+  }
+
+  const stageNameCache = new Map();
+
+  async function loadStageDisplayName(stageToken) {
+    const key = String(stageToken || '');
+    if (stageNameCache.has(key)) return stageNameCache.get(key);
+    const promise = (async () => {
+      try {
+        const defKey = findStageDefKey(key);
+        if (!defKey) return null;
+        const defBytes = await portraitBytes(defKey);
+        if (!defBytes) return null;
+        return parseStageDefInfo(decoder.decode(defBytes));
+      } catch (e) {
+        return null;
+      }
+    })();
+    stageNameCache.set(key, promise);
+    return promise;
+  }
 
   function motifPortraitRefs() {
     const refs = [];
@@ -2144,6 +2269,62 @@
     btn.append(thumb, label);
   }
 
+  // Stage grids are select.def's "extra stages" list -- typically a handful
+  // of entries, nowhere near a full character roster -- so this skips the
+  // viewport-lazy hydration the character thumbnails need and just runs
+  // every stage through a small concurrency-capped queue immediately.
+  const stageThumbQueue = [];
+  let stageThumbActive = 0;
+  const STAGE_THUMB_CONCURRENCY = 2;
+
+  function pumpStageThumbQueue() {
+    while (stageThumbActive < STAGE_THUMB_CONCURRENCY && stageThumbQueue.length) {
+      const job = stageThumbQueue.shift();
+      if (!job || !job.btn.isConnected) continue;
+      stageThumbActive++;
+      loadStagePreview(job.name).then(result => {
+        if (!job.btn.isConnected || job.btn.dataset.stageName !== job.name) return;
+        if (result && result.url) {
+          job.img.onload = () => { if (job.btn.isConnected) job.btn.classList.add('thumb-ready'); };
+          job.img.onerror = () => { job.img.hidden = true; };
+          job.img.src = result.url;
+          job.img.hidden = false;
+        }
+      }).finally(() => {
+        stageThumbActive--;
+        pumpStageThumbQueue();
+      });
+    }
+  }
+
+  function wireStageThumbnail(btn, name) {
+    btn.classList.add('has-stage-thumb');
+    btn.dataset.stageName = name;
+
+    const thumb = document.createElement('span');
+    thumb.className = 'stage-thumb';
+    const img = document.createElement('img');
+    img.className = 'stage-thumb-img';
+    img.alt = '';
+    img.hidden = true;
+    thumb.appendChild(img);
+
+    const label = document.createElement('span');
+    label.className = 'roster-name';
+    // Clean fallback derived from the raw select.def token immediately;
+    // swapped for the stage def's own displayname/name once that resolves.
+    label.textContent = String(name || '').replace(/\\/g, '/').replace(/\.def$/i, '').split('/').pop().replace(/[_-]+/g, ' ');
+
+    btn.append(thumb, label);
+
+    loadStageDisplayName(name).then(display => {
+      if (display && btn.isConnected && btn.dataset.stageName === name) label.textContent = display;
+    });
+
+    stageThumbQueue.push({ btn, name, img });
+    pumpStageThumbQueue();
+  }
+
   function buildRosterGrid(mode, names, selectedIdx) {
     const grid = document.getElementById(GRID_IDS[mode]);
     grid.innerHTML = '';
@@ -2154,10 +2335,7 @@
       btn.dataset.idx = idx;
 
       if (mode === 'stage') {
-        const label = document.createElement('span');
-        label.className = 'roster-name';
-        label.textContent = name;
-        btn.appendChild(label);
+        wireStageThumbnail(btn, name);
       } else {
         wireRosterThumbnail(btn, name);
       }
