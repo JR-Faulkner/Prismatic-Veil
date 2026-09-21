@@ -2632,3 +2632,49 @@ DEBUG panel, or the pinned summary) -- those lines say exactly which
 step failed and why (decode format, missing sprite, unresolved path,
 etc.) for that specific real file, which is the one piece of signal
 this sandbox has no way to manufacture on its own.
+
+---
+
+## Real trace received: 100% "unrecognized SFF version", pointing at the zip path itself, not SFF decode (2026-09-21)
+
+The user's actual debug trace against their real 1.7GB `WinMugen.zip`
+(9551 entries, 147 resolvable characters, 8 stages) came back. Every
+single one of them -- all 147 characters and all 8 stages, zero
+exceptions -- fails with `unrecognized SFF version`, meaning
+`detectSffVersion()` returned neither 1 nor 2 for every real file in
+the pack. Kineza (loaded via the separate repo-hosted HTTP-fetch merge,
+never touching the zip's own lazy-materialize path at all) is the only
+one that decodes, exactly as before.
+
+**This changes the diagnosis.** A 100% failure rate across 147 real
+characters from what's almost certainly a mixed, multi-author "mega
+roster" pack (this kind of WinMugen compilation aggregates characters
+from many different creators over years) makes "every single one of
+them uses a header format our decoder doesn't recognize" essentially
+impossible -- standard MUGEN tooling (Fighter Factory, the SFF spec
+itself) writes the same `ElecbyteSpr` signature universally. What's far
+more likely: the bytes `entryRaw()`/`lazyMaterialize()` hands back for
+files pulled on-demand from *this specific large zip* aren't the real
+decompressed sprite data at all -- wrong offset, wrong compressed-size
+boundary (Zip64 has already bitten this exact codebase once, per the
+sentinel-bug comment already in `entryRaw`/`listZipEntries`), or
+something else in that path corrupting/truncating the read, uniformly,
+for every entry pulled from this archive. Notably, `entryRaw()` DOES
+verify the local file header's own `PK\x03\x04` signature before
+reading further and would throw `Bad local ZIP header` if that offset
+were wrong -- the trace shows no such error, so the local header itself
+is being found correctly; whatever's wrong happens after that (the
+`comp`/`ex`-derived read boundary, or the inflate step itself).
+
+Rather than guess at which of those it is with no more evidence than
+this, added a diagnostic helper (`sffDiagBytes()`) that dumps the
+actual byte count plus a hex+ASCII preview of the first 16 bytes
+whenever `unrecognized SFF version` fires, at both throw sites
+(character portrait and stage preview). The next trace from this same
+zip will show exactly what came back -- a `PK\x03\x04` prefix would
+mean we're reading a raw zip local-header instead of decompressed
+content; all zeros would mean an empty/wrong buffer; garbage-looking
+but non-zero bytes would point at a genuine inflate/boundary bug rather
+than an empty read. That single hex dump should be enough to pin the
+exact bug without another round of guessing. `node --check` clean,
+`preflight.py` passes.

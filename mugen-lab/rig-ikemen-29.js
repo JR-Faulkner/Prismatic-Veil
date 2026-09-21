@@ -1145,6 +1145,22 @@
   // records, and stores the major version in header byte 15.
   // Supported here: raw indexed, RLE8, RLE5, LZ5, and embedded PNG8/24/32.
   // ---------------------------------------------------------------------
+  // Diagnostic for the "unrecognized SFF version" failure path -- rather
+  // than guess why a real roster's files fail detection sight-unseen, dump
+  // enough of the actual bytes returned by the zip/lazy-materialize path
+  // to tell corruption/wrong-offset/wrong-file apart from a genuinely
+  // exotic header at a glance (e.g. a leading "PK\x03\x04" means we read a
+  // raw zip local-file-header instead of decompressed sprite data).
+  function sffDiagBytes(bytes) {
+    if (!bytes) return 'null bytes';
+    if (!bytes.length) return '0 bytes';
+    const n = Math.min(16, bytes.length);
+    const hex = Array.from(bytes.subarray(0, n)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+    let ascii = '';
+    for (let i = 0; i < n; i++) { const c = bytes[i]; ascii += (c >= 32 && c < 127) ? String.fromCharCode(c) : '.'; }
+    return bytes.length + ' bytes, first ' + n + ': ' + hex + ' ("' + ascii + '")';
+  }
+
   function detectSffVersion(bytes) {
     if (!bytes || bytes.length < 16) return 0;
     const sig = String.fromCharCode(...bytes.subarray(0, 11));
@@ -1491,7 +1507,7 @@
           return { url: decoded.url, status };
         }
 
-        if (version !== 1) throw new Error('unrecognized SFF version');
+        if (version !== 1) throw new Error('unrecognized SFF version -- ' + sffDiagBytes(bytes));
         const parsed = sff1Entries(bytes);
         if (!parsed || parsed.version !== 1) throw new Error('SFF v1 directory invalid');
         const idx = parsed.entries.findIndex(e => e.group === g && e.image === i);
@@ -1604,7 +1620,7 @@
             : 'no configured/standard SFF v2 portrait found; tried ' + refs.map(r => r[0] + ',' + r[1]).join(' / '));
         }
 
-        if (version !== 1) throw new Error('unrecognized SFF version');
+        if (version !== 1) throw new Error('unrecognized SFF version -- ' + sffDiagBytes(bytes));
         const parsed = sff1Entries(bytes);
         if (!parsed || parsed.version !== 1) throw new Error('SFF v1 directory invalid');
 
