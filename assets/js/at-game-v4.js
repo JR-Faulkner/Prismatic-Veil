@@ -79,7 +79,7 @@ function deepInspect(id){
 
 const thresholds=[170,280,430,650,900,1250];let S=null;
 const clone=id=>JSON.parse(JSON.stringify(LIB[id]));
-function fresh(name){return{name:name||'Jace',premise:BACKGROUND,day:1,money:4800,baseAP:6,ap:6,maxAP:6,items:{car:clone('car'),console:clone('console'),tools:clone('tools')},selected:'tools',knowledge:{'alteration sense':1,'claim sense':1},journal:['Day 1 · Crossed into the Verdant to begin a recovery and salvage operation.','Day 1 · The family believes the move is about honest blue-collar work. That is only half true.'],alterations:0,worthUnlocked:false,currentEvent:null,lastEvent:null,claims:['car','console','tools'],threads:{business:true,serviceSpur:false,oldTraveler:false,uncle:false},result:'The last staffed post disappears in the mirror. For the first time, nobody at home is close enough to tell you to leave the power alone.'}}
+function fresh(name){return{name:name||'Jace',premise:BACKGROUND,day:1,money:4800,baseAP:6,ap:6,maxAP:6,items:{car:clone('car'),console:clone('console'),tools:clone('tools')},selected:'tools',knowledge:{'alteration sense':1,'claim sense':1},journal:['Day 1 · Crossed into the Verdant to begin a recovery and salvage operation.','Day 1 · The family believes the move is about honest blue-collar work. That is only half true.'],alterations:0,worthUnlocked:false,currentEvent:null,lastEvent:null,claims:['car','console','tools'],threads:{business:true,serviceSpur:false,oldTraveler:false,uncle:false},usedChoices:{},result:'The last staffed post disappears in the mirror. For the first time, nobody at home is close enough to tell you to leave the power alone.'}}
 function save(){localStorage.setItem(SAVE,JSON.stringify(S))}
 function totalWorth(){return Object.values(S.items).reduce((n,x)=>n+(x.worth||0),0)}
 function worthBonus(){if(!S.worthUnlocked)return 0;const t=totalWorth();return thresholds.filter(x=>t>=x).length}
@@ -87,6 +87,7 @@ function nextThreshold(){const t=totalWorth();return thresholds.find(x=>x>t)||nu
 function knowledgeTotal(){return Object.values(S.knowledge||{}).reduce((a,b)=>a+b,0)}
 function maybeUnlockWorth(){if(!S.worthUnlocked&&S.alterations>=4&&knowledgeTotal()>=5){S.worthUnlocked=true;S.journal.unshift('Day '+S.day+' · New sense unlocked: Worth.');$('worthUnlock').classList.remove('hidden');S.result='✦ WORTH UNLOCKED. This is not a price tag. Claimed things carry a deeper weight, and you can suddenly feel the total.';return true}return false}
 function scene(){if(S.currentEvent)return EVENTS.find(e=>e.id===S.currentEvent)||NORMAL[0];return NORMAL[Math.min(S.day-1,NORMAL.length-1)]}
+function choiceKey(action){return S.day+'|'+(S.currentEvent||'day')+'|'+action}
 function categoryItems(cat){return Object.entries(S.items).filter(([,v])=>v.category===cat)}
 function categoryStat(cat,entries){const focus=(CAT[cat]||CAT.other).focus,vals=entries.map(([,x])=>x[focus]||0).filter(v=>v>0);return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0}
 function render(){
@@ -97,7 +98,7 @@ function render(){
  if(S.worthUnlocked){const nx=nextThreshold();$('worthNext').innerHTML=nx?'NEXT RESONANCE<br><b>'+(nx-tw)+' WORTH AWAY</b>':'KNOWN RESONANCE<br><b>MAXED FOR NOW</b>'}
  const sc=scene();$('thread').textContent=sc.thread;$('mood').textContent=sc.mood;$('sceneTitle').textContent=sc.title;$('sceneText').textContent=sc.text;$('result').textContent=S.result||'';
  $('eventChip').className='eventChip'+(S.currentEvent?' show':'');$('eventChip').textContent=S.currentEvent?'✦ '+sc.chip:'';
- $('choices').innerHTML='';sc.choices.slice(0,5).forEach((c,i)=>{const b=document.createElement('button');b.className='choice';b.type='button';b.innerHTML='<span class="num">'+(i+1)+'</span><span><strong>'+c[0]+'</strong><small>'+c[1]+'</small></span><span class="chance">'+c[3]+'</span>';b.onclick=()=>handle(c[2]);$('choices').appendChild(b)});
+ $('choices').innerHTML='';sc.choices.slice(0,5).forEach((c,i)=>{const key=choiceKey(c[2]),used=!!(S.usedChoices&&S.usedChoices[key]),b=document.createElement('button');b.className='choice'+(used?' used':'');b.type='button';b.disabled=used;b.innerHTML='<span class="num">'+(used?'✓':(i+1))+'</span><span><strong>'+c[0]+'</strong><small>'+c[1]+'</small></span><span class="chance">'+(used?'USED':c[3])+'</span>';b.onclick=()=>{S.usedChoices=S.usedChoices||{};S.usedChoices[key]=true;handle(c[2])};$('choices').appendChild(b)});
  renderCategories();renderSelected();renderGrowth();renderJournal();save();
 }
 function renderCategories(){
@@ -191,5 +192,5 @@ $('form').onsubmit=e=>{e.preventDefault();const t=$('act').value;$('act').value=
 $('end').onclick=newDay;
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===b.dataset.tab))});
 try{S=JSON.parse(localStorage.getItem(SAVE)||'null')}catch(e){}
-if(S){S.premise=BACKGROUND;S.knowledge=S.knowledge||{'alteration sense':1,'claim sense':1};S.journal=S.journal||[];S.claims=S.claims||Object.keys(S.items||{});S.threads=S.threads||{business:true,serviceSpur:false,oldTraveler:false,uncle:false};S.baseAP=S.baseAP||6;S.result=S.result||'Welcome back to the Verdant.';render()}
+if(S){S.premise=BACKGROUND;S.knowledge=S.knowledge||{'alteration sense':1,'claim sense':1};S.journal=S.journal||[];S.claims=S.claims||Object.keys(S.items||{});S.threads=S.threads||{business:true,serviceSpur:false,oldTraveler:false,uncle:false};S.usedChoices=S.usedChoices||{};S.baseAP=S.baseAP||6;S.result=S.result||'Welcome back to the Verdant.';render()}
 })();
