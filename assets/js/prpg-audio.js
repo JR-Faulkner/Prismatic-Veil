@@ -147,16 +147,8 @@
     play('select');
   },true);
 
-  let lastUnlockSound=0;
-  const obs=new MutationObserver(()=>{
-    const u=document.getElementById('worthUnlock');
-    if(u&&!u.classList.contains('hidden')&&!u.dataset.sounded){
-      u.dataset.sounded='1';
-      const now=Date.now();
-      if(now-lastUnlockSound>250){lastUnlockSound=now;play('unlock')}
-    }
-  });
-  obs.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['class']});
+  // Unlock tones are resolved by the same semantic result path as every other action.
+  // No mutation-side audio here, which keeps one action to one sound.
 
   makeToggle();
 })();
