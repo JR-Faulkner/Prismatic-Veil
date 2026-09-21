@@ -2378,3 +2378,47 @@ live `rig-ikemen-24.html`. Committed and merged to `main` as `b6377a4`.
 Next up per the standing improvement list: Android Chrome/Firefox mobile
 coverage (WebGL context, audio-unlock, touch/pointer quirks against a
 codebase built primarily against iOS Safari).
+
+---
+
+## Android Chrome/Firefox mobile coverage pass (2026-09-20)
+
+Audited touch handling, layout units, and the AudioContext unlock path
+in `rig-ikemen-3.js`/`.html` and the canonical `rig-ikemen-29.js`/`.html`
+for anything WebKit-specific that would leave a gap on Android. Most of
+it was already fine by construction: `pointerdown`/`pointerup` (not the
+`touchstart`/`mousedown` pair, which fires differently across browsers),
+`touch-action:none`/`user-select:none` on the controller, `100dvh`
+instead of `100vh` (handles the dynamic toolbar on both engines), and a
+generic `touchend`/`mouseup`/`keydown`/`pointerup` gesture listener for
+the AudioContext resume -- none of that is iOS-only. WebGL context
+creation happens inside the Ikemen GO WASM binary itself, outside this
+wrapper's reach.
+
+Two real gaps fixed in both files: added `<meta name="mobile-web-app-
+capable">` alongside the existing `apple-mobile-web-app-capable` (the
+Android/Chrome equivalent PWA-install hint), and `overscroll-
+behavior:none` on `body` (Chrome's pull-to-refresh/overscroll glow can
+otherwise fight the on-screen D-pad on a drag that starts near the top
+of the viewport -- not a failure mode Safari has). Verified: `node
+--check` clean, `preflight.py` passes, real headless Chromium boot with
+zero new page errors. Committed and merged to `main` as `65ad2f1`.
+
+## beauty-vN chain status (2026-09-21)
+
+Per the standing improvement list's item #5 ("eventually collapse
+DAI's beauty-vN chain into one clean file"): that's already done as a
+side effect of the v24 reconciliation above -- `rig-ikemen-29.js`/`.html`
+*is* v24's content, plus this session's Wake Lock/PWA/crash-overlay/
+Android-coverage additions on top, verified working and live on `main`.
+
+What's left is just the trail: `rig-ikemen-29-beauty-v3.html` through
+`v24.js` (33 files) are now pure duplication -- fully superseded by
+`rig-ikemen-29.*` and not referenced by it. Left in place rather than
+deleted, since they're DAI's own generated version history and DAI's
+own tooling may still expect specific `vN` filenames to exist. Flagging
+here per the live-first process: DAI, these are safe to prune once
+your own side confirms nothing still points at them -- just don't
+regenerate a new `v25+` off one of these instead of off
+`rig-ikemen-29.*`, since that would silently re-fork the exact way the
+v24 reconciliation above had to fix.
