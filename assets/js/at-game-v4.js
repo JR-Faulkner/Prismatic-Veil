@@ -88,6 +88,42 @@ function knowledgeTotal(){return Object.values(S.knowledge||{}).reduce((a,b)=>a+
 function maybeUnlockWorth(){if(!S.worthUnlocked&&S.alterations>=4&&knowledgeTotal()>=5){S.worthUnlocked=true;S.journal.unshift('Day '+S.day+' · New sense unlocked: Worth.');$('worthUnlock').classList.remove('hidden');S.result='✦ WORTH UNLOCKED. This is not a price tag. Claimed things carry a deeper weight, and you can suddenly feel the total.';return true}return false}
 function scene(){if(S.currentEvent)return EVENTS.find(e=>e.id===S.currentEvent)||NORMAL[0];return NORMAL[Math.min(S.day-1,NORMAL.length-1)]}
 function choiceKey(action){return S.day+'|'+(S.currentEvent||'day')+'|'+action}
+function markUsedAction(action){
+ if(!action)return false;
+ S.usedChoices=S.usedChoices||{};
+ const sc=scene(),exists=(sc.choices||[]).slice(0,5).some(c=>c[2]===action);
+ if(!exists)return false;
+ S.usedChoices[choiceKey(action)]=true;
+ return true;
+}
+function words(s){
+ return String(s||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>3&&!['this','that','with','from','into','about','your','what','have','just','look','read','study','research'].includes(w));
+}
+function bestStudyChoice(topic){
+ const sc=scene(),tw=words(topic);if(!tw.length)return null;
+ let best=null,bestScore=0;
+ (sc.choices||[]).slice(0,5).forEach(c=>{
+  if(!c[2].startsWith('study:'))return;
+  const hay=words(c[0]+' '+c[1]+' '+c[2].slice(6));
+  const score=tw.filter(w=>hay.some(h=>h===w||h.includes(w)||w.includes(h))).length;
+  if(score>bestScore){bestScore=score;best=c[2]}
+ });
+ return bestScore>0?best:null;
+}
+function markTypedEquivalent(kind,target,detail){
+ const sc=scene(),actions=(sc.choices||[]).slice(0,5).map(c=>c[2]);
+ let action=null;
+ if(kind==='inspect'||kind==='deep'){
+  if(target==='beacon_unclaimed')action=actions.find(a=>a==='event:beacon:inspect')||null;
+  else if(target==='cabinet')action=actions.find(a=>a==='study:claim contradiction'||a==='study:service ownership')||null;
+  else action=actions.find(a=>a===('inspect:'+target))||null;
+ }
+ if(kind==='alter')action=actions.find(a=>a.startsWith('alter:'+target+':'))||null;
+ if(kind==='claim'&&(target==='beacon'||target==='beacon_unclaimed'))action=actions.find(a=>a==='event:beacon:claim')||null;
+ if(kind==='study')action=bestStudyChoice(detail);
+ if(kind==='life'&&detail)action=actions.find(a=>a===detail)||null;
+ return markUsedAction(action);
+}
 function categoryItems(cat){return Object.entries(S.items).filter(([,v])=>v.category===cat)}
 function categoryStat(cat,entries){const focus=(CAT[cat]||CAT.other).focus,vals=entries.map(([,x])=>x[focus]||0).filter(v=>v>0);return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0}
 function render(){
@@ -156,25 +192,44 @@ function freeAction(text){
  const low=t.toLowerCase(),target=resolveTargetFromText(low);
  const wantsDeep=/more detail|more detailed|what(?:'s| is).*?(?:inside|\bin\b).*?(?:it|this|that|tool|kit|car|vehicle|console|system|beacon|cabinet)|what.*?(?:contain|include|made of)|what all.*?(?:in|inside)|list.*?(?:tool|gear|component|part|item)|show.*?(?:inside|contents|components|parts)|look inside|open it|internals?|components?|composition|contents?|inside it|inside this|inside that|break it down|what is in it|what do i have.*?(?:tool|gear|kit)/.test(low);
  const wantsStats=/stats?|numbers?|readout|condition|integrity|efficiency|performance|worth/.test(low)&&!/what(?:'s| is) (?:inside|in)|components?|composition|internals?/.test(low);
- if(wantsDeep){deepInspect(target);render();return}
+ if(wantsDeep){markTypedEquivalent('deep',target);deepInspect(target);render();return}
  if(/\bclaim\b|stake claim|make it mine/.test(low)){
+  markTypedEquivalent('claim',target);
   if(target==='beacon'||target==='beacon_unclaimed'){if(S.day===4||S.items.beacon)establishClaim('beacon');else S.result='You remember the idea, but there is no survey beacon in front of you to Claim right now.'}
   else S.result='You reach for the sense you have been calling Claim. It wants a definite target, something you can point to and mean when you think: mine.';
   render();return
  }
  if(/study|research|read about|learn/.test(low)){
-  let topic=low.replace(/^.*?(study|research|read about|learn)\s*/,'').slice(0,60)||'verdant fieldcraft';study(topic);render();return
+  let topic=low.replace(/^.*?(study|research|read about|learn)\s*/,'').slice(0,60)||'verdant fieldcraft';
+  markTypedEquivalent('study',target,topic);study(topic);render();return
  }
  if(/alter|improve|upgrade|change|modify/.test(low)){
   const itemTarget=(target==='cabinet'||target==='beacon_unclaimed')?S.selected:target;
   const m=low.match(/(\d+)\s*(?:ap|point)/),cost=m?clamp(+m[1],1,6):1,stat=/comfort/.test(low)?'comfort':/perform|power|speed|traction/.test(low)?'performance':/efficien|cool|airflow|energy/.test(low)?'efficiency':/integr|strong|durab/.test(low)?'integrity':'condition';
-  alter(itemTarget,stat,cost);render();return
+  markTypedEquivalent('alter',itemTarget);alter(itemTarget,stat,cost);render();return
  }
  if(wantsStats||/inspect|look at|check|examine/.test(low)){
+  markTypedEquivalent('inspect',target);
   if(target==='cabinet'||target==='beacon_unclaimed'){deepInspect(target)}else inspect(target);
   render();return
  }
- if(/drive|explore|go out|walk|rest|sleep|eat|call family/.test(low)&&!/alter|improve|upgrade/.test(low)){
+ let lifeAction=null;
+ if(/reach|head|go/.test(low)&&/yard/.test(low))lifeAction='life:arrive';
+ else if(/take in|view|look around|scenery/.test(low))lifeAction='life:observe';
+ else if(/set up|organize|work bay/.test(low)&&/yard|bay|shop/.test(low))lifeAction='life:yard';
+ else if(/job|jobs|posting|postings|recovery board/.test(low))lifeAction='life:jobs';
+ else if(/call|phone|ring/.test(low)&&/family|home/.test(low))lifeAction=scene().choices.some(c=>c[2]==='event:family:normal')?'event:family:normal':'life:family';
+ else if(/long way|long route|go around/.test(low))lifeAction='life:longroute';
+ else if(/write down|record|make a note|note it/.test(low))lifeAction='life:record';
+ else if(/ask/.test(low)&&/traveler/.test(low))lifeAction='life:traveler';
+ else if(/drive|explore|service road|unfamiliar route/.test(low))lifeAction='life:explore';
+ else if(/rest|sleep|take it easy|slow day/.test(low))lifeAction='life:rest';
+ if(lifeAction){
+  markTypedEquivalent('life',target,lifeAction);
+  if(lifeAction.startsWith('event:family:'))resolveEvent('family','normal');else life(lifeAction.slice(5));
+  render();return
+ }
+ if(/go out|walk|eat/.test(low)){
   S.result='You do it. The Verdant does not require a skill check for every ordinary decision.';S.journal.unshift('Day '+S.day+' · '+t.slice(0,100));render();return
  }
  S.result='You attempt: “'+t+'” The action is accepted as part of your life in the Verdant, but this build does not yet attach a specific mechanical consequence to it. No fake failure roll was added.';
