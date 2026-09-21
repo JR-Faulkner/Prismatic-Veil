@@ -228,6 +228,38 @@ function markTypedEquivalent(kind,target,detail){
 }
 function categoryItems(cat){return Object.entries(S.items).filter(([,v])=>v.category===cat)}
 function categoryStat(cat,entries){const focus=(CAT[cat]||CAT.other).focus,vals=entries.map(([,x])=>x[focus]||0).filter(v=>v>0);return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0}
+const SCENE_VISUALS={
+  1:['road','THE VERDANT ROAD','Beyond the last staffed post'],
+  2:['foothold','THE FOOTHOLD YARD','Rented gravel, work bay, first real base'],
+  3:['board','RECOVERY BOARD','Work begins to find you'],
+  4:['beacon','OLD SERVICE ROAD','Vines, survey hardware, uncertain Claim'],
+  5:['service','SERVICE SPUR','Collapsed gate and corroded infrastructure'],
+  6:['station','OLD FLOOD STATION','The first contradiction'],
+  7:['roadside','ROADSIDE EATERY','Local crews and an old word'],
+  8:['foothold','THE FOOTHOLD YARD','A name on the gate'],
+  9:['foothold','THE FOOTHOLD YARD','Your first walk-in customer'],
+  10:['greenhouse','ABANDONED GREENHOUSE','Steel, vines, and a live recovery site'],
+  11:['homecall','FAMILY CALL','Home feels different from out here'],
+  12:['market','SALVAGE ROW','Tarps, tools, rumors, and recovered things'],
+  13:['road','UNMAPPED SPUR','A road you do not remember'],
+  14:['rainline','THE RAINLINE','Weather stops in a perfect line'],
+  15:['foothold','THE FOOTHOLD YARD','The business starts paying back'],
+  16:['pump','OLD PUMP HOUSE','Water below, equipment beyond'],
+  17:['foothold','THE FOOTHOLD YARD','Claim gains distance'],
+  18:['market','SALVAGE ROW','An old page in a junk box'],
+  19:['relay','OLD RELAY SHACK','A possible foothold deeper in'],
+  20:['relayinside','HIDDEN RELAY ROOM','A room the floorplan forgot'],
+  21:['relayinside','THE PEDESTAL ROOM','One impossible word: ORIGIN']
+};
+function updateSceneWindow(){
+  if(!$('sceneWindow'))return;
+  const v=SCENE_VISUALS[Math.min(S.day,21)]||['foothold','THE VERDANT','Your life beyond the corridor'];
+  $('sceneWindow').dataset.scene=v[0];
+  $('scenePlace').textContent=v[1];
+  $('sceneFlavor').textContent=v[2];
+  $('sceneKicker').textContent=S.currentEvent?'LIVE EVENT':'CURRENT SCENE';
+}
+
 function render(){
  $('setup').classList.add('hidden');$('game').classList.remove('hidden');$('who').textContent=S.name;$('premise').textContent=S.premise||BACKGROUND;$('day').textContent=S.day;$('money').textContent='$'+S.money.toLocaleString();
  const weekNo=Math.ceil(S.day/7),phase=S.day<=7?'FOOTHOLD':S.day<=14?'ROOTS':S.day<=21?'DEEP VERDANT':'OPEN FRONTIER';
@@ -238,7 +270,7 @@ function render(){
  for(let i=0;i<S.maxAP;i++){const d=document.createElement('i');d.className='dot'+(i<S.ap?' on':'');$('apdots').appendChild(d)}
  const tw=totalWorth();$('worthTotal').textContent=tw;$('worthTotalTop').textContent=tw;$('stats').classList.toggle('hasWorth',S.worthUnlocked);$('worthStat').classList.toggle('hidden',!S.worthUnlocked);$('worthSummary').classList.toggle('show',S.worthUnlocked);
  if(S.worthUnlocked){const nx=nextThreshold();$('worthNext').innerHTML=nx?'NEXT RESONANCE<br><b>'+(nx-tw)+' WORTH AWAY</b>':'KNOWN RESONANCE<br><b>MAXED FOR NOW</b>'}
- const sc=scene();$('thread').textContent=sc.thread;$('mood').textContent=sc.mood;$('sceneTitle').textContent=sc.title;$('sceneText').textContent=sc.text;$('result').textContent=S.result||'';
+ const sc=scene();updateSceneWindow();$('thread').textContent=sc.thread;$('mood').textContent=sc.mood;$('sceneTitle').textContent=sc.title;$('sceneText').textContent=sc.text;$('result').textContent=S.result||'';
  $('eventChip').className='eventChip'+(S.currentEvent?' show':'');$('eventChip').textContent=S.currentEvent?'✦ '+sc.chip:'';
  $('choices').innerHTML='';sc.choices.slice(0,5).forEach((c,i)=>{const key=choiceKey(c[2]),used=!!(S.usedChoices&&S.usedChoices[key]),b=document.createElement('button');b.className='choice'+(used?' used':'');b.type='button';b.disabled=used;b.innerHTML='<span class="num">'+(used?'✓':(i+1))+'</span><span><strong>'+c[0]+'</strong><small>'+c[1]+'</small></span><span class="chance">'+(used?'USED':c[3])+'</span>';b.onclick=()=>{S.usedChoices=S.usedChoices||{};S.usedChoices[key]=true;handle(c[2])};$('choices').appendChild(b)});
  renderCategories();renderSelected();renderGrowth();renderJournal();save();
