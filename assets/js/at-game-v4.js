@@ -34,7 +34,7 @@ const INTERNALS={
   deep:'The read sharpens into thermal paths, power-delivery stages, board traces, memory and storage interfaces, fan and heat-sink geometry, shielding, connectors and firmware-controlled components. You understand the layout more clearly than the design theory behind every part.'
  },
  tools:{
-  basic:'The starter kit is not one object to the power. It is a collection: sockets and drivers, cutters, pliers, a pry bar, compact meter, work light, straps, gloves and a handful of recovery hardware.',
+  basic:'You actually unpack the kit instead of reading a stat block. You brought a ratchet and socket set, combination wrenches, screwdrivers and bit drivers, lineman’s pliers, needle-nose pliers, side cutters, adjustable wrench, compact pry bar, utility knife, tape measure, compact electrical meter with probes, rechargeable work light, two recovery straps, tie-downs, work gloves, electrical tape, zip ties, spare fasteners and a small pouch of connectors and terminals.',
   deep:'When you focus, each piece separates by material, wear surface, joint, grip, fastener interface and intended load. The meter is its own little system of probes, protection, display electronics and power. The straps read as fibers, stitching, hooks and load paths. “Tool kit” was only your human shorthand.'
  },
  beacon:{
@@ -153,7 +153,7 @@ function handle(action){if(!action)return;const p=action.split(':');if(p[0]==='i
 function freeAction(text){
  const t=text.trim();if(!t){render();return}
  const low=t.toLowerCase(),target=resolveTargetFromText(low);
- const wantsDeep=/more detail|more detailed|what(?:'s| is) (?:inside|in) (?:it|this|that)|what is it made of|what(?:'s| is) it made of|look inside|open it|internals?|components?|composition|inside it|inside this|inside that|break it down|what is in it/.test(low);
+ const wantsDeep=/more detail|more detailed|what(?:'s| is).*?(?:inside|\bin\b).*?(?:it|this|that|tool|kit|car|vehicle|console|system|beacon|cabinet)|what.*?(?:contain|include|made of)|what all.*?(?:in|inside)|list.*?(?:tool|gear|component|part|item)|show.*?(?:inside|contents|components|parts)|look inside|open it|internals?|components?|composition|contents?|inside it|inside this|inside that|break it down|what is in it|what do i have.*?(?:tool|gear|kit)/.test(low);
  const wantsStats=/stats?|numbers?|readout|condition|integrity|efficiency|performance|worth/.test(low)&&!/what(?:'s| is) (?:inside|in)|components?|composition|internals?/.test(low);
  if(wantsDeep){deepInspect(target);render();return}
  if(/\bclaim\b|stake claim|make it mine/.test(low)){
