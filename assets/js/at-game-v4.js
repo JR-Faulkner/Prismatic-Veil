@@ -73,7 +73,75 @@ function sceneFocus(){
  if((S.day===19||S.day===20||S.day===21)&&S.items.relay)return'relay';
  return S.selected;
 }
+const WORLD_TARGETS={
+ gate:{
+  name:'collapsed access gate',
+  keywords:/\b(?:collapsed\s+)?(?:access\s+)?gate\b/,
+  active:()=>S.day===5,
+  inspect:'The collapsed access gate is old galvanized steel on a concrete track, bent inward where one hinge post shifted. Vines have threaded through the lower mesh, but the real blockage is mechanical: the frame is twisted and the roller no longer sits square in its guide. It is part of the site, not part of your recovery contract.',
+  alter:'You focus on the gate and deliberately reach for Alteration. Nothing becomes writable. No CONDITION. No INTEGRITY. No familiar internal clarity. The power does not reject you dramatically; it simply never settles onto the gate. Your current explanation is immediate and comfortable: it is not yours. No AP is spent because no Alteration actually takes hold.'
+ },
+ cabinet:{
+  name:'sealed maintenance cabinet',
+  keywords:/\b(?:maintenance\s+)?cabinet\b/,
+  active:()=>S.day===6,
+  inspect:'The sealed cabinet is built into the station wall: old switchgear, heavy bus bars, relays, service cable, fused disconnects and one smaller sealed module deeper inside. There is no active owner tag and no stable Claim readout.',
+  alter:'You try to reach for the cabinet the same way you would one of your Claims. For an instant the old impossible fragment almost returns, then slips away before you can hold it. The cabinet still does not become writable. No AP is spent.'
+ },
+ growth:{
+  name:'Verdant growth',
+  keywords:/\b(?:vines?|growth|plants?|roots?)\b/,
+  active:()=>S.day===9||S.day===10,
+  inspect:'The growth is physically real and ordinary enough to touch, but its behavior is odd: stems and roots favor seams, fasteners and old infrastructure instead of simply spreading through open soil.',
+  alter:'You reach for the living growth with Alteration. It does not resolve as one of your Claims. No stable writable properties appear. Whatever the power may eventually do with living systems, you do not know how to access that yet.'
+ },
+ rainline:{
+  name:'rain boundary',
+  keywords:/\b(?:rainline|rain\s+line|rain\s+boundary|storm\s+boundary|weather\s+line)\b/,
+  active:()=>S.day===14,
+  inspect:'The rain stops along an unnaturally clean boundary. Leaves crossing it go from dry to soaked immediately. The line shifts by inches but holds its overall shape.',
+  alter:'You try to treat the rain boundary as a target. Alteration gives you nothing stable to grip. It may not be an object in any useful sense, or your idea of what counts as a target may be too narrow. No AP is spent.'
+ },
+ crossing:{
+  name:'flooded crossing',
+  keywords:/\b(?:crossing|flooded\s+road|water|current)\b/,
+  active:()=>S.day===12||S.day===16,
+  inspect:'The water itself is not mysterious. The danger is speed, depth, footing and whatever the road surface is doing underneath it.',
+  alter:'You reach for the crossing as though “make this easier” were enough of a target. It is not. Alteration does not accept an outcome as a property. Nothing changes, and no AP is spent.'
+ },
+ plate:{
+  name:'dark pedestal plate',
+  keywords:/\b(?:plate|pedestal\s+plate|dark\s+plate)\b/,
+  active:()=>S.day===20||S.day===21,
+  inspect:'The palm-sized plate is smooth, dark, slightly warm and fixed to the pedestal with no visible fasteners. Ordinary inspection explains almost nothing.',
+  alter:'You reach for the plate without Claiming it. For a heartbeat something catches, but not enough to become a normal writable readout. The sensation is categorically different from a clean Claim. You cannot force it into a normal Alteration.'
+ }
+};
+function worldTargetFromText(low){
+ for(const [id,w] of Object.entries(WORLD_TARGETS)){
+  if(w.active()&&w.keywords.test(low))return'world:'+id;
+ }
+ return null;
+}
+function worldTarget(id){
+ return id&&id.startsWith('world:')?WORLD_TARGETS[id.slice(6)]:null;
+}
+function inspectWorldTarget(id){
+ const w=worldTarget(id);
+ if(!w){S.result='There is no clear world target in the current scene.';return}
+ S.result=w.inspect;
+ S.journal.unshift('Day '+S.day+' · Examined '+w.name+'.');
+}
+function attemptWorldAlter(id){
+ const w=worldTarget(id);
+ if(!w){S.result='Alteration cannot find a definite target in that request.';return}
+ S.result='✦ ALTERATION ATTEMPT · '+w.name.toUpperCase()+'\n\n'+w.alter;
+ S.knowledge['world-target attempts']=(S.knowledge['world-target attempts']||0)+1;
+ S.journal.unshift('Day '+S.day+' · Attempted Alteration on '+w.name+' without an established Claim.');
+}
+
 function resolveTargetFromText(low){
+ const world=worldTargetFromText(low);if(world)return world;
  if(/maintenance cabinet|cabinet/.test(low))return'cabinet';
  if(/survey beacon|beacon/.test(low))return S.items.beacon?'beacon':'beacon_unclaimed';
  if(/car|vehicle|coupe/.test(low))return'car';
@@ -85,6 +153,7 @@ function resolveTargetFromText(low){
  return S.selected;
 }
 function deepInspect(id){
+ if(id&&id.startsWith('world:')){inspectWorldTarget(id);return}
  if(id==='cabinet'){
   S.result='You stop treating the cabinet like a stat block and actually examine it. Behind the sealed doors are old switchgear, heavy bus bars, control relays, bundled service cable, fused disconnects and faded maintenance labels. Several circuits have been physically removed. One smaller sealed module sits deeper in the cabinet with no readable purpose marking. Your ordinary eyes can see all of that. The strange part is what Alter does not do: there is no stable Claim readout, only the memory of that impossible one-word flicker: CONDITION.';
   S.journal.unshift('Day '+S.day+' · Examined the maintenance cabinet in physical detail.');
@@ -263,6 +332,7 @@ function freeAction(text){
  if(/\bclaim\b|stake claim|make it mine/.test(low)){
   markTypedEquivalent('claim',target);
   if(target==='beacon'||target==='beacon_unclaimed'){if(S.day===4||S.items.beacon)establishClaim('beacon');else S.result='You remember the idea, but there is no survey beacon in front of you to Claim right now.'}
+  else if(target&&target.startsWith('world:')){const w=worldTarget(target);S.result='You test the idea of Claim against '+(w?w.name:'the target')+'. The feeling does not settle into the clean certainty you get from something that is unquestionably yours. Jace can attempt the Claim, but right now he has no convincing reason to believe it took.';S.journal.unshift('Day '+S.day+' · Tested Claim against '+(w?w.name:'a world target')+'.');}
   else S.result='You reach for the sense you have been calling Claim. It wants a definite target, something you can point to and mean when you think: mine.';
   render();return
  }
@@ -271,13 +341,14 @@ function freeAction(text){
   markTypedEquivalent('study',target,topic);study(topic);render();return
  }
  if(/alter|improve|upgrade|change|modify/.test(low)){
+  if(target&&target.startsWith('world:')){attemptWorldAlter(target);render();return}
   const itemTarget=(target==='cabinet'||target==='beacon_unclaimed')?S.selected:target;
   const m=low.match(/(\d+)\s*(?:ap|point)/),cost=m?clamp(+m[1],1,6):1,stat=/comfort/.test(low)?'comfort':/perform|power|speed|traction/.test(low)?'performance':/efficien|cool|airflow|energy/.test(low)?'efficiency':/integr|strong|durab/.test(low)?'integrity':'condition';
   markTypedEquivalent('alter',itemTarget);alter(itemTarget,stat,cost);render();return
  }
  if(wantsStats||/inspect|look at|check|examine/.test(low)){
   markTypedEquivalent('inspect',target);
-  if(target==='cabinet'||target==='beacon_unclaimed'){deepInspect(target)}else inspect(target);
+  if(target&&target.startsWith('world:')){inspectWorldTarget(target)}else if(target==='cabinet'||target==='beacon_unclaimed'){deepInspect(target)}else inspect(target);
   render();return
  }
  let lifeAction=null;
@@ -299,7 +370,7 @@ function freeAction(text){
  if(/go out|walk|eat/.test(low)){
   S.result='You do it. The Verdant does not require a skill check for every ordinary decision.';S.journal.unshift('Day '+S.day+' · '+t.slice(0,100));render();return
  }
- S.result='You attempt: “'+t+'” The action is accepted as part of your life in the Verdant, but this build does not yet attach a specific mechanical consequence to it. No fake failure roll was added.';
+ if(target&&target.startsWith('world:')){const w=worldTarget(target);S.result='You focus your action on '+(w?w.name:'the scene target')+'. The target is recognized, but the interpreter does not yet have a specific consequence for the exact verb you used. It is no longer being mistaken for one of your owned Claims.';}else S.result='You attempt: “'+t+'” The action is accepted as part of your life in the Verdant, but this build does not yet attach a specific mechanical consequence to it. No fake failure roll was added.';
  S.journal.unshift('Day '+S.day+' · '+t.slice(0,100));render();
 }
 function newDay(){
