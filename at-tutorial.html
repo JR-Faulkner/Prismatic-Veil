@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#171332">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="A+T">
+<link rel="manifest" href="./at-manifest.webmanifest">
+<link rel="icon" href="./assets/ui/at-home-icon.svg" type="image/svg+xml">
+<title>A+T · Tutorial</title>
+<style>
+:root{--paper:#fffaf1;--purple:#6b4ed9;--mint:#65d7aa;--cyan:#44cad5;--gold:#f2bd4c;--text:#28233a;--muted:#6f6880;--line:#ddd3ed}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,sans-serif;background:#101737;color:var(--text)}
+body{padding:calc(10px + env(safe-area-inset-top)) 10px calc(20px + env(safe-area-inset-bottom));background:linear-gradient(145deg,#1c214c,#4f368c 47%,#17788b);min-height:100vh}
+.app{max-width:760px;margin:auto}.top{display:flex;align-items:center;color:#fff;padding:3px 3px 9px}.brand small{display:block;font-size:8px;letter-spacing:.17em;color:#baf4ea;font-weight:1000}.brand h1{font-size:22px;line-height:.95;margin:3px 0 0;letter-spacing:-.035em}.back{margin-left:auto;color:#fff;text-decoration:none;border:1px solid #ffffff55;background:#16163877;border-radius:999px;padding:9px 11px;font-size:9px;font-weight:1000}
+.shell{background:#fffaf2ef;border:1px solid #ffffffaa;border-radius:22px;padding:10px;box-shadow:0 18px 45px #08082255;backdrop-filter:blur(12px)}
+.hero{padding:16px;border-radius:18px;color:#fff;background:linear-gradient(130deg,#5f46ce,#8159ed 46%,#2dbbc2);position:relative;overflow:hidden}.hero:after{content:"✦";position:absolute;right:10px;top:-20px;font-size:98px;color:#ffffff18}.hero small{font-size:8px;font-weight:1000;letter-spacing:.14em;color:#d8fff6}.hero h2{font-size:24px;line-height:1.04;margin:5px 0 6px}.hero p{font-size:12px;line-height:1.58;margin:0;color:#fff}
+.nameBox{margin-top:10px;padding:11px;border:1px solid var(--line);background:#fff;border-radius:14px}.nameBox label{font-size:8px;letter-spacing:.12em;font-weight:1000;color:#655d79}.nameBox input{width:100%;margin-top:5px;border:0;border-bottom:1px solid #d8cee9;padding:8px 2px;font:inherit;font-size:17px;color:#241f31;outline:none}
+.lesson{display:none}.lesson.active{display:block}.guide{margin:9px 0;padding:9px 10px;border-radius:12px;background:linear-gradient(135deg,#fff0b9,#ffdec4);border:1px solid #edc267;color:#674a18;font-size:9px;font-weight:900;line-height:1.4}
+.scene{border-radius:18px;padding:14px;background:linear-gradient(145deg,#fff,#fff5df);border:1px solid #ead8b8}.sceneTop{display:flex;justify-content:space-between;gap:8px}.thread{font-size:8px;letter-spacing:.12em;font-weight:1000;color:var(--purple)}.mood{font-size:8px;border-radius:999px;padding:5px 8px;background:#e6f7f1;color:#277b68;font-weight:1000}.scene h3{margin:7px 0 5px;font-size:19px}.scene p{font-size:12px;line-height:1.58;color:#554e66;margin:0}.log{margin-top:10px;min-height:64px;padding:27px 10px 10px;border-radius:12px;background:#eee9ff;border:1px solid #d2c4f2;color:#443767;font-size:11px;line-height:1.5;font-weight:750;position:relative;white-space:pre-line}.log:before{content:"ACTION LOG";position:absolute;left:10px;top:8px;font-size:8px;letter-spacing:.14em;color:#7257c5;font-weight:1000}
+.choices{display:grid;gap:7px;margin-top:9px}.choice{width:100%;display:grid;grid-template-columns:31px 1fr auto;gap:8px;align-items:center;text-align:left;border:1px solid var(--line);border-radius:14px;background:#fff;padding:9px;color:var(--text)}.choice .num{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,#ede7ff,#def8f6);color:var(--purple);font-weight:1000}.choice strong{display:block;font-size:11px}.choice small{display:block;font-size:9px;color:var(--muted);margin-top:2px}.choice .tag{font-size:8px;padding:5px 7px;border-radius:999px;background:#e5f7ef;color:#25816b;font-weight:1000}.choice.used{opacity:.55;background:#f1edf5;border-style:dashed}.choice.used .num{background:#e2f3e8;color:#28806b}.choice:disabled{cursor:default}
+.free{margin-top:11px;border-top:1px solid #ddd2ec;padding-top:10px}.freeHead{display:flex;justify-content:space-between;gap:8px;margin:0 3px 6px}.freeHead strong{font-size:9px;letter-spacing:.13em;color:#5c43b6}.freeHead span{font-size:9px;color:#70687f;font-weight:700;text-align:right}.free textarea{width:100%;min-height:100px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:11px;font:inherit;font-size:16px;line-height:1.45;color:#252033;outline:none}.actions{display:flex;gap:7px;margin-top:7px}.btn{border:0;border-radius:12px;padding:11px 12px;background:#eae4f5;color:#554d67;font:inherit;font-size:10px;font-weight:1000}.btn.primary{flex:1;background:linear-gradient(135deg,#f1bc4a,#ff8b6e);color:#362314}.ap{display:flex;gap:3px;align-items:center;margin-top:8px}.ap span{width:9px;height:9px;border-radius:50%;background:#d8d2e4}.ap span.on{background:linear-gradient(135deg,#f2bd4c,#ff8a66);box-shadow:0 0 7px #ffad5180}.finish{display:none;margin-top:10px}.finish.show{display:block}.finish button{width:100%;border:0;border-radius:15px;padding:14px;background:linear-gradient(135deg,#6a4bda,#39c8c8);color:white;font:inherit;font-size:12px;font-weight:1000;letter-spacing:.06em}
+@media(max-width:560px){.shell{padding:8px}.hero h2{font-size:22px}.freeHead{display:block}.freeHead span{display:block;text-align:left;margin-top:2px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top"><div class="brand"><small>PURE-RPG SERIES</small><h1>ALTERATIONS OF<br>TRANSFORMATIONS</h1></div><a class="back" href="./at-start.html">A+T HOME</a></header>
+<div class="shell">
+<section id="intro">
+<div class="hero"><small>TUTORIAL · THE DAY BEFORE</small><h2>Before the Verdant,<br>learn how Jace moves through the world.</h2><p>This tutorial is part of the story. The five choices are suggestions, not limits. The <strong>DO IT</strong> box is where you can say what Jace actually attempts in normal language.</p></div>
+<div class="nameBox"><label>NAME<input id="name" value="Jace" autocomplete="off"></label></div>
+<button class="btn primary" id="begin" style="width:100%;margin-top:10px">START THE NIGHT BEFORE ✦</button>
+</section>
+
+<section id="lesson0" class="lesson">
+<div class="guide">TUTORIAL 1/2 · Buttons are suggestions. You can also type your own action below.</div>
+<article class="scene"><div class="sceneTop"><span class="thread">PACKING</span><span class="mood">🏠 NIGHT BEFORE</span></div><h3>The Tool Kit On The Floor</h3><p>Your room is half packed. Tomorrow you drive toward the Verdant under the respectable banner of recovery work. On the floor sits the starter tool kit the family helped you buy. Since Alteration awakened, owned things feel strangely legible when you focus on them.</p><div class="log" id="log0">Try a choice, or ask your own question below.</div></article>
+<div class="choices" id="choices0"></div>
+<form class="free" data-step="0"><div class="freeHead"><strong>YOUR ACTION</strong><span>Try: “What’s actually in the tool kit?”</span></div><textarea placeholder="Say what Jace does or asks..."></textarea><div class="actions"><button class="btn primary" type="submit">DO IT ✦</button><button class="btn" type="button" data-next="1">NEXT MORNING →</button></div></form>
+</section>
+
+<section id="lesson1" class="lesson">
+<div class="guide">TUTORIAL 2/2 · Alteration uses AP. AP refreshes each day. Unused AP is never wasted.</div>
+<article class="scene"><div class="sceneTop"><span class="thread">ALTERATION</span><span class="mood">✦ DEPARTURE MORNING</span></div><h3>One More Experiment Before You Leave</h3><p>The car is loaded. Your family thinks you are nervous about starting a business. You are mostly thinking about the quiet warmth that follows every Alteration. Right now your working theory is simple: things that are truly yours answer. You call that <strong>Claim</strong>.</p><div class="ap" id="ap"></div><div class="log" id="log1">You have 6 AP available. You do not need to spend all of it.</div></article>
+<div class="choices" id="choices1"></div>
+<form class="free" data-step="1"><div class="freeHead"><strong>YOUR ACTION</strong><span>Try asking about AP, Claim, or making a tiny Alteration.</span></div><textarea placeholder="Say what Jace does or asks..."></textarea><div class="actions"><button class="btn primary" type="submit">DO IT ✦</button><button class="btn" type="button" id="finishLesson">FINISH TUTORIAL →</button></div></form>
+<div class="finish" id="finish"><button id="enterVerdant">ENTER THE VERDANT ✦</button></div>
+</section>
+</div>
+</div>
+<script>
+const toolList='Ratchet and socket set, combination wrenches, screwdrivers and bit drivers, lineman’s pliers, needle-nose pliers, side cutters, adjustable wrench, compact pry bar, utility knife, tape measure, electrical meter with probes, rechargeable work light, two recovery straps, tie-downs, work gloves, electrical tape, zip ties, spare fasteners, connectors and terminals.';
+let step=0,ap=6,condition=83;
+const choices=[
+[
+ ['Open the tool kit','See what is physically inside','CONTENTS'],
+ ['Inspect the tool kit','See the stat-style readout','STATS'],
+ ['Ask your own question','Use the DO IT box below','FREE'],
+ ['Inspect the sports car','Try the sense on another Claim','CAR'],
+ ['Just keep packing','Ordinary actions are valid too','PACK']
+],
+[
+ ['Make a tiny Alteration','Refine the tool kit · 1 AP','ALTER'],
+ ['Inspect after the change','Compare the new readout','STATS2'],
+ ['Ask for deeper detail','Numbers are not the only answer','DETAIL'],
+ ['Check how AP works','Capacity is a limit, not a chore','AP'],
+ ['Leave the remaining AP alone','Unused AP is fine','REST']
+]
+];
+function renderAP(){const box=document.getElementById('ap');box.innerHTML='';for(let i=0;i<6;i++){const d=document.createElement('span');if(i<ap)d.className='on';box.appendChild(d)}}
+function log(n,msg){document.getElementById('log'+n).textContent=msg}
+function renderChoices(n){const box=document.getElementById('choices'+n);box.innerHTML='';choices[n].forEach((c,i)=>{const b=document.createElement('button');b.className='choice';b.type='button';b.innerHTML='<span class="num">'+(i+1)+'</span><span><strong>'+c[0]+'</strong><small>'+c[1]+'</small></span><span class="tag">TRY</span>';b.onclick=()=>{doAction(n,c[2]);b.disabled=true;b.classList.add('used');b.querySelector('.num').textContent='✓';b.querySelector('.tag').textContent='USED'};box.appendChild(b)})}
+function doAction(n,a){
+ if(n===0){
+  if(a==='CONTENTS'||a==='DETAIL')log(0,toolList+'\n\nThat is a contents read: what is actually present, not a pile of Condition/Efficiency numbers.');
+  else if(a==='STATS')log(0,'Starter Tool Kit · Condition 83 · Integrity 86 · Efficiency 62.\n\nThat is a stat inspection. If you want to know what is inside something, ask for contents, components, materials, or more detail.');
+  else if(a==='CAR')log(0,'The sports car also answers as yours: powertrain, cooling, electrical, braking, steering, suspension, tires, cabin systems and structure. Different Claims expose different systems.');
+  else if(a==='PACK')log(0,'You keep packing. No dice roll appears. Ordinary competent actions simply happen unless something makes them uncertain.');
+  else log(0,'Use the DO IT box below. Type naturally. The suggestions are examples, not the whole game.');
+ } else {
+  if(a==='ALTER'){
+   if(ap<1){log(1,'No AP remains. You would need a new day before making another Alteration.');return}
+   ap--;condition=Math.min(100,condition+3);renderAP();log(1,'✦ You refine the tool kit. Condition rises to '+condition+'. 1 AP spent.\n\nCalm settles through you, then warmth and that tiny pulse of approval. Using the power feels more natural than refusing it.');
+  }else if(a==='STATS2')log(1,'Starter Tool Kit · Condition '+condition+' · Integrity 86 · Efficiency 62 · AP '+ap+'/6.');
+  else if(a==='DETAIL')log(1,toolList+'\n\nKnowledge can eventually make those broad categories resolve into deeper systems and better possible alterations.');
+  else if(a==='AP')log(1,'AP is current Alteration capacity. Bigger or stranger changes cost more. It refreshes with a new day. There is no bonus for emptying the meter.');
+  else if(a==='REST')log(1,'You leave the remaining '+ap+' AP untouched. Nothing is lost. The power is available when you have a reason to use it, not a daily checklist.');
+ }
+}
+function free(n,text){
+ const q=text.trim(),low=q.toLowerCase();if(!q)return;
+ if(n===0){
+  if(/what.*(in|inside|contain)|contents?|components?|tool kit|tools/.test(low))doAction(0,'CONTENTS');
+  else if(/stat|condition|integrity|efficien|inspect/.test(low))doAction(0,'STATS');
+  else if(/car|vehicle/.test(low))doAction(0,'CAR');
+  else log(0,'You attempt: “'+q+'”\n\nThe important lesson: the typed action is part of the game, not a side chat box. The full game interpreter keeps expanding from playtest requests like this.');
+ }else{
+  if(/alter|improve|refine|upgrade/.test(low))doAction(1,'ALTER');
+  else if(/\bap\b|capacity|point/.test(low))doAction(1,'AP');
+  else if(/claim|own|ownership/.test(low))log(1,'Claim is Jace’s current name for the relationship that makes owned things quiet and legible to Alteration. He currently assumes Claim grants access. The story has not proven that assumption true.');
+  else if(/detail|inside|component|contain|tool/.test(low))doAction(1,'DETAIL');
+  else log(1,'You attempt: “'+q+'”\n\nIn the main game, natural language can inspect, study, Alter, explore, talk, plan, or simply live. Some intents are still being expanded through playtesting.');
+ }
+}
+document.getElementById('begin').onclick=()=>{const name=document.getElementById('name').value.trim()||'Jace';sessionStorage.setItem('at_tutorial_name',name);document.getElementById('intro').style.display='none';document.getElementById('lesson0').classList.add('active');renderChoices(0)};
+document.querySelectorAll('form.free').forEach(f=>f.onsubmit=e=>{e.preventDefault();const n=+f.dataset.step,t=f.querySelector('textarea');free(n,t.value);t.value=''});
+document.querySelector('[data-next="1"]').onclick=()=>{document.getElementById('lesson0').classList.remove('active');document.getElementById('lesson1').classList.add('active');renderChoices(1);renderAP();window.scrollTo(0,0)};
+document.getElementById('finishLesson').onclick=()=>{document.getElementById('finish').classList.add('show');log(1,'Tutorial complete. You understand the interface. '+(sessionStorage.getItem('at_tutorial_name')||'Jace')+' still does not understand the real limits of Alteration. That is what the Verdant is for.')};
+document.getElementById('enterVerdant').onclick=()=>{localStorage.setItem('at_tutorial_seen','1');sessionStorage.setItem('at_launch_token','1');location.href='./at-game-v4.html?new=1'};
+</script>
+</body></html>
