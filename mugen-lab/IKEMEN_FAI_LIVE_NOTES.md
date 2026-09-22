@@ -3353,3 +3353,77 @@ screen screenshot confirmed unaffected (no shared markup touched).
 check zero errors at all three viewports, screen-toggle re-verified
 (fighters/arena still correctly show `display:none` on whichever one
 is inactive).
+
+---
+
+## MobMugen wordmark moved out of the persistent nav bar into a one-time splash screen (2026-09-22)
+
+Same real-device testing pass, one more space complaint: the
+`.bar.player-bar` nav strip carrying the "MobMugen" wordmark sat above
+every screen -- zip loader, both pickers -- and was already known to be
+disposable chrome, since `body.match-live .player-bar{display:none}`
+already hid it once an actual match started. Measured its real cost
+before touching anything: 30px, ~8% of the picker's usable height at
+844x390 -- not nothing, on a screen where this whole session's fight
+has been over single-digit-pixel wins. User's ask: build a proper
+splash screen out of the wordmark instead, shown once before the
+rotate gate, dismissed by any key or tap, with a breathing prompt like
+the picker's own VS-badge idle pulse (`v24VsPulse`) -- and pull the
+wordmark off every other screen once that exists.
+
+**New `#mobmugenSplash`**, `position:fixed;inset:0;z-index:1100` --
+above the rotate gate's own `z-index:1000` -- containing the `.brand`
+wordmark (now sized for a hero moment, `clamp(28px,9vw,60px)` instead
+of the old nav-bar-scaled `clamp(16px,4vw,27px)`) and a "PRESS ANY KEY
+OR TAP TO CONTINUE" prompt animating opacity+scale on a 1.8s loop
+(`splashPromptBreathe`), the same easing shape as `v24VsPulse` but
+simpler since it's animating a text label, not a badge with a
+box-shadow glow.
+
+**Deliberately zero coordination with the rotate-gate's own logic.**
+The rotate-gate's `onOrientation()` already runs immediately on load,
+independently, and decides its own hidden/visible state before the
+splash's dismiss handler ever fires. Because the splash sits on a
+strictly higher z-index and does nothing but disappear on the first
+`keydown`/`pointerdown`, dismissing it doesn't need to *decide*
+anything -- it just reveals whatever's already sitting underneath,
+correctly, in either orientation: the rotate-gate's "ROTATE TO
+LANDSCAPE" card if still in portrait, or the zip-loader/setup screen
+directly if already landscape. This is the same principle the picker
+screens themselves have used all session (an ancestor's `display:none`
+makes a descendant's own state moot) applied in the other direction --
+here it's the SPLASH's own removal that's inert with respect to what's
+underneath, not an ancestor collapsing a child.
+
+**Wordmark removed everywhere else, not just hidden.** Deleted the
+`<div class="bar player-bar"><div class="brand">MobMugen</div></div>`
+markup entirely (it now lives only inside the splash), and with it
+every rule that only existed to serve that old placement: the base
+`.bar{...}` block, two narrow-viewport `.bar{...}` media fragments
+(one bundled on a line with unrelated `.brand{...}` grid-item sizing,
+now dead since `.brand` isn't a grid item anymore; the other bundled
+with unrelated `.tag`/`.controls` rules, which were left alone), and
+three `body.match-live .player-bar`/`.brand`/`.brand:after` overrides
+that existed solely to hide/shrink a wordmark that, post-move, never
+renders during a match at all regardless. `.brand`/`.brand:after`
+themselves were kept (just resized) since the splash reuses them
+directly rather than duplicating the gradient-text styling.
+
+**Verified**, 844x390 and 390x844, via the same disposable
+`__testOpenPicker()` harness plus direct DOM/computed-style checks (no
+real zip/match needed to test any of this): splash renders on load in
+both orientations with the correct text; simulating a mouse-down
+(stand-in for tap/click, and `keydown` is wired the same way) hides it
+and reveals the zip-loader screen in landscape or the rotate-gate's
+"ROTATE TO LANDSCAPE" card in portrait, exactly as intended; a
+post-dismiss sweep of every `.brand` element on the page confirms none
+render outside `#mobmugenSplash` anywhere. Screenshots of all three
+states (splash, post-dismiss landscape, post-dismiss portrait) confirm
+the visual result. Removing the wordmark freed even more room than the
+controls removal alone: the roster viewport measured earlier in this
+file at 151px is now 183px at the same viewport (about five 36px rows
+visible before any scroll), and `#setup`'s own `scrollHeight` still
+exactly equals its `clientHeight`. `node --check` clean, `preflight.py`
+passes, real-file headless boot check zero errors at
+390x844/844x390/2000x933. Debug harness deleted before commit -- never
+shipped.
