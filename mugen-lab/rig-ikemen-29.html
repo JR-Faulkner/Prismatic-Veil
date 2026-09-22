@@ -379,16 +379,10 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
   border:0!important;border-radius:7px!important;
   box-shadow:inset 0 0 0 1px #205775,inset 0 -22px 40px #0009,0 4px 12px #0008!important;
 }
-.stage-preview-name{
-  left:10px!important;bottom:8px!important;
-  padding:4px 7px;border-radius:4px;
-  background:#02070bc9;
-  border-left:2px solid var(--blue)
-}
-.stage-readout{
-  border:0!important;border-radius:6px!important;
+.stage-preview-info{
+  border-left:0!important;border-radius:0 6px 6px 0!important;
   background:linear-gradient(180deg,#12202b,#09121a)!important;
-  box-shadow:inset 0 0 0 1px #214760!important
+  box-shadow:inset 1px 0 0 #214760!important
 }
 .action-dock{
   padding:5px;border-radius:8px;
@@ -427,7 +421,18 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
   padding:7px 5px;font:900 7px ui-monospace;letter-spacing:.05em;box-shadow:none
 }
 .diag-head.compact{margin:0 0 4px;padding:0}
-.setup{padding:10px!important;align-items:start!important}
+/* align-items:start here used to top-anchor .setup unconditionally --
+   but .setup's base rule (line ~116) already sets place-items:center,
+   and once the picker is actually open, the picker-scoped
+   place-items:stretch further down this file already wins over
+   anything set here regardless (higher specificity). The only state
+   this unconditional override ever actually affected was the plain
+   zip-load screen, before the picker exists at all -- pinning its
+   "CHOOSE MUGEN ZIP" content to the top of a tall card instead of
+   centering it, reported directly as "needs to be centered not forced
+   to the top." Dropped; the zip-load screen now falls through to the
+   base rule's centering, same as it would have without this line. */
+.setup{padding:10px!important}
 .card{width:min(720px,100%);padding-top:4px}
 .card h2{margin-bottom:3px}
 .card p{margin:3px auto 6px;line-height:1.3}
@@ -467,14 +472,30 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 .portrait-well span{position:absolute;right:7%;bottom:-10%;font-size:clamp(58px,15vw,112px);line-height:.85;font-weight:1000;font-style:italic;
   color:#d9f3ff0f;-webkit-text-stroke:1px #6ed0ff38;text-shadow:0 0 18px #1aa8ff35;transform:skew(-8deg)}
 .p2-card .portrait-well span{right:auto;left:7%;color:#ffe6990d;-webkit-text-stroke-color:#f4c64d3b;text-shadow:0 0 18px #f4c64d25}
-.stage-preview{position:relative;height:82px;margin-bottom:8px;overflow:hidden;border:1px solid #1a4564;border-radius:6px;
+/* Preview used to be a single full-width box with the stage name as a
+   tiny overlay pill in one corner -- a huge image with maybe 4% of its
+   own area actually spent on the one piece of text you need (which
+   stage is this?). Split into a real two-column layout instead: a media
+   column carrying the actual art (~70%, .stage-preview-media -- the
+   positioning root for the decorated grid backdrop, the art image, and
+   the two decorative corner wings, all moved here from the old
+   full-width .stage-preview) and a proper info column (~30%,
+   .stage-preview-info) that just shows the selected stage name at a
+   readable size instead of squeezed into a corner label. This also
+   absorbed the old separate .stage-bay-head/.stage-readout row below
+   the preview, which said the exact same "selected stage" thing a
+   second time in its own dedicated strip -- removed, its former
+   vertical space now goes to the stage grid instead. */
+.stage-preview{position:relative;display:flex;height:82px;margin-bottom:8px;overflow:hidden;border:1px solid #1a4564;border-radius:6px;
+  box-shadow:inset 0 0 32px #0009}
+.stage-preview-media{position:relative;flex:7 1 0;min-width:0;overflow:hidden;
   background:
     radial-gradient(circle at 68% 38%,#1b5d8744,transparent 22%),
     linear-gradient(180deg,#102334 0 48%,#07131d 49% 100%);
-  box-shadow:inset 0 0 32px #0009}
-.stage-preview:before,.stage-preview:after{content:"";position:absolute;bottom:0;background:#0a1017;opacity:.96}
-.stage-preview:before{left:-5%;width:48%;height:48%;clip-path:polygon(0 60%,30% 18%,45% 58%,58% 30%,78% 67%,100% 35%,100% 100%,0 100%)}
-.stage-preview:after{right:-4%;width:47%;height:54%;clip-path:polygon(0 57%,18% 24%,38% 62%,56% 10%,75% 65%,100% 30%,100% 100%,0 100%)}
+}
+.stage-preview-media:before,.stage-preview-media:after{content:"";position:absolute;bottom:0;background:#0a1017;opacity:.96}
+.stage-preview-media:before{left:-5%;width:48%;height:48%;clip-path:polygon(0 60%,30% 18%,45% 58%,58% 30%,78% 67%,100% 35%,100% 100%,0 100%)}
+.stage-preview-media:after{right:-4%;width:47%;height:54%;clip-path:polygon(0 57%,18% 24%,38% 62%,56% 10%,75% 65%,100% 30%,100% 100%,0 100%)}
 .stage-preview-grid{position:absolute;inset:0;background:
   linear-gradient(#54bdff0e 1px,transparent 1px),
   linear-gradient(90deg,#54bdff0e 1px,transparent 1px);
@@ -482,9 +503,14 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 .stage-preview-img{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;object-position:center}
 .stage-preview-img[hidden]{display:none!important}
 .stage-preview.has-art .stage-preview-grid,
-.stage-preview.has-art:before,
-.stage-preview.has-art:after{opacity:0}
-.stage-preview-name{position:absolute;left:9px;bottom:7px;z-index:2;font:1000 9px ui-monospace;letter-spacing:.12em;color:#cfeaff;text-shadow:0 2px 10px #000}
+.stage-preview.has-art .stage-preview-media:before,
+.stage-preview.has-art .stage-preview-media:after{opacity:0}
+.stage-preview-info{
+  flex:3 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  padding:6px 8px;text-align:center;border-left:1px solid #1a4564;
+  background:linear-gradient(180deg,#12202b,#09121a);
+}
+.stage-preview-info #selStage{font-size:clamp(11px,2.4vw,15px);font-weight:900;color:#cfeaff;word-break:break-word}
 
 .p2-card{background:
     linear-gradient(215deg,#2b2412 0 58%,transparent 58%),
@@ -509,16 +535,13 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 .row-note{font-size:7px;color:#486d89}
 .fighter-pick-panel:nth-child(2) .row-note{color:#8d772f}
 .stage-bay{margin-top:9px;padding:9px;border:1px solid #173a56;border-radius:8px;background:linear-gradient(180deg,#08131d,#060d14)}
-/* Left side used to carry its own "02 / ARENA" / "Stage Select" heading,
-   left over from before the picker was split into two full screens
-   (see IKEMEN_FAI_LIVE_NOTES.md) -- once #pickerScreenArena got its own
-   .select-titlebar ("02 SELECT ARENA / ARENA SELECT"), this became a
-   second heading saying the same thing right underneath the first,
-   which is exactly what got reported as "says arena select twice."
-   Removed; .stage-readout (the actually-unique "which stage is
-   selected" readout) now sits alone at the row's end. */
-.stage-bay-head{display:flex;align-items:flex-end;justify-content:flex-end;gap:8px;margin-bottom:7px}
-.stage-readout{margin:0!important;min-width:150px;text-align:right;background:#0b1721!important}
+/* .stage-bay-head/.stage-readout (the "02 / ARENA" heading, later just
+   a "SELECTED STAGE" readout once the heading half was removed as a
+   duplicate of the screen's own titlebar -- see IKEMEN_FAI_LIVE_NOTES.md)
+   is gone entirely now: the readout's job moved into the preview itself
+   as .stage-preview-info, a real side-by-side column instead of a
+   separate row below the preview, freeing that row's height for the
+   stage grid. */
 .stage-grid{max-height:104px!important;grid-template-columns:repeat(auto-fill,minmax(86px,1fr))!important}
 .action-dock{display:grid;grid-template-columns:auto minmax(150px,1fr);gap:8px;margin-top:10px}
 .action-dock .start-btn,.action-dock .change-btn{margin:0;height:42px}
@@ -534,7 +557,7 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
   #charPickerSection{padding:9px}.roster-grid{max-height:112px;grid-template-columns:repeat(auto-fill,minmax(58px,1fr))}
   .select-titlebar .picker-heading{text-align:center}
   .versus-banner{grid-template-columns:1fr 38px 1fr}.fighter-card{min-height:76px!important;padding:9px!important}.vs-core span{width:31px;height:31px;font-size:12px}
-  .fighter-grids{grid-template-columns:1fr}.stage-bay-head{align-items:center}.stage-readout{min-width:120px}
+  .fighter-grids{grid-template-columns:1fr}
   .action-dock{grid-template-columns:1fr 1.35fr}
   .controls{height:190px}
 }
@@ -548,7 +571,7 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 
 @media(max-width:420px){
   .tag{font-size:8px}.controls{height:205px}
-  .fighter-name{font-size:11px}.fighter-role,.fighter-state{font-size:6px}.stage-readout{min-width:110px}
+  .fighter-name{font-size:11px}.fighter-role,.fighter-state{font-size:6px}
   .dpad{width:138px;height:138px}.acts{width:176px;height:146px}
 }
 @media(min-width:1100px){.wrap{max-width:1200px}}
@@ -965,7 +988,7 @@ body:not(.match-live) .controls{display:none!important}
      reach them, exactly what was reported. Replaced with a real flex
      chain instead: .setup stretches its card to the full available
      height, each picker screen becomes a flex column, the small fixed-
-     size pieces (titlebar, versus banner, stage preview, stage-bay-head,
+     size pieces (titlebar, versus banner, stage preview,
      action-dock) keep their natural height, and only the actual list
      (.shared-grid / #stageGrid) flexes to fill what's left and scrolls
      internally if it doesn't fit -- so the buttons and preview are
@@ -989,7 +1012,6 @@ body:not(.match-live) .controls{display:none!important}
   }
   body:not(.match-live):has(#charPickerSection:not(.hide)) .select-titlebar,
   body:not(.match-live):has(#charPickerSection:not(.hide)) .versus-banner,
-  body:not(.match-live):has(#charPickerSection:not(.hide)) .stage-bay-head,
   body:not(.match-live):has(#charPickerSection:not(.hide)) .shared-roster-head,
   body:not(.match-live):has(#charPickerSection:not(.hide)) .action-dock{
     flex:0 0 auto!important;
@@ -1495,12 +1517,11 @@ body:not(.match-live) .controls{display:none!important}
 
             <div class="stage-bay">
               <div id="stagePreview" class="stage-preview" aria-hidden="true">
-                <div class="stage-preview-grid"></div>
-                <img class="stage-preview-img" alt="" hidden>
-                <div class="stage-preview-name">ARENA PREVIEW</div>
-              </div>
-              <div class="stage-bay-head">
-                <div class="sel-item stage-readout">
+                <div class="stage-preview-media">
+                  <div class="stage-preview-grid"></div>
+                  <img class="stage-preview-img" alt="" hidden>
+                </div>
+                <div class="sel-item stage-preview-info">
                   <span class="sel-label">SELECTED STAGE</span>
                   <span id="selStage">CHOOSE STAGE</span>
                 </div>
@@ -1564,7 +1585,7 @@ body:not(.match-live) .controls{display:none!important}
     </div>
   </div>
 </div>
-<script src="./rig-ikemen-29.js?v=05cc4c4"></script>
+<script src="./rig-ikemen-29.js?v=9b765a4"></script>
 <script>
 (function(){
   const clean = v => {
@@ -1612,19 +1633,11 @@ body:not(.match-live) .controls{display:none!important}
   }
   bindPreview('selP1','p1Portrait','P1');
   bindPreview('selP2','p2Portrait','CPU');
-
-  const stageName = document.getElementById('selStage');
-  const preview = document.getElementById('stagePreview');
-  if(stageName && preview){
-    const label = preview.querySelector('.stage-preview-name');
-    const syncStage = () => {
-      const name = clean(stageName.textContent);
-      label.textContent = name || 'ARENA PREVIEW';
-      preview.classList.toggle('preview-live',!!name);
-    };
-    new MutationObserver(syncStage).observe(stageName,{childList:true,subtree:true,characterData:true});
-    syncStage();
-  }
+  // #selStage used to be mirrored into a separate .stage-preview-name
+  // overlay pill on the preview image. That element is gone now --
+  // #selStage lives directly inside .stage-preview-info (see the arena
+  // preview restructure in IKEMEN_FAI_LIVE_NOTES.md), so there's nothing
+  // left to mirror it into.
 })();
 </script>
 <script>
