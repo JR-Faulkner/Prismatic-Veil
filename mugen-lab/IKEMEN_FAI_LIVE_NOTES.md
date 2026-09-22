@@ -2678,3 +2678,55 @@ but non-zero bytes would point at a genuine inflate/boundary bug rather
 than an empty read. That single hex dump should be enough to pin the
 exact bug without another round of guessing. `node --check` clean,
 `preflight.py` passes.
+
+---
+
+## Root cause found and fixed: SFF v1 version marker at the wrong byte offset (2026-09-22)
+
+The diagnostic dump paid off immediately. The new trace showed the
+same header on literally every real character and stage:
+`45 6c 65 63 62 79 74 65 53 70 72 00 00 01 00 01` -- a perfectly valid
+`ElecbyteSpr` signature, zero corruption. The zip/lazy-materialize path
+was never the bug; it was reading real, correct bytes the whole time.
+
+The actual bug: `detectSffVersion()` and `sff1Entries()` both checked
+`bytes[12] === 1` to recognize SFF v1. Every real character in this
+trace has `bytes[12] = 0x00` and `bytes[13] = 0x01` -- **the version
+marker sits at byte 13, not byte 12.** Confirmed by pulling Kineza's
+own `.sff` out of `kineza-char-v03a.zip` and diffing its header
+byte-for-byte against the trace: Kineza's file reads
+`00 01 00 00 01` at offset 11-15 (marker at byte **12**), while every
+real roster file reads `00 00 01 00 01` (marker at byte **13**).
+Kineza's SFF was hand-repaired by an earlier session (see the
+`kineza-char.PROVENANCE.txt` history above -- the original had no
+palette block at all) and that repair script apparently wrote the
+version marker one byte earlier than the real, universal convention
+every actual MUGEN character file uses. The one file that "worked" was
+the one non-standard file in the whole system; every standard file was
+being rejected.
+
+Fixed with a single shared `isSff1Version(bytes)` helper --
+`bytes[13] === 1 || bytes[12] === 1` -- used by both `detectSffVersion`
+and `sff1Entries`, so the real convention now works and Kineza's own
+non-standard file still doesn't regress. Verified three ways: (1) unit
+comparison of both exact byte patterns (Kineza's and the real trace's)
+through `detectSffVersion`/`sff1Entries`, both now returning version 1;
+(2) a synthetic-but-realistic full SFF v1 file built with the *real*
+byte pattern (`00 01` at 12-13, not Kineza's `01 00`), containing an
+actual PCX-encoded 9000,0 sprite with a real 768-byte trailing palette,
+decoded successfully end-to-end (directory parse -> link resolve ->
+palette resolve -> PCX RLE decode -> indexed-to-RGBA) -- confirming the
+fix works for the whole real pipeline, not just the version-check
+function in isolation; (3) real headless boot, zero page errors,
+`node --check` clean, `preflight.py` passes.
+
+This should resolve both open items from the last two rounds: real
+character portraits and real stage preview art, for any character/stage
+using standard SFF v1 (which, per the trace, is literally 100% of this
+147-character/8-stage roster -- byte 15 was 1, not 2, in every sample,
+so SFF v2 support added earlier this session may not even be exercised
+by this particular pack, though it remains correct and unchanged for
+whichever future roster does use it). Needs one more real-phone
+confirmation to close out, but this is the first fix in this whole
+chain backed by an exact, verified byte-level diff against the real
+failure rather than a plausible-sounding guess.

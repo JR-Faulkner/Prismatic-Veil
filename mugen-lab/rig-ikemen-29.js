@@ -1024,8 +1024,8 @@
     if (!bytes || bytes.length < 544) return null;
     const sig = String.fromCharCode(...bytes.subarray(0, 11));
     if (sig !== 'ElecbyteSpr') return null;
-    const major = bytes[12];
-    if (major !== 1) return { version: major, entries: [] };
+    if (!isSff1Version(bytes)) return { version: bytes[12], entries: [] };
+    const major = 1;
 
     const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     const imageCount = dv.getUint32(20, true);
@@ -1161,12 +1161,25 @@
     return bytes.length + ' bytes, first ' + n + ': ' + hex + ' ("' + ascii + '")';
   }
 
+  // Real MUGEN SFF v1 files carry their version marker at byte 13 (Ver1=1,
+  // with Ver0=byte 12 sitting at 0) -- confirmed byte-for-byte against a
+  // real 147-character roster's own files, every one of which has exactly
+  // this pattern (00 01 00 01 at offset 12-15) and was being rejected as
+  // "unrecognized SFF version" before this fix. Also accepts byte 12===1,
+  // the position this repo's own hand-repaired Kineza asset actually uses
+  // (its header was written with the marker one byte earlier than the real
+  // spec position by an earlier session's repair script) -- kept so that
+  // asset doesn't regress now that the real convention is also checked.
+  function isSff1Version(bytes) {
+    return bytes[13] === 1 || bytes[12] === 1;
+  }
+
   function detectSffVersion(bytes) {
     if (!bytes || bytes.length < 16) return 0;
     const sig = String.fromCharCode(...bytes.subarray(0, 11));
     if (sig !== 'ElecbyteSpr') return 0;
     if (bytes[15] === 2) return 2;
-    if (bytes[12] === 1) return 1;
+    if (isSff1Version(bytes)) return 1;
     return 0;
   }
 
