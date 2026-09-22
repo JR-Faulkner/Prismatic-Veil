@@ -256,6 +256,7 @@ function updateSceneWindow(){
   const v=SCENE_VISUALS[Math.min(S.day,21)]||['foothold','THE VERDANT','Your life beyond the corridor'];
   $('sceneWindow').dataset.scene=v[0];
   $('scenePlace').textContent=v[1];
+  if($('headerLocation'))$('headerLocation').textContent=v[1];
   $('sceneFlavor').textContent=v[2];
   $('sceneKicker').textContent=S.currentEvent?'LIVE EVENT':'CURRENT SCENE';
 }
@@ -267,9 +268,22 @@ function segDigit(ch){
  return '<svg class="segDigit" viewBox="0 0 40 68" aria-hidden="true">'+r('a',8,2,24,6)+r('b',30,8,6,22)+r('c',30,38,6,22)+r('d',8,60,24,6)+r('e',4,38,6,22)+r('f',4,8,6,22)+r('g',8,31,24,6)+'</svg>';
 }
 function digitalHTML(value){
- return String(value).split('').map(ch=>/[0-9]/.test(ch)?segDigit(ch):'<span class="segGlyph">'+escapeHtml(ch)+'</span>').join('');
+ return String(value).split('').map(ch=>{
+  if(/[0-9]/.test(ch))return segDigit(ch);
+  const cls=ch==='/'?' segSlash':ch==='%'?' segPct':ch===','?' segComma':ch==='Ƶ'?' segCurrency':ch===' '?' segSpace':'';
+  return '<span class="segGlyph'+cls+'">'+escapeHtml(ch)+'</span>';
+ }).join('');
 }
 function setDigital(el,value){if(!el)return;el.innerHTML=digitalHTML(value);el.setAttribute('aria-label',String(value))}
+function choiceIcon(action,label){
+ const s=(String(action)+' '+String(label)).toLowerCase();
+ if(s.includes('recovery')||s.includes('board'))return '<svg viewBox="0 0 32 32"><rect x="8" y="7" width="16" height="20" rx="2"/><path d="M12 7V4h8v3M11 13h10M11 18h10M11 23h7"/></svg>';
+ if(s.includes('tool')||s.includes('inspect'))return '<svg viewBox="0 0 32 32"><path d="M20 5a7 7 0 0 0-7 9L5 22l5 5 8-8a7 7 0 0 0 9-7l-5 4-5-5z"/></svg>';
+ if(s.includes('alter'))return '<svg viewBox="0 0 32 32"><path d="M18 3L8 18h7l-1 11 10-15h-7z"/></svg>';
+ if(s.includes('view')||s.includes('look'))return '<svg viewBox="0 0 32 32"><path d="M3 16s5-8 13-8 13 8 13 8-5 8-13 8S3 16 3 16z"/><circle cx="16" cy="16" r="4"/></svg>';
+ if(s.includes('road')||s.includes('route')||s.includes('leave')||s.includes('reach'))return '<svg viewBox="0 0 32 32"><path d="M12 29l3-26M20 29L17 3M8 22h5M19 16h5M10 10h5"/></svg>';
+ return '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="11"/><path d="M16 9v7l5 3"/></svg>';
+}
 
 function render(){
  document.body.classList.add('playing');
@@ -284,7 +298,7 @@ function render(){
  if(S.worthUnlocked){const nx=nextThreshold();$('worthNext').innerHTML=nx?'NEXT RESONANCE<br><b>'+(nx-tw)+' WORTH AWAY</b>':'KNOWN RESONANCE<br><b>MAXED FOR NOW</b>'}
  const sc=scene();updateSceneWindow();$('thread').textContent=sc.thread;$('mood').textContent=sc.mood;$('sceneTitle').textContent=sc.title;$('sceneText').textContent=sc.text;$('result').textContent=S.result||'';
  $('eventChip').className='eventChip'+(S.currentEvent?' show':'');$('eventChip').textContent=S.currentEvent?'✦ '+sc.chip:'';
- $('choices').innerHTML='';sc.choices.slice(0,5).forEach((c,i)=>{const key=choiceKey(c[2]),used=!!(S.usedChoices&&S.usedChoices[key]),b=document.createElement('button');b.className='choice'+(used?' used':'');b.type='button';b.disabled=used;b.innerHTML='<span class="choiceIndex">'+(used?'<span class="usedMark">✓</span>':digitalHTML(i+1))+'</span><span class="choiceBody"><strong>'+c[0]+'</strong><small>'+c[1]+'</small></span><span class="choiceState">'+(used?'USED':((String(c[3]).includes('%'))?digitalHTML(c[3]):escapeHtml(c[3])))+'</span>';b.onclick=()=>{S.usedChoices=S.usedChoices||{};S.usedChoices[key]=true;handle(c[2])};$('choices').appendChild(b)});
+ $('choices').innerHTML='';sc.choices.slice(0,5).forEach((c,i)=>{const key=choiceKey(c[2]),used=!!(S.usedChoices&&S.usedChoices[key]),b=document.createElement('button');b.className='choice'+(used?' used':'');b.type='button';b.disabled=used;b.innerHTML='<span class="choiceIndex">'+(used?'<span class="usedMark">✓</span>':digitalHTML(String(i+1).padStart(2,'0')))+'</span><span class="choiceIcon">'+choiceIcon(c[2],c[0])+'</span><span class="choiceBody"><strong>'+c[0]+'</strong><small>'+c[1]+'</small></span><span class="choiceState">'+(used?'USED':((String(c[3]).includes('%'))?digitalHTML(c[3]):escapeHtml(c[3])))+'</span>';b.onclick=()=>{S.usedChoices=S.usedChoices||{};S.usedChoices[key]=true;handle(c[2])};$('choices').appendChild(b)});
  renderCategories();renderSelected();renderGrowth();renderJournal();save();
 }
 function alterStage(){
