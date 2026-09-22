@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="A+T">
-<link rel="manifest" href="./at-manifest.webmanifest?v=v4.14.0">
-<link rel="icon" href="./assets/ui/at-home-icon.svg?v=v4.14.0" type="image/svg+xml">
+<link rel="manifest" href="./at-manifest.webmanifest?v=v4.14.1">
+<link rel="icon" href="./assets/ui/at-home-icon.svg?v=v4.14.1" type="image/svg+xml">
 <title>A+T · Tutorial</title>
 <style>
 :root{--paper:#fffaf1;--purple:#6b4ed9;--mint:#65d7aa;--cyan:#44cad5;--gold:#f2bd4c;--text:#28233a;--muted:#6f6880;--line:#ddd3ed}
@@ -27,7 +27,7 @@ body{padding:calc(10px + env(safe-area-inset-top)) 10px calc(20px + env(safe-are
 </head>
 <body>
 <div class="app">
-<header class="top"><div class="brand"><small>PURE-RPG SERIES</small><h1>ALTERATIONS OF<br>TRANSFORMATIONS</h1></div><a class="back" href="./at-start.html?v=v4.14.0">A+T HOME</a></header>
+<header class="top"><div class="brand"><small>PURE-RPG SERIES</small><h1>ALTERATIONS OF<br>TRANSFORMATIONS</h1></div><a class="back" href="./at-start.html?v=v4.14.1">A+T HOME</a></header>
 <div class="shell">
 <section id="intro">
 <div class="hero"><small>TUTORIAL · THE DAY BEFORE</small><h2>Before the Verdant,<br>learn how Jace moves through the world.</h2><p>This tutorial is part of the story. The five choices are suggestions, not limits. The <strong>DO IT</strong> box is where you can say what Jace actually attempts in normal language.</p></div>
@@ -109,6 +109,6 @@ document.getElementById('begin').onclick=()=>{const name=document.getElementById
 document.querySelectorAll('form.free').forEach(f=>f.onsubmit=e=>{e.preventDefault();const n=+f.dataset.step,t=f.querySelector('textarea');free(n,t.value);t.value=''});
 document.querySelector('[data-next="1"]').onclick=()=>{document.getElementById('lesson0').classList.remove('active');document.getElementById('lesson1').classList.add('active');renderChoices(1);renderAP();window.scrollTo(0,0)};
 document.getElementById('finishLesson').onclick=()=>{document.getElementById('finish').classList.add('show');log(1,'Tutorial complete. You understand the interface. '+(sessionStorage.getItem('at_tutorial_name')||'Jace')+' still does not understand the real limits of Alteration. That is what the Verdant is for.')};
-document.getElementById('enterVerdant').onclick=()=>{localStorage.setItem('at_tutorial_seen','1');sessionStorage.setItem('at_launch_token','1');location.href='./at-game-v4.html?new=1&v=v4.14.0'};
+document.getElementById('enterVerdant').onclick=()=>{localStorage.setItem('at_tutorial_seen','1');sessionStorage.setItem('at_launch_token','1');location.href='./at-game-v4.html?new=1&v=v4.14.1'};
 </script>
-<script src="./assets/js/prpg-audio.js?v=v4.14.0"></script></body></html>
+<script src="./assets/js/prpg-audio.js?v=v4.14.1"></script></body></html>
