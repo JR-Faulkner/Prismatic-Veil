@@ -262,7 +262,7 @@ function updateSceneWindow(){
 
 function render(){
  document.body.classList.add('playing');
- $('setup').classList.add('hidden');$('game').classList.remove('hidden');$('who').textContent=S.name;$('premise').textContent=S.premise||BACKGROUND;$('day').textContent=S.day;$('money').textContent='$'+S.money.toLocaleString();
+ $('setup').classList.add('hidden');$('game').classList.remove('hidden');$('who').textContent=S.name;$('premise').textContent=S.premise||BACKGROUND;$('day').textContent=S.day;$('money').textContent='Ƶ '+S.money.toLocaleString();
  const weekNo=Math.ceil(S.day/7),phase=S.day<=7?'FOOTHOLD':S.day<=14?'ROOTS':S.day<=21?'DEEP VERDANT':'OPEN FRONTIER';
  if($('weekLabel'))$('weekLabel').textContent=S.day<=21?weekNo:'OPEN';
  if($('phaseLabel'))$('phaseLabel').textContent=phase;
