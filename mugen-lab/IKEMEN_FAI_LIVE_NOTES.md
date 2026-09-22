@@ -2823,3 +2823,71 @@ too (for the rarer mid-match case) and wasn't reworked here since
 fixing it properly would mean moving the orientation check earlier in
 page load, which is more than this pass asked for -- worth revisiting
 if it's actually visible on a real device.
+
+---
+
+## Narrower control gutters, extended to pre-fight too -- and a real 3-layer CSS trap found along the way (2026-09-22)
+
+Follow-up to the landscape-only change: user asked to narrow the
+side-docked control gutters from the live match (more room for the
+game) and, since the whole app is landscape-only now, extend that same
+side-docking to the setup/character-picker screen too -- it was still
+stacking the full-width control deck *below* the picker, costing
+roughly 220px of vertical height out of a ~390px-tall phone landscape
+view, which is a much bigger loss than the match's side gutters.
+
+**Found something worth flagging for whoever else touches this CSS:**
+`.stage`/`.cz`/`.dpad`/`.acts`/`.act` sizing for `body.match-live` in
+landscape is declared **three separate times** in this file, each from
+a different beautification pass (a `max-height:650px`-scoped phone
+block, a general `(orientation:landscape)` block, and a third
+V24-specific block appended even later) -- all three still present,
+none removed when the next one superseded it. Since all three use
+`!important` on selectors of equal specificity, **only the last one in
+source order actually renders**; the other two are fully dead code for
+every property they share with it. First tried narrowing the *second*
+block and verified via headless computed-style checks that literally
+nothing changed on screen -- the third (V24) block's older, wider
+numbers were still winning. Found this by comparing the actual
+rendered `getComputedStyle()` values against arithmetic from each
+block's own formula until one matched exactly, not by guessing.
+Fixed by updating the actual winning block (the V24 one, further down
+the file) with the narrower numbers, so what's declared where finally
+matches what renders. Did not consolidate or delete the two dead
+blocks in this pass -- that's a real cleanup worth doing but is a
+larger, separate change from what this pass asked for.
+
+Narrower values applied to the winning block: `.stage`'s reserved
+margin 148px -> 108px (width cap 75vw -> 82vw), `.cz` 17vw/148px ->
+15vw/132px, `.dpad` 15.5vw/132px -> 14vw/122px. The floors that
+actually guarantee tap accuracy were **raised**, not shrunk, while
+already touching these rules: `.dpad`/`.acts` min-size 102x102/124x108
+-> 112x112/150x116, and `.act` (the individual attack buttons)
+38px -> 44px, matching this project's own stated 44px touch-target
+standard (`CLAUDE.md`: "Touch targets clear 44px") that this one rule
+had fallen short of.
+
+Extended the same side-docked-controls treatment to pre-fight: the
+`body:not(.match-live):has(#charPickerSection:not(.hide))` selector
+(the same one that already made `.controls` visible pre-fight) now
+gets its own copy of the `.controls`/`.cz`/`.dpad`/`.acts`/`.act`
+fixed-position rules, matching the match-live numbers, plus a new
+`.wrap` max-width constraint (`calc(100vw - 280px)`) so the picker's
+own content doesn't render underneath the now-docked side controls.
+`#setup`/`#charPickerSection` live *inside* `.stage`, and `.stage`'s
+own pre-fight width comes from `fitStage()` reading `.wrap`'s
+`clientWidth` at runtime (not a CSS-only value) -- confirmed the
+`.wrap` constraint actually reaches the picker's rendered width, not
+just the DOM in theory, by checking `getComputedStyle(wrap).width`
+matches the constrained formula exactly (564px on an 844px-wide test
+viewport, i.e. `844 - 280`).
+
+**Verified with real computed-style checks, not just by reading the
+CSS**, at a real phone landscape viewport (844x390): match-live now
+shows `.stage` max-width 736px (`844-108`, confirming the fix reached
+the winning block), `.cz` 126.594px (`15vw`), `.act` 44x44px exactly.
+Pre-fight picker: `.controls` fixed/full-viewport, `.cz` fixed at the
+same 126.594px, `.wrap` narrowed to 564px, and the zip-picker button
+confirmed still genuinely clickable (`elementFromPoint` over it returns
+the button itself, not the control overlay). `node --check` clean,
+`preflight.py` passes, zero page errors in either state.
