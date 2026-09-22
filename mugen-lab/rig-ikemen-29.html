@@ -348,16 +348,7 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 .roster-item[data-mode="stage"]:before{
   content:"◆";color:#9fc7df;background:linear-gradient(160deg,#20303e,#0b1117)
 }
-.roster-item[data-mode="stage"]{padding-left:54px!important}
-.stage-thumb{
-  position:absolute;left:6px;top:50%;transform:translateY(-50%);
-  width:42px;height:30px;border-radius:4px;overflow:hidden;
-  background:linear-gradient(160deg,#20303e,#0b1117);
-  box-shadow:inset 0 0 0 1px #265f84;
-}
-.stage-thumb-img{width:100%;height:100%;object-fit:cover;display:block}
-.stage-thumb-img[hidden]{display:none!important}
-.roster-item.has-stage-thumb.thumb-ready:before{display:none}
+.roster-item[data-mode="stage"]{padding-left:38px!important}
 .roster-name{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .roster-item:after{
   content:"";position:absolute;right:-12px;top:-12px;width:42px;height:42px;transform:rotate(45deg);
@@ -486,6 +477,11 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
   linear-gradient(#54bdff0e 1px,transparent 1px),
   linear-gradient(90deg,#54bdff0e 1px,transparent 1px);
   background-size:18px 18px;transform:perspective(180px) rotateX(61deg) translateY(36px) scale(1.35);transform-origin:center bottom}
+.stage-preview-img{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;object-position:center}
+.stage-preview-img[hidden]{display:none!important}
+.stage-preview.has-art .stage-preview-grid,
+.stage-preview.has-art:before,
+.stage-preview.has-art:after{opacity:0}
 .stage-preview-name{position:absolute;left:9px;bottom:7px;z-index:2;font:1000 9px ui-monospace;letter-spacing:.12em;color:#cfeaff;text-shadow:0 2px 10px #000}
 
 .p2-card{background:
@@ -927,14 +923,128 @@ body:not(.match-live):has(#charPickerSection:not(.hide)) .controls{
     min-height:0!important;
   }
 
-  /* Fighter select and arena select were one screen sharing one small
-     roster-grid height budget (128-142px) between the versus banner, the
-     roster, the stage preview, and the stage grid all at once. Now that
-     each is its own full screen, let the grid actually use the space
-     that split freed up instead of keeping the old crowded-screen cap. */
+  /* Fixed max-heights on the grids (previously min(46vh,420px)) couldn't
+     guarantee the action buttons stayed on screen -- on a short landscape
+     phone (~390px tall) a fixed cap plus the versus banner/preview/labels
+     above it could still add up to more than the viewport, pushing FIGHT/
+     BACK/NEXT off the bottom and forcing the whole page to scroll to
+     reach them, exactly what was reported. Replaced with a real flex
+     chain instead: .setup stretches its card to the full available
+     height, each picker screen becomes a flex column, the small fixed-
+     size pieces (titlebar, versus banner, stage preview, stage-bay-head,
+     action-dock) keep their natural height, and only the actual list
+     (.shared-grid / #stageGrid) flexes to fill what's left and scrolls
+     internally if it doesn't fit -- so the buttons and preview are
+     always visible; only the list itself ever needs to scroll, the same
+     way the roster grid already worked, just now sized correctly. */
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .setup{
+    place-items:stretch!important;
+    grid-template-rows:minmax(0,1fr)!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .card{
+    width:100%!important;
+    height:100%!important;
+    display:flex!important;flex-direction:column!important;
+    margin:0 auto!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) #charPickerSection,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .picker-screen{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    display:flex!important;flex-direction:column!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .select-titlebar,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .versus-banner,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .stage-bay-head,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .shared-roster-head,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .action-dock{
+    flex:0 0 auto!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .shared-roster-panel,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .stage-bay{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    display:flex!important;flex-direction:column!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .shared-roster-viewport{
+    flex:1 1 auto!important;
+    min-height:0!important;
+  }
   body:not(.match-live):has(#charPickerSection:not(.hide)) .shared-grid,
   body:not(.match-live):has(#charPickerSection:not(.hide)) .stage-grid{
-    max-height:min(46vh,420px)!important;
+    max-height:none!important;
+    height:100%!important;
+    flex:1 1 auto!important;
+    min-height:0!important;
+  }
+  /* The arena preview is the one deliberately fixed-size piece -- the
+     whole point of the last request was to make it the prominent, real
+     element on the screen, with the stage list taking whatever's left. */
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .stage-preview{
+    flex:0 0 auto!important;
+    height:min(36vh,220px)!important;
+    margin-bottom:8px!important;
+  }
+
+  /* A 147-character real roster (this project's own real-phone test) in
+     4 fixed columns of ~72px-tall thumbnail tiles meant maybe a dozen
+     visible before scrolling. Doubling columns and roughly halving tile
+     height (~1/4 the on-screen area per tile, per direct user request)
+     fits ~4x as many at a glance -- the actual goal with a roster this
+     size, not just a cosmetic resize. */
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .shared-grid{
+    grid-template-columns:repeat(8,1fr)!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .shared-grid .roster-item.has-roster-thumb{
+    min-height:36px!important;
+    padding:24px 3px 3px!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .shared-grid .roster-thumb{
+    height:20px!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .shared-grid .roster-thumb-fallback{
+    font-size:9px!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .shared-grid .roster-item.has-roster-thumb .roster-name{
+    font-size:6.5px!important;
+  }
+
+  /* The versus banner's fighter-card min-height (88px, set unconditionally
+     elsewhere) plus the titlebar and action-dock alone ate 73px+96px=169px
+     of a ~208px budget on a 390px-tall phone, squeezing the roster panel
+     below it to ~15px -- less than a single 36px row -- even after the
+     .setup/.card grid-row fix above gave the whole chain a real, definite
+     height to distribute. Shrinking the banner itself is what actually
+     frees the room the roster grid needs to be usable. */
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .versus-banner{
+    margin:2px 0!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .fighter-card{
+    min-height:32px!important;
+    padding:4px 7px!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .vs-core span{
+    width:26px!important;height:26px!important;font-size:10px!important;
+  }
+  /* Even after shrinking the versus banner, the roster panel's own chrome
+     (titlebar, P1/CPU tab head, panel padding) was still eating enough of
+     the remaining budget that the actual scrollable list measured out at
+     ~4px tall -- not "needs to scroll", just broken. Compacting these too
+     is what gets the list to a real, usable height. */
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .select-titlebar{
+    margin-bottom:2px!important;padding-bottom:2px!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .picker-heading{
+    font-size:9px!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .shared-roster-head{
+    margin-bottom:2px!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .roster-mode{
+    height:18px!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .shared-roster-panel{
+    padding:4px!important;
   }
 
   /* Make the parent deck layout-free. Touch targets live in side gutters. */
@@ -1347,6 +1457,7 @@ body:not(.match-live):has(#charPickerSection:not(.hide)) .controls{
             <div class="stage-bay">
               <div id="stagePreview" class="stage-preview" aria-hidden="true">
                 <div class="stage-preview-grid"></div>
+                <img class="stage-preview-img" alt="" hidden>
                 <div class="stage-preview-name">ARENA PREVIEW</div>
               </div>
               <div class="stage-bay-head">
