@@ -285,6 +285,12 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 }
 .select-titlebar:before{content:"01";position:absolute;left:12px;top:50%;transform:translateY(-50%);font:1000 8px ui-monospace;color:#4dbaff}
 .select-titlebar:after{content:"FIGHTER SELECT";position:absolute;right:12px;top:50%;transform:translateY(-50%);font:900 7px ui-monospace;letter-spacing:.12em;color:#877331}
+/* Fighter select and arena select became two separate screens sharing
+   this same titlebar markup/class -- the "01"/"FIGHTER SELECT" kicker
+   text was hardcoded onto .select-titlebar itself, so it showed
+   unchanged on the arena screen too until overridden here. */
+#pickerScreenArena .select-titlebar:before{content:"02"}
+#pickerScreenArena .select-titlebar:after{content:"ARENA SELECT"}
 .versus-banner{
   position:relative;z-index:1;
   padding:4px;
@@ -921,6 +927,16 @@ body:not(.match-live):has(#charPickerSection:not(.hide)) .controls{
     min-height:0!important;
   }
 
+  /* Fighter select and arena select were one screen sharing one small
+     roster-grid height budget (128-142px) between the versus banner, the
+     roster, the stage preview, and the stage grid all at once. Now that
+     each is its own full screen, let the grid actually use the space
+     that split freed up instead of keeping the old crowded-screen cap. */
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .shared-grid,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .stage-grid{
+    max-height:min(46vh,420px)!important;
+  }
+
   /* Make the parent deck layout-free. Touch targets live in side gutters. */
   body.match-live .controls,
   body:not(.match-live):has(#charPickerSection:not(.hide)) .controls{
@@ -1282,61 +1298,74 @@ body:not(.match-live):has(#charPickerSection:not(.hide)) .controls{
         <label id="zipLabel" class="pick">CHOOSE MUGEN ZIP<input id="zipInput" type="file" accept=".zip,application/zip" hidden></label>
         <div id="prepDiag" class="diag">Waiting for zip…</div>
         <div id="charPickerSection" class="hide">
-          <div class="select-titlebar">
-            <p class="picker-heading">Select Fighters</p>
-          </div>
+          <div id="pickerScreenFighters" class="picker-screen">
+            <div class="select-titlebar">
+              <p class="picker-heading">Select Fighters</p>
+            </div>
 
-          <div class="versus-banner">
-            <div class="sel-item fighter-card p1-card">
-              <div id="p1Portrait" class="portrait-well" aria-hidden="true"><img class="portrait-art" src="/Prismatic-Veil/kineza_full.png?v=579cf39e-v19" alt="" hidden><span>?</span></div>
-              <span class="slot-mark">P1</span>
-              <span class="fighter-role">PLAYER ONE</span>
-              <span id="selP1" class="fighter-name">CHOOSE FIGHTER</span>
-              <span class="fighter-state">PRIMARY</span>
-            </div>
-            <div class="vs-core"><span>VS</span></div>
-            <div class="sel-item fighter-card p2-card">
-              <div id="p2Portrait" class="portrait-well" aria-hidden="true"><img class="portrait-art" src="/Prismatic-Veil/kineza_full.png?v=579cf39e-v19" alt="" hidden><span>?</span></div>
-              <span class="slot-mark">CPU</span>
-              <span class="fighter-role">PLAYER TWO</span>
-              <span id="selP2" class="fighter-name">CHOOSE FIGHTER</span>
-              <span class="fighter-state">RIVAL</span>
-            </div>
-          </div>
-
-          <div id="sharedRosterPanel" class="shared-roster-panel" data-mode="p1">
-            <div class="shared-roster-head">
-              <button class="roster-mode active" data-roster-mode="p1" type="button">P1</button>
-              <div class="shared-roster-title">ROSTER</div>
-              <button class="roster-mode" data-roster-mode="p2" type="button">CPU</button>
-            </div>
-            <div class="shared-roster-viewport">
-              <div id="p1Grid" class="roster-grid shared-grid"></div>
-              <div id="p2Grid" class="roster-grid shared-grid hide"></div>
-            </div>
-          </div>
-
-          <div class="stage-bay">
-            <div id="stagePreview" class="stage-preview" aria-hidden="true">
-              <div class="stage-preview-grid"></div>
-              <div class="stage-preview-name">ARENA PREVIEW</div>
-            </div>
-            <div class="stage-bay-head">
-              <div>
-                <span class="select-kicker">02 / ARENA</span>
-                <div class="stage-label-big">Stage Select</div>
+            <div class="versus-banner">
+              <div class="sel-item fighter-card p1-card">
+                <div id="p1Portrait" class="portrait-well" aria-hidden="true"><img class="portrait-art" src="/Prismatic-Veil/kineza_full.png?v=579cf39e-v19" alt="" hidden><span>?</span></div>
+                <span class="slot-mark">P1</span>
+                <span class="fighter-role">PLAYER ONE</span>
+                <span id="selP1" class="fighter-name">CHOOSE FIGHTER</span>
+                <span class="fighter-state">PRIMARY</span>
               </div>
-              <div class="sel-item stage-readout">
-                <span class="sel-label">SELECTED STAGE</span>
-                <span id="selStage">CHOOSE STAGE</span>
+              <div class="vs-core"><span>VS</span></div>
+              <div class="sel-item fighter-card p2-card">
+                <div id="p2Portrait" class="portrait-well" aria-hidden="true"><img class="portrait-art" src="/Prismatic-Veil/kineza_full.png?v=579cf39e-v19" alt="" hidden><span>?</span></div>
+                <span class="slot-mark">CPU</span>
+                <span class="fighter-role">PLAYER TWO</span>
+                <span id="selP2" class="fighter-name">CHOOSE FIGHTER</span>
+                <span class="fighter-state">RIVAL</span>
               </div>
             </div>
-            <div id="stageGrid" class="roster-grid stage-grid"></div>
+
+            <div id="sharedRosterPanel" class="shared-roster-panel" data-mode="p1">
+              <div class="shared-roster-head">
+                <button class="roster-mode active" data-roster-mode="p1" type="button">P1</button>
+                <div class="shared-roster-title">ROSTER</div>
+                <button class="roster-mode" data-roster-mode="p2" type="button">CPU</button>
+              </div>
+              <div class="shared-roster-viewport">
+                <div id="p1Grid" class="roster-grid shared-grid"></div>
+                <div id="p2Grid" class="roster-grid shared-grid hide"></div>
+              </div>
+            </div>
+
+            <div class="picker-actions action-dock">
+              <button id="changeZipBtn" class="change-btn">CHANGE LIBRARY</button>
+              <button id="nextArenaBtn" class="start-btn">NEXT: ARENA</button>
+            </div>
           </div>
 
-          <div class="picker-actions action-dock">
-            <button id="changeZipBtn" class="change-btn">CHANGE LIBRARY</button>
-            <button id="startBtn" class="start-btn">FIGHT</button>
+          <div id="pickerScreenArena" class="picker-screen hide">
+            <div class="select-titlebar">
+              <p class="picker-heading">Select Arena</p>
+            </div>
+
+            <div class="stage-bay">
+              <div id="stagePreview" class="stage-preview" aria-hidden="true">
+                <div class="stage-preview-grid"></div>
+                <div class="stage-preview-name">ARENA PREVIEW</div>
+              </div>
+              <div class="stage-bay-head">
+                <div>
+                  <span class="select-kicker">02 / ARENA</span>
+                  <div class="stage-label-big">Stage Select</div>
+                </div>
+                <div class="sel-item stage-readout">
+                  <span class="sel-label">SELECTED STAGE</span>
+                  <span id="selStage">CHOOSE STAGE</span>
+                </div>
+              </div>
+              <div id="stageGrid" class="roster-grid stage-grid"></div>
+            </div>
+
+            <div class="picker-actions action-dock">
+              <button id="backFightersBtn" class="change-btn">BACK</button>
+              <button id="startBtn" class="start-btn">FIGHT</button>
+            </div>
           </div>
         </div>
       </div>

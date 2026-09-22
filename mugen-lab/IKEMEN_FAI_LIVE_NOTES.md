@@ -2951,3 +2951,62 @@ fight screen, and `document.body.scrollHeight === window.innerHeight`
 in every case (no page-level scroll forced). `node --check` clean,
 `preflight.py` passes, zero page errors at 390x844 (portrait, gate
 should show), 844x390, and 2000x933.
+
+---
+
+## Fighter select and arena select split into two screens (2026-09-22)
+
+Even after the layout fixes above, user felt the picker was still
+crowded on one screen -- versus banner, roster grid, stage preview, and
+stage grid all sharing the same small viewport, forcing a cramped
+roster grid and pointless vertical scrolling for something that's
+landscape-only now anyway. Asked for two separate, full screens:
+Fighter Select, then Arena Select, each with room to actually use.
+
+**Markup**: `#charPickerSection`'s children were split into two new
+wrapper divs, `#pickerScreenFighters` (titlebar, versus banner, shared
+P1/CPU roster panel, CHANGE LIBRARY + a new NEXT: ARENA button) and
+`#pickerScreenArena` (its own titlebar, the stage preview/bay, a new
+BACK button + the FIGHT button moved here from the fighters screen).
+Toggled with the same `.hide` utility class already used everywhere
+else in this file -- no new CSS mechanism needed for show/hide.
+
+**JS**: added `showPickerScreen(name)` -- toggles the two wrapper
+divs' `.hide` class, updates the status pill text (SELECT FIGHTERS /
+SELECT ARENA), and moves focus into the now-visible screen's first
+relevant element (first roster item, or the stage grid, falling back
+to the FIGHT button if a screen has nothing focusable). `selectItem()`
+now calls `showPickerScreen('arena')` once both P1 and P2 are chosen
+instead of trying to focus a stage grid that's on a screen that isn't
+shown yet -- the auto-advance UX is unchanged, it just crosses a real
+screen boundary now instead of scrolling within one. `updateSelectionDisplay()`
+gates the new NEXT button's ready state (`duelReady`: both fighters
+picked) separately from FIGHT's (`fightReady`: fighters + stage, or no
+stages exist) -- matching the existing pattern of a visual `.v24-ready`
+class + text change rather than the native `disabled` attribute, which
+would have fought the button's custom clip-path/gradient styling.
+
+**CSS**: the picker's decorative titlebar kicker ("01" / "FIGHTER
+SELECT") was hardcoded via `:before`/`:after` content on the shared
+`.select-titlebar` class -- caught by screenshot showing "01 FIGHTER
+SELECT" still on the arena screen after the split. Overridden
+specifically for `#pickerScreenArena` to "02" / "ARENA SELECT". Also
+bumped `.shared-grid`/`.stage-grid`'s `max-height` (previously
+128-142px, tuned for the old crowded single screen) to
+`min(46vh,420px)` under the same landscape pre-fight scoping used
+throughout this session's picker work, so each screen's grid actually
+uses the room the split freed up instead of keeping the old cramped
+cap.
+
+**Verified with a temporary debug-exposed test harness** (a
+`window.__testOpenPicker(chars, stages)` hook added to a throwaway copy
+of the file, deleted after testing -- not shipped) driving the real
+functions with synthetic roster/stage data end to end: opened the
+picker, clicked a P1 roster item, switched to the CPU tab, clicked a
+P2 item, confirmed it auto-advanced to the arena screen
+(`pickerScreenFighters` hidden, `pickerScreenArena` shown), clicked
+BACK (returns to fighters), clicked NEXT (re-advances), picked a
+stage, and confirmed the FIGHT button read "FIGHT · READY". Screenshots
+at each step confirm the visual result matches. Zero page errors at
+390x844, 844x390, and 2000x933. `node --check` clean, `preflight.py`
+passes.
