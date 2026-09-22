@@ -635,3 +635,19 @@ body.playing .systemRail .railLed{display:none!important}
  body.playing .systemRail{min-height:39px!important}
 }
 
+
+/* ===== A+T V4.16.1 · explicit top-shell image layers ===== */
+body.playing .userBay,
+body.playing .headerLocation,
+body.playing .systemRail{background-image:none!important}
+body.playing .b2ShellArt{
+ position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+ object-fit:fill!important;display:block!important;z-index:0!important;pointer-events:none!important;
+}
+body.playing .userBay>*:not(.b2ShellArt),
+body.playing .headerLocation>*:not(.b2ShellArt),
+body.playing .systemRail>*:not(.b2ShellArt){position:relative;z-index:2}
+body.playing .userBay{position:relative!important}
+body.playing .headerLocation{position:relative!important}
+body.playing .systemRail{position:relative!important;overflow:hidden!important}
+body.playing .systemRail>span{display:flex!important}
