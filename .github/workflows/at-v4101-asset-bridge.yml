@@ -1,0 +1,74 @@
+name: A+T V4.10.1 Asset Bridge
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/at-v4101-asset-bridge.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download high-resolution Verdant atlas
+        env:
+          ASSET_URL: "https://uc6ef4a093a4ffbebbd397b29030.dl.dropboxusercontent.com/cd/0/get/DIlOC5Xhn7GMkowJm1cSpWPrQwWNexqoskSy7Z1saJ96luBtPfhZku5e8XEmAoxtXWSam_NDtmPefvV_prFIUt4DUS9OJV3U4_DK6CdeG7nvvgzek4zaMcx54tW-QbZAGi_DCQJ9qBg_dDKw7tswXw0zXk0TkvfTthgWQCqMd0aRqQ/file?c_luid=9bd25e73"
+        run: |
+          curl --fail --location --retry 2 "$ASSET_URL" -o assets/at-scenes-v4101.webp
+          test "$(stat -c%s assets/at-scenes-v4101.webp)" -eq 521128
+          echo "5c5236f20ef9c5bbde7e1557b795636edf25f77675b1f170b24fa6e7233e964b  assets/at-scenes-v4101.webp" | sha256sum -c -
+
+      - name: Wire asset and bump live build
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, re
+
+          css = Path("assets/at-scenes-embedded.css")
+          s = css.read_text()
+          s, n = re.subn(
+              r':root\{--at-verdant-sprite:url\("data:image/webp;base64,[A-Za-z0-9+/=]+"\)\}',
+              ':root{--at-verdant-sprite:url("./at-scenes-v4101.webp?v=v4.10.1")}',
+              s,
+              count=1
+          )
+          if n != 1:
+              raise SystemExit(f"expected one embedded atlas replacement, got {n}")
+          css.write_text(s)
+
+          for name in ("at-start.html","at-game-v4.html","at-tutorial.html"):
+              p = Path(name)
+              t = p.read_text().replace("v4.10.0","v4.10.1").replace("A+T V4.10.0 · PLAYTEST","A+T V4.10.1 · PLAYTEST")
+              p.write_text(t)
+
+          p = Path("at-build.json")
+          b = json.loads(p.read_text())
+          b["build"] = "v4.10.1"
+          b["version"] = "4.10.1"
+          b["updated"] = "2026-09-21"
+          p.write_text(json.dumps(b, indent=2) + "\n")
+
+          p = Path("at-manifest.webmanifest")
+          m = json.loads(p.read_text())
+          m["start_url"] = "./at-start.html?launch=app&v=v4.10.1"
+          for icon in m.get("icons", []):
+              icon["src"] = "./assets/ui/at-home-icon.svg?v=v4.10.1"
+          p.write_text(json.dumps(m, indent=2) + "\n")
+          PY
+
+      - name: Commit verified asset
+        run: |
+          rm .github/workflows/at-v4101-asset-bridge.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/at-scenes-v4101.webp assets/at-scenes-embedded.css at-start.html at-game-v4.html at-tutorial.html at-build.json at-manifest.webmanifest .github/workflows/at-v4101-asset-bridge.yml
+          git commit -m "A+T V4.10.1: restore high-resolution Verdant scene art"
+          git pull --rebase origin main
+          git push origin HEAD:main
