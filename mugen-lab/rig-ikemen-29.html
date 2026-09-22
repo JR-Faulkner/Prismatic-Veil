@@ -1258,7 +1258,7 @@ body:not(.match-live):has(#charPickerSection:not(.hide)) .controls{
   <div class="rotate-gate-card">
     <div class="rotate-phone" aria-hidden="true">▭</div>
     <div id="rotateGateTitle" class="rotate-gate-title">ROTATE TO LANDSCAPE</div>
-    <div id="rotateGateText" class="rotate-gate-text">Rotate your phone to begin the match.</div>
+    <div id="rotateGateText" class="rotate-gate-text">MobMugen is landscape-only. Rotate your phone to continue.</div>
   </div>
 </div>
 <div id="testDock" class="test-dock">
@@ -1397,38 +1397,30 @@ body:not(.match-live):has(#charPickerSection:not(.hide)) .controls{
 </script>
 <script>
 (function(){
+  // Landscape-only, app-wide: the gate used to only guard the live match
+  // (setup/picker were freely usable in portrait) with a click-interceptor
+  // on the FIGHT button to catch the one remaining portrait-reachable
+  // action. Now the gate covers the whole app from first load, so nothing
+  // in portrait -- setup, picker, START button included -- is reachable at
+  // all (the gate is position:fixed;inset:0;z-index:1000, blocking all
+  // pointer events beneath it), which makes that click-interceptor and its
+  // pendingStart/bypassGate bookkeeping dead code; removed rather than left
+  // unreachable.
   const gate = document.getElementById('rotateGate');
   const title = document.getElementById('rotateGateTitle');
   const text = document.getElementById('rotateGateText');
-  const start = document.getElementById('startBtn');
   const setup = document.getElementById('setup');
   const landscape = window.matchMedia('(orientation: landscape)');
-  let pendingStart = false;
-  let bypassGate = false;
 
   function showGate(kind){
     if(!gate) return;
-    if(kind === 'start'){
-      title.textContent = 'ROTATE TO LANDSCAPE';
-      text.textContent = 'Rotate your phone to begin the match.';
-    } else {
-      title.textContent = 'ROTATE TO LANDSCAPE';
-      text.textContent = 'Match paused. Rotate to landscape to resume.';
-    }
+    title.textContent = 'ROTATE TO LANDSCAPE';
+    text.textContent = kind === 'resume'
+      ? 'Match paused. Rotate to landscape to resume.'
+      : 'MobMugen is landscape-only. Rotate your phone to continue.';
     gate.hidden = false;
   }
   function hideGate(){ if(gate) gate.hidden = true; }
-
-  // Capture the FIGHT press before I29's startMatch listener.
-  start?.addEventListener('click', e => {
-    if(bypassGate){ bypassGate = false; return; }
-    if(!landscape.matches){
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      pendingStart = true;
-      showGate('start');
-    }
-  }, true);
 
   function onOrientation(){
     const live = setup && setup.classList.contains('hide');
@@ -1436,19 +1428,13 @@ body:not(.match-live):has(#charPickerSection:not(.hide)) .controls{
     if(landscape.matches){
       hideGate();
       document.getElementById('controls')?.classList.remove('hidden');
-
-      if(pendingStart){
-        pendingStart = false;
-        bypassGate = true;
-        // Allow layout to settle in landscape before the real I29 start.
-        setTimeout(() => start?.click(), 60);
-      } else if(live){
-        setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
-      }
-    } else if(live){
-      // Visual/input pause gate. The engine remains behind the overlay;
-      // no gameplay input is accepted until landscape returns.
-      showGate('resume');
+      // Allow layout to settle in landscape before anything reads sizes.
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
+    } else {
+      // Visual/input pause gate. Whatever's behind it -- setup, picker, or
+      // a live match -- stays untouched; no input reaches it until
+      // landscape returns.
+      showGate(live ? 'resume' : 'start');
     }
   }
 
