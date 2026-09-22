@@ -2768,3 +2768,58 @@ Not yet re-confirmed on the user's actual stage files (this is a
 heuristic change, not something with a "correct" answer verifiable in
 isolation) -- next real-phone pass should check whether stage tiles now
 show a representative scene instead of sky.
+
+---
+
+## App made landscape-only, end to end (2026-09-22)
+
+Real-phone confirmation on the stage-art fix: portraits and stage
+previews both showing real content now, priority #1 and #3's decode
+issues resolved. Separate design discussion followed: user asked
+whether the whole app should just be landscape-only rather than
+portrait-for-setup/landscape-for-fight, specifically because that would
+eliminate the entire "rotate mid-fight crash" bug class (priority #5)
+for free -- if the app never leaves landscape, there's no orientation
+transition left to crash on. Decided to build it and see.
+
+Previously `rotateGate` only activated once a match was `live` (setup
+classList had `hide`) -- the setup screen and character/stage picker
+were freely usable in portrait, with a separate click-interceptor on
+the FIGHT button as the one guard against starting a match while still
+portrait. Changed `onOrientation()` in `rig-ikemen-29.html`'s gate
+script to show the gate whenever the device isn't in landscape,
+regardless of `live` -- covering setup, picker, and match alike from
+first page load. `rotateGate` was already `position:fixed;inset:0;
+z-index:1000`, so no CSS/layout change was needed; it already blocks
+pointer events across the entire viewport, not just over the game
+canvas. That full-viewport coverage is also what made the old
+click-interceptor dead code once the gate applies everywhere: a
+portrait user can no longer physically reach the FIGHT button (or
+anything else) to click it in the first place, so `pendingStart`/
+`bypassGate` and the interceptor were removed rather than left
+unreachable. Updated the gate's copy for the pre-match case from
+"Rotate your phone to begin the match" to "MobMugen is landscape-only.
+Rotate your phone to continue.", since it now covers zip loading and
+character picking too, not just the fight itself; the mid-match
+"paused, rotate to resume" text is unchanged.
+
+**Verified directly, not just by inspection:** loaded the page in two
+separate headless browser contexts, one at a portrait viewport
+(390x844) and one at landscape (844x390). Portrait: `rotateGate.hidden
+=== false`, its own title text sits at the exact center of the
+viewport (`document.elementFromPoint` at center returns the gate's own
+child), and `elementFromPoint` at all four corners also returns the
+gate element itself -- confirming the full page is genuinely covered
+and click-blocked, not just visually overlaid with gaps at the edges.
+Landscape: gate hidden, `elementFromPoint` at center returns the normal
+`setup` screen underneath. Zero page errors in both. `node --check`
+clean, `preflight.py` passes.
+
+One known, accepted cosmetic gap: since `rig-ikemen-29.js` (the big
+bundle) loads and runs before this small inline gate script farther
+down the page, a portrait load could in principle show a brief flash of
+the setup screen before the gate script hides it. This existed before
+too (for the rarer mid-match case) and wasn't reworked here since
+fixing it properly would mean moving the orientation check earlier in
+page load, which is more than this pass asked for -- worth revisiting
+if it's actually visible on a real device.
