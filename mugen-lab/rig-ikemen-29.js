@@ -2181,6 +2181,34 @@
   const GRID_IDS = { p1: 'p1Grid', p2: 'p2Grid', stage: 'stageGrid' };
   const pickerState = { p1Idx: 0, p2Idx: 0, stageIdx: 0 };
   let pickerWired = false;
+  let pickerScreen = 'fighters';
+
+  // Fighter select and arena select were one crowded, vertically-scrolling
+  // screen -- versus banner, roster grid, stage preview, stage grid, and
+  // actions all stacked in the same view. Split into two full screens so
+  // each gets the whole picker area to itself; fightersEl/arenaEl toggle
+  // via the same .hide class already used everywhere else in this file.
+  function showPickerScreen(name) {
+    pickerScreen = name;
+    const fightersEl = document.getElementById('pickerScreenFighters');
+    const arenaEl = document.getElementById('pickerScreenArena');
+    if (fightersEl) fightersEl.classList.toggle('hide', name !== 'fighters');
+    if (arenaEl) arenaEl.classList.toggle('hide', name !== 'arena');
+
+    if (name === 'arena') {
+      status('SELECT ARENA');
+      const first = document.querySelector('#stageGrid .roster-item.selected') ||
+        document.querySelector('#stageGrid .roster-item');
+      if (first) first.focus(); else focusStartButton();
+    } else {
+      status('SELECT FIGHTERS');
+      const active = document.querySelector('#sharedRosterPanel [data-roster-mode].active');
+      const mode = active ? active.dataset.rosterMode : 'p1';
+      const first = document.querySelector('#' + GRID_IDS[mode] + ' .roster-item.selected') ||
+        document.querySelector('#' + GRID_IDS[mode] + ' .roster-item');
+      if (first) first.focus();
+    }
+  }
 
   function showCharacterPicker() {
     pickerState.p1Idx = Math.max(0, allChars.indexOf(charNames[0]));
@@ -2197,6 +2225,7 @@
     buildRosterGrid('p2', allChars, pickerState.p2Idx);
     buildRosterGrid('stage', allStages, pickerState.stageIdx);
     updateSelectionDisplay();
+    showPickerScreen('fighters');
 
     // Bind once. showCharacterPicker() runs again after CHANGE ZIP, and
     // re-adding these every time would stack listeners -- one tap of START
@@ -2207,14 +2236,18 @@
         playMotifUiSound('cancel');
         resetForNewZip();
       });
+      document.getElementById('nextArenaBtn').addEventListener('click', () => {
+        if (!allChars[pickerState.p1Idx] || !allChars[pickerState.p2Idx]) return;
+        playMotifUiSound('confirm');
+        showPickerScreen('arena');
+      });
+      document.getElementById('backFightersBtn').addEventListener('click', () => {
+        playMotifUiSound('cancel');
+        showPickerScreen('fighters');
+      });
       pickerWired = true;
     }
 
-    const first = document.querySelector('#p1Grid .roster-item.selected') ||
-      document.querySelector('#p1Grid .roster-item');
-    if (first) first.focus();
-
-    status('SELECT FIGHTERS');
     log('I29 PICKER · ' + allChars.length + ' characters / ' + allStages.length + ' stages offered');
   }
 
@@ -2481,13 +2514,11 @@
       focusPickerMode('p2');
       log('I29 PICKER · P1 selected; focus moved to P2');
     } else if (mode === 'p2') {
-      if (allStages.length) {
-        focusPickerMode('stage');
-        log('I29 PICKER · P2 selected; focus moved to Stage');
-      } else {
-        focusStartButton();
-        log('I29 PICKER · P2 selected; no stages listed; focus moved to START MATCH');
-      }
+      // Both fighters chosen -- advance to the arena screen the same way
+      // NEXT: ARENA does, rather than just moving focus within a now-
+      // hidden stage grid on the old single-screen layout.
+      showPickerScreen('arena');
+      log('I29 PICKER · P2 selected; advanced to arena screen');
     } else if (mode === 'stage') {
       focusStartButton();
       log('I29 PICKER · Stage selected; focus moved to START MATCH');
@@ -2525,6 +2556,11 @@
     const duelReady = !!p1Name && !!p2Name;
     const fightReady = duelReady && (!allStages.length || !!stageName);
     if (picker) picker.classList.toggle('duel-ready', duelReady);
+    const next = document.getElementById('nextArenaBtn');
+    if (next) {
+      next.classList.toggle('v24-ready', duelReady);
+      next.textContent = duelReady ? 'NEXT: ARENA · READY' : 'NEXT: ARENA';
+    }
     const start = document.getElementById('startBtn');
     if (start) {
       start.classList.toggle('v24-ready', fightReady);
