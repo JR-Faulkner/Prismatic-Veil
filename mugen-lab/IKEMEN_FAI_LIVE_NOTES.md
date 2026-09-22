@@ -2730,3 +2730,41 @@ whichever future roster does use it). Needs one more real-phone
 confirmation to close out, but this is the first fix in this whole
 chain backed by an exact, verified byte-level diff against the real
 failure rather than a plausible-sounding guess.
+
+---
+
+## Real-phone confirmation: portraits and stage decode both work now; stage art picks the wrong layer (2026-09-22)
+
+The SFF v1 offset fix confirmed working on the user's real 147-character
+roster: character portraits render for real (kineza, mole, G.Ken,
+GoD_Ryu, AngelRyu, hulk, peter, jmax all show real art in the roster
+grid), and stage tiles decode successfully too -- no more "unrecognized
+SFF version" anywhere.
+
+New, much smaller issue found by the same real-phone pass: the stage
+preview art is technically decoding fine but shows the wrong part of
+the stage -- flat sky/cloud imagery instead of the actual scene. Root
+cause: `loadStagePreview()` was hardcoded to always grab sprite group
+0/image 0, on the theory that it's the base background layer. There is
+no universal "cover art" sprite convention for MUGEN stages (unlike a
+character's 9000,0/9000,1), and on real stage files, group 0/image 0 is
+apparently the small sky/gradient backdrop layer, not the main scene.
+
+Fixed by scanning every sprite in the stage's SFF and picking the
+single **largest** one by pixel area instead of a fixed group/image
+pair (added `pickLargestSff1Sprite()`/`pickLargestSff2Sprite()`, plus a
+cheap `pcxDims()` PCX-header-only reader so the v1 path doesn't have to
+fully RLE-decode every candidate just to compare sizes). The reasoning:
+sky/gradient/parallax layers are typically small or tileable, while the
+primary background panorama is reliably the biggest single image in a
+stage's SFF -- a much better proxy than any fixed index. Verified with
+a synthetic multi-sprite SFF v1 file (a 32x24 "sky" at 0,0, a 64x48
+extra layer, and a 320x240 "main scene" at a different group/image):
+the picker correctly selects the 320x240 sprite every time, and it
+decodes successfully through the full real pipeline. `node --check`
+clean, `preflight.py` passes, real headless boot with zero page errors.
+
+Not yet re-confirmed on the user's actual stage files (this is a
+heuristic change, not something with a "correct" answer verifiable in
+isolation) -- next real-phone pass should check whether stage tiles now
+show a representative scene instead of sky.

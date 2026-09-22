@@ -1489,7 +1489,53 @@
 
   const portraitCache = new Map();
   const stagePreviewCache = new Map();
-  const STAGE_PREVIEW_REF = [0, 0]; // base background layer -- the closest thing to a universal "cover art" convention a stage def has.
+
+  // No group/image pair is a universal "cover art" convention for a stage
+  // the way 9000,0/9000,1 is for a character portrait -- a stage's own
+  // background is typically built from several layers (sky, parallax
+  // midground, foreground detail), and group 0/image 0 (tried first) landed
+  // on a small tileable sky/gradient layer on real content, not the main
+  // scene. Picking the single largest sprite in the whole SFF is a much
+  // better proxy for "the primary background panorama", since sky/gradient
+  // layers are typically small or tileable while the main backdrop is the
+  // biggest single image in the file.
+  function pcxDims(bytes, entry) {
+    const start = entry.dataStart, end = entry.dataEnd;
+    if (end - start < 128 || bytes[start] !== 10) return null;
+    const dv = new DataView(bytes.buffer, bytes.byteOffset + start, end - start);
+    const xmin = dv.getUint16(4, true), ymin = dv.getUint16(6, true);
+    const xmax = dv.getUint16(8, true), ymax = dv.getUint16(10, true);
+    const width = xmax - xmin + 1, height = ymax - ymin + 1;
+    if (width <= 0 || height <= 0 || width > 4096 || height > 4096) return null;
+    return { width, height };
+  }
+
+  function pickLargestSff1Sprite(bytes, entries) {
+    let best = -1, bestArea = 0, bestGroup = -1, bestImage = -1;
+    for (let idx = 0; idx < entries.length; idx++) {
+      const linked = resolveSff1Linked(entries, idx);
+      if (!linked) continue;
+      const dims = pcxDims(bytes, linked.entry);
+      if (!dims) continue;
+      const area = dims.width * dims.height;
+      if (area > bestArea) { bestArea = area; best = idx; bestGroup = entries[idx].group; bestImage = entries[idx].image; }
+    }
+    return best < 0 ? null : { idx: best, group: bestGroup, image: bestImage };
+  }
+
+  function pickLargestSff2Sprite(dir) {
+    let best = -1, bestArea = 0, bestGroup = -1, bestImage = -1;
+    for (let idx = 0; idx < dir.sprites.length; idx++) {
+      const requested = dir.sprites[idx];
+      const linked = resolveSff2Sprite(dir, idx);
+      if (!linked) continue;
+      const width = requested.width || linked.entry.width;
+      const height = requested.height || linked.entry.height;
+      const area = width * height;
+      if (area > bestArea) { bestArea = area; best = idx; bestGroup = requested.group; bestImage = requested.image; }
+    }
+    return best < 0 ? null : { idx: best, group: bestGroup, image: bestImage };
+  }
 
   async function loadStagePreview(stageToken) {
     const key = String(stageToken || '');
@@ -1506,16 +1552,15 @@
         if (!bytes) throw new Error('stage SFF unreadable');
 
         const version = detectSffVersion(bytes);
-        const [g, i] = STAGE_PREVIEW_REF;
 
         if (version === 2) {
           const dir = sff2Directory(bytes);
           if (!dir) throw new Error('SFF v2 directory invalid');
-          const idx = dir.sprites.findIndex(e => e.group === g && e.image === i);
-          if (idx < 0) throw new Error('no ' + g + ',' + i + ' sprite in stage SFF');
-          const decoded = decodeSff2Portrait(bytes, dir, { idx });
+          const pick = pickLargestSff2Sprite(dir);
+          if (!pick) throw new Error('no sprites found in stage SFF');
+          const decoded = decodeSff2Portrait(bytes, dir, { idx: pick.idx });
           if (!decoded || !decoded.url) throw new Error((decoded && decoded.reason) || 'decode failed');
-          const status = 'SFF v2 ' + g + ',' + i + ' ' + decoded.width + 'x' + decoded.height + ' ' + decoded.kind;
+          const status = 'SFF v2 ' + pick.group + ',' + pick.image + ' ' + decoded.width + 'x' + decoded.height + ' ' + decoded.kind + ' (largest sprite)';
           log('I29 STAGE PREVIEW · ' + key + ' ' + status + ' from ' + sffPath);
           return { url: decoded.url, status };
         }
@@ -1523,16 +1568,16 @@
         if (version !== 1) throw new Error('unrecognized SFF version -- ' + sffDiagBytes(bytes));
         const parsed = sff1Entries(bytes);
         if (!parsed || parsed.version !== 1) throw new Error('SFF v1 directory invalid');
-        const idx = parsed.entries.findIndex(e => e.group === g && e.image === i);
-        if (idx < 0) throw new Error('no ' + g + ',' + i + ' sprite in stage SFF');
-        const linked = resolveSff1Linked(parsed.entries, idx);
+        const pick = pickLargestSff1Sprite(bytes, parsed.entries);
+        if (!pick) throw new Error('no PCX sprites found in stage SFF');
+        const linked = resolveSff1Linked(parsed.entries, pick.idx);
         if (!linked) throw new Error('sprite link unresolved');
-        const palette = pcxPalette(bytes, linked.entry) || findSff1Palette(bytes, parsed.entries, idx);
+        const palette = pcxPalette(bytes, linked.entry) || findSff1Palette(bytes, parsed.entries, pick.idx);
         const decoded = decodePcx8(bytes, linked.entry, palette);
         if (!decoded) throw new Error('PCX decode failed');
         const url = rgbaToDataUrl(decoded);
         if (!url) throw new Error('canvas encode failed');
-        const status = 'SFF v1 ' + g + ',' + i + ' ' + decoded.width + 'x' + decoded.height;
+        const status = 'SFF v1 ' + pick.group + ',' + pick.image + ' ' + decoded.width + 'x' + decoded.height + ' (largest sprite)';
         log('I29 STAGE PREVIEW · ' + key + ' ' + status + ' from ' + sffPath);
         return { url, status };
       } catch (e) {
