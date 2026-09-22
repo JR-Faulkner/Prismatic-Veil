@@ -2891,3 +2891,63 @@ same 126.594px, `.wrap` narrowed to 564px, and the zip-picker button
 confirmed still genuinely clickable (`elementFromPoint` over it returns
 the button itself, not the control overlay). `node --check` clean,
 `preflight.py` passes, zero page errors in either state.
+
+---
+
+## Three real bugs found by screenshot, not by re-reading the CSS (2026-09-22)
+
+User's own screenshot of the pre-fight picker in landscape showed the
+previous pass hadn't actually worked: a huge dead-space gap between the
+picker card and the docked D-pad/buttons, plain unstyled control
+circles that didn't match the fight screen's look, and a need to scroll
+down to reach START/FIGHT -- "as if it's set in portrait mode anyway."
+Reproduced with headless Playwright at three viewports (phone 844x390,
+tablet 1180x820, wide desktop 2000x933) rather than guessing from the
+screenshot alone, and found three distinct, concrete bugs:
+
+**Bug 1 -- `.wrap`'s width formula had no upper clamp.** The previous
+pass's `max-width:calc(100vw - 280px)` was meant to narrow `.wrap` on
+phones, but on anything wider it does the opposite: at a 2000px
+viewport it computed to 1720px, blowing past the base
+`.wrap{max-width:980px}` rule entirely and matching the screenshot's
+huge gap exactly. Confirmed via `getComputedStyle` before concluding
+anything. Fixed with `max-width:min(900px,calc(100vw - 280px))` --
+same phone-narrowing behavior, but now genuinely capped.
+
+**Bug 2 -- the picker's decorative V24 skin (gradient side panels,
+"MOVEMENT"/"STRIKE BANK" labels, colored button borders) was still
+match-only.** The previous pass extended the *positioning* rules
+(width/position:fixed) to pre-fight but missed the separate block that
+actually paints the controls -- so pre-fight's now-correctly-docked
+D-pad and buttons rendered as bare, unstyled circles, visibly not
+matching the fight screen. Extended every selector in that decorative
+block (`.cz`, `.cz:after` labels, `.dpad`, `.dir`, `.acts`, `.act`,
+`.bx`/`.by`/`.bz` color variants, `.util`) to the same pre-fight
+selector as everywhere else in this pass.
+
+**Bug 3 -- fixing the width/height budget reintroduced a worse bug via
+`fitStage()`.** Giving `.wrap` a real height and `.stage` a flex-filled
+`height:auto` (so `.setup`'s existing `position:absolute;overflow-y:
+auto` could finally activate its internal scroll instead of growing the
+page) exposed that `fitStage()` (in `rig-ikemen-29.js`) sets an inline
+`width` on `.stage` unconditionally, computed to fit a 16:9 **game
+canvas** -- not the picker, which is a taller list UI with nothing to
+do with 16:9. Once `.stage` had a real height for that function to
+compute against, its aspect-fit math squeezed the whole picker down to
+an incorrect ~284px-wide box. An inline style beats non-`!important`
+CSS, so `height`/`flex` overrides alone weren't enough; needed
+`width:100%!important;max-width:100%!important` on the same rule too.
+Confirmed directly: without the width override, computed width was
+284px; with it, 900px (matching `.wrap`). Caught by re-testing after
+the first fix rather than assuming it worked, since dispatching a
+`resize` event (which `fitStage()` listens for, and which my first,
+simpler test never triggered) revealed it.
+
+**Verified with real computed-style checks and screenshots** at all
+three viewports after all three fixes: `.wrap`/`.stage` width tracks
+correctly (564px phone, 900px desktop, never runaway), the docked
+controls render with the full V24 decorative treatment matching the
+fight screen, and `document.body.scrollHeight === window.innerHeight`
+in every case (no page-level scroll forced). `node --check` clean,
+`preflight.py` passes, zero page errors at 390x844 (portrait, gate
+should show), 844x390, and 2000x933.

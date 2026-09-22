@@ -877,10 +877,48 @@ body:not(.match-live):has(#charPickerSection:not(.hide)) .controls{
 
   /* Pre-fight (setup/picker visible, no match yet): reclaim the vertical
      space the stacked-below control deck used to cost, and leave side
-     margins clear of the now-docked D-pad/action buttons. */
+     margins clear of the now-docked D-pad/action buttons.
+
+     Two bugs found by screenshot on a wider-than-phone viewport, not by
+     re-reading the CSS: (1) the width reservation had no upper clamp, so
+     "100vw - 280px" grew past the base .wrap{max-width:980px} rule on
+     anything wider than a phone -- confirmed via computed style at a
+     2000px-wide viewport: .wrap rendered at 1720px, ballooning the gap
+     between the picker card and the docked D-pad/buttons into the huge
+     dead space in the screenshot, instead of shrinking it. min()'d
+     against the original comfortable width so it only ever gets
+     narrower than 900px, never wider. (2) .wrap/.stage had no height
+     budget pre-fight (only .match-live got one), so the picker's natural
+     content height could exceed the viewport and force the whole page to
+     scroll -- exactly the "shouldn't have to scroll like it's still
+     portrait" report. .setup (the picker's own container) is already
+     `position:absolute;inset:0;overflow-y:auto` inside .stage specifically
+     so it can scroll internally, but that only works if .stage itself is
+     height-bounded; giving .wrap a flex column layout with a real height
+     and letting .stage fill what's left is what actually activates that
+     existing internal-scroll behavior instead of growing the page. */
   body:not(.match-live):has(#charPickerSection:not(.hide)) .wrap{
-    max-width:calc(100vw - 280px)!important;
+    max-width:min(900px,calc(100vw - 280px))!important;
     margin-left:auto!important;margin-right:auto!important;
+    height:calc(100dvh - 20px)!important;
+    display:flex!important;flex-direction:column!important;
+  }
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .stage{
+    /* fitStage() (rig-ikemen-29.js) sets an inline width/height on this
+       element unconditionally, computed to fit a 16:9 GAME CANVAS -- not
+       appropriate for the picker UI, which is a taller list/settings
+       layout, not a canvas. An inline style beats CSS unless !important,
+       so width needs its own override here too, not just height/flex --
+       omitting it left fitStage()'s canvas-fitting math squeezing the
+       whole picker down to an incorrect ~280px-wide box once .stage
+       actually had a real height to compute against (confirmed directly:
+       adding !important here changed computed width from 284px back to
+       filling the flex row, e.g. 900px on a wide viewport). */
+    flex:1 1 auto!important;
+    width:100%!important;
+    max-width:100%!important;
+    height:auto!important;
+    min-height:0!important;
   }
 
   /* Make the parent deck layout-free. Touch targets live in side gutters. */
@@ -1138,7 +1176,14 @@ body:not(.match-live):has(#charPickerSection:not(.hide)) .controls{
     width:min(82vw,calc(100dvh * 16 / 9))!important;
     max-width:calc(100vw - 108px)!important;
   }
-  body.match-live .cz{
+  /* Decorative V24 skin (gradients, borders, MOVEMENT/STRIKE BANK labels)
+     for the same touch controls -- previously match-only, so pre-fight's
+     side-docked controls positioned correctly (from the earlier block)
+     but rendered as bare, unstyled circles, visibly not matching the
+     fight screen's look. Extended to the same pre-fight selector as
+     everywhere else in this pass. */
+  body.match-live .cz,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .cz{
     width:min(15vw,132px)!important;max-width:132px!important;
     margin-block:7px!important;top:7px!important;bottom:7px!important;
     border-radius:18px!important;
@@ -1146,59 +1191,79 @@ body:not(.match-live):has(#charPickerSection:not(.hide)) .controls{
     box-shadow:inset 0 0 0 1px #1e4660,inset 0 1px #ffffff0d,0 8px 26px #0008!important;
     backdrop-filter:blur(6px)!important;
   }
-  body.match-live .cz.left{border-left:2px solid #229fe0!important}
-  body.match-live .cz.right{border-right:2px solid #b68a1d!important}
-  body.match-live .cz:after{
+  body.match-live .cz.left,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .cz.left{border-left:2px solid #229fe0!important}
+  body.match-live .cz.right,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .cz.right{border-right:2px solid #b68a1d!important}
+  body.match-live .cz:after,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .cz:after{
     position:absolute;top:9px;left:0;right:0;text-align:center;
     font:1000 6px ui-monospace;letter-spacing:.18em;pointer-events:none
   }
-  body.match-live .cz.left:after{content:"MOVEMENT";color:#4ebeff}
-  body.match-live .cz.right:after{content:"STRIKE BANK";color:#d3ad43}
-  body.match-live .dpad{
+  body.match-live .cz.left:after,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .cz.left:after{content:"MOVEMENT";color:#4ebeff}
+  body.match-live .cz.right:after,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .cz.right:after{content:"STRIKE BANK";color:#d3ad43}
+  body.match-live .dpad,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .dpad{
     width:min(14vw,122px)!important;height:min(14vw,122px)!important;
     min-width:112px!important;min-height:112px!important;
     padding:5px!important;border:0!important;border-radius:18px!important;opacity:.86!important;
     background:radial-gradient(circle,#0e1e2b 0 20%,#07121b 21% 62%,#03070b 63% 100%)!important;
     box-shadow:inset 0 0 0 1px #2f6a8e,inset 0 0 18px #1aa8ff20,0 7px 18px #0009!important
   }
-  body.match-live .dir{
+  body.match-live .dir,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .dir{
     margin:2px!important;border-radius:7px!important;color:#c8e9fb!important;font-size:17px!important;
     background:linear-gradient(180deg,#122637aa,#071018c7)!important;
     box-shadow:inset 0 0 0 1px #28587788!important;
     transition:transform .06s ease,filter .06s ease,box-shadow .06s ease!important
   }
-  body.match-live .dir.center{
+  body.match-live .dir.center,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .dir.center{
     margin:7px!important;border-radius:50%!important;color:#61bee9!important;font-size:6px!important;
     background:radial-gradient(circle,#102c3f,#03070b)!important;
     box-shadow:inset 0 0 0 1px #28739e,0 0 12px #1aa8ff20!important
   }
-  body.match-live .dir.on{
+  body.match-live .dir.on,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .dir.on{
     transform:scale(.88)!important;filter:brightness(1.75)!important;
     background:radial-gradient(circle,#23aef0aa,#071018 70%)!important;
     box-shadow:inset 0 0 0 1px #7bd7ff,0 0 14px #1aa8ff99!important
   }
-  body.match-live .acts{
+  body.match-live .acts,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .acts{
     width:min(17vw,158px)!important;height:min(14vw,122px)!important;
     min-width:150px!important;min-height:116px!important;opacity:.88!important;pointer-events:auto!important
   }
-  body.match-live .act{
+  body.match-live .act,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .act{
     width:min(5.6vw,44px)!important;height:min(5.6vw,44px)!important;
     min-width:44px!important;min-height:44px!important;border-width:1px!important;font-size:10px!important;
     background:radial-gradient(circle at 34% 27%,#ffffff3b,#172331 36%,#05090e 78%)!important;
     box-shadow:0 6px 11px #000b,inset 0 0 0 1px #ffffff0b,inset 0 -6px 10px #0008!important
   }
-  body.match-live .act.on{
+  body.match-live .act.on,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .act.on{
     transform:scale(.88)!important;filter:brightness(1.65)!important;
     box-shadow:0 0 18px currentColor,inset 0 0 8px #fff5!important
   }
-  body.match-live .bx,body.match-live .bz{color:#6bcaff!important;border-color:#25a8ed!important}
-  body.match-live .by,body.match-live .bx2{color:#ffe485!important;border-color:#d6aa31!important}
-  body.match-live .bz2,body.match-live .bc{color:#ff858d!important;border-color:#d94c59!important}
-  body.match-live .util{
+  body.match-live .bx,body.match-live .bz,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .bx,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .bz{color:#6bcaff!important;border-color:#25a8ed!important}
+  body.match-live .by,body.match-live .bx2,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .by,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .bx2{color:#ffe485!important;border-color:#d6aa31!important}
+  body.match-live .bz2,body.match-live .bc,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .bz2,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .bc{color:#ff858d!important;border-color:#d94c59!important}
+  body.match-live .util,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .util{
     opacity:.50!important;padding:3px!important;border-radius:999px!important;
     background:#020609aa!important;box-shadow:inset 0 0 0 1px #1d3b4d!important
   }
-  body.match-live .util button{border-color:#2a536c!important;background:#07111a!important;color:#9bb9cc!important}
+  body.match-live .util button,
+  body:not(.match-live):has(#charPickerSection:not(.hide)) .util button{border-color:#2a536c!important;background:#07111a!important;color:#9bb9cc!important}
 }
 
 </style>
