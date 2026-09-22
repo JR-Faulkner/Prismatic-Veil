@@ -328,3 +328,65 @@ body.playing .scene p{max-width:70ch}
 body.playing .free textarea{background:#070d11!important;border:1px solid #43565e!important;box-shadow:inset 3px 0 0 #2ee8e2,0 0 0 3px #091014!important}
 @media(max-width:430px){body.playing .pcuUser{padding:9px 10px!important;min-height:58px}body.playing .stat{padding:9px 4px!important}body.playing .choice{min-height:56px!important;padding:8px 10px!important}body.playing .btn{min-height:52px!important}body.playing .stat b{font-size:17px!important}body.playing #money{font-size:16px!important}}
 
+
+
+/* ===== A+T V4.13 · BEHEMOTH2 OS RECONSTRUCTION ===== */
+body.playing .shell{position:relative;padding:6px!important;background:#071014!important;border:1px solid #3b4d55!important;box-shadow:0 16px 40px #000b,inset 0 0 0 2px #020609!important}
+body.playing .shell>*{position:relative;z-index:1}
+body.playing .shell:after{content:"";position:absolute;inset:4px;border:1px solid #1d2b31;pointer-events:none;clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}
+.systemRail{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:-1px 4px 5px;background:#26373e;border:1px solid #344851;overflow:hidden}
+.systemRail span{display:flex;align-items:center;justify-content:center;gap:6px;background:#091216;padding:5px 4px;color:#8fa0a7;font:800 7px/1 "SFMono-Regular",Menlo,monospace;letter-spacing:.12em;white-space:nowrap}
+.railLed{width:6px;height:6px;border-radius:50%;background:#5f6a6e;box-shadow:inset 0 0 0 1px #000}
+.railLed.on{background:#2ee8e2;box-shadow:0 0 8px #2ee8e2}
+.railLed.power{background:#ffbd3f;box-shadow:0 0 7px #ffbd3f88}
+body.playing .journey{margin:0 2px 4px!important;gap:1px!important;background:#25363d!important;border:1px solid #30434b!important}
+body.playing .journey>div{border:0!important;border-radius:0!important;background:#0b1419!important;padding:5px 8px!important}
+body.playing .stats{margin:0 2px 5px!important;gap:2px!important;background:#26373e!important;border:1px solid #344851!important;padding:2px!important}
+body.playing .stat{min-height:61px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;background-image:var(--b2-stat-frame)!important}
+body.playing .stat span{margin-top:3px!important}
+body.playing .nav{margin:0 2px 5px!important;gap:1px!important;background:#27383f!important;border:1px solid #33474f!important}
+body.playing .nav button{min-height:46px!important;position:relative!important}
+body.playing .nav button:before{content:"";position:absolute;left:50%;bottom:3px;width:18px;height:2px;transform:translateX(-50%);background:#45545a}
+body.playing .nav button.active:before{background:#2ee8e2;box-shadow:0 0 8px #2ee8e2}
+body.playing .sceneWindow{margin:0 4px 4px!important}
+body.playing .scene{margin:0 2px 5px!important;min-height:128px!important;background-image:var(--b2-panel-frame)!important;background-size:100% 100%!important}
+body.playing .sceneTop{border-bottom:1px solid #263941;padding-bottom:6px!important;margin-bottom:7px!important}
+body.playing .choices{margin:0 2px 6px!important;gap:2px!important}
+body.playing .choice{display:grid!important;grid-template-columns:72px minmax(0,1fr) 108px!important;min-height:68px!important;padding:0!important;background-image:var(--b2-choice-frame)!important}
+.choiceIndex,.choiceState{height:100%;display:flex;align-items:center;justify-content:center;background:#0a1318cc}
+.choiceIndex{border-right:1px solid #344850;box-shadow:inset 4px 0 0 #2ee8e2}
+.choiceBody{padding:10px 12px!important;align-self:center}
+.choiceState{border-left:1px solid #344850;color:#b7c3c7;font:900 8px/1 "SFMono-Regular",Menlo,monospace;letter-spacing:.1em;overflow:hidden}
+.choiceState .segDigit{height:27px;width:16px}
+.usedMark{font:900 20px/1 system-ui;color:#6d7e84}
+body.playing .free{margin:0 2px 5px!important;border:1px solid #344850!important;background:#081115!important;padding:4px!important;box-shadow:inset 0 0 0 1px #020507!important}
+body.playing .free textarea{margin:0!important;min-height:64px!important;border:0!important;background:#050c10!important;box-shadow:inset 4px 0 0 #2ee8e2!important}
+body.playing .actions{margin:3px 0 0!important;gap:3px!important;background:#26373e!important;padding:2px!important}
+body.playing .btn{min-height:58px!important}
+.segDigit{width:19px;height:34px;display:inline-block;vertical-align:middle;overflow:visible}
+.segDigit .seg{fill:currentColor;opacity:.065}
+.segDigit .seg.on{opacity:1;filter:drop-shadow(0 0 2px currentColor)}
+.segGlyph{display:inline-flex;align-items:center;justify-content:center;min-width:.46em;height:1em;font:900 .86em/1 "SFMono-Regular",Menlo,monospace;vertical-align:middle}
+body.playing .stat b,body.playing .choiceIndex,body.playing .choiceState{color:#e7f9fa!important}
+body.playing #day .segDigit,body.playing #apText .segDigit{color:#9ffaf5}
+body.playing #money .segDigit{color:#f3f6f7}
+body.playing #money .segGlyph:first-child{color:#ffbd3f}
+body.playing .choiceIndex .segDigit{height:38px;width:22px;color:#eaf8f8}
+body.playing .choiceState .segDigit{color:#aaf6f2}
+body.playing .choice:active .choiceIndex{box-shadow:inset 4px 0 0 #ffbd3f}
+body.playing .choice:active .segDigit{color:#ffd46c}
+body.playing .alterSense,body.playing .alterCard,body.playing .cat,body.playing .worthCard,body.playing .jrow{margin-left:2px!important;margin-right:2px!important}
+body.playing .alterCard{padding:14px!important}
+body.playing .meter{min-height:34px!important;border:1px solid #344850!important;background:#081216!important}
+body.playing .alterChoice{min-height:58px!important;border:1px solid #344850!important;background:#0a1419!important}
+@media(max-width:430px){
+ .systemRail span{font-size:6px!important;letter-spacing:.08em!important}
+ body.playing .choice{grid-template-columns:58px minmax(0,1fr) 82px!important;min-height:65px!important}
+ .choiceBody{padding:9px 9px!important}
+ .choiceState{font-size:7px!important}
+ body.playing .choiceIndex .segDigit{height:34px;width:20px}
+ body.playing .stat b .segDigit{height:30px;width:17px}
+ body.playing #money .segDigit{height:28px;width:16px}
+ body.playing .free textarea{min-height:60px!important}
+}
+

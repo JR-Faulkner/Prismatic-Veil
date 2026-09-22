@@ -260,20 +260,31 @@ function updateSceneWindow(){
   $('sceneKicker').textContent=S.currentEvent?'LIVE EVENT':'CURRENT SCENE';
 }
 
+const SEG_MAP={0:'abcdef',1:'bc',2:'abdeg',3:'abcdg',4:'bcfg',5:'acdfg',6:'acdefg',7:'abc',8:'abcdefg',9:'abcdfg'};
+function segDigit(ch){
+ const on=SEG_MAP[ch]||'';
+ const r=(id,x,y,w,h)=>'<rect class="seg '+(on.includes(id)?'on':'')+'" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="2"/>';
+ return '<svg class="segDigit" viewBox="0 0 40 68" aria-hidden="true">'+r('a',8,2,24,6)+r('b',30,8,6,22)+r('c',30,38,6,22)+r('d',8,60,24,6)+r('e',4,38,6,22)+r('f',4,8,6,22)+r('g',8,31,24,6)+'</svg>';
+}
+function digitalHTML(value){
+ return String(value).split('').map(ch=>/[0-9]/.test(ch)?segDigit(ch):'<span class="segGlyph">'+escapeHtml(ch)+'</span>').join('');
+}
+function setDigital(el,value){if(!el)return;el.innerHTML=digitalHTML(value);el.setAttribute('aria-label',String(value))}
+
 function render(){
  document.body.classList.add('playing');
- $('setup').classList.add('hidden');$('game').classList.remove('hidden');$('who').textContent=S.name;$('premise').textContent=S.premise||BACKGROUND;$('day').textContent=S.day;$('money').textContent='Ƶ '+S.money.toLocaleString();
+ $('setup').classList.add('hidden');$('game').classList.remove('hidden');$('who').textContent=S.name;$('premise').textContent=S.premise||BACKGROUND;setDigital($('day'),String(S.day).padStart(2,'0'));setDigital($('money'),'Ƶ '+S.money.toLocaleString());
  const weekNo=Math.ceil(S.day/7),phase=S.day<=7?'FOOTHOLD':S.day<=14?'ROOTS':S.day<=21?'DEEP VERDANT':'OPEN FRONTIER';
  if($('weekLabel'))$('weekLabel').textContent=S.day<=21?weekNo:'OPEN';
  if($('phaseLabel'))$('phaseLabel').textContent=phase;
  if($('weekTrack'))$('weekTrack').style.width=(S.day<=21?((((S.day-1)%7)+1)/7)*100:100)+'%';
- S.maxAP=S.baseAP+worthBonus();if(S.ap>S.maxAP)S.ap=S.maxAP;$('apText').textContent=S.ap+'/'+S.maxAP;$('apdots').innerHTML='';
+ S.maxAP=S.baseAP+worthBonus();if(S.ap>S.maxAP)S.ap=S.maxAP;setDigital($('apText'),S.ap+'/'+S.maxAP);$('apdots').innerHTML='';
  for(let i=0;i<S.maxAP;i++){const d=document.createElement('i');d.className='dot'+(i<S.ap?' on':'');$('apdots').appendChild(d)}
  const tw=totalWorth();$('worthTotal').textContent=tw;$('worthTotalTop').textContent=tw;$('stats').classList.toggle('hasWorth',S.worthUnlocked);const showWorth=S.worthUnlocked&&alterStage()>=2;$('worthStat').classList.toggle('hidden',!showWorth);$('worthSummary').classList.toggle('show',showWorth);
  if(S.worthUnlocked){const nx=nextThreshold();$('worthNext').innerHTML=nx?'NEXT RESONANCE<br><b>'+(nx-tw)+' WORTH AWAY</b>':'KNOWN RESONANCE<br><b>MAXED FOR NOW</b>'}
  const sc=scene();updateSceneWindow();$('thread').textContent=sc.thread;$('mood').textContent=sc.mood;$('sceneTitle').textContent=sc.title;$('sceneText').textContent=sc.text;$('result').textContent=S.result||'';
  $('eventChip').className='eventChip'+(S.currentEvent?' show':'');$('eventChip').textContent=S.currentEvent?'✦ '+sc.chip:'';
- $('choices').innerHTML='';sc.choices.slice(0,5).forEach((c,i)=>{const key=choiceKey(c[2]),used=!!(S.usedChoices&&S.usedChoices[key]),b=document.createElement('button');b.className='choice'+(used?' used':'');b.type='button';b.disabled=used;b.innerHTML='<span class="num">'+(used?'✓':(i+1))+'</span><span><strong>'+c[0]+'</strong><small>'+c[1]+'</small></span><span class="chance">'+(used?'USED':c[3])+'</span>';b.onclick=()=>{S.usedChoices=S.usedChoices||{};S.usedChoices[key]=true;handle(c[2])};$('choices').appendChild(b)});
+ $('choices').innerHTML='';sc.choices.slice(0,5).forEach((c,i)=>{const key=choiceKey(c[2]),used=!!(S.usedChoices&&S.usedChoices[key]),b=document.createElement('button');b.className='choice'+(used?' used':'');b.type='button';b.disabled=used;b.innerHTML='<span class="choiceIndex">'+(used?'<span class="usedMark">✓</span>':digitalHTML(i+1))+'</span><span class="choiceBody"><strong>'+c[0]+'</strong><small>'+c[1]+'</small></span><span class="choiceState">'+(used?'USED':((String(c[3]).includes('%'))?digitalHTML(c[3]):escapeHtml(c[3])))+'</span>';b.onclick=()=>{S.usedChoices=S.usedChoices||{};S.usedChoices[key]=true;handle(c[2])};$('choices').appendChild(b)});
  renderCategories();renderSelected();renderGrowth();renderJournal();save();
 }
 function alterStage(){
