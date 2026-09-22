@@ -303,3 +303,28 @@ body.playing .identity summary>span:first-child{font-size:8px!important;color:#b
  .free textarea{min-height:54px!important}
 }
 
+
+
+/* ===== A+T V4.12 · PRODUCTION ASSET INTEGRATION ===== */
+:root{--b2-panel-frame:url("./ui/behemoth2/b2-panel-frame.svg?v=v4.12.0");--b2-stat-frame:url("./ui/behemoth2/b2-stat-tile.svg?v=v4.12.0");--b2-choice-frame:url("./ui/behemoth2/b2-choice-row.svg?v=v4.12.0");--b2-primary-frame:url("./ui/behemoth2/b2-primary-button.svg?v=v4.12.0");--b2-secondary-frame:url("./ui/behemoth2/b2-secondary-button.svg?v=v4.12.0");--b2-tab-frame:url("./ui/behemoth2/b2-tab.svg?v=v4.12.0")}
+body.playing .pcuUser,body.playing .scene,body.playing .alterSense,body.playing .alterCard,body.playing .cat,body.playing .worthCard,body.playing .jrow{background-color:transparent!important;background-image:var(--b2-panel-frame)!important;background-size:100% 100%!important;background-repeat:no-repeat!important;border:0!important;clip-path:none!important;box-shadow:none!important}
+body.playing .pcuUser{padding:11px 13px!important;min-height:64px}
+body.playing .stat{background-color:transparent!important;background-image:var(--b2-stat-frame)!important;background-size:100% 100%!important;background-repeat:no-repeat!important;border:0!important;clip-path:none!important;padding:10px 6px!important}
+body.playing .nav{border:0!important;background:transparent!important;padding:0!important;gap:2px!important}
+body.playing .nav button{background-color:transparent!important;background-image:var(--b2-tab-frame)!important;background-size:100% 100%!important;background-repeat:no-repeat!important;border:0!important;clip-path:none!important;min-height:42px!important}
+body.playing .nav button.active{background-color:#0b292e!important;background-image:var(--b2-tab-frame)!important;filter:drop-shadow(0 0 4px #2ee8e266)!important;box-shadow:inset 0 -3px 0 #2ee8e2!important}
+body.playing .choice{background-color:transparent!important;background-image:var(--b2-choice-frame)!important;background-size:100% 100%!important;background-repeat:no-repeat!important;border:0!important;clip-path:none!important;min-height:58px!important;padding:9px 12px!important}
+body.playing .choice:active{filter:drop-shadow(0 0 5px #ffbd3f66)}
+body.playing .btn.primary{background-color:transparent!important;background-image:var(--b2-primary-frame)!important;background-size:100% 100%!important;background-repeat:no-repeat!important;border:0!important;clip-path:none!important;box-shadow:none!important;color:#17130b!important;min-height:54px!important}
+body.playing .btn:not(.primary){background-color:transparent!important;background-image:var(--b2-secondary-frame)!important;background-size:100% 100%!important;background-repeat:no-repeat!important;border:0!important;clip-path:none!important;min-height:54px!important}
+body.playing .sceneWindow{border:0!important;background-color:#091014!important;outline:1px solid #4c6068!important;outline-offset:-5px!important;box-shadow:0 0 0 3px #091014,0 2px 0 #020405!important;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)!important}
+body.playing .choice .num,body.playing .stat b,body.playing #money,body.playing #day,body.playing #apText,body.playing .chance{font-family:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace!important;font-variant-numeric:tabular-nums slashed-zero!important;font-weight:900!important;letter-spacing:.01em!important}
+body.playing .choice .num{font-size:15px!important}
+body.playing .stat b{font-size:18px!important}
+body.playing #money{font-size:17px!important}
+body.playing .chance{font-size:8px!important}
+body.playing .scene{padding:15px!important}
+body.playing .scene p{max-width:70ch}
+body.playing .free textarea{background:#070d11!important;border:1px solid #43565e!important;box-shadow:inset 3px 0 0 #2ee8e2,0 0 0 3px #091014!important}
+@media(max-width:430px){body.playing .pcuUser{padding:9px 10px!important;min-height:58px}body.playing .stat{padding:9px 4px!important}body.playing .choice{min-height:56px!important;padding:8px 10px!important}body.playing .btn{min-height:52px!important}body.playing .stat b{font-size:17px!important}body.playing #money{font-size:16px!important}}
+
