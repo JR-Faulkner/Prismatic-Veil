@@ -3132,3 +3132,76 @@ density (slot mark / role / name / state, four lines) but keeps every
 field rather than hiding any of them -- if it's still too tall for
 comfort, dropping a field is a content decision for the user to make,
 not one made unilaterally here.
+
+---
+
+## Both picker screens were showing at once on real hardware -- a CSS specificity bug in the previous entry's own fix (2026-09-22)
+
+User tested the arena-preview/tile-quartering/no-scroll pass above on a
+real iPhone and reported Select Fighters and Select Arena both visible
+stacked on one screen, regardless of which screen JS had switched to --
+screenshots confirmed both the versus banner/roster AND the stage
+preview/stage grid rendering simultaneously, both before and after
+tapping NEXT: ARENA.
+
+This was missed by the previous entry's own synthetic-harness
+verification because that check only asked "is the action-dock inside
+the viewport," not "is the other screen actually hidden" -- a real gap
+in what got measured, not a flake.
+
+**Root cause**: `showPickerScreen()`'s JS toggle (`classList.toggle('hide', ...)`)
+was, and still is, correct. The bug is pure CSS cascade. The previous
+entry's flex-chain fix included:
+
+```css
+body:not(.match-live):has(#charPickerSection:not(.hide)) #charPickerSection,
+body:not(.match-live):has(#charPickerSection:not(.hide)) .picker-screen{
+  display:flex!important; ...
+}
+```
+
+`.hide{display:none!important}` is also `!important`, so the tiebreak
+is specificity, not source order -- and this selector's specificity is
+much higher than a bare `.hide` class: the `:has(#charPickerSection:not(.hide))`
+clause carries the specificity of an ID selector (`#charPickerSection`),
+so the whole compound selector outweighs `.hide` by a wide margin
+(1 ID + 3 classes + 1 element, vs. `.hide`'s 1 class). `display:flex!important`
+from this rule was winning over `display:none!important` from `.hide`
+on `#pickerScreenArena`, unconditionally, regardless of whether that
+specific element carried the `.hide` class or not.
+
+The `#charPickerSection` half of the same rule never had this problem,
+because the `:has()` guard already requires `#charPickerSection` itself
+to lack `.hide` before the rule can match at all -- the gating
+condition and the element are the same, so there's no daylight for a
+conflict. `.picker-screen`'s own hidden/visible state is independent of
+that gate (it's `#pickerScreenFighters`/`#pickerScreenArena` toggling
+between themselves, not tied to `#charPickerSection`'s own class), which
+is exactly the daylight the bug lived in. Every other rule in the same
+block either never sets `display` at all (so `.hide` wins by default) or
+targets an element whose only hidden state already IS the same gating
+condition (`#charPickerSection` itself) -- checked every one individually
+via grep, `.picker-screen` was the only match for this failure shape.
+
+**Fix**: one selector, `.picker-screen` -> `.picker-screen:not(.hide)`.
+Now the rule simply never matches an element that also carries `.hide`,
+so there's no specificity fight to have.
+
+**Verified** two ways at 844x390 with the same disposable
+`__testOpenPicker()` harness (147/8 synthetic dataset, deleted after):
+(1) explicit computed-style check on both screens through a full
+open -> NEXT: ARENA -> BACK cycle, confirming the inactive screen reads
+`display:none` / zero-height and the active one reads `display:flex`
+at every step, not just at the end state; (2) re-ran the previous
+entry's action-dock-in-viewport measurement to confirm the `:not(.hide)`
+addition didn't regress the space-management fix it was layered on top
+of -- both screens' docks still land fully inside the viewport. `node
+--check` clean, `preflight.py` passes with the same pre-existing I28/I29
+anchor warning, real-file headless boot check zero errors at
+390x844/844x390/2000x933.
+
+Lesson for next time, not just for this bug: verifying "the dock is
+inside the viewport" is not the same claim as "only one screen is
+visible" -- when a fix's whole design is that a toggle-hidden element's
+own hidden state matters, the check needs to assert that state directly
+at every transition, not infer it from something adjacent.
