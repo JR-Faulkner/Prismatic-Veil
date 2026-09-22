@@ -230,22 +230,22 @@ function categoryItems(cat){return Object.entries(S.items).filter(([,v])=>v.cate
 function categoryStat(cat,entries){const focus=(CAT[cat]||CAT.other).focus,vals=entries.map(([,x])=>x[focus]||0).filter(v=>v>0);return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0}
 const SCENE_VISUALS={
   1:['road','THE VERDANT ROAD','Beyond the last staffed post'],
-  2:['foothold','THE FOOTHOLD YARD','Rented gravel, work bay, first real base'],
+  2:['foothold','HOME BASE','Rented gravel, work bay, first real base'],
   3:['board','RECOVERY BOARD','Work begins to find you'],
   4:['beacon','OLD SERVICE ROAD','Vines, survey hardware, uncertain Claim'],
   5:['service','SERVICE SPUR','Collapsed gate and corroded infrastructure'],
   6:['station','OLD FLOOD STATION','The first contradiction'],
   7:['roadside','ROADSIDE EATERY','Local crews and an old word'],
-  8:['foothold','THE FOOTHOLD YARD','A name on the gate'],
-  9:['foothold','THE FOOTHOLD YARD','Your first walk-in customer'],
+  8:['foothold','HOME BASE','A name on the gate'],
+  9:['foothold','HOME BASE','Your first walk-in customer'],
   10:['greenhouse','ABANDONED GREENHOUSE','Steel, vines, and a live recovery site'],
   11:['homecall','FAMILY CALL','Home feels different from out here'],
   12:['market','SALVAGE ROW','Tarps, tools, rumors, and recovered things'],
   13:['road','UNMAPPED SPUR','A road you do not remember'],
   14:['rainline','THE RAINLINE','Weather stops in a perfect line'],
-  15:['foothold','THE FOOTHOLD YARD','The business starts paying back'],
+  15:['foothold','HOME BASE','The business starts paying back'],
   16:['pump','OLD PUMP HOUSE','Water below, equipment beyond'],
-  17:['foothold','THE FOOTHOLD YARD','Claim gains distance'],
+  17:['foothold','HOME BASE','Claim gains distance'],
   18:['market','SALVAGE ROW','An old page in a junk box'],
   19:['relay','OLD RELAY SHACK','A possible foothold deeper in'],
   20:['relayinside','HIDDEN RELAY ROOM','A room the floorplan forgot'],
@@ -261,6 +261,7 @@ function updateSceneWindow(){
 }
 
 function render(){
+ document.body.classList.add('playing');
  $('setup').classList.add('hidden');$('game').classList.remove('hidden');$('who').textContent=S.name;$('premise').textContent=S.premise||BACKGROUND;$('day').textContent=S.day;$('money').textContent='$'+S.money.toLocaleString();
  const weekNo=Math.ceil(S.day/7),phase=S.day<=7?'FOOTHOLD':S.day<=14?'ROOTS':S.day<=21?'DEEP VERDANT':'OPEN FRONTIER';
  if($('weekLabel'))$('weekLabel').textContent=S.day<=21?weekNo:'OPEN';
