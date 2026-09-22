@@ -3205,3 +3205,109 @@ inside the viewport" is not the same claim as "only one screen is
 visible" -- when a fix's whole design is that a toggle-hidden element's
 own hidden state matters, the check needs to assert that state directly
 at every transition, not infer it from something adjacent.
+
+---
+
+## Touch controls removed from the picker entirely, versus banner collapsed to a thin strip (2026-09-22)
+
+Real-device follow-up on top of the previous two entries: the fix
+landed correctly (both picker screens now toggle properly, per the
+entry above), but the user reported the fighter picker still felt too
+tight and proposed the real culprit directly -- the MOVEMENT/STRIKE
+BANK touch-control docks were rendering on both edges of the screen
+the entire time you're just picking a fighter, doing nothing (no D-pad
+input is read on a picker screen), and suggested hiding them entirely
+during selection with a slide-in transition when the match actually
+starts. Asked for a second opinion first rather than just implementing:
+agreed the controls were the bigger lever, but pushed back on
+completely deleting the versus banner in favor of collapsing it (small
+name chips instead of full portrait cards) so there's still a visual
+confirmation of the pick. User picked both recommended options.
+
+**Controls hidden pre-fight.** A previous pass (visible in this file's
+own older Kineza-lineage history, not written by this session) had
+deliberately extended the match-only touch-control styling to the
+picker too, specifically so the D-pad/strike bank could be "tested"
+before the fight started -- `body:not(.match-live) .controls{display:
+none!important}` (the honest default) was overridden right below it by
+`body:not(.match-live):has(#charPickerSection:not(.hide)) .controls{
+display:block!important}`, and every `.cz`/`.dpad`/`.acts`/`.act`/
+`.dir`/`.util`/`.bx` etc. selector in both the layout block and the
+decorative-skin block was duplicated with that same picker-context
+half so the docked controls would render fully styled, not as bare
+unstyled circles. Reverted all of it: removed the `display:block`
+override outright, and stripped the picker-context half from every one
+of those paired selectors (roughly 40 lines across two blocks),
+leaving each rule `body.match-live .xyz{...}` only. Nothing needed
+touching in the JS -- `setup.classList.add('hide')`'s existing
+MutationObserver-driven `body.match-live` toggle was always correct;
+this was 100% a CSS-side "show it here too" decision to reverse.
+
+**Reclaimed the width that was reserved for the (now gone) gutters.**
+`.wrap`'s picker-context rule was clamping to `min(900px,calc(100vw -
+280px))` specifically to leave 140px clear on each side for the docked
+D-pad/strike-bank panels. With those panels never rendering pre-fight
+anymore, that reservation was pure dead space -- removed in favor of
+the app's own normal `.wrap{max-width:980px}`. Measured directly: wrap
+width at an 844px-wide viewport went from 564px (900 clamped by
+100vw-280) to 824px, handing the whole picker card back ~260px of
+width it had been ceding to controls nobody could see anyway.
+
+**Versus banner collapsed, not deleted.** `.fighter-role` ("PLAYER
+ONE"/"PLAYER TWO") and `.fighter-state` ("PRIMARY"/"RIVAL") -- flavor
+labels, not information needed while picking -- are now `display:none`
+in the picker context, leaving only the slot mark (P1/CPU) and the
+fighter's actual name. This is what let `.fighter-card`'s min-height
+come down from the previous entry's 32px to 26px and *actually reach*
+that floor: previously, shrinking min-height further did nothing
+because the card's real height was being forced by its own four
+stacked lines of text, not by the min-height property at all -- with
+two of those four lines gone, the floor became reachable. Deliberately
+did **not** touch `.portrait-well`/`.portrait-art` -- that system
+positions art in percentages of its own container (`height:122%`,
+`object-fit:contain`/`cover`) with several hand-tuned per-character
+crop overrides (Kineza's `data-direct-kineza` and `portrait-authority`
+variants), and this project's own history above is full of art-
+rendering regressions from exactly this kind of "looked like a safe
+CSS tweak" surgery. Shrinking the *container* lets the existing
+percentage-based system scale the same real art down for free, without
+touching a single one of those tuned crop rules.
+
+**Slide-in entrance for match start.** Added a small, purely additive
+CSS keyframe pair (`controlsSlideInLeft`/`controlsSlideInRight`)
+animating `.cz.left`/`.cz.right` from off-screen-translated+transparent
+to their normal docked position+opacity, applied only under `body.
+match-live .cz.left/.right`. Deliberately did not attempt a continuous
+cross-fade requiring `.controls` to stay positioned-but-invisible
+through the whole pre-fight state (which would have meant re-touching
+most of the ~40 lines just reverted, right after two real regressions
+already shipped from CSS surgery in this same file this session) --
+a CSS animation retriggers on its own every time an element newly
+starts matching a rule, which is exactly what happens the instant
+`match-live` gets added, so this needed zero JS changes and zero
+touching of the static `!important` sizing rules. `.util` (pause/
+settings) was deliberately left out of the animation since it already
+owns a static `transform:translateX(-50%)` for centering that an
+animated `transform` would fight.
+
+**Verified**, 844x390, synthetic 147-character/8-stage dataset via the
+same disposable `__testOpenPicker()` harness: `.controls`/`.cz` compute
+`display:none` throughout the picker on both screens (not just
+"looks hidden"); `document.documentElement.scrollHeight` (390) exactly
+equals `window.innerHeight` (390) -- zero page-level scroll; **`#setup`'s
+own `scrollHeight` (336) now exactly equals its `clientHeight` (336)**,
+meaning the picker's own internal container doesn't need to scroll
+either, not just that the action-dock happens to stay in view; roster
+viewport height went from the previous entry's 38px to 151px (about
+four full 36px rows visible before any scroll is needed at all);
+`.fighter-card` measures exactly 26px (matching min-height, confirming
+the text-content floor is gone); manually toggling `#setup`'s `.hide`
+class (the same trigger `startMatch()` uses) confirmed `body.match-live`
+applies and both `.cz.left`/`.cz.right` report the correct
+`animationName` via computed style. Screenshots of both screens at
+this viewport show no control clutter, a one-line versus banner, and
+four full roster rows with the arena preview prominent at the top of
+its own screen. `node --check` clean, `preflight.py` passes (same
+pre-existing I28/I29 anchor warning), real-file headless boot check
+zero errors at 390x844/844x390/2000x933. Debug harness deleted before
+commit -- never shipped.
