@@ -507,8 +507,15 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 .row-note{font-size:7px;color:#486d89}
 .fighter-pick-panel:nth-child(2) .row-note{color:#8d772f}
 .stage-bay{margin-top:9px;padding:9px;border:1px solid #173a56;border-radius:8px;background:linear-gradient(180deg,#08131d,#060d14)}
-.stage-bay-head{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-bottom:7px}
-.stage-label-big{font-size:14px;font-weight:1000;font-style:italic;text-transform:uppercase;letter-spacing:.03em;color:#eef7ff}
+/* Left side used to carry its own "02 / ARENA" / "Stage Select" heading,
+   left over from before the picker was split into two full screens
+   (see IKEMEN_FAI_LIVE_NOTES.md) -- once #pickerScreenArena got its own
+   .select-titlebar ("02 SELECT ARENA / ARENA SELECT"), this became a
+   second heading saying the same thing right underneath the first,
+   which is exactly what got reported as "says arena select twice."
+   Removed; .stage-readout (the actually-unique "which stage is
+   selected" readout) now sits alone at the row's end. */
+.stage-bay-head{display:flex;align-items:flex-end;justify-content:flex-end;gap:8px;margin-bottom:7px}
 .stage-readout{margin:0!important;min-width:150px;text-align:right;background:#0b1721!important}
 .stage-grid{max-height:104px!important;grid-template-columns:repeat(auto-fill,minmax(86px,1fr))!important}
 .action-dock{display:grid;grid-template-columns:auto minmax(150px,1fr);gap:8px;margin-top:10px}
@@ -540,7 +547,7 @@ body[data-runtime-state="error"] .stage{border-color:#8c2530}
 
 @media(max-width:420px){
   .bar{min-height:78px}.tag{font-size:8px}.controls{height:205px}
-  .fighter-name{font-size:11px}.fighter-role,.fighter-state{font-size:6px}.stage-readout{min-width:110px}.stage-label-big{font-size:12px}
+  .fighter-name{font-size:11px}.fighter-role,.fighter-state{font-size:6px}.stage-readout{min-width:110px}
   .dpad{width:138px;height:138px}.acts{width:176px;height:146px}
 }
 @media(min-width:1100px){.wrap{max-width:1200px}}
@@ -1471,10 +1478,6 @@ body:not(.match-live) .controls{display:none!important}
                 <div class="stage-preview-name">ARENA PREVIEW</div>
               </div>
               <div class="stage-bay-head">
-                <div>
-                  <span class="select-kicker">02 / ARENA</span>
-                  <div class="stage-label-big">Stage Select</div>
-                </div>
                 <div class="sel-item stage-readout">
                   <span class="sel-label">SELECTED STAGE</span>
                   <span id="selStage">CHOOSE STAGE</span>

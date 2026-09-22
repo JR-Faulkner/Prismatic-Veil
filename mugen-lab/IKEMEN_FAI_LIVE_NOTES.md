@@ -3311,3 +3311,45 @@ its own screen. `node --check` clean, `preflight.py` passes (same
 pre-existing I28/I29 anchor warning), real-file headless boot check
 zero errors at 390x844/844x390/2000x933. Debug harness deleted before
 commit -- never shipped.
+
+---
+
+## Arena screen had a second, genuinely redundant "arena select" heading (2026-09-22)
+
+Same testing pass as the entry above -- user caught, in the same
+breath, that the Arena screen "says arena select twice and is cut
+off." Checked it directly rather than assuming it was another symptom
+of the just-fixed control-clutter/width issue: it wasn't (or wasn't
+only that).
+
+`#pickerScreenArena`'s `.stage-bay-head` carried its own inline
+heading -- `<span class="select-kicker">02 / ARENA</span>` +
+`<div class="stage-label-big">Stage Select</div>` -- sitting directly
+under the screen's own `.select-titlebar`, which *already* renders
+"02" / "SELECT ARENA" / "ARENA SELECT" (kicker, heading, kicker) for
+the whole screen. This second heading predates the two-screen split
+documented earlier in this file: before that split, arena selection
+was a sub-section of one shared picker page and needed its own local
+heading; once it got a full screen with its own titlebar, the inline
+one became a straight duplicate that nobody removed. `.select-kicker`
+turned out to have no CSS rule backing it at all (confirmed by grep) --
+further sign this was leftover markup nobody had touched since before
+the split, not a deliberate second heading.
+
+Removed the redundant heading entirely (both the `<span>` and `<div>`,
+plus a media-query rule that only ever styled the deleted
+`.stage-label-big`), leaving `.stage-bay-head` with just the
+`.stage-readout` ("SELECTED STAGE: <name>") pill, which is the only
+part of that row carrying actually-unique information. `.stage-bay-head`
+switched from `justify-content:space-between` to `justify-content:
+flex-end` so the lone remaining pill still sits at the row's end
+instead of the row collapsing to a left-aligned single item.
+
+**Verified**: screenshot of the Arena screen at 844x390 (synthetic
+8-stage dataset) shows "SELECT ARENA" exactly once in the titlebar and
+the stage readout alone below the preview, no second heading. Fighters
+screen screenshot confirmed unaffected (no shared markup touched).
+`node --check` clean, `preflight.py` passes, real-file headless boot
+check zero errors at all three viewports, screen-toggle re-verified
+(fighters/arena still correctly show `display:none` on whichever one
+is inactive).
