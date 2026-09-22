@@ -2183,6 +2183,32 @@
   let pickerWired = false;
   let pickerScreen = 'fighters';
 
+  // The big arena preview used to be pure decoration (a gradient + the
+  // selected stage's name, watched via a MutationObserver in a separate
+  // inline script that has no access to loadStagePreview() at all -- that
+  // lives in this closure). Per-tile thumbnails were dropped once this
+  // existed for real, so this is now the only stage art on the whole
+  // screen; wire it to the actual decoded image instead of leaving it
+  // decorative.
+  let arenaPreviewToken = 0;
+  async function updateArenaPreview(stageToken) {
+    const preview = document.getElementById('stagePreview');
+    const img = preview ? preview.querySelector('.stage-preview-img') : null;
+    if (!preview || !img) return;
+    const token = ++arenaPreviewToken;
+    img.hidden = true;
+    preview.classList.remove('has-art');
+    if (!stageToken) return;
+    const result = await loadStagePreview(stageToken);
+    if (token !== arenaPreviewToken) return; // selection moved on while decoding
+    if (result && result.url) {
+      img.onload = () => { if (token === arenaPreviewToken) preview.classList.add('has-art'); };
+      img.onerror = () => { img.hidden = true; preview.classList.remove('has-art'); };
+      img.src = result.url;
+      img.hidden = false;
+    }
+  }
+
   // Fighter select and arena select were one crowded, vertically-scrolling
   // screen -- versus banner, roster grid, stage preview, stage grid, and
   // actions all stacked in the same view. Split into two full screens so
@@ -2197,6 +2223,7 @@
 
     if (name === 'arena') {
       status('SELECT ARENA');
+      updateArenaPreview(allStages[pickerState.stageIdx]);
       const first = document.querySelector('#stageGrid .roster-item.selected') ||
         document.querySelector('#stageGrid .roster-item');
       if (first) first.focus(); else focusStartButton();
@@ -2376,50 +2403,15 @@
     btn.append(thumb, label);
   }
 
-  // Stage grids are select.def's "extra stages" list -- typically a handful
-  // of entries, nowhere near a full character roster -- so this skips the
-  // viewport-lazy hydration the character thumbnails need and just runs
-  // every stage through a small concurrency-capped queue immediately.
-  const stageThumbQueue = [];
-  let stageThumbActive = 0;
-  const STAGE_THUMB_CONCURRENCY = 2;
-
-  function pumpStageThumbQueue() {
-    while (stageThumbActive < STAGE_THUMB_CONCURRENCY && stageThumbQueue.length) {
-      const job = stageThumbQueue.shift();
-      if (!job || !job.btn.isConnected) continue;
-      stageThumbActive++;
-      loadStagePreview(job.name).then(result => {
-        if (!job.btn.isConnected || job.btn.dataset.stageName !== job.name) return;
-        if (result && result.url) {
-          job.img.onload = () => { if (job.btn.isConnected) job.btn.classList.add('thumb-ready'); };
-          job.img.onerror = () => { job.img.hidden = true; };
-          job.img.src = result.url;
-          job.img.hidden = false;
-        }
-      }).finally(() => {
-        stageThumbActive--;
-        pumpStageThumbQueue();
-      });
-    }
-  }
-
-  function enqueueStageThumbnail(btn, name, img) {
-    stageThumbQueue.push({ btn, name, img });
-    pumpStageThumbQueue();
-  }
-
+  // Stage tiles used to carry their own small preview thumbnail, loaded
+  // through a small concurrency-capped queue. Once the arena screen got a
+  // real, single large preview area (see updateArenaPreview()) showing the
+  // currently-selected stage, a second copy of the same image on every
+  // tile became redundant -- removed in favor of just a clean name label,
+  // which also lets each tile be much shorter (more stages visible at
+  // once without scrolling the list).
   function wireStageThumbnail(btn, name) {
-    btn.classList.add('has-stage-thumb');
     btn.dataset.stageName = name;
-
-    const thumb = document.createElement('span');
-    thumb.className = 'stage-thumb';
-    const img = document.createElement('img');
-    img.className = 'stage-thumb-img';
-    img.alt = '';
-    img.hidden = true;
-    thumb.appendChild(img);
 
     const label = document.createElement('span');
     label.className = 'roster-name';
@@ -2427,17 +2419,11 @@
     // swapped for the stage def's own displayname/name once that resolves.
     label.textContent = String(name || '').replace(/\\/g, '/').replace(/\.def$/i, '').split('/').pop().replace(/[_-]+/g, ' ');
 
-    btn.append(thumb, label);
+    btn.append(label);
 
     loadStageDisplayName(name).then(display => {
       if (display && btn.isConnected && btn.dataset.stageName === name) label.textContent = display;
     });
-
-    // Do NOT enqueue here -- this runs before the button is appended to the
-    // grid, so job.btn.isConnected would read false and pumpStageThumbQueue()
-    // would silently drop the job forever. Caller enqueues after appendChild,
-    // same as the character thumbnail path (enqueueRosterThumbnail).
-    return img;
   }
 
   function buildRosterGrid(mode, names, selectedIdx) {
@@ -2449,9 +2435,8 @@
       btn.dataset.mode = mode;
       btn.dataset.idx = idx;
 
-      let stageImg = null;
       if (mode === 'stage') {
-        stageImg = wireStageThumbnail(btn, name);
+        wireStageThumbnail(btn, name);
       } else {
         wireRosterThumbnail(btn, name);
       }
@@ -2459,9 +2444,7 @@
       btn.addEventListener('click', () => selectItem(mode, idx));
       grid.appendChild(btn);
 
-      if (mode === 'stage') {
-        enqueueStageThumbnail(btn, name, stageImg);
-      } else if (idx < 4 || idx === selectedIdx) {
+      if (mode !== 'stage' && (idx < 4 || idx === selectedIdx)) {
         // V21 phone path: hydrate the first visible row immediately instead
         // of waiting for IntersectionObserver to notice a newly-attached cell.
         enqueueRosterThumbnail(btn);
@@ -2505,6 +2488,7 @@
     if (mode === 'stage') {
       playMotifUiSound('stageDone');
       v24Flash(document.querySelector('.stage-bay'));
+      updateArenaPreview(allStages[idx]);
     } else {
       playMotifUiSound('confirm');
       v24Flash(document.querySelector(mode === 'p1' ? '.p1-card' : '.p2-card'));

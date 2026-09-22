@@ -3010,3 +3010,125 @@ stage, and confirmed the FIGHT button read "FIGHT · READY". Screenshots
 at each step confirm the visual result matches. Zero page errors at
 390x844, 844x390, and 2000x933. `node --check` clean, `preflight.py`
 passes.
+
+---
+
+## Arena preview promoted to real art, fighter tiles quartered, and the picker's own "no scroll" claim fixed (2026-09-22)
+
+User tested the two-screen split above and came back with five asks in
+one message: put the arena preview at the top and make it prominent
+enough that per-tile stage thumbnails are redundant (name label only);
+make fighter tiles roughly a quarter of their current size so a
+140+-character roster fits without endless scrolling; and, the one
+that turned out to matter most, make sure neither screen ever needs
+page-level scrolling to reach FIGHT -- "that definitely could use some
+space management."
+
+**Real arena preview.** `#stagePreview` was pure decoration -- a CSS
+gradient plus a name label kept in sync by a `MutationObserver`
+watching the selected roster item's text (`rig-ikemen-29.html:1570`,
+untouched). Added a real `<img class="stage-preview-img">` inside it
+and a new `updateArenaPreview(stageToken)` in the JS closure (the
+observer lives in an inline `<script>` with no access to
+`loadStagePreview()`, which is closure-scoped). It decodes the
+stage's largest sprite the same way the old per-tile thumbnails did,
+sets `.has-art` on the container to fade the decorative gradient
+underneath, and is called both when the arena screen opens
+(`showPickerScreen('arena')`) and whenever a different stage tile is
+clicked (`selectItem('stage', idx)`). A monotonic `arenaPreviewToken`
+guards against a slow decode from an earlier selection landing after a
+newer one -- the same pattern this file already uses for other
+async-vs-selection races.
+
+**Per-tile stage thumbnails removed.** With the big preview now the
+only real art on the screen, `wireStageThumbnail()`'s own thumbnail
+`<img>`, the `stage-thumb`/`stage-thumb-img` CSS, and the whole
+`pumpStageThumbQueue()`/`enqueueStageThumbnail()` concurrency-capped
+queue that fed them were deleted outright -- not hidden, not
+feature-flagged, since nothing else referenced them (confirmed by
+grep). Tiles now carry just the cleaned name label, and
+`.roster-item[data-mode="stage"]`'s left padding (reserved for the old
+thumbnail) dropped from 54px to 38px.
+
+**Fighter tiles quartered.** `.shared-grid` went from 4 columns of
+~72px-tall tiles to 8 columns of 36px tiles (roster-item min-height),
+with the thumbnail image, its fallback glyph, and the name label all
+scaled down to match -- scoped, like every picker override this
+session, under the existing `body:not(.match-live):has(#charPickerSection:not(.hide))`
+landscape/short-height media block, so nothing outside the picker is
+affected.
+
+**The "no scroll" bug -- found by measurement, not by eye.** The
+previous session's `max-height:min(46vh,420px)` cap on the grids was
+replaced with a real flex chain (`.setup` stretches `.card` to full
+height, each picker screen becomes a flex column, only the roster/
+stage list itself flexes and scrolls internally) -- described in
+detail in this same section of the diff. First pass looked right by
+inspection but wasn't: a synthetic 147-character/8-stage dataset
+driven through a temporary `window.__testOpenPicker()` debug harness
+(same disposable-copy pattern as the previous entry, deleted after
+testing) at a real 844x390 landscape viewport, traced with
+`getComputedStyle`/`getBoundingClientRect` at every level of the
+container chain, found the action-dock sitting at `y=1114px` on a
+390px-tall screen -- unreachable without scrolling `.setup`'s own
+internal overflow, the exact bug class reported, just moved one level
+deeper.
+
+Root cause: `.setup{display:grid}` has no explicit `grid-template-rows`,
+so its single implicit row defaults to `auto` (content-sized).
+`place-items:stretch` only stretches a grid item *within* its track --
+it does nothing when the track itself is sized *by* that item's
+content, which is exactly what was happening. `.card`, the item, was
+measuring `1490.98px` tall (its natural content height) instead of the
+intended `335px`. Fixed with one line: `grid-template-rows:minmax(0,1fr)!important`
+on `.setup`, giving the row a real, shrinkable, fillable track.
+Re-measured: `.card` now correctly computes to `315px` (matching
+`.setup`'s content-box height), and the Arena screen's action-dock
+landed fully inside the viewport (`337-383px` of `390px`) on the very
+next pass.
+
+**That fix wasn't the whole story on the Fighters screen.** With
+`.card` now sized correctly, the Fighters screen's action-dock *was*
+inside the viewport, but the roster list above it (`.shared-roster-viewport`)
+measured `0px` -- and Playwright's own click-actionability check on
+`#nextArenaBtn` failed with `<div id="p1Grid"> ... intercepts pointer
+events`, meaning the roster grid's rows (each an explicit `36px` track,
+19+ rows for 147 items) were rendering past their allocated space and
+visually overlapping the action-dock below, even though the dock's own
+box-model geometry was untouched. Traced the actual space budget
+line by line (`selectTitlebar` 27px + `versusBanner` 96px +
+`actionDock` 46px = 169px of a 208px total), and found the versus
+banner's `.fighter-card` -- 88px tall, set unconditionally elsewhere in
+the file for a normal-height context -- was eating nearly half the
+screen's entire budget by itself on a 390px-tall phone. Added a
+matching compact override (`.fighter-card` down to 32px, `.vs-core`
+badge down to 26px, plus trimming the roster panel's own tab-head/
+padding chrome) under the same scoped media block. Re-measured after
+each change rather than guessing at a final number: the roster
+viewport went `0px -> 4.27px -> 34.55px -> 38.3px` across three
+successive trims, at which point `.fighter-card`'s actual height
+became bound by its own text content (four stacked labels) rather than
+by `min-height`, so further shrinking stopped paying off and was left
+alone.
+
+**Verified**, all at a synthetic 147-character/8-stage dataset via the
+same disposable `__testOpenPicker()` harness, 844x390 viewport:
+action-dock fully inside the viewport on both screens (`228-274px` and
+`324-370px` of `390px`) with zero outer or `.setup`-level scroll
+needed; roster list correctly flexes and would scroll internally past
+that; Arena screen's preview/name/grid/dock all land inside the
+viewport in the intended top-to-bottom order. Debug harness deleted
+before commit -- never shipped. Separately, `node --check` on the real
+file, `preflight.py` (passed, no new warnings), and a real-file
+(non-synthetic) headless boot check at 390x844, 844x390 and 2000x933
+all came back with zero page errors.
+
+**Not done in this pass, flagged rather than assumed:** fighter tile
+art at 36px tall will be small; the user was told this trade-off
+directly (their own request, "worth knowing" per their stated
+preference for direct pushback rather than silent compliance) and
+chose to proceed. The `.fighter-card` compaction reduces information
+density (slot mark / role / name / state, four lines) but keeps every
+field rather than hiding any of them -- if it's still too tall for
+comfort, dropping a field is a content decision for the user to make,
+not one made unilaterally here.
