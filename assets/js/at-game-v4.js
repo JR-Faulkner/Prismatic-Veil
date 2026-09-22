@@ -294,7 +294,7 @@ function render(){
  if($('weekTrack'))$('weekTrack').style.width=(S.day<=21?((((S.day-1)%7)+1)/7)*100:100)+'%';
  S.maxAP=S.baseAP+worthBonus();if(S.ap>S.maxAP)S.ap=S.maxAP;setDigital($('apText'),S.ap+'/'+S.maxAP);$('apdots').innerHTML='';
  for(let i=0;i<S.maxAP;i++){const d=document.createElement('i');d.className='dot'+(i<S.ap?' on':'');$('apdots').appendChild(d)}
- const tw=totalWorth();$('worthTotal').textContent=tw;$('worthTotalTop').textContent=tw;$('stats').classList.toggle('hasWorth',S.worthUnlocked);const showWorth=S.worthUnlocked&&alterStage()>=2;$('worthStat').classList.toggle('hidden',!showWorth);$('worthSummary').classList.toggle('show',showWorth);
+ const tw=totalWorth();if($('worthTotal'))$('worthTotal').textContent=tw;if($('worthTotalTop'))$('worthTotalTop').textContent=tw;if($('stats'))$('stats').classList.toggle('hasWorth',S.worthUnlocked);const showWorth=S.worthUnlocked&&alterStage()>=2;if($('worthStat'))$('worthStat').classList.toggle('hidden',!showWorth);if($('worthSummary'))$('worthSummary').classList.toggle('show',showWorth);
  if(S.worthUnlocked){const nx=nextThreshold();$('worthNext').innerHTML=nx?'NEXT RESONANCE<br><b>'+(nx-tw)+' WORTH AWAY</b>':'KNOWN RESONANCE<br><b>MAXED FOR NOW</b>'}
  const sc=scene();updateSceneWindow();$('thread').textContent=sc.thread;$('mood').textContent=sc.mood;$('sceneTitle').textContent=sc.title;$('sceneText').textContent=sc.text;$('result').textContent=S.result||'';
  $('eventChip').className='eventChip'+(S.currentEvent?' show':'');$('eventChip').textContent=S.currentEvent?'✦ '+sc.chip:'';
