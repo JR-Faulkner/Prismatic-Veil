@@ -3427,3 +3427,97 @@ exactly equals its `clientHeight`. `node --check` clean, `preflight.py`
 passes, real-file headless boot check zero errors at
 390x844/844x390/2000x933. Debug harness deleted before commit -- never
 shipped.
+
+---
+
+## Selection confirmation timing, zip-load centering, and arena preview 70/30 split (2026-09-22)
+
+Three more real-device reports from the same testing pass: (1) picking
+P1 then P2 felt like it "was hard to tell" whether the tap registered,
+and once it did, "it was locked in" -- (2) the zip-load screen's
+content was pinned to the top of a tall, mostly-empty card instead of
+centered -- (3) the arena preview still felt crowded, with the actual
+useful text (the stage name) squeezed into what the user measured as
+"like 4% of the space" a much bigger image was taking up, and asked
+for a real 70/30 media/info split instead.
+
+**Selection confirmation.** Root cause wasn't a missing or too-subtle
+`.selected` style -- that gold inset border + glow (`.roster-item.
+selected`) was already there and unchanged. It was timing:
+`selectItem('p2', idx)` called `showPickerScreen('arena')` in the exact
+same synchronous call as applying `.selected` and firing the pick-flash
+animation, so the entire Fighters screen -- confirmation included --
+was gone before a human eye could register it. Added a 380ms delay
+(`arenaAdvanceTimer`, debounced with `clearTimeout` so a fast re-tap
+during the window resets the wait instead of double-firing) between
+the pick landing and the screen actually advancing. Verified directly:
+immediately after the P2 click, `pickerScreenFighters` is confirmed
+still visible with both `.selected` and the `.v24-confirm` flash class
+present on the tapped tile; only after the delay elapses does the
+screen switch to Arena. (P1's own pick doesn't have this problem --
+selecting P1 only moves focus to the P2 tab, it doesn't change screens
+-- so it was left alone.)
+
+**Zip-load centering.** `.setup{align-items:start!important}` was set
+completely unconditionally (`.setup`'s own base rule already has
+`place-items:center`) -- but tracing every state `.setup` can be in
+found this override only ever mattered for the plain zip-load screen:
+once the picker is actually open, a later, higher-specificity
+`place-items:stretch!important` (from this session's earlier flex-chain
+work) already wins regardless of what this rule says. So the one place
+this actually top-anchored content was the "CHOOSE MUGEN ZIP" screen,
+pinning it to the top of a card that could be much taller than its
+content on a wide landscape phone. Removed; verified by measuring the
+gap above and below the zip-load card directly (111px both sides at
+844x390 -- genuinely centered, not just visually close) rather than
+eyeballing a screenshot alone.
+
+**Arena preview real 70/30 split.** `.stage-preview` was a single
+full-width box: the actual art, plus a small `.stage-preview-name`
+overlay pill in one corner as the only place the stage's name showed
+close to the image, with a SEPARATE `.stage-bay-head`/`.stage-readout`
+row below (already flagged as redundant with the screen's own
+titlebar in an earlier entry, though the row itself survived that
+pass) also showing the same name again. Restructured `.stage-preview`
+into a real flex row: `.stage-preview-media` (`flex:7 1 0`, ~70%) as
+the new positioning root for the art image, the decorative grid
+backdrop, and the two decorative corner-wing pseudo-elements (all
+moved off `.stage-preview` itself, which is now just the flex
+container), and `.stage-preview-info` (`flex:3 1 0`, ~30%) showing
+`#selStage` at a real, readable size instead of a squeezed corner
+label. The old `.stage-bay-head`/`.stage-readout` row is gone
+entirely -- its one genuinely useful piece of information (which
+stage is selected) now lives in the info column instead of a separate
+row below, and that freed row's height goes to the stage grid instead.
+A same-session `MutationObserver` in an inline script that used to
+mirror `#selStage`'s text into the old overlay pill became dead code
+once that pill was removed -- deleted rather than left orphaned.
+
+**One self-inflicted bug caught before shipping**: moving `#selStage`
+out of its old `<div class="sel-item stage-readout">` wrapper dropped
+the `sel-item` class, and `updateSelectionDisplay()`'s existing
+`selStage.closest('.sel-item').classList.toggle('filled', ...)` call
+threw `Cannot read properties of null` the moment a stage was picked,
+since `.closest()` no longer found a match. Caught immediately by the
+verification script itself erroring out, not by a passing test that
+happened to miss it. Fixed by keeping `sel-item` on the new
+`.stage-preview-info` div alongside its own class, which also means
+the existing `.sel-item.filled` gold-highlight behavior still applies
+to the new panel for free.
+
+**Verified**, 844x390, via the disposable `__testOpenPicker()` harness:
+zip-load screen measured genuinely centered (111px/111px top/bottom
+gap); P2 pick confirmed visible-with-flash before the delayed arena
+advance, and the advance itself still lands correctly after the delay;
+arena preview media/info columns measured at 68%/32% of the preview's
+width (matching the requested ~70/30 split, small variance from
+border/rounding); `#selStage` confirmed rendering inside the new info
+panel with the old `.stage-bay-head` confirmed completely absent from
+the DOM. Screenshots of the zip-load screen and the restructured arena
+preview confirm the visual result. Full regression pass re-run on top
+of every earlier fix in this file -- screen toggle, controls-hidden
+space budget (183px roster viewport, unchanged), splash screen show/
+dismiss in both orientations -- all still correct. `node --check`
+clean, `preflight.py` passes, real-file headless boot check zero
+errors at 390x844/844x390/2000x933. Debug harness deleted before
+commit -- never shipped.

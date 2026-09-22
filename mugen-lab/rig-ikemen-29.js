@@ -2182,6 +2182,7 @@
   const pickerState = { p1Idx: 0, p2Idx: 0, stageIdx: 0 };
   let pickerWired = false;
   let pickerScreen = 'fighters';
+  let arenaAdvanceTimer = null;
 
   // The big arena preview used to be pure decoration (a gradient + the
   // selected stage's name, watched via a MutationObserver in a separate
@@ -2500,9 +2501,20 @@
     } else if (mode === 'p2') {
       // Both fighters chosen -- advance to the arena screen the same way
       // NEXT: ARENA does, rather than just moving focus within a now-
-      // hidden stage grid on the old single-screen layout.
-      showPickerScreen('arena');
-      log('I29 PICKER · P2 selected; advanced to arena screen');
+      // hidden stage grid on the old single-screen layout. This used to
+      // fire in the same tick as the .selected class/flash above, so the
+      // whole screen (and any confirmation on the tile you just tapped)
+      // was gone before it had a chance to register -- reported directly
+      // as "hard to tell if a pick worked, and it felt locked in". A
+      // short pause lets the flash/gold-border actually be seen first.
+      // Re-tapping P2 during that window (clearInterval-style debounce)
+      // just restarts the wait against the new pick rather than firing
+      // both advances.
+      clearTimeout(arenaAdvanceTimer);
+      arenaAdvanceTimer = setTimeout(() => {
+        showPickerScreen('arena');
+        log('I29 PICKER · P2 selected; advanced to arena screen');
+      }, 380);
     } else if (mode === 'stage') {
       focusStartButton();
       log('I29 PICKER · Stage selected; focus moved to START MATCH');
