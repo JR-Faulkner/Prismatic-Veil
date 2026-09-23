@@ -1,0 +1,8 @@
+/* A+T V4.21.11 holder scale correction */
+body.playing .narrationShell{height:330px!important;min-height:330px!important;margin:0 2px 0!important}
+body.playing .narrationShell .narrationCopy{left:7.8%!important;right:8.1%!important;top:58px!important;bottom:28px!important;padding:0 8px 10px!important;max-height:none!important;overflow:auto!important}
+body.playing .actionLogShell{height:250px!important;min-height:250px!important;margin:0 2px 0!important}
+body.playing .actionLogShell .actionResult{left:8.6%!important;right:15.2%!important;top:56px!important;bottom:30px!important;padding:0 8px 8px!important;max-height:none!important;overflow:auto!important}
+body.playing .actionScroll{top:29%!important;height:47%!important}
+body.playing .choices{margin-top:0!important;gap:0!important}
+@media(max-width:390px){body.playing .narrationShell{height:320px!important;min-height:320px!important}body.playing .narrationShell .narrationCopy{top:56px!important;bottom:26px!important}body.playing .actionLogShell{height:244px!important;min-height:244px!important}body.playing .actionLogShell .actionResult{top:54px!important;bottom:28px!important}}
