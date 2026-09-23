@@ -9,7 +9,7 @@
   "theme_color": "#071014",
   "icons": [
     {
-      "src": "./assets/ui/at-home-icon-behemoth-v1.svg?v=v4.19.0",
+      "src": "./assets/ui/at-home-icon-behemoth-v1.svg?v=v4.19.1",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
