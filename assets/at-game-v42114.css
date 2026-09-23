@@ -334,7 +334,7 @@ body.playing .free textarea{background:#070d11!important;border:1px solid #43565
 body.playing .shell{position:relative;padding:6px!important;background:#071014!important;border:1px solid #3b4d55!important;box-shadow:0 16px 40px #000b,inset 0 0 0 2px #020609!important}
 body.playing .shell>*{position:relative;z-index:1}
 body.playing .shell:after{content:"";position:absolute;inset:4px;border:1px solid #1d2b31;pointer-events:none;clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}
-.systemRail{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:-1px 4px 5px;background:#26373e;border:1px solid #344851;overflow:hidden}
+.systemRail{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;margin:-1px 4px 5px;background:#26373e;border:1px solid #344851;overflow:hidden}
 .systemRail span{display:flex;align-items:center;justify-content:center;gap:6px;background:#091216;padding:5px 4px;color:#8fa0a7;font:800 7px/1 "SFMono-Regular",Menlo,monospace;letter-spacing:.12em;white-space:nowrap}
 .railLed{width:6px;height:6px;border-radius:50%;background:#5f6a6e;box-shadow:inset 0 0 0 1px #000}
 .railLed.on{background:#2ee8e2;box-shadow:0 0 8px #2ee8e2}
@@ -921,7 +921,7 @@ body.playing .narrationMeta .thread{color:#77efeb!important;font-size:10.5px!imp
 body.playing .narrationMeta .mood{color:#9ddf9f!important;background:transparent!important;padding:0!important;font-size:10.5px!important;line-height:1!important;letter-spacing:.045em!important;white-space:nowrap!important}
 
 /* Narrative shell is only hardware. Viewport is the clipping boundary. */
-body.playing .narrationShell{position:relative!important;box-sizing:border-box!important;width:calc(100% - 4px)!important;aspect-ratio:884/330!important;height:auto!important;margin:0 2px 1px!important;padding:0!important;overflow:hidden!important;contain:layout paint!important}
+body.playing .narrationShell{position:relative!important;box-sizing:border-box!important;width:calc(100% - 4px)!important;aspect-ratio:884/429!important;height:auto!important;margin:0 2px 1px!important;padding:0!important;overflow:hidden!important;contain:layout paint!important}
 body.playing .narrationShellArt{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:fill!important;z-index:0!important;display:block!important;pointer-events:none!important}
 body.playing .narrationViewport{position:absolute!important;z-index:2!important;left:7.5%!important;right:8%!important;top:19%!important;bottom:21%!important;overflow:hidden!important;clip-path:inset(0)!important;contain:layout paint!important}
 body.playing .narrationCopy{position:relative!important;display:block!important;box-sizing:border-box!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0 6px 6px!important;overflow:auto!important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-width:none!important;background:transparent!important;border:0!important;box-shadow:none!important}
@@ -930,7 +930,7 @@ body.playing .narrationCopy h3{position:static!important;display:block!important
 body.playing .narrationCopy p{position:static!important;display:block!important;margin:0!important;padding:0!important;color:#c7d2d5!important;font-size:11.6px!important;line-height:1.38!important;transform:none!important}
 
 /* Action Log uses the same holder -> viewport -> scroller structure. */
-body.playing .actionLogShell{position:relative!important;box-sizing:border-box!important;width:calc(100% - 4px)!important;aspect-ratio:884/330!important;height:auto!important;margin:0 2px 1px!important;padding:0!important;overflow:hidden!important;contain:layout paint!important}
+body.playing .actionLogShell{position:relative!important;box-sizing:border-box!important;width:calc(100% - 4px)!important;aspect-ratio:884/429!important;height:auto!important;margin:0 2px 1px!important;padding:0!important;overflow:hidden!important;contain:layout paint!important}
 body.playing .actionLogShell:has(.actionResult:empty){display:none!important}
 body.playing .actionLogArt{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:fill!important;z-index:0!important;display:block!important;pointer-events:none!important}
 body.playing .actionViewport{position:absolute!important;z-index:2!important;left:8.3%!important;right:14.5%!important;top:27%!important;bottom:23%!important;overflow:hidden!important;clip-path:inset(0)!important;contain:layout paint!important}
@@ -969,3 +969,8 @@ body.playing .free{margin-top:1px!important}
   body.playing .choiceBody small{font-size:8px!important}
   body.playing .choiceState{font-size:7.2px!important}
 }
+
+/* ===== A+T V4.21.18 · COLLAPSE HEADER-STACK DEAD AIR ===== */
+body.playing .b2Header{margin-bottom:1px!important}
+body.playing .systemRail{margin-top:1px!important;margin-bottom:1px!important}
+body.playing .nav{margin-top:1px!important;margin-bottom:1px!important}
