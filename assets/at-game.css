@@ -799,3 +799,110 @@ body.playing .headerLocation>#headerLocation{
     letter-spacing:.015em!important;
   }
 }
+
+
+/* ===== A+T V4.18.0 · BEHEMOTH2 CHOICE ROW FAMILY ===== */
+body.playing .choices{
+  gap:5px!important;
+  margin-top:6px!important;
+}
+body.playing .choice{
+  position:relative!important;
+  isolation:isolate!important;
+  grid-template-columns:68px 52px minmax(0,1fr) 100px!important;
+  min-height:72px!important;
+  height:72px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:none!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+  clip-path:none!important;
+}
+body.playing .choice .choiceArt{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:fill!important;
+  z-index:0!important;
+  pointer-events:none!important;
+  opacity:0!important;
+}
+body.playing .choice .choiceArtDefault{opacity:1!important}
+body.playing .choice:active:not(.used):not(.locked) .choiceArtDefault,
+body.playing .choice:focus-visible:not(.used):not(.locked) .choiceArtDefault{opacity:0!important}
+body.playing .choice:active:not(.used):not(.locked) .choiceArtActive,
+body.playing .choice:focus-visible:not(.used):not(.locked) .choiceArtActive{opacity:1!important}
+body.playing .choice.used .choiceArtDefault{opacity:0!important}
+body.playing .choice.used .choiceArtUsed{opacity:1!important}
+body.playing .choice.locked .choiceArtDefault{opacity:0!important}
+body.playing .choice.locked .choiceArtLocked{opacity:1!important}
+body.playing .choiceIndex,
+body.playing .choiceIcon,
+body.playing .choiceBody,
+body.playing .choiceState{
+  position:relative!important;
+  z-index:2!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+body.playing .choiceIndex{
+  height:100%!important;
+  padding-left:5px!important;
+}
+body.playing .choiceIcon{
+  height:100%!important;
+}
+body.playing .choiceIcon svg{
+  width:25px!important;
+  height:25px!important;
+}
+body.playing .choiceBody{
+  padding:9px 12px!important;
+  min-width:0!important;
+}
+body.playing .choiceBody strong{
+  color:#edf5f6!important;
+  font-size:12px!important;
+  line-height:1.15!important;
+}
+body.playing .choiceBody small{
+  color:#91a0a7!important;
+  font-size:9px!important;
+  line-height:1.25!important;
+  margin-top:3px!important;
+}
+body.playing .choiceState{
+  height:100%!important;
+  padding-right:5px!important;
+}
+body.playing .choice.used{
+  opacity:1!important;
+  filter:none!important;
+}
+body.playing .choice.used .choiceBody strong,
+body.playing .choice.used .choiceBody small,
+body.playing .choice.used .choiceState,
+body.playing .choice.used .choiceIcon{
+  opacity:.58!important;
+}
+body.playing .choice:active:not(.used){
+  transform:translateY(1px)!important;
+}
+@media(max-width:430px){
+  body.playing .choices{gap:4px!important}
+  body.playing .choice{
+    grid-template-columns:50px 40px minmax(0,1fr) 72px!important;
+    min-height:66px!important;
+    height:66px!important;
+  }
+  body.playing .choiceBody{padding:7px 7px!important}
+  body.playing .choiceBody strong{font-size:10.5px!important}
+  body.playing .choiceBody small{font-size:8px!important}
+  body.playing .choiceIcon svg{width:20px!important;height:20px!important}
+  body.playing .choiceState{font-size:6.5px!important}
+}

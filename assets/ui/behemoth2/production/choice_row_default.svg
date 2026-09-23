@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 180">
+<defs>
+  <linearGradient id="m" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#2f3e45"/><stop offset=".18" stop-color="#151e23"/><stop offset=".82" stop-color="#080d10"/><stop offset="1" stop-color="#34464d"/></linearGradient>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#091216"/><stop offset=".5" stop-color="#071014"/><stop offset="1" stop-color="#091216"/></linearGradient>
+  <filter id="b"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+<g opacity="1">
+<path d="M22 10h1150l18 18v124l-18 18H22L7 155V25z" fill="#03070a" stroke="#111a1e" stroke-width="5"/>
+<path d="M34 17h1127l17 17v112l-17 17H34l-17-17V34z" fill="url(#m)" stroke="#5b6970" stroke-width="3"/>
+<path d="M55 31h1090l18 18v82l-18 18H55l-18-18V49z" fill="url(#g)" stroke="#4a5d65" stroke-width="2.5"/>
+
+<path d="M34 61 17 78v26l17 17 13-10V71z" fill="#7d949b" opacity=".95"/>
+<path d="M1161 61l17 17v26l-17 17-13-10V71z" fill="#2b4148" opacity=".9"/>
+<rect x="66" y="47" width="100" height="86" rx="5" fill="#071014" stroke="#4a5d65" stroke-width="2.5"/>
+<rect x="180" y="47" width="92" height="86" rx="5" fill="#071014" stroke="#4a5d65" stroke-width="2.5"/>
+<path d="M290 47h640l12 12v62l-12 12H290l-12-12V59z" fill="#071014" stroke="#4a5d65" stroke-width="2.5"/>
+<path d="M960 47h170l12 12v62l-12 12H960l-12-12V59z" fill="#071014" stroke="#4a5d65" stroke-width="2.5"/>
+<g fill="#091014" stroke="#6e7c82" stroke-width="2"><circle cx="33" cy="32" r="10"/><circle cx="1164" cy="32" r="10"/><circle cx="33" cy="148" r="10"/><circle cx="1164" cy="148" r="10"/></g>
+<g fill="#1a2023"><circle cx="33" cy="32" r="4"/><circle cx="1164" cy="32" r="4"/><circle cx="33" cy="148" r="4"/><circle cx="1164" cy="148" r="4"/></g>
+<path d="M83 90h66M116 57v66" stroke="#4a5d65" stroke-width="2" opacity=".25"/>
+<path d="M197 90h58M226 61v58" stroke="#4a5d65" stroke-width="2" opacity=".23"/>
+<rect x="38" y="67" width="6" height="46" rx="3" fill="#7d949b" opacity=".65"/>
+</g>
+</svg>
