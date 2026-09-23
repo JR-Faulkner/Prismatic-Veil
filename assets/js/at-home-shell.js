@@ -1,0 +1,50 @@
+(()=>{
+const FALLBACK='v4.19.0',SAVE='at_game_v4_week1';
+document.documentElement.style.background='#03080b';
+document.body.className='atHome';
+const style=document.createElement('style');
+style.textContent=`
+*{box-sizing:border-box}html,body{margin:0;width:100%;min-height:100%;background:#03080b;color:#eef7f7;font-family:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,sans-serif}
+body.atHome{min-height:100vh;overflow:hidden;display:grid;place-items:center;padding:calc(18px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));background:radial-gradient(circle at 50% 28%,#0b2429 0,#071317 38%,#03090c 74%)}
+body.atHome:before{content:"";position:fixed;inset:44% 0 0;background-image:linear-gradient(180deg,#03090c 0%,transparent 24%,#02060966 100%),url("./assets/at-scenes-v4101.webp?v=v4.10.1");background-size:100% 100%,200% 600%;background-position:center,100% 20%;background-repeat:no-repeat;opacity:.34;filter:saturate(.9) contrast(1.08);pointer-events:none}
+.launcher{position:relative;z-index:2;width:min(92vw,430px);padding:18px 18px 17px;background:linear-gradient(180deg,#0c171bdc,#061014ed);border:1px solid #56646b;clip-path:polygon(18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px),0 18px);box-shadow:0 24px 70px #000b,inset 0 0 0 2px #071014,inset 0 0 30px #1be4dc12;text-align:center}
+.launcher:before,.launcher:after{content:"";position:absolute;top:62px;width:5px;height:64px;border-radius:4px;background:#ffb42f;box-shadow:0 0 14px #ffb42f88}.launcher:before{left:5px}.launcher:after{right:5px}
+.homeIcon{width:min(42vw,172px);aspect-ratio:1;display:block;margin:0 auto 12px;filter:drop-shadow(0 15px 28px #000a)}
+.sys{font:800 8px/1 "SFMono-Regular",Menlo,monospace;letter-spacing:.18em;color:#ffbf42;margin-bottom:8px}
+h1{margin:0;font:900 clamp(26px,7.5vw,39px)/.92 "Arial Narrow",system-ui,sans-serif;letter-spacing:.035em;color:#f0f4f3;text-shadow:0 1px 0 #fff3}
+.series{margin-top:9px;font:800 10px/1 system-ui;letter-spacing:.28em;color:#aab9bd}
+.chapter{display:flex;align-items:center;justify-content:center;gap:11px;margin:12px 0 15px;color:#58ece6;font:900 12px/1 system-ui;letter-spacing:.22em}.chapter:before,.chapter:after{content:"";width:46px;height:1px;background:linear-gradient(90deg,transparent,#37d7d2)}.chapter:after{transform:scaleX(-1)}
+.buttons{display:grid;gap:8px}.launch{position:relative;width:100%;min-height:48px;border:1px solid #43575e;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);background:linear-gradient(180deg,#10262c,#071319);color:#dff6f5;font:900 11px/1 system-ui;letter-spacing:.12em;padding:14px 16px;box-shadow:inset 0 0 0 1px #0d1a1f,inset 0 0 18px #1be4dc0c;touch-action:manipulation}.launch:active{transform:translateY(1px);filter:brightness(1.14)}.new{border-color:#3fe6e1;color:#e9ffff;box-shadow:inset 0 0 22px #2ee8e216,0 0 10px #2ee8e218}.alt{border-color:#637178}.continue{border-color:#ffb42f88;color:#ffe3a5}.continue[hidden]{display:none}
+.saveNote{min-height:12px;margin:10px 0 0;color:#90a0a5;font:800 8px/1 system-ui;letter-spacing:.1em}.hint{margin:8px 0 0;color:#65787e;font:700 8px/1.35 system-ui;letter-spacing:.03em}.versionStamp{position:fixed;z-index:3;left:calc(10px + env(safe-area-inset-left));bottom:calc(8px + env(safe-area-inset-bottom));padding:5px 7px;border:1px solid #293940;background:#03090ccc;color:#6f858b;font:800 7px/1 "SFMono-Regular",Menlo,monospace;letter-spacing:.12em}
+.bootSplash{position:fixed;z-index:60;inset:0;background:#020709;overflow:hidden;opacity:1;transition:opacity .45s ease;display:flex;align-items:flex-start;justify-content:center;padding:calc(18px + env(safe-area-inset-top)) 20px calc(16px + env(safe-area-inset-bottom))}
+.bootSplash.hide{opacity:0;pointer-events:none}
+.bootSplash:before,.bootSplash:after{content:"";position:absolute;top:0;bottom:0;width:34px;background:linear-gradient(90deg,#111b20,#28363c 32%,#080e11 62%,#10171b);border-color:#5c6a70;border-style:solid;box-shadow:inset 0 0 0 2px #05090b;z-index:3}.bootSplash:before{left:0;border-width:0 1px 0 0}.bootSplash:after{right:0;border-width:0 0 0 1px}
+.bootBolts{position:absolute;inset:0;pointer-events:none;z-index:5}.bootBolts i{position:absolute;width:18px;height:18px;border:3px solid #66757a;border-radius:50%;background:#080d10;box-shadow:inset 0 0 0 4px #141c20}.bootBolts i:nth-child(1){left:7px;top:12%}.bootBolts i:nth-child(2){right:7px;top:12%}.bootBolts i:nth-child(3){left:7px;bottom:14%}.bootBolts i:nth-child(4){right:7px;bottom:14%}
+.bootCore{position:relative;z-index:4;width:min(86vw,410px);text-align:center;padding-top:12vh}
+.bootMonogram{font:1000 clamp(76px,25vw,128px)/.78 "Arial Black",Impact,sans-serif;letter-spacing:-.08em;background:linear-gradient(180deg,#fff,#aeb9bd 34%,#f8f9f8 55%,#77858b 82%,#d8dfdf);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 24px #1cf1eb18}.bootMonogram span{font-size:.48em;color:#36eee8;-webkit-text-fill-color:#36eee8;text-shadow:0 0 16px #23eae5}
+.bootName{margin-top:16px;color:#ecf4f4;font:800 clamp(13px,3.8vw,19px)/1.55 system-ui;letter-spacing:.25em}.bootSeries{margin-top:10px;color:#a8b7bb;font:800 10px/1 system-ui;letter-spacing:.28em}.bootChapter{margin-top:28px;color:#5df0ea;font:900 14px/1 system-ui;letter-spacing:.28em}.bootAmber{width:24px;height:4px;background:#ffb42f;margin:20px auto 0;box-shadow:0 0 10px #ffb42f88}
+.bootVista{position:absolute;left:34px;right:34px;bottom:0;height:48%;background-image:linear-gradient(180deg,#020709 0%,transparent 25%,transparent 72%,#020709 100%),url("./assets/at-scenes-v4101.webp?v=v4.10.1");background-size:100% 100%,200% 600%;background-position:center,100% 20%;background-repeat:no-repeat;z-index:1;filter:saturate(.9) contrast(1.08)}.bootVista:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#02070999,transparent 20%,transparent 80%,#02070999)}
+.bootFrame{position:absolute;inset:8px 36px 8px;border:1px solid #245159;clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px);z-index:2;box-shadow:inset 0 0 30px #31e9e50e}
+@media(max-width:430px){.launcher{padding:15px 14px 14px}.homeIcon{width:min(39vw,150px)}.bootCore{padding-top:10vh}.bootVista{left:30px;right:30px;height:46%}}
+@media(display-mode:standalone){.hint{display:none}}
+@media(prefers-reduced-motion:reduce){.bootSplash{transition:none}}
+`;
+document.head.appendChild(style);
+document.body.innerHTML='<div class="bootSplash" id="bootSplash"><div class="bootFrame"></div><div class="bootBolts"><i></i><i></i><i></i><i></i></div><div class="bootCore"><div class="bootMonogram">A<span>+</span>T</div><div class="bootName">ALTERATIONS OF<br>TRANSFORMATIONS</div><div class="bootSeries">A PURE RPG SERIES</div><div class="bootAmber"></div><div class="bootChapter">THE VERDANT</div></div><div class="bootVista"></div></div><div class="versionStamp" id="versionStamp">A+T V4.19.0 · PLAYTEST</div><main class="launcher"><div class="sys">BEHEMOTH2 · FIELD OS</div><img class="homeIcon" src="./assets/ui/at-home-icon-behemoth-v1.svg?v=v4.19.0" alt="A+T The Verdant"><h1>ALTERATIONS OF<br>TRANSFORMATIONS</h1><div class="series">A PURE RPG SERIES</div><div class="chapter">THE VERDANT</div><div class="buttons"><button class="launch new" id="newTutorial">NEW GAME · TUTORIAL</button><button class="launch alt" id="newGame">NEW GAME · SKIP TUTORIAL</button><button class="launch continue" id="continueGame" hidden>CONTINUE</button></div><p class="saveNote" id="saveNote"></p><p class="hint">Tutorial begins the night before Jace leaves. Skip Tutorial starts at the Verdant border. Continue returns to your current life.</p></main>';
+const params=new URLSearchParams(location.search);
+if(params.get('reset')==='1'){localStorage.removeItem(SAVE);const q=new URLSearchParams(location.search);q.delete('reset');history.replaceState({},'',location.pathname+(q.toString()?'?'+q.toString():''))}
+let BUILD=localStorage.getItem('at.liveBuild')||FALLBACK;
+const stamp=document.getElementById('versionStamp');
+function setBuild(v){if(!v)return;BUILD=v;localStorage.setItem('at.liveBuild',v);stamp.textContent='A+T '+String(v).toUpperCase()+' · PLAYTEST'}
+fetch('./at-build.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(b=>{if(b&&b.build)setBuild(b.build)}).catch(()=>{});
+const continueBtn=document.getElementById('continueGame'),note=document.getElementById('saveNote');
+function refreshSave(){const saved=!!localStorage.getItem(SAVE);continueBtn.hidden=!saved;note.textContent=saved?'Verdant save detected.':'Fresh start ready.'}
+refreshSave();addEventListener('pageshow',refreshSave);
+document.getElementById('newTutorial').onclick=()=>{localStorage.removeItem(SAVE);sessionStorage.setItem('at_launch_token','1');location.href='./at-tutorial.html?v='+encodeURIComponent(BUILD)};
+document.getElementById('newGame').onclick=()=>{localStorage.removeItem(SAVE);sessionStorage.setItem('at_launch_token','1');location.href='./at-game-v4.html?new=1&v='+encodeURIComponent(BUILD)};
+continueBtn.onclick=()=>{sessionStorage.setItem('at_launch_token','1');location.href='./at-game-v4.html?continue=1&v='+encodeURIComponent(BUILD)};
+const splash=document.getElementById('bootSplash');
+function closeSplash(){if(!splash||splash.classList.contains('hide'))return;splash.classList.add('hide');setTimeout(()=>splash.remove(),520)}
+if(params.get('splash')==='0'||matchMedia('(prefers-reduced-motion:reduce)').matches)closeSplash();else setTimeout(closeSplash,1550);
+splash&&splash.addEventListener('click',closeSplash,{once:true});addEventListener('keydown',closeSplash,{once:true});
+})();

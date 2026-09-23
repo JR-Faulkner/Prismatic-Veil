@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="t d">
+<title id="t">A+T The Verdant</title><desc id="d">Behemoth2 hardware app icon for Alterations of Transformations</desc>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#071216"/><stop offset=".56" stop-color="#071014"/><stop offset="1" stop-color="#02070a"/></linearGradient>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4a565b"/><stop offset=".18" stop-color="#151b1f"/><stop offset=".5" stop-color="#303a3f"/><stop offset=".8" stop-color="#0d1215"/><stop offset="1" stop-color="#5a666b"/></linearGradient>
+<linearGradient id="silver" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff"/><stop offset=".18" stop-color="#b7c0c3"/><stop offset=".47" stop-color="#f2f4f3"/><stop offset=".72" stop-color="#889399"/><stop offset="1" stop-color="#d9dedd"/></linearGradient>
+<linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8ffcf8"/><stop offset=".45" stop-color="#31e9e5"/><stop offset="1" stop-color="#10a9b5"/></linearGradient>
+<filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="1024" height="1024" fill="#03090c"/>
+<rect x="28" y="28" width="968" height="968" rx="170" fill="url(#metal)" stroke="#0a0d0f" stroke-width="18"/>
+<rect x="78" y="78" width="868" height="868" rx="124" fill="url(#bg)" stroke="#5d6a70" stroke-width="6"/>
+<rect x="101" y="101" width="822" height="822" rx="98" fill="none" stroke="#2ee8e2" stroke-width="10" filter="url(#glow)"/>
+<rect x="118" y="118" width="788" height="788" rx="82" fill="none" stroke="#15363b" stroke-width="5"/>
+<g fill="#151c20" stroke="#66747a" stroke-width="5"><path d="M44 168V83q0-39 39-39h89l52 52-43 85H92z"/><path d="M980 168V83q0-39-39-39h-89l-52 52 43 85h89z"/><path d="M44 856v85q0 39 39 39h89l52-52-43-85H92z"/><path d="M980 856v85q0 39-39 39h-89l-52-52 43-85h89z"/></g>
+<g fill="#05090b" stroke="#8d989c" stroke-width="8"><circle cx="132" cy="132" r="42"/><circle cx="892" cy="132" r="42"/><circle cx="132" cy="892" r="42"/><circle cx="892" cy="892" r="42"/></g>
+<g fill="#1a2226"><circle cx="132" cy="132" r="16"/><circle cx="892" cy="132" r="16"/><circle cx="132" cy="892" r="16"/><circle cx="892" cy="892" r="16"/></g>
+<g fill="#ffb62e" filter="url(#glow)"><rect x="64" y="390" width="14" height="130" rx="7"/><rect x="946" y="390" width="14" height="130" rx="7"/></g>
+<g stroke="#1b4a50" opacity=".35" fill="none"><circle cx="512" cy="500" r="305"/><circle cx="512" cy="500" r="250"/><path d="M210 500h604M512 198v604"/></g>
+<text x="390" y="595" text-anchor="middle" fill="url(#silver)" stroke="#eef3f2" stroke-width="2" font-family="Arial Black,Impact,Arial,sans-serif" font-size="270" font-weight="900">A</text>
+<text x="535" y="555" text-anchor="middle" fill="url(#cyan)" font-family="Arial Black,Impact,Arial,sans-serif" font-size="112" font-weight="900" filter="url(#glow)">+</text>
+<text x="700" y="595" text-anchor="middle" fill="url(#silver)" stroke="#eef3f2" stroke-width="2" font-family="Arial Black,Impact,Arial,sans-serif" font-size="270" font-weight="900">T</text>
+<g fill="#5fae55" opacity=".78"><path d="M794 111q27 18 34 53-32-2-49-24 0-18 15-29z"/><path d="M836 145q26 8 39 35-27 8-48-7-6-15 9-28z"/><path d="M854 188q21 2 37 21-20 13-41 5-9-12 4-26z"/><path d="M167 858q-28-13-40-44 30-4 51 14 4 17-11 30z"/></g>
+<g stroke="#4d8e48" stroke-width="7" fill="none" opacity=".7"><path d="M896 99q-26 42-19 91t-21 87"/><path d="M116 918q27-34 26-74t24-67"/></g>
+<path d="M324 705h376" stroke="#2ee8e2" stroke-width="4" opacity=".7"/><rect x="443" y="719" width="34" height="9" fill="#ffb62e"/><rect x="495" y="719" width="34" height="9" fill="#ffb62e"/><rect x="547" y="719" width="34" height="9" fill="#ffb62e"/>
+<text x="512" y="806" text-anchor="middle" fill="#75e9e4" font-family="Arial,Helvetica,sans-serif" font-size="54" font-weight="800" letter-spacing="14">THE VERDANT</text>
+</svg>
