@@ -1,6 +1,6 @@
 {
-  "build": "v4.21.9",
-  "runtime": "assets/js/at-home-shell-v4219.js",
+  "build": "v4.21.10",
+  "runtime": "assets/js/at-home-shell-v42110.js",
   "launcher": "at-live.html",
   "updated": "2026-09-23"
 }
