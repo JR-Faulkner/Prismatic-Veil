@@ -930,10 +930,10 @@ body.playing .narrationCopy h3{position:static!important;display:block!important
 body.playing .narrationCopy p{position:static!important;display:block!important;margin:0!important;padding:0!important;color:#c7d2d5!important;font-size:11.6px!important;line-height:1.38!important;transform:none!important}
 
 /* Action Log uses the same holder -> viewport -> scroller structure. */
-body.playing .actionLogShell{position:relative!important;box-sizing:border-box!important;width:calc(100% - 4px)!important;aspect-ratio:884/250!important;height:auto!important;margin:0 2px 1px!important;padding:0!important;overflow:hidden!important;contain:layout paint!important}
+body.playing .actionLogShell{position:relative!important;box-sizing:border-box!important;width:calc(100% - 4px)!important;aspect-ratio:884/330!important;height:auto!important;margin:0 2px 1px!important;padding:0!important;overflow:hidden!important;contain:layout paint!important}
 body.playing .actionLogShell:has(.actionResult:empty){display:none!important}
 body.playing .actionLogArt{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:fill!important;z-index:0!important;display:block!important;pointer-events:none!important}
-body.playing .actionViewport{position:absolute!important;z-index:2!important;left:8.3%!important;right:14.5%!important;top:22.5%!important;bottom:23%!important;overflow:hidden!important;clip-path:inset(0)!important;contain:layout paint!important}
+body.playing .actionViewport{position:absolute!important;z-index:2!important;left:8.3%!important;right:14.5%!important;top:27%!important;bottom:23%!important;overflow:hidden!important;clip-path:inset(0)!important;contain:layout paint!important}
 body.playing .actionResult{position:relative!important;display:block!important;box-sizing:border-box!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0 6px 6px!important;overflow:auto!important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;color:#e3d2a4!important;font:800 13.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace!important;letter-spacing:.01em!important;white-space:normal!important;transform:none!important}
 body.playing .actionResult:before{content:none!important;display:none!important}
 body.playing .actionScroll{position:absolute!important;z-index:3!important;left:89.2%!important;top:28%!important;width:8px!important;height:46%!important;pointer-events:none!important}
