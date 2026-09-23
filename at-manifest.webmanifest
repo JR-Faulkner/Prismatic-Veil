@@ -2,20 +2,20 @@
   "name": "Alterations of Transformations: The Verdant",
   "short_name": "A+T",
   "description": "A+T: The Verdant · A Pure RPG Series",
-  "start_url": "./at-start.html?launch=app",
+  "start_url": "./at-live.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#020709",
   "theme_color": "#061015",
   "icons": [
     {
-      "src": "./assets/ui/at-mock1/at_home_icon_mock1_180.png?v=v4.20.1",
+      "src": "./assets/ui/at-mock1/at_home_icon_mock1_180.png?v=v4.20.2",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     }
   ],
-  "id": "./at-start.html",
+  "id": "./at-live.html",
   "orientation": "portrait-primary",
   "display_override": [
     "standalone",
