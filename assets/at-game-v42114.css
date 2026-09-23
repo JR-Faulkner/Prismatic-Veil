@@ -921,19 +921,19 @@ body.playing .narrationMeta .thread{color:#77efeb!important;font-size:10.5px!imp
 body.playing .narrationMeta .mood{color:#9ddf9f!important;background:transparent!important;padding:0!important;font-size:10.5px!important;line-height:1!important;letter-spacing:.045em!important;white-space:nowrap!important}
 
 /* Narrative shell is only hardware. Viewport is the clipping boundary. */
-body.playing .narrationShell{position:relative!important;box-sizing:border-box!important;width:calc(100% - 4px)!important;height:252px!important;min-height:252px!important;margin:0 2px 1px!important;padding:0!important;overflow:hidden!important;contain:layout paint!important}
+body.playing .narrationShell{position:relative!important;box-sizing:border-box!important;width:calc(100% - 4px)!important;aspect-ratio:884/330!important;height:auto!important;margin:0 2px 1px!important;padding:0!important;overflow:hidden!important;contain:layout paint!important}
 body.playing .narrationShellArt{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:fill!important;z-index:0!important;display:block!important;pointer-events:none!important}
-body.playing .narrationViewport{position:absolute!important;z-index:2!important;left:7.5%!important;right:8%!important;top:52px!important;bottom:24px!important;overflow:hidden!important;clip-path:inset(0)!important;contain:layout paint!important}
+body.playing .narrationViewport{position:absolute!important;z-index:2!important;left:7.5%!important;right:8%!important;top:19%!important;bottom:21%!important;overflow:hidden!important;clip-path:inset(0)!important;contain:layout paint!important}
 body.playing .narrationCopy{position:relative!important;display:block!important;box-sizing:border-box!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0 6px 6px!important;overflow:auto!important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-width:none!important;background:transparent!important;border:0!important;box-shadow:none!important}
 body.playing .narrationCopy::-webkit-scrollbar{display:none}
 body.playing .narrationCopy h3{position:static!important;display:block!important;margin:0 0 7px!important;padding:0!important;color:#f4f7f7!important;font-size:18px!important;line-height:1.08!important;transform:none!important}
 body.playing .narrationCopy p{position:static!important;display:block!important;margin:0!important;padding:0!important;color:#c7d2d5!important;font-size:11.6px!important;line-height:1.38!important;transform:none!important}
 
 /* Action Log uses the same holder -> viewport -> scroller structure. */
-body.playing .actionLogShell{position:relative!important;box-sizing:border-box!important;width:calc(100% - 4px)!important;height:182px!important;min-height:182px!important;margin:0 2px 1px!important;padding:0!important;overflow:hidden!important;contain:layout paint!important}
+body.playing .actionLogShell{position:relative!important;box-sizing:border-box!important;width:calc(100% - 4px)!important;aspect-ratio:884/250!important;height:auto!important;margin:0 2px 1px!important;padding:0!important;overflow:hidden!important;contain:layout paint!important}
 body.playing .actionLogShell:has(.actionResult:empty){display:none!important}
 body.playing .actionLogArt{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:fill!important;z-index:0!important;display:block!important;pointer-events:none!important}
-body.playing .actionViewport{position:absolute!important;z-index:2!important;left:8.3%!important;right:14.5%!important;top:43px!important;bottom:24px!important;overflow:hidden!important;clip-path:inset(0)!important;contain:layout paint!important}
+body.playing .actionViewport{position:absolute!important;z-index:2!important;left:8.3%!important;right:14.5%!important;top:22.5%!important;bottom:23%!important;overflow:hidden!important;clip-path:inset(0)!important;contain:layout paint!important}
 body.playing .actionResult{position:relative!important;display:block!important;box-sizing:border-box!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0 6px 6px!important;overflow:auto!important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;color:#e3d2a4!important;font:800 13.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace!important;letter-spacing:.01em!important;white-space:normal!important;transform:none!important}
 body.playing .actionResult:before{content:none!important;display:none!important}
 body.playing .actionScroll{position:absolute!important;z-index:3!important;left:89.2%!important;top:28%!important;width:8px!important;height:46%!important;pointer-events:none!important}
@@ -961,12 +961,8 @@ body.playing .free{margin-top:1px!important}
 @media(max-width:390px){
   body.playing .sceneWindow{width:calc(100% + 10px)!important;height:184px!important;margin-left:-5px!important;margin-right:-5px!important}
   body.playing .narrationMeta .thread,body.playing .narrationMeta .mood{font-size:10px!important}
-  body.playing .narrationShell{height:246px!important;min-height:246px!important}
-  body.playing .narrationViewport{left:7.7%!important;right:8.2%!important;top:50px!important;bottom:22px!important}
   body.playing .narrationCopy h3{font-size:17px!important}
   body.playing .narrationCopy p{font-size:11.1px!important;line-height:1.36!important}
-  body.playing .actionLogShell{height:178px!important;min-height:178px!important}
-  body.playing .actionViewport{left:8.5%!important;right:14.8%!important;top:42px!important;bottom:22px!important}
   body.playing .actionResult{font-size:12.9px!important;line-height:1.38!important}
   body.playing .choice{height:59px!important;min-height:59px!important}
   body.playing .choiceBody strong{font-size:10.9px!important}
