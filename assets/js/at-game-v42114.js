@@ -286,6 +286,7 @@ function updateActionScroll(){
  const travel=Math.max(0,track-thumbH);
  thumb.style.transform='translateY('+(max?travel*(box.scrollTop/max):0)+'px)';
 }
+window.updateActionScroll=updateActionScroll;
 
 function choiceIcon(action,label){
  const s=(String(action)+' '+String(label)).toLowerCase();
