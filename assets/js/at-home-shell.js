@@ -1,7 +1,7 @@
 (()=>{
 const SAVE='at_game_v4_week1';
-const FALLBACK_BUILD='v4.20.0';
-const ART='./assets/ui/at-mock1/at_splash_mock1_982x2129.webp?v=v4.20.0';
+const FALLBACK_BUILD='v4.20.1';
+const ART='./assets/ui/at-mock1/at_splash_mock1_982x2129.webp?v=v4.20.1';
 document.documentElement.style.background='#020709';
 
 const style=document.createElement('style');
@@ -14,19 +14,19 @@ html,body{margin:0;width:100%;height:100%;height:100dvh;background:#020709;color
 .ready .splashShade{opacity:0}
 .menuUI{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .42s ease}
 .menuMode .menuUI{opacity:1;pointer-events:auto}
-.actions{position:absolute;left:50%;top:57.2%;transform:translateX(-50%);width:min(82vw,372px);display:grid;gap:10px}
+.actions{position:absolute;left:50%;top:63.5%;transform:translateX(-50%);width:min(82vw,372px);display:grid;gap:10px}
 .launch{position:relative;width:100%;height:55px;border:1px solid #67f4ee;border-radius:4px;clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px),0 14px);background:linear-gradient(180deg,#0a2830e8,#031319f2);color:#f5ffff;font:900 12px/1 system-ui;letter-spacing:.12em;text-shadow:0 1px 2px #000;box-shadow:inset 0 0 0 2px #051114,inset 0 0 20px #2aece521,0 0 10px #2de6df38;touch-action:manipulation}
 .launch:before,.launch:after{content:"";position:absolute;top:13px;width:5px;height:29px;border-radius:2px;background:#ffb52e;box-shadow:0 0 10px #ffb52ea8}
 .launch:before{left:5px}.launch:after{right:5px}
 .launch:active{transform:translateY(1px);filter:brightness(1.16)}
 .launch[hidden]{display:none}
 .continue{border-color:#7eece7}
-.saveNote{position:absolute;left:50%;top:78.7%;transform:translateX(-50%);width:86vw;margin:0;text-align:center;color:#b7cbce;font:800 8px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-shadow:0 2px 4px #000}
+.saveNote{position:absolute;left:50%;top:83.8%;transform:translateX(-50%);width:86vw;margin:0;text-align:center;color:#b7cbce;font:800 8px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-shadow:0 2px 4px #000}
 .version{position:absolute;left:calc(8px + env(safe-area-inset-left));bottom:calc(6px + env(safe-area-inset-bottom));padding:4px 6px;border:1px solid #5fe4de44;background:#020709b8;color:#7f9a9f;font:800 7px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em}
 .tapSkip{position:absolute;right:calc(8px + env(safe-area-inset-right));bottom:calc(7px + env(safe-area-inset-bottom));font:700 7px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em;color:#789093;opacity:.65}
 .menuMode .tapSkip{display:none}
-@media(max-width:430px){.actions{top:57.7%;width:min(84vw,350px);gap:9px}.launch{height:52px;font-size:11px}.saveNote{top:78.4%}}
-@media(max-height:720px){.actions{top:55.5%;gap:7px}.launch{height:47px}.saveNote{top:79.5%}}
+@media(max-width:430px){.actions{top:64.2%;width:min(84vw,350px);gap:9px}.launch{height:52px;font-size:11px}.saveNote{top:84.2%}}
+@media(max-height:720px){.actions{top:61.5%;gap:7px}.launch{height:47px}.saveNote{top:84.5%}}
 @media(prefers-reduced-motion:reduce){.splashShade,.menuUI{transition:none}}
 `;
 document.head.appendChild(style);
