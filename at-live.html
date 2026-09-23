@@ -9,7 +9,7 @@
 </head><body><div class="boot" id="boot">BEHEMOTH2 · LIVE LINK<small>RESOLVING CURRENT BUILD</small></div>
 <script>
 (()=>{const MAP_API='https://api.github.com/repos/JR-Faulkner/Prismatic-Veil/contents/at-live-map.json?ref=main&ts='+Date.now();
-const FALLBACK={build:'v4.20.2',runtime:'assets/js/at-home-shell-v4202.js'};
+const FALLBACK={build:'v4.20.3',runtime:'assets/js/at-home-shell-v4203.js'};
 function run(m){window.__AT_LIVE_BUILD=m.build||FALLBACK.build;const s=document.createElement('script');s.src='./'+(m.runtime||FALLBACK.runtime);s.async=false;s.onerror=()=>{document.getElementById('boot').innerHTML='A+T LIVE LINK ERROR<small>RELOAD TO RETRY</small>'};document.head.appendChild(s)}
 fetch(MAP_API,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}}).then(r=>r.ok?r.json():Promise.reject()).then(x=>{const raw=atob((x.content||'').replace(/\n/g,''));run(JSON.parse(raw))}).catch(()=>run(FALLBACK));
 })();
