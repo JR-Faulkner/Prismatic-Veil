@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 590 330">
+<defs><linearGradient id="m" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#4b5558"/><stop offset=".16" stop-color="#171d20"/><stop offset=".8" stop-color="#090d10"/><stop offset="1" stop-color="#3a4245"/></linearGradient><filter id="g"><feGaussianBlur stdDeviation="4"/></filter></defs>
+<path d="M26 12h505l44 44v214l-44 44H26L12 300V27z" fill="#04080a" stroke="#667076" stroke-width="4"/>
+<path d="M39 20h474l45 45v196l-45 45H39l-19-19V39z" fill="url(#m)" stroke="#8a6525" stroke-width="3"/>
+<path d="M55 50h437l26 26v161l-26 26H55l-18-18V68z" fill="#071014" fill-opacity=".9" stroke="#a9761b" stroke-width="2"/>
+<text x="78" y="47" fill="#ffc13d" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="900" letter-spacing="3">ACTION LOG</text>
+<path d="M206 35h285" stroke="#72551f" stroke-width="3"/><path d="M69 278h390" stroke="#73571e" stroke-width="2"/>
+<g fill="#0a1012" stroke="#7e8588" stroke-width="2"><circle cx="36" cy="34" r="10"/><circle cx="522" cy="34" r="10"/><circle cx="36" cy="292" r="10"/><circle cx="522" cy="292" r="10"/></g>
+<rect x="27" y="111" width="7" height="74" rx="3" fill="#ffae27" filter="url(#g)"/><rect x="505" y="97" width="6" height="120" rx="3" fill="#ffae27"/>
+<path d="m519 86 7-10 7 10M519 229l7 10 7-10" fill="none" stroke="#ffb42e" stroke-width="4"/>
+</svg>
