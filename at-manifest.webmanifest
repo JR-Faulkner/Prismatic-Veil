@@ -9,7 +9,7 @@
   "theme_color": "#061015",
   "icons": [
     {
-      "src": "./assets/ui/at-mock1/at_home_icon_mock1_180.png?v=v4.21.7",
+      "src": "./assets/ui/at-mock1/at_home_icon_mock1_180.png?v=v4.21.8",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
