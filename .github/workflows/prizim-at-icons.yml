@@ -1,0 +1,45 @@
+name: PriZim A+T Icon Preflight
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'assets/ui/behemoth2/icons/v42134/**'
+      - 'assets/js/at-game-v42134.js'
+      - 'assets/at-game-v42134.css'
+      - 'assets/js/at-home-shell-v42134.js'
+      - 'at-game-v42134.html'
+      - 'at-live-map.json'
+      - 'tools/prizim/at_icon_preflight.py'
+      - '.github/workflows/prizim-at-icons.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  icon-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PriZim image dependency
+        run: python -m pip install --disable-pip-version-check Pillow
+      - name: Run PriZim A+T icon preflight
+        run: python tools/prizim/at_icon_preflight.py
+      - name: Publish PriZim report
+        if: always()
+        shell: bash
+        run: |
+          if [ -f build/prizim/at-icon-preflight.md ]; then
+            cat build/prizim/at-icon-preflight.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload PriZim report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prizim-at-icon-preflight
+          path: |
+            build/prizim/at-icon-preflight.json
+            build/prizim/at-icon-preflight.md
