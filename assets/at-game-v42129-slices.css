@@ -1,21 +1,11 @@
-/* A+T V4.21.29 real asset slices */
-body.playing .storyCorners{display:none!important}
-body.playing .narrationShell:before,body.playing .narrationShell:after,body.playing .actionLogShell:before,body.playing .actionLogShell:after{display:none!important}
-body.playing .sliceAssetFrame{position:absolute!important;inset:0!important;z-index:0!important;pointer-events:none!important}
-body.playing .sliceAssetFrame .fill{position:absolute!important;inset:16px!important;background:linear-gradient(180deg,#182329,#071014 24%,#061116 82%,#26353b)!important}
-body.playing .sliceAssetFrame.action .fill{background:linear-gradient(180deg,#171d20,#090d10 76%,#3a4245)!important}
-body.playing .sliceAssetFrame img{position:absolute!important;display:block!important}
-body.playing .sliceAssetFrame .corner{width:30px!important;height:30px!important}
-body.playing .sliceAssetFrame .tl{left:0!important;top:0!important}
-body.playing .sliceAssetFrame .tr{right:0!important;top:0!important;transform:scaleX(-1)!important}
-body.playing .sliceAssetFrame .bl{left:0!important;bottom:0!important;transform:scaleY(-1)!important}
-body.playing .sliceAssetFrame .br{right:0!important;bottom:0!important;transform:scale(-1)!important}
-body.playing .sliceAssetFrame .railH{left:30px!important;right:30px!important;width:calc(100% - 60px)!important;height:10px!important;object-fit:fill!important}
-body.playing .sliceAssetFrame .railH.top{top:0!important}
-body.playing .sliceAssetFrame .railH.bottom{bottom:0!important;transform:scaleY(-1)!important}
-body.playing .sliceAssetFrame .railV{top:30px!important;bottom:30px!important;height:calc(100% - 60px)!important;width:10px!important;object-fit:fill!important}
-body.playing .sliceAssetFrame .railV.left{left:0!important}
-body.playing .sliceAssetFrame .railV.right{right:0!important;transform:scaleX(-1)!important}
-body.playing .narrationShell,body.playing .actionLogShell{overflow:hidden!important}
-body.playing .narrationCopy,body.playing .actionResult{overflow:visible!important;max-height:none!important}
+/* A+T V4.21.29 real slice assets */
+body.playing .storyCorners,body.playing .narrationShell:before,body.playing .narrationShell:after,body.playing .actionLogShell:before,body.playing .actionLogShell:after{display:none!important}
+body.playing .narrationShellArt,body.playing .actionLogArt{display:none!important}
+body.playing .narrationShell{background:url('./ui/behemoth2/slices/narr_corner.svg') 0 0/30px 30px no-repeat,url('./ui/behemoth2/slices/narr_corner_tr.svg') 100% 0/30px 30px no-repeat,url('./ui/behemoth2/slices/narr_corner_bl.svg') 0 100%/30px 30px no-repeat,url('./ui/behemoth2/slices/narr_corner_br.svg') 100% 100%/30px 30px no-repeat,url('./ui/behemoth2/slices/narr_rail.svg') 30px 0/calc(100% - 60px) 10px no-repeat,url('./ui/behemoth2/slices/narr_rail.svg') 30px 100%/calc(100% - 60px) 10px no-repeat,url('./ui/behemoth2/slices/narr_rail_v.svg') 0 30px/10px calc(100% - 60px) no-repeat,url('./ui/behemoth2/slices/narr_rail_v.svg') 100% 30px/10px calc(100% - 60px) no-repeat,linear-gradient(180deg,#182329 0,#071014 22%,#061116 82%,#26353b 100%)!important;overflow:hidden!important}
+body.playing .actionLogShell{background:url('./ui/behemoth2/slices/action_corner.svg') 0 0/30px 30px no-repeat,url('./ui/behemoth2/slices/action_corner_tr.svg') 100% 0/30px 30px no-repeat,url('./ui/behemoth2/slices/action_corner_bl.svg') 0 100%/30px 30px no-repeat,url('./ui/behemoth2/slices/action_corner_br.svg') 100% 100%/30px 30px no-repeat,url('./ui/behemoth2/slices/action_rail.svg') 30px 0/calc(100% - 60px) 10px no-repeat,url('./ui/behemoth2/slices/action_rail.svg') 30px 100%/calc(100% - 60px) 10px no-repeat,url('./ui/behemoth2/slices/action_rail_v.svg') 0 30px/10px calc(100% - 60px) no-repeat,url('./ui/behemoth2/slices/action_rail_v.svg') 100% 30px/10px calc(100% - 60px) no-repeat,linear-gradient(180deg,#171d20 0,#090d10 76%,#3a4245 100%)!important;overflow:hidden!important}
+body.playing .narrationViewport{padding:44px 7.5% 28px!important}
+body.playing .actionViewport{padding:44px 14.5% 28px 8.3%!important}
+body.playing .narrationCopy,body.playing .actionResult{height:auto!important;max-height:none!important;overflow:visible!important}
 body.playing .actionScroll{display:none!important}
+body.playing .choices{gap:0!important;margin-top:0!important}
+@media(max-width:390px){body.playing .narrationViewport{padding:42px 7.7% 26px!important}body.playing .actionViewport{padding:42px 14.8% 26px 8.5%!important}}
