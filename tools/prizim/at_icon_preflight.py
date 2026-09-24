@@ -111,3 +111,5 @@ for key,ok in contracts.items():
     print(f"[{'PASS' if ok else 'FAIL'}] contract {key}")
 return_code=1 if failures else 0
 sys.exit(return_code)
+
+# PriZim lane trigger: A+T claim icons
