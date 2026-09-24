@@ -69,10 +69,16 @@ export default class Live29GEncounterBattleScene extends Live29FEncounterBattleS
     if (previousView) {
       previousView.stopIdle?.();
       if (previousView.layout) this.scale.off('resize', previousView.layout, previousView);
-      if (previousView.container) {
-        this.tweens.killTweensOf(previousView.container);
-        previousView.container.destroy(true);
-      }
+      // Do not destroy the inherited Wraith view during scene boot. The live
+      // K27 stack has resize/tween callbacks still settling at this point;
+      // destroying the container can trip Phaser's internal sys lookup. Hide
+      // it and let the scene shutdown own cleanup while LIVE29G creates the
+      // location-specific view below.
+      previousView.container?.setVisible?.(false);
+      previousView.container?.setActive?.(false);
+      previousView.sprite?.setVisible?.(false);
+      previousView.glow?.setVisible?.(false);
+      previousView.ghost?.setVisible?.(false);
     }
 
     this.enemyView = createEnemyView(this, this.enemy);
