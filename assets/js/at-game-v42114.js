@@ -515,6 +515,5 @@ $('end').onclick=newDay;
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===b.dataset.tab))});
 try{S=JSON.parse(localStorage.getItem(SAVE)||'null')}catch(e){}
 if(S){S.premise=BACKGROUND;if(S.items&&S.items.car){S.items.car.name='Virog 4';S.items.car.icon='🚙';}S.knowledge=S.knowledge||{'alteration sense':1,'claim sense':1};S.journal=S.journal||[];S.claims=S.claims||Object.keys(S.items||{});S.threads=S.threads||{business:true,serviceSpur:false,oldTraveler:false,uncle:false};S.usedChoices=S.usedChoices||{};S.baseAP=S.baseAP||6;S.result=S.result||'Welcome back to the Verdant.';render()}
-if(location.search)history.replaceState({},'',location.pathname);
 })();
 ;(()=>{const r=document.getElementById('result');if(r&&!r.dataset.scrollSync){r.dataset.scrollSync='1';r.addEventListener('scroll',updateActionScroll,{passive:true});window.addEventListener('resize',updateActionScroll,{passive:true});requestAnimationFrame(updateActionScroll)}})();
