@@ -18,6 +18,10 @@ export const PROGRESSION_TUNING = Object.freeze({
   revision: 'live30e-provisional1',
   levelCurveLocked: false,
   encounters: Object.freeze({
+    whisper: Object.freeze({
+      firstClear: Object.freeze({ xpEach: 50, items: Object.freeze({ veilShard: 1, memoryFragment: 1 }) }),
+      repeat: Object.freeze({ xpEach: 20, items: Object.freeze({}) })
+    }),
     echo: Object.freeze({
       firstClear: Object.freeze({ xpEach: 50, items: Object.freeze({ veilShard: 1, memoryFragment: 1 }) }),
       repeat: Object.freeze({ xpEach: 20, items: Object.freeze({}) })
