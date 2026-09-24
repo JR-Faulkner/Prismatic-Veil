@@ -10,7 +10,7 @@
 <script>
 (()=>{const MAP_API='https://api.github.com/repos/JR-Faulkner/Prismatic-Veil/contents/at-live-map.json?ref=main&ts='+Date.now();
 const FALLBACK={build:'v4.21.3',runtime:'assets/js/at-home-shell-v4213.js'};
-function run(m){window.__AT_LIVE_BUILD=m.build||FALLBACK.build;const s=document.createElement('script');s.src='./'+(m.runtime||FALLBACK.runtime);s.async=false;s.onerror=()=>{document.getElementById('boot').innerHTML='A+T LIVE LINK ERROR<small>RELOAD TO RETRY</small>'};document.head.appendChild(s)}
+function run(m){const build=m.build||FALLBACK.build;window.__AT_LIVE_BUILD=build;const s=document.createElement('script');s.src='./'+(m.runtime||FALLBACK.runtime)+'?v='+encodeURIComponent(build);s.async=false;s.onerror=()=>{document.getElementById('boot').innerHTML='A+T LIVE LINK ERROR<small>RELOAD TO RETRY</small>'};document.head.appendChild(s)}
 fetch(MAP_API,{cache:'no-store',headers:{Accept:'application/vnd.github+json'}}).then(r=>r.ok?r.json():Promise.reject()).then(x=>{const raw=atob((x.content||'').replace(/\n/g,''));run(JSON.parse(raw))}).catch(()=>run(FALLBACK));
 })();
 </script></body></html>
