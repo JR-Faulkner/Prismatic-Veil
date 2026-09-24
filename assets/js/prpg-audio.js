@@ -216,6 +216,94 @@
     b.addEventListener('click',e=>{e.stopPropagation();enabled=!enabled;localStorage.setItem('prpg.sfx',enabled?'1':'0');b.textContent=enabled?'🔊':'🔇';if(enabled){prime();play('select')}});
   }
 
+  const choiceLockKey='prpg.choiceLocks.v42135';
+  const branchRules=[
+    {day:3,group:'jobNotice',labels:['Accept the recovery job','Pass on the job']},
+    {day:4,group:'beaconClaim',labels:['Stake a recovery Claim','Leave it alone']},
+    {day:5,group:'serviceSpurRoute',labels:['Use your tools creatively','Alter your tools for the job','Abandon the shortcut']},
+    {day:9,group:'greenhouseOffer',labels:['Take the greenhouse job','Decline it']},
+    {day:10,group:'greenhouseRun',labels:['Work your way inside','Back out and reassess']},
+    {day:16,group:'pumpHouse',labels:['Plan the recovery normally','Walk away from bad conditions']},
+    {day:19,group:'relayClaim',labels:['Stake a Claim on the shack','Mark it for later','Walk away']}
+  ];
+
+  function readChoiceLocks(){
+    try{return JSON.parse(localStorage.getItem(choiceLockKey)||'{}')||{}}
+    catch{return {}}
+  }
+
+  function writeChoiceLocks(locks){
+    try{localStorage.setItem(choiceLockKey,JSON.stringify(locks||{}))}catch{}
+  }
+
+  function currentStoryDay(){
+    const raw=(document.getElementById('day')?.textContent||'').match(/\d+/);
+    return raw?Number(raw[0]):0;
+  }
+
+  function choiceLabel(button){
+    return (button?.querySelector('strong')?.textContent||button?.textContent||'').replace(/\s+/g,' ').trim();
+  }
+
+  function branchForChoice(button){
+    const day=currentStoryDay(),label=choiceLabel(button);
+    const rule=branchRules.find(r=>r.day===day&&r.labels.includes(label));
+    return rule?{key:day+'|'+rule.group,label,rule}:null;
+  }
+
+  function setResult(text){
+    const box=document.getElementById('result');
+    if(box)box.textContent=text;
+  }
+
+  function syncChoiceLocks(){
+    const locks=readChoiceLocks();
+    document.querySelectorAll('button.choice').forEach(button=>{
+      const branch=branchForChoice(button);
+      if(!branch)return;
+      const locked=locks[branch.key];
+      if(!locked||locked===branch.label)return;
+      button.disabled=true;
+      button.classList.add('used');
+      button.dataset.choiceState='closed';
+      const state=button.querySelector('.choiceState');
+      if(state)state.textContent='RESOLVED';
+    });
+  }
+
+  function installChoiceLocks(){
+    document.addEventListener('click',e=>{
+      const nav=e.target.closest('button,a');
+      if(nav&&['newTutorial','newGame','start','begin'].includes(nav.id)){
+        try{localStorage.removeItem(choiceLockKey)}catch{}
+      }
+      const button=e.target.closest('button.choice');
+      if(!button)return;
+      const branch=branchForChoice(button);
+      if(!branch)return;
+      const locks=readChoiceLocks(),locked=locks[branch.key];
+      if(locked&&locked!==branch.label){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        pulseEl(button,'reject');
+        play('reject');
+        setResult('That branch is already resolved by your earlier choice here. The opposite path is closed unless the story reopens it.');
+        syncChoiceLocks();
+        return;
+      }
+      if(!locked){
+        locks[branch.key]=branch.label;
+        writeChoiceLocks(locks);
+      }
+    },true);
+    const choices=document.getElementById('choices');
+    if(choices)new MutationObserver(syncChoiceLocks).observe(choices,{childList:true,subtree:true,characterData:true});
+    const day=document.getElementById('day');
+    if(day)new MutationObserver(syncChoiceLocks).observe(day,{childList:true,subtree:true,characterData:true});
+    syncChoiceLocks();
+  }
+  installChoiceLocks();
+
   document.addEventListener('pointerdown',prime,{once:true,capture:true});
 
   document.addEventListener('click',e=>{
