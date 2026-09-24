@@ -39,6 +39,43 @@
     if(travel&&!travel.disabled)travel.textContent='Revisit Encounter';
   }
 
+  function setText(id,value){const el=document.getElementById(id);if(el)el.textContent=value;return el}
+  function setMeta(values){const el=document.getElementById('locationMeta');if(el)el.innerHTML=values.map(v=>`<span>${v}</span>`).join('')}
+  function forceTravel(label,enabled){const el=document.getElementById('travelButton');if(el){el.textContent=label;el.disabled=!enabled}}
+  function paintNode(id,label,x,y,glyph,locked=false){
+    const map=document.querySelector('.map-wrap');if(!map)return null;
+    let node=document.querySelector(`.pv30-node[data-location="${id}"]`);
+    if(!node){
+      node=document.createElement('button');node.type='button';node.className='hotspot pv30-node';node.dataset.location=id;
+      node.innerHTML=`<span class="pv30-glyph"><i>${glyph||'◇'}</i></span><span class="pv30-name"></span>`;
+      map.appendChild(node);
+    }
+    node.style.setProperty('left',x+'%','important');node.style.setProperty('top',y+'%','important');
+    node.querySelector('.pv30-name')?.replaceChildren(document.createTextNode(label));
+    const icon=node.querySelector('.pv30-glyph i');if(icon)icon.textContent=glyph||icon.textContent;
+    node.setAttribute('aria-label',label+(locked?', locked route':''));
+    node.classList.toggle('locked',!!locked);return node;
+  }
+  function showWhisperPanel(){
+    setText('objectiveText','Stabilize the Whispering Grove disturbance.');
+    setText('locationName','Whispering Grove');
+    setText('locationState',isCleared()?'Cleared · Route Stable':'Reachable');
+    setText('locationDesc',isCleared()?'The prismatic voices have quieted. The Grove route remains open for a rematch.':'A living grove where prismatic leaves echo voices from nearby realities. This is the first active disturbance on the route.');
+    setMeta(isCleared()?['Cleared','Route Stable','Revisit']:['Encounter','First Clear','Resonance']);
+    forceTravel(isCleared()?'Revisit Encounter':'Enter Whispering Grove',true);
+  }
+  function showLockedPanel(name,state,desc,meta){
+    setText('objectiveText','Stabilize Whispering Grove to reveal more of the region.');
+    setText('locationName',name);setText('locationState',state);setText('locationDesc',desc);setMeta(meta);
+    forceTravel('Route Not Yet Open',false);
+  }
+  function patchVisibleMap(){
+    paintNode('whisper','Whispering Grove',34.8,43.2,'♧',false);
+    paintNode('echo','Echo Castle',83.0,31.0,'♜',!isCleared());
+    paintNode('frigid','Frigid Hills',16.0,18.0,'❄',true);
+    document.querySelector('.pv30-node[data-location="whisper"]')?.classList.toggle('pv-cleared',isCleared());
+  }
+
   async function ensureTravelPiece(){
     if(window.PV_OVERWORLD30G&&typeof window.PV_OVERWORLD30G.departWhisper==='function')return;
     if(!document.querySelector('script[data-pv-overworld-live30g]')){
@@ -106,7 +143,9 @@
   }
 
   document.addEventListener('click',e=>{
-    if(e.target.closest?.('.hotspot[data-location="whisper"]'))setTimeout(()=>{syncClearMarker();patchEncounterPanel()},0);
+    if(e.target.closest?.('.hotspot[data-location="whisper"]'))setTimeout(()=>{patchVisibleMap();showWhisperPanel();syncClearMarker();patchEncounterPanel()},0);
+    if(e.target.closest?.('.hotspot[data-location="echo"]'))setTimeout(()=>showLockedPanel('Echo Castle','Distant Signal','The upper-right castle rings with a clean, repeating Veil signal. Its gate is visible, but the route is not yet stable.',['Castle','Signal','Story']),0);
+    if(e.target.closest?.('.hotspot[data-location="frigid"]'))setTimeout(()=>showLockedPanel('Frigid Hills','Route Sealed','A winter-bright rise beyond the safe road. Frosted resonance marks a future route through the highlands.',['Highlands','Frost','Discovery']),0);
   },false);
 
   document.addEventListener('click',e=>{
@@ -119,6 +158,9 @@
   },true);
 
   syncClearMarker();
+  setTimeout(patchVisibleMap,80);
+  setTimeout(patchVisibleMap,450);
+  setTimeout(()=>{if(document.querySelector('.pv30-node[data-location="whisper"]')?.classList.contains('sel'))showWhisperPanel()},520);
   const params=new URLSearchParams(location.search);
   if(params.get('pvreturn')===LOCATION){
     const result=safeParse(localStorage.getItem(RESULT_KEY))||{result:params.get('pvresult')||'unknown',firstClear:false};
