@@ -6,7 +6,7 @@
   let primed=false;
   let ctx=null;
 
-  const volumes={select:.28,activate:.34,step:.22,reject:.27,refresh:.30};
+  const volumes={select:.28,activate:.34,step:.22,reject:.27,refresh:.30,newClaim:.36,worthUnlock:.32,apRestore:.30};
 
   function audioCtx(){
     ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
@@ -117,7 +117,48 @@
     osc(c,d,t,.82,52,'sine',.038);
   }
 
-  const cues={select:cueSelect,activate:cueActivate,step:cueStep,reject:cueReject,refresh:cueRefresh};
+  function cueNewClaim(c,t,d){
+    hit(c,d,t,{len:.12,freq:260,gain:.74,grit:.18,highpass:440});
+    hit(c,d,t+.075,{len:.14,freq:390,gain:.48,grit:.12,highpass:560});
+    sweep(c,d,t+.04,.28,92,64,'sawtooth',.09);
+    hit(c,d,t+.24,{len:.10,freq:760,gain:.22,grit:.05,highpass:680});
+    osc(c,d,t,.42,48,'sine',.045);
+  }
+
+  function cueWorthUnlock(c,t,d){
+    hit(c,d,t,{len:.07,freq:620,gain:.20,grit:.035,highpass:720});
+    hit(c,d,t+.105,{len:.08,freq:820,gain:.22,grit:.04,highpass:760});
+    hit(c,d,t+.215,{len:.10,freq:1120,gain:.24,grit:.045,highpass:840});
+    sweep(c,d,t+.04,.46,160,420,'sine',.055);
+    osc(c,d,t+.18,.40,74,'sine',.035);
+  }
+
+  function cueApRestore(c,t,d){
+    hit(c,d,t,{len:.10,freq:420,gain:.36,grit:.10,highpass:580});
+    sweep(c,d,t+.04,.32,82,132,'sine',.07);
+    hit(c,d,t+.29,{len:.08,freq:980,gain:.18,grit:.035,highpass:820});
+    osc(c,d,t,.42,60,'sine',.036);
+  }
+
+  const cues={select:cueSelect,activate:cueActivate,step:cueStep,reject:cueReject,refresh:cueRefresh,newClaim:cueNewClaim,worthUnlock:cueWorthUnlock,apRestore:cueApRestore};
+
+  function addFeelStyles(){
+    if(document.getElementById('prpgSfxFeel'))return;
+    const s=document.createElement('style');
+    s.id='prpgSfxFeel';
+    s.textContent='.prpg-press{transform:translateY(2px) scale(.995)!important;filter:brightness(1.18) saturate(1.12)!important}.prpg-confirm{box-shadow:0 0 0 1px rgba(245,194,101,.72),0 0 20px rgba(245,172,70,.34)!important}.prpg-commit{box-shadow:0 0 0 1px rgba(143,218,151,.72),0 0 24px rgba(143,218,151,.28)!important}.prpg-reject{box-shadow:0 0 0 1px rgba(255,96,82,.72),0 0 18px rgba(255,80,70,.30)!important}';
+    document.head.appendChild(s);
+  }
+
+  function pulseEl(el,kind='press'){
+    if(!el||!el.classList)return;
+    addFeelStyles();
+    const cls=kind==='confirm'?'prpg-confirm':kind==='commit'?'prpg-commit':kind==='reject'?'prpg-reject':'prpg-press';
+    el.classList.remove('prpg-press','prpg-confirm','prpg-commit','prpg-reject');
+    void el.offsetWidth;
+    el.classList.add('prpg-press',cls);
+    setTimeout(()=>el.classList.remove('prpg-press',cls),kind==='commit'?420:180);
+  }
 
   function play(name){
     if(!enabled)return;
@@ -129,6 +170,8 @@
       (cues[name]||cueSelect)(c,t,d);
     }catch(e){}
   }
+
+  window.PRPGAudio={play,pulse:pulseEl};
 
   function prime(){
     if(primed)return;
@@ -146,6 +189,23 @@
     return /⚠|not enough|cannot|no ap|no stable|nothing changes|does not become writable|does not resolve|never settles|blocked/.test(t);
   }
 
+  function watchSpecialResults(){
+    const result=document.getElementById('result');
+    if(!result||result.dataset.prpgSfxWatch)return;
+    result.dataset.prpgSfxWatch='1';
+    let last='';
+    const scan=()=>{
+      const text=(result.textContent||'').trim();
+      if(!text||text===last)return;
+      last=text;
+      if(/CLAIM ESTABLISHED/i.test(text)) play('newClaim');
+      else if(/WORTH UNLOCKED/i.test(text)) play('worthUnlock');
+      else if(/Alteration capacity returns/i.test(text)) play('apRestore');
+    };
+    new MutationObserver(scan).observe(result,{childList:true,characterData:true,subtree:true});
+    scan();
+  }
+
   function addToggle(){
     if(document.getElementById('prpgSfx'))return;
     const b=document.createElement('button');b.id='prpgSfx';b.type='button';b.textContent=enabled?'🔊':'🔇';b.setAttribute('aria-label','Toggle sound effects');
@@ -161,24 +221,27 @@
   document.addEventListener('click',e=>{
     const el=e.target.closest('button,a');
     if(!el||el.id==='prpgSfx')return;
-    if(el.disabled){play('reject');return}
+    if(el.disabled){pulseEl(el,'reject');play('reject');return}
 
-    if(el.id==='end'){play('refresh');return}
+    if(el.id==='end'){pulseEl(el,'commit');play('refresh');return}
 
     const pageChange=el.classList.contains('back')||['newTutorial','newGame','continueGame','enterVerdant','start','begin','finishLesson'].includes(el.id)||!!el.dataset.next||!!el.closest('.nav');
-    if(pageChange){play('step');return}
+    if(pageChange){pulseEl(el,'press');play('step');return}
 
     const activates=el.classList.contains('choice')||el.classList.contains('alterChoice')||el.classList.contains('primary');
     if(activates){
+      pulseEl(el,'confirm');
       play('select');
       setTimeout(()=>play(failedResult()?'reject':'activate'),55);
       return;
     }
 
     if(el.classList.contains('prop')||el.classList.contains('simpleClaim')||el.classList.contains('btn')||el.classList.contains('launch')){
+      pulseEl(el,'press');
       play('select');
     }
   },true);
 
   addToggle();
+  watchSpecialResults();
 })();
