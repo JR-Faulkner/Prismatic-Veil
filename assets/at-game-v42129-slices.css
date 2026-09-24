@@ -1,0 +1,21 @@
+/* A+T V4.21.29 real asset slices */
+body.playing .storyCorners{display:none!important}
+body.playing .narrationShell:before,body.playing .narrationShell:after,body.playing .actionLogShell:before,body.playing .actionLogShell:after{display:none!important}
+body.playing .sliceAssetFrame{position:absolute!important;inset:0!important;z-index:0!important;pointer-events:none!important}
+body.playing .sliceAssetFrame .fill{position:absolute!important;inset:16px!important;background:linear-gradient(180deg,#182329,#071014 24%,#061116 82%,#26353b)!important}
+body.playing .sliceAssetFrame.action .fill{background:linear-gradient(180deg,#171d20,#090d10 76%,#3a4245)!important}
+body.playing .sliceAssetFrame img{position:absolute!important;display:block!important}
+body.playing .sliceAssetFrame .corner{width:30px!important;height:30px!important}
+body.playing .sliceAssetFrame .tl{left:0!important;top:0!important}
+body.playing .sliceAssetFrame .tr{right:0!important;top:0!important;transform:scaleX(-1)!important}
+body.playing .sliceAssetFrame .bl{left:0!important;bottom:0!important;transform:scaleY(-1)!important}
+body.playing .sliceAssetFrame .br{right:0!important;bottom:0!important;transform:scale(-1)!important}
+body.playing .sliceAssetFrame .railH{left:30px!important;right:30px!important;width:calc(100% - 60px)!important;height:10px!important;object-fit:fill!important}
+body.playing .sliceAssetFrame .railH.top{top:0!important}
+body.playing .sliceAssetFrame .railH.bottom{bottom:0!important;transform:scaleY(-1)!important}
+body.playing .sliceAssetFrame .railV{top:30px!important;bottom:30px!important;height:calc(100% - 60px)!important;width:10px!important;object-fit:fill!important}
+body.playing .sliceAssetFrame .railV.left{left:0!important}
+body.playing .sliceAssetFrame .railV.right{right:0!important;transform:scaleX(-1)!important}
+body.playing .narrationShell,body.playing .actionLogShell{overflow:hidden!important}
+body.playing .narrationCopy,body.playing .actionResult{overflow:visible!important;max-height:none!important}
+body.playing .actionScroll{display:none!important}
