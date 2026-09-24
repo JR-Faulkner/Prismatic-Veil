@@ -11,8 +11,10 @@ import { createEnemyView } from './Live25EnemyViewFactory.js?v=live29g1';
 import EnemyAudioDirector from '../EnemyAudioDirector.js?v=live29g1';
 
 const LOCATION_ENEMY = Object.freeze({
-  // Echo Playground is the first location-specific encounter lane.
-  // Other/unmapped locations intentionally retain the K27 Veil Wraith.
+  // Whispering Grove is the first location-specific encounter lane.
+  // Echo remains mapped for save/back-compat, but the Overworld now launches
+  // the first encounter from Whispering Grove.
+  whisper: ENEMY_IDS.hushling,
   echo: ENEMY_IDS.hushling
 });
 
