@@ -974,3 +974,48 @@ body.playing .free{margin-top:1px!important}
 body.playing .b2Header{margin-bottom:1px!important}
 body.playing .systemRail{margin-top:1px!important;margin-bottom:1px!important}
 body.playing .nav{margin-top:1px!important;margin-bottom:1px!important}
+
+/* ===== A+T V4.21.20 · BEHEMOTH2 SETUP SCREEN =====
+   The setup/name/premise screen renders before body.playing is ever
+   added, so none of the hardware-console overrides above ever reached
+   it -- it was still running the original soft "bubble" theme (pastel
+   pills, rounded cards, purple gradients) while every other screen had
+   moved to the dark industrial Behemoth2 look. Scoped to #setup so
+   nothing shared with in-game screens (.shell/.hero/.badge/.btn etc.,
+   already correctly dark via body.playing) is touched. */
+body:not(.playing) .shell{
+  background:linear-gradient(180deg,#0b151aee,#071014f5),repeating-linear-gradient(135deg,#ffffff07 0 1px,transparent 1px 8px);
+  border:1px solid #35464e;border-radius:0;box-shadow:0 18px 45px #000a,inset 0 0 0 1px #000;
+  backdrop-filter:none;
+}
+#setup{padding:2px}
+#setup .hero{
+  background:linear-gradient(160deg,#0f1b20,#0a1216);color:var(--b2-text);
+  border:1px solid var(--b2-border);border-radius:0;box-shadow:inset 3px 0 0 var(--b2-teal);
+  padding:15px 15px 15px 17px;
+}
+#setup .hero:after{color:#ffffff08}
+#setup .hero h2{color:var(--b2-text)}
+#setup .hero p{color:var(--b2-muted)}
+#setup .badge{
+  background:#0b1216;border:1px solid var(--b2-border);border-radius:2px;color:var(--b2-teal);
+  font-family:"SFMono-Regular",Menlo,Consolas,monospace;
+}
+#setup h2{color:var(--b2-text);font-family:"Arial Narrow",Impact,sans-serif;letter-spacing:.01em}
+#setup p{color:var(--b2-muted)}
+#setup .setupPills span{
+  background:#0b1216;border:1px solid #30444c;border-radius:2px;color:var(--b2-teal);
+  font-family:"SFMono-Regular",Menlo,Consolas,monospace;
+}
+#setup label{color:var(--b2-muted);font-family:"SFMono-Regular",Menlo,Consolas,monospace}
+#setup input{
+  background:#070d11;border:1px solid #43565e;border-radius:0;color:var(--b2-text);
+  box-shadow:inset 3px 0 0 var(--b2-teal);font-family:inherit;
+}
+#setup input:focus{border-color:var(--b2-teal);box-shadow:inset 3px 0 0 var(--b2-teal),0 0 0 3px #2ee8e222}
+#setup .btn.primary{
+  background:linear-gradient(135deg,#ffc74a,#e99a13)!important;color:#16130d!important;
+  border:1px solid #ffd56c!important;border-radius:0!important;
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+  font-family:"Arial Narrow",Impact,sans-serif;letter-spacing:.06em;
+}
