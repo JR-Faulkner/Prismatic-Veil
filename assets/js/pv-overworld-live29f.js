@@ -39,7 +39,22 @@
     if(travel&&!travel.disabled)travel.textContent='Revisit Encounter';
   }
 
+  async function ensureTravelPiece(){
+    if(window.PV_OVERWORLD30G&&typeof window.PV_OVERWORLD30G.departWhisper==='function')return;
+    if(!document.querySelector('script[data-pv-overworld-live30g]')){
+      await new Promise(resolve=>{
+        const s=document.createElement('script');
+        s.src='./assets/js/pv-overworld-live30g.js?pvasset=live30g1';
+        s.dataset.pvOverworldLive30g='1';
+        s.onload=resolve;
+        s.onerror=resolve;
+        document.body.appendChild(s);
+      });
+    }
+  }
+
   async function runTravelPiece(){
+    await ensureTravelPiece();
     if(window.PV_OVERWORLD30G&&typeof window.PV_OVERWORLD30G.departWhisper==='function'){
       await window.PV_OVERWORLD30G.departWhisper();
     }
