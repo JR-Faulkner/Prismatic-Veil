@@ -755,12 +755,11 @@ body.playing .nav button:active .tabArt{transform:translateY(1px)!important;filt
 
 /* ===== A+T V4.17.1 · LIVE TOP-SHELL TEXT SEATING ===== */
 /* Surgical DOM-only correction: USER, ROLE, LOCATION. Hardware art remains unchanged. */
-body.playing .userMeta .userNameField{
-  transform:translateX(-7%)!important;
-}
-body.playing .userMeta .userRoleField{
-  transform:translateX(-5%)!important;
-}
+/* V4.21.25: dropped the per-field translateX nudges here — NAME/ROLE were being
+   hand-shoved left by two different past passes while UNIT never got a matching
+   nudge, so the three fields didn't sit on the same rhythm. Spacing now comes
+   only from .userMeta's own grid gap/columns (V4.16.2 block above), applied
+   evenly to all three fields. */
 body.playing .userMeta .userNameField strong{
   font-size:12px!important;
   letter-spacing:.055em!important;
@@ -778,12 +777,6 @@ body.playing .headerLocation>#headerLocation{
 }
 
 @media(max-width:430px){
-  body.playing .userMeta .userNameField{
-    transform:translateX(-8%)!important;
-  }
-  body.playing .userMeta .userRoleField{
-    transform:translateX(-6%)!important;
-  }
   body.playing .userMeta .userNameField strong{
     font-size:9px!important;
     letter-spacing:.045em!important;
