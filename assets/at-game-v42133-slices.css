@@ -1,0 +1,83 @@
+/* A+T V4.21.30 · real slice assets, variable-height story frames */
+body.playing #life{container-type:inline-size!important}
+body.playing .storyCorners,
+body.playing .narrationShell:before,
+body.playing .narrationShell:after,
+body.playing .actionLogShell:before,
+body.playing .actionLogShell:after{display:none!important}
+
+body.playing .narrationShell,
+body.playing .actionLogShell{
+  --slice-corner:clamp(30px,9.05cqw,72px);
+  --slice-rail:clamp(9px,2.72cqw,22px);
+  overflow:hidden!important;
+}
+body.playing .sliceAssetFrame{
+  position:absolute!important;
+  inset:0!important;
+  z-index:0!important;
+  pointer-events:none!important;
+}
+body.playing .sliceAssetFrame .fill{
+  position:absolute!important;
+  inset:var(--slice-rail)!important;
+  background:linear-gradient(180deg,#182329,#071014 24%,#061116 82%,#26353b)!important;
+}
+body.playing .sliceAssetFrame.action .fill{
+  background:linear-gradient(180deg,#171d20,#090d10 76%,#3a4245)!important;
+}
+body.playing .sliceAssetFrame img{
+  position:absolute!important;
+  display:block!important;
+}
+body.playing .sliceAssetFrame .corner{
+  width:var(--slice-corner)!important;
+  height:var(--slice-corner)!important;
+}
+body.playing .sliceAssetFrame .corner.tl{left:0!important;top:0!important}
+body.playing .sliceAssetFrame .corner.tr{right:0!important;top:0!important}
+body.playing .sliceAssetFrame .corner.bl{left:0!important;bottom:0!important}
+body.playing .sliceAssetFrame .corner.br{right:0!important;bottom:0!important}
+body.playing .sliceAssetFrame .railH{
+  left:var(--slice-corner)!important;
+  right:var(--slice-corner)!important;
+  width:calc(100% - (2 * var(--slice-corner)))!important;
+  height:var(--slice-rail)!important;
+  object-fit:fill!important;
+}
+body.playing .sliceAssetFrame .railH.top{top:0!important}
+body.playing .sliceAssetFrame .railH.bottom{bottom:0!important;transform:scaleY(-1)!important}
+body.playing .sliceAssetFrame .railV{
+  top:var(--slice-corner)!important;
+  bottom:var(--slice-corner)!important;
+  height:calc(100% - (2 * var(--slice-corner)))!important;
+  width:var(--slice-rail)!important;
+  object-fit:fill!important;
+}
+body.playing .sliceAssetFrame .railV.left{left:0!important}
+body.playing .sliceAssetFrame .railV.right{right:0!important;transform:scaleX(-1)!important}
+
+/* Recreate the non-stretching indicator lamps from the approved frames. */
+body.playing .sliceAssetFrame.narr:before{
+  content:""!important;position:absolute!important;z-index:2!important;
+  left:2.6%!important;top:9.95cqw!important;width:.8%!important;height:5.43cqw!important;
+  border-radius:999px!important;background:#ffb632!important;box-shadow:0 0 6px #ffb63266!important;
+}
+body.playing .sliceAssetFrame.narr:after{
+  content:""!important;position:absolute!important;z-index:2!important;
+  right:2.8%!important;top:13.12cqw!important;width:.9%!important;height:8.6cqw!important;
+  border-radius:999px!important;background:#22e7e2!important;box-shadow:0 0 10px #22e7e288!important;
+}
+body.playing .sliceAssetFrame.action:before{
+  content:""!important;position:absolute!important;z-index:2!important;
+  left:2.6%!important;top:10.4cqw!important;width:.8%!important;height:6.79cqw!important;
+  border-radius:999px!important;background:#ffae27!important;box-shadow:0 0 7px #ffae2777!important;
+}
+
+/* The frame grows with the copy. Scrolling is retired for these two story panels. */
+body.playing .narrationCopy,
+body.playing .actionResult{
+  overflow:visible!important;
+  max-height:none!important;
+}
+body.playing .actionScroll{display:none!important}
