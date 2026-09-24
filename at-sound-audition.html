@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101820">
+  <title>A+T Sound Audition</title>
+  <style>
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%}body{min-height:100vh;display:grid;place-items:center;padding:calc(18px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));background:radial-gradient(circle at 50% 0%,rgba(121,183,155,.18),transparent 34%),linear-gradient(180deg,#101820 0%,#11150f 54%,#070a08 100%);color:#efe9d6;font-family:"Segoe UI",system-ui,-apple-system,sans-serif}main{width:min(100%,620px);border:1px solid rgba(190,174,132,.34);border-radius:8px;padding:18px;background:rgba(17,22,18,.86);box-shadow:0 18px 50px rgba(0,0,0,.44)}.plate{border:1px solid rgba(238,224,177,.18);border-radius:6px;padding:16px;background:linear-gradient(90deg,rgba(255,255,255,.045),transparent 16%,transparent 84%,rgba(255,255,255,.035)),#182019}h1{margin:0 0 4px;font-size:21px;line-height:1.1;letter-spacing:0;text-transform:uppercase}.sub{margin:0 0 18px;color:#b7ad8b;font-size:12px;line-height:1.4}.grid{display:grid;gap:12px}.row{display:grid;gap:10px;padding:12px;border:1px solid rgba(238,224,177,.18);border-radius:6px;background:#0d110e}.label{display:flex;align-items:baseline;justify-content:space-between;gap:10px;color:#f4e6bd;font-weight:800;letter-spacing:.04em;text-transform:uppercase;font-size:13px}.label span{color:#8b967f;font-size:11px;font-weight:700;text-transform:none;letter-spacing:0}button{width:100%;min-height:52px;border:1px solid #75694b;border-radius:4px;color:#f6ead0;background:linear-gradient(180deg,rgba(255,255,255,.11),rgba(0,0,0,.18)),#252b23;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 7px 0 #090b08;font:inherit;font-size:15px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;touch-action:manipulation}button:active{transform:translateY(4px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 3px 0 #090b08}.meter{height:6px;border-radius:999px;background:#111;margin-top:2px;overflow:hidden}.bar{height:100%;width:0;background:#c8ad6b;transition:width .12s linear}.note{margin:14px 0 0;color:#aeb6a0;font-size:12px;line-height:1.45}.small{color:#8b967f;font-size:11px;line-height:1.35}
+  </style>
+</head>
+<body>
+  <main>
+    <section class="plate" aria-label="A+T sound audition">
+      <h1>A+T Sound Audition</h1>
+      <p class="sub">Industrial mechanical UI draft. Preview only. The live game route is unchanged.</p>
+      <div class="grid">
+        <article class="row">
+          <div class="label">Do It <span>Relay actuator, v1</span></div>
+          <button data-sound="doit">Press Do It</button>
+          <div class="meter"><div class="bar" id="doitBar"></div></div>
+          <div class="small">Fast switch, relay clunk, faint PCU pulse. Built for frequent taps.</div>
+        </article>
+        <article class="row">
+          <div class="label">End Day <span>Shift-close latch, v1</span></div>
+          <button data-sound="endday">Press End Day</button>
+          <div class="meter"><div class="bar" id="enddayBar"></div></div>
+          <div class="small">Heavier latch, short wind-down, final relay. Built for committing the day.</div>
+        </article>
+      </div>
+      <p class="note">Tap the large buttons on phone speakers. This page generates the audition sounds in-browser so it can be reviewed before any game wiring.</p>
+    </section>
+  </main>
+  <script>
+    let ctx;
+    function audioCtx(){ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();return ctx;}
+    function envGain(c,t,a,d,s,r,dur,level){const g=c.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(level,t+a);g.gain.exponentialRampToValueAtTime(Math.max(.0001,level*s),t+a+d);g.gain.setValueAtTime(Math.max(.0001,level*s),t+Math.max(a+d,dur-r));g.gain.exponentialRampToValueAtTime(.0001,t+dur);return g;}
+    function osc(c,t,dur,freq,type,gain,dest){const o=c.createOscillator();o.type=type;o.frequency.setValueAtTime(freq,t);const g=envGain(c,t,.003,.035,.18,.05,dur,gain);o.connect(g).connect(dest);o.start(t);o.stop(t+dur+.02);}
+    function noise(c,t,dur,gain,dest){const len=Math.max(1,Math.floor(c.sampleRate*dur));const b=c.createBuffer(1,len,c.sampleRate);const a=b.getChannelData(0);for(let i=0;i<len;i++){a[i]=(Math.random()*2-1)*(1-i/len);}const s=c.createBufferSource();s.buffer=b;const hp=c.createBiquadFilter();hp.type="highpass";hp.frequency.value=650;const g=envGain(c,t,.001,.025,.08,.04,dur,gain);s.connect(hp).connect(g).connect(dest);s.start(t);s.stop(t+dur+.02);}
+    function bus(c){const comp=c.createDynamicsCompressor();comp.threshold.value=-18;comp.knee.value=14;comp.ratio.value=5;comp.attack.value=.002;comp.release.value=.09;const filt=c.createBiquadFilter();filt.type="lowpass";filt.frequency.value=6200;comp.connect(filt).connect(c.destination);return comp;}
+    function hit(c,d,t,o){osc(c,t,o.len,o.freq,"triangle",o.gain,d);osc(c,t,o.len,o.freq*2.03,"sine",o.gain*.22,d);noise(c,t,Math.min(o.len,.09),o.grit,d);}
+    function doit(){const c=audioCtx();const t=c.currentTime+.012;const d=bus(c);hit(c,d,t,{len:.075,freq:1480,gain:.62,grit:.28});hit(c,d,t+.032,{len:.11,freq:510,gain:.36,grit:.12});hit(c,d,t+.112,{len:.08,freq:890,gain:.20,grit:.05});osc(c,t,.22,86,"sine",.045,d);pulse("doitBar",240);}
+    function endday(){const c=audioCtx();const t=c.currentTime+.012;const d=bus(c);hit(c,d,t,{len:.14,freq:330,gain:.72,grit:.20});hit(c,d,t+.09,{len:.16,freq:188,gain:.42,grit:.12});osc(c,t+.12,.48,118,"sawtooth",.045,d);osc(c,t+.2,.36,54,"sine",.055,d);noise(c,t+.14,.42,.035,d);hit(c,d,t+.49,{len:.11,freq:620,gain:.16,grit:.04});hit(c,d,t+.69,{len:.08,freq:1040,gain:.16,grit:.035});osc(c,t,.82,52,"sine",.038,d);pulse("enddayBar",860);}
+    function pulse(id,ms){const el=document.getElementById(id);el.style.transition="none";el.style.width="100%";requestAnimationFrame(()=>{el.style.transition=`width ${ms}ms linear`;el.style.width="0";});}
+    document.querySelectorAll("button[data-sound]").forEach(b=>b.addEventListener("click",async()=>{const c=audioCtx();if(c.state!=="running")await c.resume();(b.dataset.sound==="doit"?doit:endday)();}));
+  </script>
+</body>
+</html>
