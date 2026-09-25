@@ -39,9 +39,11 @@
     if(travel&&!travel.disabled)travel.textContent='Revisit Encounter';
   }
 
+
+
   function setText(id,value){const el=document.getElementById(id);if(el)el.textContent=value;return el}
   function setMeta(values){const el=document.getElementById('locationMeta');if(el)el.innerHTML=values.map(v=>`<span>${v}</span>`).join('')}
-  function forceTravel(label,enabled){const el=document.getElementById('travelButton');if(el){el.textContent=label;el.disabled=!enabled;el.removeAttribute('aria-disabled');el.dataset.pvWhisperTravel=enabled?'1':'0'}}
+  function forceTravel(label,enabled,dest=''){const el=document.getElementById('travelButton');if(el){el.textContent=label;el.disabled=!enabled;el.removeAttribute('aria-disabled');el.dataset.pvWhisperTravel=enabled&&dest===''?'1':'0';el.dataset.pvMoveDest=dest||''}}
   function paintNode(id,label,x,y,glyph,locked=false){
     const map=document.querySelector('.map-wrap');if(!map)return null;
     let node=document.querySelector(`.pv30-node[data-location="${id}"]`);
@@ -76,11 +78,18 @@
     setText('locationName',name);setText('locationState',state);setText('locationDesc',desc);setMeta(meta);
     forceTravel('Route Not Yet Open',false);
   }
+  function showMovePanel(id,name,state,desc,meta){
+    document.querySelectorAll('.hotspot.sel,.pv30-node.sel').forEach(n=>n.classList.remove('sel'));
+    document.querySelector(`.hotspot[data-location="${id}"],.pv30-node[data-location="${id}"]`)?.classList.add('sel');
+    setText('objectiveText',`Move the party to ${name}. Encounters here are not open yet.`);
+    setText('locationName',name);setText('locationState',state);setText('locationDesc',desc);setMeta(meta);
+    forceTravel(`Move to ${name}`,true,id);
+  }
   function patchVisibleMap(){
     const whisperNode=paintNode('whisper','Whispering Grove',34.8,43.2,'♧',false);
     if(whisperNode){whisperNode.classList.remove('locked');whisperNode.removeAttribute('disabled');whisperNode.setAttribute('aria-label','Whispering Grove, reachable encounter');}
-    paintNode('echo','Echo Castle',83.0,31.0,'♜',!isCleared());
-    paintNode('frigid','Frigid Hills',16.0,18.0,'❄',true);
+    paintNode('echo','Echo Castle',83.0,31.0,'♜',false);
+    paintNode('frigid','Frigid Hills',16.0,18.0,'❄',false);
     document.querySelector('.pv30-node[data-location="whisper"]')?.classList.toggle('pv-cleared',isCleared());
   }
 
@@ -103,6 +112,16 @@
     if(window.PV_OVERWORLD30G&&typeof window.PV_OVERWORLD30G.departWhisper==='function'){
       await window.PV_OVERWORLD30G.departWhisper();
     }
+  }
+  async function moveMapSpot(dest){
+    await ensureTravelPiece();
+    if(window.PV_OVERWORLD30G&&typeof window.PV_OVERWORLD30G.moveTo==='function')await window.PV_OVERWORLD30G.moveTo(dest);
+    else if(window.PV_OVERWORLD30G&&typeof window.PV_OVERWORLD30G.animateTo==='function')await window.PV_OVERWORLD30G.animateTo(dest);
+    const labels={echo:'Echo Castle',frigid:'Frigid Hills',whisper:'Whispering Grove',home:'Home'};
+    try{localStorage.setItem('pv.currentLocation',dest)}catch(_){}
+    setText('currentLocation',labels[dest]||dest);
+    setText('locationState','Party Positioned');
+    forceTravel('Party Positioned',false,dest);
   }
 
   function curtain(mode){
@@ -152,13 +171,19 @@
 
   document.addEventListener('click',e=>{
     if(e.target.closest?.('.hotspot[data-location="whisper"],.pv30-node[data-location="whisper"]'))setTimeout(()=>{patchVisibleMap();showWhisperPanel();syncClearMarker();patchEncounterPanel()},0);
-    if(e.target.closest?.('.hotspot[data-location="echo"]'))setTimeout(()=>showLockedPanel('Echo Castle','Distant Signal','The upper-right castle rings with a clean, repeating Veil signal. Its gate is visible, but the route is not yet stable.',['Castle','Signal','Story']),0);
-    if(e.target.closest?.('.hotspot[data-location="frigid"]'))setTimeout(()=>showLockedPanel('Frigid Hills','Route Sealed','A winter-bright rise beyond the safe road. Frosted resonance marks a future route through the highlands.',['Highlands','Frost','Discovery']),0);
+    if(e.target.closest?.('.hotspot[data-location="echo"],.pv30-node[data-location="echo"]'))setTimeout(()=>showMovePanel('echo','Echo Castle','Move Point','The upper-right castle rings with a clean, repeating Veil signal. Its encounter gate is not stable yet, but the party can move to the overlook.',['Castle','Signal','Move']),0);
+    if(e.target.closest?.('.hotspot[data-location="frigid"],.pv30-node[data-location="frigid"]'))setTimeout(()=>showMovePanel('frigid','Frigid Hills','Move Point','A winter-bright rise beyond the safe road. Frosted resonance marks a future route through the highlands.',['Highlands','Frost','Move']),0);
   },false);
 
   document.addEventListener('click',e=>{
     const travel=e.target.closest?.('#travelButton');
     if(!travel||travel.disabled)return;
+    const moveDest=travel.dataset.pvMoveDest;
+    if(moveDest&&moveDest!==LOCATION){
+      e.preventDefault();e.stopImmediatePropagation();
+      moveMapSpot(moveDest);
+      return;
+    }
     const selected=document.querySelector('.hotspot.sel,.pv30-node.sel');
     const whisperActive=selected?.dataset?.location===LOCATION||travel.dataset.pvWhisperTravel==='1'||/Whispering Grove/i.test(document.getElementById('locationName')?.textContent||'');
     if(!whisperActive)return;
@@ -187,3 +212,5 @@
     },80);
   }
 })();
+
+
