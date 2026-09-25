@@ -8,9 +8,15 @@ import { applyEncounterReward } from '../progression/PVProgression.js?v=live30e1
 const CLEAR_PREFIX = 'pv.locationClear.';
 const RESULT_KEY = 'pv.encounterResult';
 const PENDING_KEY = 'pv.pendingEncounter';
+const RETURN_LABEL = 'RETURN TO MAP';
 
 function safeParse(raw) {
   try { return raw ? JSON.parse(raw) : null; } catch (_) { return null; }
+}
+
+function encounterReturnUrl(locationId, result) {
+  const q = new URLSearchParams({ pvreturn: locationId, pvresult: result });
+  return `./hybrid-overworld.html?${q.toString()}`;
 }
 
 export default class Live29FEncounterBattleScene extends Live28K27BattleGuardScene {
@@ -67,22 +73,41 @@ export default class Live29FEncounterBattleScene extends Live28K27BattleGuardSce
       globalThis.localStorage?.removeItem(PENDING_KEY);
     } catch (_) { /* return still proceeds if storage is blocked */ }
 
-    this.time.delayedCall(delayMs, () => {
-      const q = new URLSearchParams({ pvreturn: locationId, pvresult: result });
-      globalThis.location.href = `./hybrid-overworld.html?${q.toString()}`;
+    const returnUrl = encounterReturnUrl(locationId, result);
+    globalThis.__PV_ENCOUNTER_RETURN_URL__ = returnUrl;
+    globalThis.__PV_ENCOUNTER_RETURN_LABEL__ = RETURN_LABEL;
+
+    const patchResultCard = () => {
+      const resultPanel = globalThis.document?.getElementById?.('result');
+      const actions = resultPanel?.querySelector?.('.result-actions');
+      const link = actions?.querySelector?.('a');
+      if (!link) return false;
+      link.href = returnUrl;
+      link.textContent = RETURN_LABEL;
+      link.setAttribute('data-pv-return-map', '1');
+      link.setAttribute('aria-label', 'Return to the Prismatic Veil overworld map');
+      return true;
+    };
+
+    this.time.delayedCall(Math.max(120, delayMs || 0), () => {
+      if (patchResultCard()) return;
+      const timer = globalThis.setInterval?.(() => {
+        if (patchResultCard()) globalThis.clearInterval?.(timer);
+      }, 180);
+      if (timer) globalThis.setTimeout?.(() => globalThis.clearInterval?.(timer), 3600);
     });
   }
 
   _onVictory() {
     super._onVictory();
-    // Keep the existing victory presentation/audio visible before returning.
-    this._queueEncounterReturn('victory', 2300);
+    // Keep the existing victory presentation/audio visible, then expose an explicit map return.
+    this._queueEncounterReturn('victory', 520);
   }
 
   _onDefeat() {
     super._onDefeat();
     // A failed route never marks the location clear, never awards progression,
-    // and never strands the player in battle. Preserve the defeat beat, return.
-    this._queueEncounterReturn('defeat', 2300);
+    // and never strands the player in battle. Preserve the defeat beat, then expose map return.
+    this._queueEncounterReturn('defeat', 520);
   }
 }
