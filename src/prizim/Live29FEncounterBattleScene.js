@@ -82,10 +82,19 @@ export default class Live29FEncounterBattleScene extends Live28K27BattleGuardSce
       globalThis.localStorage?.removeItem(PENDING_KEY);
     } catch (_) { /* return still proceeds if storage is blocked */ }
 
-    this.time.delayedCall(delayMs, () => {
+    const returnToOverworld = () => {
       const q = new URLSearchParams({ pvreturn: locationId, pvresult: result });
       globalThis.location.href = `./hybrid-overworld.html?${q.toString()}`;
-    });
+    };
+
+    // Hybrid has a real victory/results overlay with explicit navigation.
+    // Do not tear that screen down on a timer. It stays until the player
+    // chooses VIEW LEVEL-UP, RETURN TO MAP, or MENU. Defeat and direct
+    // non-Hybrid routes keep their timed fallback so no route can strand.
+    const hasResultOverlay = !!globalThis.document?.querySelector?.('#result');
+    if (victory && hasResultOverlay) return;
+
+    this.time.delayedCall(delayMs, returnToOverworld);
   }
 
   _onVictory() {

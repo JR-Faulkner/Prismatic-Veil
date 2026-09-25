@@ -4,9 +4,9 @@
 // victory/defeat, progression payout, and return-to-Overworld behavior.
 // This child only selects the enemy identity for a location and swaps the
 // presentation/audio view after the inherited scene has initialized.
-import Live29FEncounterBattleScene from './Live29FEncounterBattleScene.js?v=live29g1';
+import Live29FEncounterBattleScene from './Live29FEncounterBattleScene.js?v=live29g2';
 import { ENEMY_IDS, selectEnemy } from '../EnemyCatalog.js?v=live29g1';
-import { HUSHLING_TEXTURES } from '../EnemyHushlingView.js?v=live29g1';
+import { HUSHLING_TEXTURES } from '../EnemyHushlingView.js?v=live29g2';
 import { createEnemyView } from './Live25EnemyViewFactory.js?v=live29g1';
 import EnemyAudioDirector from '../EnemyAudioDirector.js?v=live29g1';
 
