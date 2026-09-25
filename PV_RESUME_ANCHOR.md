@@ -1,6 +1,6 @@
 # The Prismatic Veil — Resume Anchor
 
-Last refreshed: 2026-09-06
+Last refreshed: 2026-09-25
 
 ## LIVE30E save-state foundation (2026-09-25)
 
@@ -11,8 +11,8 @@ Last refreshed: 2026-09-06
 
 ## Current production witness
 
-- Promoted witness: `main-20260909-live28k26`
-- Witness promotion commit: `0c5a59b68d832aef44e58ac48cbabb9e3c885507`
+- Promoted witness: `main-20260909-live28k27`
+- Witness promotion commit: `b2ec9cb67310c9070b99478ba58959efb6ddea09`
 - Exact production audio install commit: `ac00a834471317edd98a60a7884a1896270be61f`
 - Production battle adapter: `src/prizim/Live28K2PartyBattleScene.js`
 - Dormant exact Aurora 01–08 runtime lane commit: `e60fd6b89c410edbd7c364acf496cf6c516f254a`
@@ -190,13 +190,13 @@ Do not add redundant base-file query-string surgery unless this routing actually
 
 ## Aurora Pulse live device gate
 
-- Current witness: `main-20260909-live28k26`.
+- Current witness: `main-20260909-live28k27`.
 - K18 baseline: core Beauty presentation, native Celestial Bloom, and live battlefield/enemy handoff passed on iPhone.
 - K19 phone review: full-screen title presentation was rejected because it interrupted cinematic continuity.
 - K20 presentation: title removed; Hybrid camera/framing and Pulse-driven battlefield re-entry are the active polish lane.
 
 - Latest phone evidence (main-20260908-live28k23): PASS iPhone MAIN gate: Aurora Pulse Beauty V2 cinematic played in the live Hybrid route with native V2 SFX, battle BGM silence during the video, Celestial Bloom choir-tail bridge into the battlefield reconnect, and live battle ownership restored cleanly.
-- Current pending gate: LIVE28K26: verify Prismel Refracted-Reflections exact cinematic, 9.35s staff/lens takeover, readable mirror crack, captured-frame shards, live battlefield reveal beneath shards, live enemy refracted impact/damage, no music/language during cinematic, clean HUD/turn restore, and unchanged Aurora Pulse + Thunder Tornado.
+- Current pending gate: LIVE28K27: verify Prismel glass-shatter beat, reflective mirror blades crossing into the live battlefield, visible shard landings around the Wraith, damage synchronized to blade impact, clean return, and unchanged Aurora Pulse + Thunder Tornado.
 - Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.
 
 ## Kineza victory timing gate
@@ -217,13 +217,13 @@ Do not add redundant base-file query-string surgery unless this routing actually
 
 ## Immediate next actions
 
-1. User checks the normal iPhone MAIN route and confirms witness `main-20260906-live28k12`.
-2. Trigger Auryi Resonart and verify the visible drawer/banner says **Aurora Pulse**, Celestial Bloom remains correct, the old Aurorb Slice pose sequence no longer plays, the cinematic remains crownless, and camera/idle restore are clean.
-3. Win the encounter and verify **Triumph of Light loops** on the victory/results screen with no battle-music or old-sting overlap.
-4. If/when the exact approved transparent Aurora Pulse PNG bytes reappear from a new source, install them at the staged 01–08 production paths, verify RGBA + dimensions + anatomy/part-count + crownless integrity, flip `AURORA_PULSE_FRAMES_READY` true, and promote the next LIVE28K witness.
-5. Do **not** re-scan the already-cleared File Library / DuoHybrid / FX runtime packages unless new evidence indicates they changed.
+1. On the normal iPhone MAIN route, advance into the Overworld and allow the new `pv.save.v1` autosave to capture a real run.
+2. Return/reload MAIN and verify **CONTINUE** appears only when a valid snapshot exists, then restores location, progression, encounter/party/resonance state, resume state, and `pv.locationClear.*` flags.
+3. Use **NEW GAME** and verify the save snapshot, run keys, and dynamic location-clear flags are cleared before the existing story route starts cleanly.
+4. Confirm Continue/New Game do not disturb the Hybrid/K battle route or the stable `main-20260909-live28k27` Resonart authority.
+5. After the iPhone witness passes, record the save flow as accepted and keep K27 as the battle authority unless a later promoted witness explicitly supersedes it.
 
-For a new chat: read this file first, then `PRIZIM_LIVE_NOTEPAD.md`. Resume from the witness/commit state above. Do not restart asset discovery unless a recorded authority/path actually fails.
+For a new chat: read this file first, then `PRIZIM_LIVE_NOTEPAD.md`. Resume from the LIVE30E save-state iPhone gate above; do not restart old asset discovery or LIVE28K12-era QA unless a recorded current authority actually fails.
 
 
 ## LIVE28K24 Kineza Thunder Tornado
