@@ -23,6 +23,15 @@ const PRISMEL_BODY_RATIO = 1 / 1.29;
 const KINEZA_BODY_RATIO = 0.647;
 const AURYI_ATTACK_LIFT_FRAC = 0.10;
 
+function responsiveAuryiBodyHeight(scene) {
+  const w = scene.scale.width;
+  const h = scene.scale.height;
+  const landscape = w > h;
+  const compactLandscape = landscape && h < 520;
+  if (!compactLandscape) return h * AURYI_BODY_H_FRAC;
+  return Math.min(h * 0.56, w * 0.30);
+}
+
 export default class Live28PartyFormationView extends Live26PartyFormationView {
   create(roster) {
     super.create(roster);
@@ -280,12 +289,12 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
 
   layout() {
     super.layout();
-    const h = this.scene.scale.height;
+    const auryiBodyH = responsiveAuryiBodyHeight(this.scene);
 
     const auryi = this.actors?.get('auryi');
     if (auryi && !auryi._snapshot && auryi.live28ApprovedTextureKey) {
       if (auryi.sprite.texture?.key !== auryi.live28ApprovedTextureKey) this._restoreAuryiClean(auryi);
-      this._fitActorToBodyHeight(auryi, auryi.live28ApprovedTextureKey, h * AURYI_BODY_H_FRAC);
+      this._fitActorToBodyHeight(auryi, auryi.live28ApprovedTextureKey, auryiBodyH);
       this._removePersistentAuryiMagic(auryi);
     }
 
@@ -293,13 +302,13 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     if (prismel && !prismel._snapshot && prismel.live28PrismelIdentityPair) {
       const wanted = prismel.live28DesiredPrismelTex || PRISMEL_PASSIVE_KEY;
       if (prismel.sprite.texture?.key !== wanted) this._applyPrismelState(prismel, wanted);
-      this._fitActorToBodyHeight(prismel, wanted, h * AURYI_BODY_H_FRAC * PRISMEL_BODY_RATIO);
+      this._fitActorToBodyHeight(prismel, wanted, auryiBodyH * PRISMEL_BODY_RATIO);
     }
 
     const kineza = this.actors?.get('kineza');
     if (kineza && !kineza._snapshot && kineza.live28KinezaStandby) {
       const key = kineza.live28KinezaMainIdle ? KINEZA_MAIN_IDLE_KEY : KINEZA_FALLBACK_KEY;
-      this._fitActorToBodyHeight(kineza, key, h * AURYI_BODY_H_FRAC * KINEZA_BODY_RATIO);
+      this._fitActorToBodyHeight(kineza, key, auryiBodyH * KINEZA_BODY_RATIO);
     }
   }
 
