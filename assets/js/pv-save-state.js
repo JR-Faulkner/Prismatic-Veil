@@ -9,6 +9,11 @@
     'pv.encounterResult','pv.pendingEncounter','pv.partySelected','pv.homecomingResume'
   ]);
   const CLEAR_PREFIX='pv.locationClear.';
+  const NEW_RUN_DEFAULTS=Object.freeze({
+    'pv.currentLocation':'home',
+    'pv.lastLocation':'home',
+    'pv.partySelected':'prismel'
+  });
 
   function storage(){return window.localStorage}
   function read(key){try{return storage().getItem(key)}catch(_){return null}}
@@ -51,9 +56,14 @@
     return true;
   }
   function newGame(){clearRun();remove(SAVE_KEY);return true}
+  function initializeNewRun(){
+    newGame();
+    Object.entries(NEW_RUN_DEFAULTS).forEach(([key,value])=>write(key,value));
+    return captureRun();
+  }
   function formatSavedAt(){const snapshot=loadRun();if(!snapshot)return '';try{return new Date(snapshot.savedAt).toLocaleString()}catch(_){return ''}}
 
-  window.PVSaveState={SAVE_KEY,RUN_KEYS,captureRun,saveRun,loadRun,hasSave,restoreRun,newGame,clearRun,formatSavedAt};
+  window.PVSaveState={SAVE_KEY,RUN_KEYS,NEW_RUN_DEFAULTS,captureRun,saveRun,loadRun,hasSave,restoreRun,newGame,initializeNewRun,clearRun,formatSavedAt};
 
   if(!isOverworld){
     const style=document.createElement('style');

@@ -2,9 +2,20 @@
 
 Last refreshed: 2026-09-25
 
+## LIVE30H canonical New Game flow (2026-09-25)
+
+- Normal title flow is now player-facing only: **ENTER THE VEIL** when no save exists; **CONTINUE + NEW GAME** when a valid `pv.save.v1` exists.
+- Direct **OVERWORLD** and **PZ-A** title shortcuts are retained for development only behind `?dev=1`; their routes were not deleted.
+- Fresh-run initialization clears the prior run, location-clear flags, progression, pending encounter/result, resonance/resume state, and save snapshot, then seeds **Home** as current/last location and **Prismel** as the default selected Bearer. Missing progression resolves canonically to Level 1 / 0 XP.
+- The Prologue is refreshed to the current Overworld canon and identifies **Whispering Grove** as the first active disturbance.
+- Prologue exit is now **BEGIN JOURNEY → Overworld**. It no longer jumps directly into battle.
+- `live-build.json` now exposes `overworld: "hybrid-overworld.html"` as a first-class route.
+- K27 Hybrid battle/cinematic authority is unchanged. Battle begins only from an Overworld encounter.
+- Pending final gate: iPhone lifecycle witness — NEW GAME → Prologue → Overworld/Home → Whispering Grove encounter → reward/autosave → MAIN → CONTINUE restore; then verify NEW GAME clears that run cleanly.
+
 ## LIVE30E save-state foundation (2026-09-25)
 
-- Main now exposes `CONTINUE` when the `pv.save.v1` snapshot exists and an explicit `NEW GAME` action that clears the run ledger and starts the story flow cleanly.
+- Main exposes `CONTINUE` when the `pv.save.v1` snapshot exists; fresh players see `ENTER THE VEIL`, while saved players get `NEW GAME`. Fresh-run initialization clears the old ledger and seeds Home/Prismel before the Prologue.
 - `assets/js/pv-save-state.js` snapshots the current map, progression, encounter, party, resonance, resume-audio, and dynamic location-clear keys at the Overworld boundary.
 - Autosave runs on Overworld entry, route/menu interaction, visibility loss, pagehide, and a low-frequency interval. The Hybrid/K battle authority is unchanged.
 - Remote iPhone validation remains pending for the new menu and New Game/Continue behavior.

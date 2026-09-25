@@ -3,6 +3,6 @@
   "entry": "index.html",
   "story": "story-scroll.html",
   "hybrid": "hybrid-main.html",
-  "pza": "pza-main.html"
+  "pza": "pza-main.html",
+  "overworld": "hybrid-overworld.html"
 }
-

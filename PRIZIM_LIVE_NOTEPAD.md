@@ -5,10 +5,21 @@ Current promoted build: `main-20260909-live28k27` — **Hybrid production author
 
 This is the fast operational failure-prevention ledger for PriZim production.
 
+## LIVE30H canonical New Game flow (2026-09-25)
+
+- Normal title flow is now player-facing only: **ENTER THE VEIL** when no save exists; **CONTINUE + NEW GAME** when a valid `pv.save.v1` exists.
+- Direct **OVERWORLD** and **PZ-A** title shortcuts are retained for development only behind `?dev=1`; their routes were not deleted.
+- Fresh-run initialization clears the prior run, location-clear flags, progression, pending encounter/result, resonance/resume state, and save snapshot, then seeds **Home** as current/last location and **Prismel** as the default selected Bearer. Missing progression resolves canonically to Level 1 / 0 XP.
+- The Prologue is refreshed to the current Overworld canon and identifies **Whispering Grove** as the first active disturbance.
+- Prologue exit is now **BEGIN JOURNEY → Overworld**. It no longer jumps directly into battle.
+- `live-build.json` now exposes `overworld: "hybrid-overworld.html"` as a first-class route.
+- K27 Hybrid battle/cinematic authority is unchanged. Battle begins only from an Overworld encounter.
+- Pending final gate: iPhone lifecycle witness — NEW GAME → Prologue → Overworld/Home → Whispering Grove encounter → reward/autosave → MAIN → CONTINUE restore; then verify NEW GAME clears that run cleanly.
+
 ## LIVE30E save-state foundation
 
 - `pv.save.v1` is the snapshot key for the current run. Main shows `CONTINUE` only when that snapshot exists.
-- `NEW GAME` clears the run keys and all `pv.locationClear.*` flags, then enters the existing story route.
+- `NEW GAME` clears the run keys and all `pv.locationClear.*` flags, seeds the clean Home/Prismel start, then enters the refreshed Prologue; the Prologue exits to Overworld.
 - Autosave is scoped to the Overworld shell; battle/cinematic resolution remains in the Hybrid/K chain.
 - Verify the normal MAIN route on iPhone before treating this as a witnessed user-facing save flow.
 

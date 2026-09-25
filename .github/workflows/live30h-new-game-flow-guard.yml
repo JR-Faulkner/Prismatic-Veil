@@ -1,0 +1,67 @@
+name: LIVE30H New Game Flow Guard
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'story-scroll.html'
+      - 'hybrid-overworld.html'
+      - 'assets/js/pv-save-state.js'
+      - 'live-build.json'
+      - '.github/workflows/live30h-new-game-flow-guard.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'story-scroll.html'
+      - 'hybrid-overworld.html'
+      - 'assets/js/pv-save-state.js'
+      - 'live-build.json'
+      - '.github/workflows/live30h-new-game-flow-guard.yml'
+
+jobs:
+  new-game-flow-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax check save-state runtime
+        run: node --check assets/js/pv-save-state.js
+      - name: Validate title, prologue, and route contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          errors=[]
+          def read(p): return Path(p).read_text(encoding='utf-8')
+          index=read('index.html')
+          story=read('story-scroll.html')
+          save=read('assets/js/pv-save-state.js')
+          overworld=read('hybrid-overworld.html')
+          build=json.loads(read('live-build.json'))
+          if 'ENTER THE VEIL' not in index or 'NEW GAME' not in index or 'CONTINUE' not in index: errors.append('title player flow labels missing')
+          if 'dev-only' not in index or "pvParams.get('dev')==='1'" not in index: errors.append('dev shortcut gate missing')
+          if 'OVERWORLD · DEV' not in index or 'PZ-A · DEV' not in index: errors.append('dev routes were not retained')
+          if 'CONTINUE TO BATTLE' in story: errors.append('prologue still jumps directly to battle')
+          if 'BEGIN JOURNEY' not in story or './hybrid-overworld.html' not in story: errors.append('prologue Overworld exit missing')
+          if 'Whispering Grove' not in story or 'Begin at Home.' not in story: errors.append('current prologue objective missing')
+          for token in ["'pv.currentLocation':'home'","'pv.lastLocation':'home'","'pv.partySelected':'prismel'","function initializeNewRun()"]:
+              if token not in save: errors.append(f'fresh-run seed missing: {token}')
+          if "pvasset=save2" not in index or "pvasset=save2" not in story or "pvasset=save2" not in overworld: errors.append('save-state cache bust missing')
+          if build.get('id')!='main-20260909-live28k27': errors.append('K27 battle witness drift')
+          if build.get('hybrid')!='hybrid-main.html': errors.append('Hybrid battle route drift')
+          if build.get('overworld')!='hybrid-overworld.html': errors.append('Overworld route authority missing')
+          if errors:
+              print('LIVE30H NEW GAME FLOW GUARD FAILED')
+              for e in errors: print(' -',e)
+              raise SystemExit(1)
+          print('LIVE30H NEW GAME FLOW CONTRACT PASS')
+          PY
+      - name: Preserve PriZim battle authority
+        run: python tools/prizim/preflight_live28k.py
+      - name: Record result
+        if: success()
+        run: |
+          echo '## LIVE30H New Game Flow Guard ✅' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Title → Prologue → Overworld flow, fresh-run seed, save cache bust, and K27 Hybrid authority all passed.' >> "$GITHUB_STEP_SUMMARY"
