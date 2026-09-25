@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "updated": "2026-09-09",
-  "witness": "main-20260909-live28k27",
+  "witness": "main-20260925-live30e1",
   "production_route": [
     "index.html",
     "story-scroll.html",
@@ -235,3 +235,4 @@
     "refracted_reflections_blade_policy": "The broken reflection must continue into the live battlefield as reflective cyan/violet/gold/white mirror blades. Blades visibly cross toward the real enemy, strike around/through the target, leave readable landed shards on the battlefield, then fade after the impact settles."
   }
 }
+

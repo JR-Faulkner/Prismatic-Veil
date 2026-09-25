@@ -257,3 +257,14 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 - Preserve battle-BGM silence through the cinematic/shatter and preserve Aurora Pulse V2 + Thunder Tornado.
 - iPhone MAIN remains the final runtime/presentation gate.
 
+## LIVE30E1 progression and lexicon pass
+
+- Promoted build: `main-20260925-live30e1`.
+- Canonical content authority: `src/PVCanon.js`.
+- Auryi title is **Aura Spoken** across BattleConfig and the live result card.
+- Resonarts are sealed until Level 2; the live drawer explains the lock and the Hybrid confirm path enforces it.
+- Whispering Grove first clear awards 100 XP per core Bearer, producing the first Level 2 unlock and a readable level-up result.
+- This is a progression/content pass; the accepted Aurora Pulse, Thunder Tornado, and Prismel reflected-blades presentation lanes remain unchanged.
+- iPhone MAIN remains the final runtime gate for this build.
+
+

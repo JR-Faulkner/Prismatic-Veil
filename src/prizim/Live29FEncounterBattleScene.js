@@ -3,7 +3,7 @@
 // Overworld encounter completion/return behavior when the battle was entered
 // from a location route.
 import Live28K27BattleGuardScene from './Live28K27BattleGuardScene.js?v=live29f1';
-import { applyEncounterReward } from '../progression/PVProgression.js?v=live30e2';
+import { applyEncounterReward, isResonartUnlocked, loadProgression } from '../progression/PVProgression.js?v=live30e3';
 
 const CLEAR_PREFIX = 'pv.locationClear.';
 const RESULT_KEY = 'pv.encounterResult';
@@ -26,6 +26,21 @@ export default class Live29FEncounterBattleScene extends Live28K27BattleGuardSce
       enteredAt: pending?.enteredAt || Date.now()
     } : null;
     globalThis.__PV_LIVE29F_ENCOUNTER_BRIDGE__ = !!this._pvEncounter;
+  }
+
+  _pvResonartUnlocked() {
+    const state = loadProgression(globalThis.localStorage);
+    const hero = state.heroes?.[this.activeHeroId];
+    return isResonartUnlocked(hero);
+  }
+
+  _confirmDrawer() {
+    if (this._drawerOpen === 'Resonart' && !this._pvResonartUnlocked()) {
+      this._setBanner('Resonart sealed · reach Level 2 to awaken it.');
+      this.audio?.uiReject?.();
+      return;
+    }
+    return super._confirmDrawer();
   }
 
   _queueEncounterReturn(result, delayMs) {

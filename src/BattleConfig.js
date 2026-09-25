@@ -13,7 +13,7 @@
 //                   that stays a later mechanic.
 //
 // v0.4 additions (COMMAND_LEXICON_LOCK.md, HP_RP_ATTUNEMENT_HUD_SPEC.md):
-//   title       identity/flavor language (Prism Weaver, Aura Acolyte,
+//   title       identity/flavor language (Prism Weaver, Aura Spoken,
 //               Momentum Born) — shown as identity text, never as an
 //               action-button label. RESONART is the universal label
 //               for every hero's technique slot instead.
@@ -24,11 +24,13 @@
 //               resource; Attunement is a synchronization state (three
 //               facets), not a third bar — VEILSHIFT unlocks at
 //               attunement >= attunementMax.
+import { PV_BEARERS, PV_PROGRESSION } from './PVCanon.js?v=lexicon1';
+
 export const HEROES = Object.freeze({
   prismel: Object.freeze({
     id: 'prismel',
-    name: 'Prismel',
-    title: 'Prism Weaver',
+    name: PV_BEARERS.prismel.name,
+    title: PV_BEARERS.prismel.title,
     hp: 100,
     maxHp: 100,
     rp: 100,
@@ -51,14 +53,15 @@ export const HEROES = Object.freeze({
     scaleMul: 1,
     flip: Object.freeze({ idle: true, step: true, gather: true, release: false, recover: true }),
     attack: Object.freeze({
-      name: 'Refractive Burst',
+      name: PV_BEARERS.prismel.basicAttack,
       damage: 14,
       flavor: 'Crystal energy gathers...',
       critChance: 0.25,
       critMultiplier: 2
     }),
     resonart: Object.freeze({
-      name: 'Refracted-Reflections',
+      name: PV_BEARERS.prismel.resonart,
+      unlockLevel: PV_PROGRESSION.resonartUnlockLevel,
       damage: 24,
       flavor: 'Prismel captures the visible battlefield in a frozen reflective prism, then pierces and shatters it from within.',
       presentation: 'hybrid-video-runtime-shatter'
@@ -75,8 +78,8 @@ export const HEROES = Object.freeze({
 
   kineza: Object.freeze({
     id: 'kineza',
-    name: 'Kineza',
-    title: 'Momentum Born',
+    name: PV_BEARERS.kineza.name,
+    title: PV_BEARERS.kineza.title,
     hp: 115,
     maxHp: 115,
     rp: 100,
@@ -99,14 +102,15 @@ export const HEROES = Object.freeze({
     scaleMul: 0.78,
     flip: Object.freeze({ idle: false, step: false, gather: false, release: false, recover: false }),
     attack: Object.freeze({
-      name: 'Momentum Fist',
+      name: PV_BEARERS.kineza.basicAttack,
       damage: 17,
       flavor: 'Kinetic force coils tight...',
       critChance: 0.22,
       critMultiplier: 2
     }),
     resonart: Object.freeze({
-      name: 'Thunder Tornado',
+      name: PV_BEARERS.kineza.resonart,
+      unlockLevel: PV_PROGRESSION.resonartUnlockLevel,
       damage: 26,
       flavor: 'Kineza punches fast enough to build a kinetic cyclone, lets emerald thunder charge it, then drives the tornado through the battlefield.',
       presentation: 'hybrid-video'
@@ -121,8 +125,8 @@ export const HEROES = Object.freeze({
 
   auryi: Object.freeze({
     id: 'auryi',
-    name: 'Auryi',
-    title: 'Aura Acolyte',
+    name: PV_BEARERS.auryi.name,
+    title: PV_BEARERS.auryi.title,
     hp: 100,
     maxHp: 100,
     rp: 100,
@@ -146,14 +150,15 @@ export const HEROES = Object.freeze({
     flip: Object.freeze({ idle: false, step: false, gather: false, release: false, recover: false }),
     // Basic attack and Resonart are intentionally separate authorities.
     attack: Object.freeze({
-      name: 'Aurorb Slice',
+      name: PV_BEARERS.auryi.basicAttack,
       damage: 13,
       flavor: 'A compressed Aurorb cuts through the Veil toward the target.',
       critChance: 0.2,
       critMultiplier: 2
     }),
     resonart: Object.freeze({
-      name: 'Aurora Pulse',
+      name: PV_BEARERS.auryi.resonart,
+      unlockLevel: PV_PROGRESSION.resonartUnlockLevel,
       damage: 22,
       flavor: 'Auryi grows her aura into a vast Aurora, then crushes it between her hands to release a Resonance pulse.',
       presentation: 'hybrid-video',
@@ -194,3 +199,4 @@ export const BATTLE_CONFIG = Object.freeze({
     enemyTurn: 'ENEMY TURN'
   })
 });
+

@@ -239,6 +239,14 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Preserve Aurora Pulse V2 and Thunder Tornado unchanged.
 - iPhone MAIN remains the final runtime/presentation gate.
 
+## LIVE30E1 progression and lexicon
+
+- `main-20260925-live30e1` adds the shared `src/PVCanon.js` manifest and normalizes Auryi to **Aura Spoken**.
+- All three Bearer Resonarts are locked until Level 2. The first Whispering Grove clear pays 100 XP to Prismel, Auryi, and Kineza, so the reward screen demonstrates the unlock.
+- The Hybrid drawer shows the sealed state before Level 2; the live wrapper and encounter adapter both reject an early confirm.
+- No battle cinematic authority or approved battle-critical art changed in this pass.
+- Fresh iPhone MAIN verification is still pending.
+
 ## LIVE28K27 Prismel reflected-blades presentation polish
 
 - Current promoted witness: `main-20260909-live28k27`.
@@ -248,4 +256,5 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Logical damage now resolves on the live blade impact instead of the first battlefield-reveal frame.
 - Preserve battle-BGM silence through the cinematic/shatter and preserve Aurora Pulse V2 + Thunder Tornado.
 - iPhone MAIN remains the final runtime/presentation gate.
+
 

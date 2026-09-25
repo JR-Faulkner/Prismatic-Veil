@@ -4,11 +4,14 @@
 // prematurely locking the final level curve or per-level stat-point economy.
 // Natural-growth profiles remain owned by the Party UI authority.
 
+import { PV_PROGRESSION } from '../PVCanon.js?v=lexicon1';
+
 export const PROGRESSION_STORAGE_KEY = 'pv.progression.v1';
 export const PROGRESSION_SCHEMA = 1;
 
 export const CORE_BATTLE_BEARERS = Object.freeze(['prismel', 'auryi', 'kineza']);
 export const ALL_BEARERS = Object.freeze(['prismel', 'auryi', 'kineza', 'sarallel', 'vyan']);
+export const RESONART_UNLOCK_LEVEL = PV_PROGRESSION.resonartUnlockLevel;
 
 // TUNING NOTE: XP payout is deliberately isolated here so it can be rebalanced
 // without changing persistence, battle resolution, or the locked stat-growth split.
@@ -22,7 +25,7 @@ export const PROGRESSION_TUNING = Object.freeze({
   levelCurve: Object.freeze({ baseXp: 100, growth: 1.35, maxLevel: 50 }),
   encounters: Object.freeze({
     echo: Object.freeze({
-      firstClear: Object.freeze({ xpEach: 50, items: Object.freeze({ veilShard: 1, memoryFragment: 1 }) }),
+      firstClear: Object.freeze({ xpEach: PV_PROGRESSION.firstEncounterXp, items: Object.freeze({ veilShard: 1, memoryFragment: 1 }) }),
       repeat: Object.freeze({ xpEach: 20, items: Object.freeze({}) })
     })
   })
@@ -49,6 +52,13 @@ export function levelForXp(xp) {
 export function nextLevelXp(levelOrXp, fromXp = null) {
   const level = fromXp == null ? levelForXp(levelOrXp) : Math.max(1, Math.floor(Number(levelOrXp) || 1));
   return xpForLevel(Math.min(PROGRESSION_TUNING.levelCurve.maxLevel, level + 1));
+}
+
+export function isResonartUnlocked(levelOrHero) {
+  const level = typeof levelOrHero === 'object'
+    ? (levelOrHero?.level || levelForXp(levelOrHero?.xp))
+    : levelOrHero;
+  return Math.max(1, Math.floor(Number(level) || 1)) >= RESONART_UNLOCK_LEVEL;
 }
 
 function blankHero() {
@@ -160,6 +170,9 @@ export function applyEncounterReward(locationId, options = {}, storage = globalT
     levels: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, state.heroes[id].level])),
     levelUps,
     nextLevelXp: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, nextLevelXp(state.heroes[id].level)])),
+    unlocks: {
+      resonart: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, isResonartUnlocked(state.heroes[id])] ))
+    },
     items,
     levelCurveLocked: PROGRESSION_TUNING.levelCurveLocked,
     tuningRevision: PROGRESSION_TUNING.revision
