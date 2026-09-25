@@ -13,6 +13,15 @@ const AURYI_BODY_H_FRAC = 0.47;
 const PRISMEL_BODY_RATIO = 1 / 1.29;
 const KINEZA_LETHAL_HOME_SETTLE_MS = 240;
 
+function responsiveAuryiBodyHeight(scene) {
+  const w = scene.scale.width;
+  const h = scene.scale.height;
+  const landscape = w > h;
+  const compactLandscape = landscape && h < 520;
+  if (!compactLandscape) return h * AURYI_BODY_H_FRAC;
+  return Math.min(h * 0.56, w * 0.30);
+}
+
 export default class Live28K2PartyFormationView extends Live28PartyFormationView {
   constructor(scene) {
     super(scene);
@@ -153,11 +162,12 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
 
   layout() {
     super.layout();
+    const auryiBodyH = responsiveAuryiBodyHeight(this.scene);
 
     const auryi = this.actors?.get('auryi');
     if (auryi && !auryi._snapshot && auryi.live28ApprovedTextureKey === AURYI_K2_PRIMARY_KEY) {
       if (auryi.sprite.texture?.key !== AURYI_K2_PRIMARY_KEY) this._restoreAuryiPrimary(auryi);
-      this._fitActorToBodyHeight(auryi, AURYI_K2_PRIMARY_KEY, this.scene.scale.height * AURYI_BODY_H_FRAC);
+      this._fitActorToBodyHeight(auryi, AURYI_K2_PRIMARY_KEY, auryiBodyH);
       this._removePersistentAuryiMagic(auryi);
     }
 
@@ -176,7 +186,7 @@ export default class Live28K2PartyFormationView extends Live28PartyFormationView
     this._fitActorToBodyHeight(
       prismel,
       wanted,
-      this.scene.scale.height * AURYI_BODY_H_FRAC * PRISMEL_BODY_RATIO
+      auryiBodyH * PRISMEL_BODY_RATIO
     );
     this._forceActiveRing(this.scene?.activeHeroId);
   }
