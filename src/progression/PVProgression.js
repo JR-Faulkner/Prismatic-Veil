@@ -4,14 +4,14 @@
 // prematurely locking the final level curve or per-level stat-point economy.
 // Natural-growth profiles remain owned by the Party UI authority.
 
-import { PV_PROGRESSION } from '../PVCanon.js?v=lexicon1';
-
 export const PROGRESSION_STORAGE_KEY = 'pv.progression.v1';
 export const PROGRESSION_SCHEMA = 1;
 
 export const CORE_BATTLE_BEARERS = Object.freeze(['prismel', 'auryi', 'kineza']);
 export const ALL_BEARERS = Object.freeze(['prismel', 'auryi', 'kineza', 'sarallel', 'vyan']);
-export const RESONART_UNLOCK_LEVEL = PV_PROGRESSION.resonartUnlockLevel;
+// Keep progression self-contained so the CI contract can exercise this module
+// from a temporary location without needing to copy unrelated content files.
+export const RESONART_UNLOCK_LEVEL = 2;
 
 // TUNING NOTE: XP payout is deliberately isolated here so it can be rebalanced
 // without changing persistence, battle resolution, or the locked stat-growth split.
@@ -25,7 +25,7 @@ export const PROGRESSION_TUNING = Object.freeze({
   levelCurve: Object.freeze({ baseXp: 100, growth: 1.35, maxLevel: 50 }),
   encounters: Object.freeze({
     echo: Object.freeze({
-      firstClear: Object.freeze({ xpEach: PV_PROGRESSION.firstEncounterXp, items: Object.freeze({ veilShard: 1, memoryFragment: 1 }) }),
+      firstClear: Object.freeze({ xpEach: 100, items: Object.freeze({ veilShard: 1, memoryFragment: 1 }) }),
       repeat: Object.freeze({ xpEach: 20, items: Object.freeze({}) })
     })
   })
