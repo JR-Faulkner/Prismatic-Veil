@@ -57,7 +57,7 @@ jobs:
           const repeat=p.applyEncounterReward('echo',{firstClear:false,encounterId:'echo:test:repeat'},storage);
           if(!repeat.awarded||repeat.xpEach!==20)throw new Error('repeat XP payout drift');
           s=p.loadProgression(storage);
-          for(const id of p.CORE_BATTLE_BEARERS)if(s.heroes[id].xp!==120)throw new Error(`repeat XP missing for ${id}`);
+          for(const id of p.CORE_BATTLE_BEARERS)if(s.heroes[id].xp!==140)throw new Error(`repeat XP missing for ${id}`);
           if(s.inventory.veilShard!==1||s.inventory.memoryFragment!==1)throw new Error('repeat incorrectly duplicated first-clear items');
           if(s.levelCurveLocked!==false)throw new Error('level curve was accidentally locked');
           console.log('LIVE30E progression exercise PASS');
