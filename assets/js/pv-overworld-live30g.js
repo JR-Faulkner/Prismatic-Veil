@@ -22,6 +22,10 @@
     'glassway>home':[[50.5,69.3],[42.0,70.8],[34.6,71.7],[27.2,70.0]],
     'whisper>frigid':[[34.8,43.2],[28.0,34.0],[22.0,25.0],[16.0,18.0]],
     'frigid>whisper':[[16.0,18.0],[22.0,25.0],[28.0,34.0],[34.8,43.2]],
+    'home>echo':[[27.2,70],[27,58],[31,49],[34.8,43.2],[49,36],[66,31],[83,31]],
+    'echo>home':[[83,31],[66,31],[49,36],[34.8,43.2],[31,49],[27,58],[27.2,70]],
+    'home>frigid':[[27.2,70],[27,58],[31,49],[34.8,43.2],[28,34],[22,25],[16,18]],
+    'frigid>home':[[16,18],[22,25],[28,34],[34.8,43.2],[31,49],[27,58],[27.2,70]],
     'whisper>echo':[[34.8,43.2],[49.0,36.0],[66.0,31.0],[83.0,31.0]],
     'echo>whisper':[[83.0,31.0],[66.0,31.0],[49.0,36.0],[34.8,43.2]],
     'glassway>oldwater':[[50.5,69.3],[58.8,63.8],[65.8,56.8],[72.0,50.5]],
@@ -106,6 +110,20 @@
     piece.classList.add('arrived');
     await wait(180);
   }
+  async function moveTo(dest,opts={}){
+    const to=POS[dest]?dest:'home';
+    const from=opts.from&&POS[opts.from]?opts.from:currentId();
+    try{localStorage.setItem(LAST_KEY,from)}catch(_){}
+    note.innerHTML=`<b>Route Movement</b><span>${from} → ${to}</span>`;
+    note.classList.add('show');
+    await animateTo(to,{from,stepMs:opts.stepMs||300});
+    try{localStorage.setItem(CURRENT_KEY,to)}catch(_){}
+    note.innerHTML=`<b>Arrived</b><span>${to}</span>`;
+    await wait(opts.holdMs||420);
+    note.classList.remove('show');
+    sync(to);
+    return to;
+  }
   async function departWhisper(){
     const from=currentId();
     try{localStorage.setItem(LAST_KEY,from)}catch(_){}
@@ -130,5 +148,5 @@
 
   sync();
   document.documentElement.dataset.pvOverworldPiece='LIVE30G';
-  window.PV_OVERWORLD30G={piece,note,sync,animateTo,departWhisper,departEcho:departWhisper};
+  window.PV_OVERWORLD30G={piece,note,sync,animateTo,moveTo,departWhisper,departEcho:departWhisper};
 })();
