@@ -6,7 +6,7 @@
   const isOverworld=/hybrid-overworld\.html$/i.test(location.pathname);
   const RUN_KEYS=Object.freeze([
     'pv.currentLocation','pv.lastLocation','pv.resonance.sync','pv.progression.v1',
-    'pv.encounterResult','pv.pendingEncounter','pv.partySelected','pv.homecomingResume'
+    'pv.encounterResult','pv.pendingEncounter','pv.partySelected','pv.homecomingResume','pv.towerArrivalSeen'
   ]);
   const CLEAR_PREFIX='pv.locationClear.';
   const NEW_RUN_DEFAULTS=Object.freeze({

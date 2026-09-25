@@ -13,7 +13,7 @@ button,a,input{touch-action:manipulation}
 .arrival{position:fixed;inset:0;z-index:40;background:#020611;display:grid;place-items:center;overflow:hidden}
 .arrival[hidden]{display:none}.arrival video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(1.04) contrast(1.03)}
 .arrival:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#02061122,#02061120 45%,#020611da 100%),radial-gradient(circle at 50% 40%,transparent 20%,#02061166 78%)}
-.arrival-ui{position:relative;z-index:2;align-self:end;width:min(700px,90vw);margin-bottom:max(26px,env(safe-area-inset-bottom));padding:16px 18px;text-align:center;border:1px solid #ead07f88;background:#061128dc;box-shadow:0 16px 45px #000c,0 0 30px #7cecff28;backdrop-filter:blur(7px)}
+.arrival-ui{position:relative;z-index:2;align-self:end;width:min(700px,90vw);margin-bottom:max(26px,env(safe-area-inset-bottom));padding:16px 18px;text-align:center;border:1px solid #ead07f88;background:#061128dc;box-shadow:0 16px 45px #000c,0 0 30px #7cecff28;backdrop-filter:blur(7px);animation:pvArrivalCard .28s ease-out both}.arrival-ui[hidden]{display:none!important}.arrival-skip{position:absolute;z-index:3;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));border:1px solid #ead07f77;background:#061128b8;color:#f8edcf;padding:8px 11px;font:900 8px system-ui;letter-spacing:.14em;backdrop-filter:blur(6px)}.arrival.intro .arrival-skip{display:none}.arrival.intro:after{background:linear-gradient(180deg,#02061144,#02061130 42%,#020611e6 100%),radial-gradient(circle at 50% 40%,transparent 18%,#02061188 82%)}@keyframes pvArrivalCard{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 .arrival-ui b{display:block;color:var(--cyan);font:900 9px system-ui;letter-spacing:.22em}.arrival-ui strong{display:block;margin-top:5px;color:var(--gold);font-size:clamp(24px,5vw,48px);font-weight:500}
 .arrival-ui span{display:block;margin:7px auto 12px;max-width:58ch;color:#c7d4e8;font:700 11px/1.4 system-ui}.btn{border:1px solid #e3c67499;background:linear-gradient(180deg,#18335b,#0b1a39);color:#fff0bd;padding:10px 15px;font:900 9px system-ui;letter-spacing:.13em;text-transform:uppercase;box-shadow:0 5px 18px #0008}.btn:disabled{opacity:.42}
 .tower{position:fixed;inset:0;display:grid;grid-template-rows:auto 1fr auto;padding:max(9px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(9px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));gap:8px}
@@ -22,8 +22,7 @@ button,a,input{touch-action:manipulation}
 .puzzle{display:none;min-height:100%;padding:clamp(14px,2.7vw,28px)}.puzzle.active{display:grid;grid-template-columns:minmax(220px,.86fr) minmax(280px,1.14fr);gap:clamp(15px,3vw,34px);align-items:center}
 .copy h2{margin:0;color:var(--gold);font-size:clamp(25px,4vw,45px);font-weight:500}.copy p{color:#c0cee2;font:700 clamp(10px,1.35vw,14px)/1.5 system-ui;max-width:54ch}.phase{color:var(--cyan);font:900 8px system-ui;letter-spacing:.18em}.hint{margin-top:11px;padding:9px 11px;border-left:2px solid var(--violet);background:#0a1730;color:#9fb2cf;font:700 9px/1.4 system-ui}
 .console{display:grid;place-items:center;min-height:250px}.rings{position:relative;width:min(330px,56vh,44vw);aspect-ratio:1}.ring{position:absolute;left:50%;top:50%;border:1px solid #8beaff88;border-radius:50%;transform:translate(-50%,-50%) rotate(calc(var(--r)*60deg));transition:transform .22s ease;box-shadow:0 0 18px #7cecff18,inset 0 0 18px #8d67ff18}.ring:before{content:"◆";position:absolute;left:50%;top:-7px;transform:translateX(-50%);color:var(--gold);text-shadow:0 0 8px #fff0a8}.r1{width:100%;height:100%}.r2{width:72%;height:72%}.r3{width:44%;height:44%}.core{position:absolute;left:50%;top:50%;width:18%;height:18%;transform:translate(-50%,-50%) rotate(45deg);border:1px solid #ead07faa;background:radial-gradient(circle,#7cecff66,#35236f 52%,#070b1d);box-shadow:0 0 28px #7cecff88}
-.ring-controls,.cal-grid,.route-map{display:grid;gap:8px}.ring-controls{grid-template-columns:repeat(3,1fr);margin-top:10px}.ring-controls button{min-height:42px}
-.target{margin-top:10px;text-align:center;color:#8fa7c6;font:800 8px system-ui;letter-spacing:.13em}.target b{color:#f5dc92}
+.ring-controls,.cal-grid,.route-map{display:grid;gap:8px}.ring-controls{grid-template-columns:repeat(3,1fr);margin-top:12px}.ring-control{min-height:76px;padding:9px 8px!important;display:grid;grid-template-rows:auto auto auto;place-items:center;gap:3px;background:radial-gradient(circle at 50% 0,#744cff2d,transparent 58%),linear-gradient(180deg,#112b4b,#08152e)!important}.ring-control .rc-name{color:#8deeff;font:900 7px system-ui;letter-spacing:.16em}.ring-control .rc-glyph{color:#fff0bd;font:700 24px Georgia;text-shadow:0 0 12px #8deeff99}.ring-control .rc-goal{color:#97a9c4;font:800 6.5px system-ui;letter-spacing:.11em}.ring-control.matched{border-color:#f0d681!important;box-shadow:0 0 18px #7cecff55,inset 0 0 18px #f0d68118}.ring-control.matched .rc-goal{color:#8fffcf}.target{margin-top:10px;padding:9px 11px;border:1px solid #7cecff44;background:#06152ecc;text-align:center;color:#aebed5;font:800 8px system-ui;letter-spacing:.13em}.target b{color:#f5dc92}.target .match{display:block;margin-top:4px;color:#7cecff}.puzzle-rule{margin-top:10px;padding:10px 12px;border:1px solid #d9bc6a44;background:linear-gradient(135deg,#0b1732,#071126);color:#d3deed;font:800 9px/1.45 system-ui}.puzzle-rule strong{color:#fff0bd}.puzzle-rule .example{display:block;margin-top:5px;color:#83ecff;letter-spacing:.08em}
 .cal-grid{grid-template-columns:1fr}.band{padding:10px;border:1px solid #8092ba44;background:#061228c9}.band-head{display:flex;justify-content:space-between;color:#d5e4f7;font:800 9px system-ui;letter-spacing:.09em}.band small{color:var(--cyan)}input[type=range]{width:100%;accent-color:#9a72ff;margin-top:9px}
 .cal-readout{text-align:center;padding:12px;border:1px solid #7cecff44;background:#06152e;color:#aebfd8;font:800 9px system-ui;letter-spacing:.12em}.cal-readout.locked{color:#fff0bd;border-color:#ead07f99;box-shadow:0 0 20px #7cecff33}
 .route-map{grid-template-columns:repeat(5,1fr);align-items:center;position:relative;padding:34px 6px}.route-map:before{content:"";position:absolute;left:8%;right:8%;top:50%;height:1px;background:linear-gradient(90deg,#7cecff33,#ead07f88,#a878ff55)}.node{position:relative;z-index:2;aspect-ratio:1;max-width:76px;width:100%;justify-self:center;border:1px solid #8797bb77;border-radius:50%;background:#07152e;color:#aebed5;font:900 7px system-ui;letter-spacing:.07em;box-shadow:0 0 0 5px #030914}.node.hit{border-color:#7cecff;color:#fff0bd;background:#142b4d;box-shadow:0 0 0 5px #030914,0 0 18px #7cecff55}.node.wrong{border-color:#ff7790;color:#ffd6dd}
@@ -35,16 +34,17 @@ button,a,input{touch-action:manipulation}
 </head>
 <body>
 <div id="arrival" class="arrival">
-  <video id="arrivalVideo" playsinline muted autoplay preload="auto" src="./assets/ui/overworld/v2/resonance_tower_arrival_v1.mp4"></video>
-  <div class="arrival-ui"><b>ROUTE CALIBRATED · TOWER SIGNAL ACQUIRED</b><strong>Resonance Tower</strong><span>The Grove signal reaches an old water tower rebuilt around a Veil conduit. Three calibration locks stand between the Bearers and the next route.</span><button id="enterTower" class="btn">ENTER TOWER</button></div>
+  <video id="arrivalVideo" playsinline webkit-playsinline muted autoplay preload="auto" src="./assets/ui/overworld/v2/resonance_tower_arrival_v1.mp4"></video>
+  <button id="skipArrival" class="arrival-skip" type="button">SKIP</button>
+  <div id="arrivalIntro" class="arrival-ui" hidden><b>ROUTE CALIBRATED · TOWER SIGNAL ACQUIRED</b><strong>Resonance Tower</strong><span>The Grove signal reaches an old water tower rebuilt around a Veil conduit. Three calibration locks stand between the Bearers and the next route.</span><button id="enterTower" class="btn">ENTER TOWER</button></div>
 </div>
 
 <main class="tower">
   <header class="top"><div><div class="eyebrow">THE PRISMATIC VEIL · RESONANCE TOWER</div><h1 class="title">Signal Calibration</h1></div><div class="progress"><div class="pip" data-pip="1"><span>01</span></div><div class="pip" data-pip="2"><span>02</span></div><div class="pip" data-pip="3"><span>03</span></div></div></header>
   <section class="stage">
     <article class="puzzle" data-step="1">
-      <div class="copy"><div class="phase">01 · ECHO RING CONSOLE</div><h2>Listen to the Grove</h2><p>The Tower receives Whispering Grove as three overlapping memory tones. Rotate the three echo rings until their glyphs match the recovered pattern.</p><div class="hint">TARGET PATTERN · <b>◈ · ✦ · ○</b><br>Each ring advances one resonance glyph when tapped.</div></div>
-      <div class="console"><div><div class="rings"><div class="ring r1" id="ring1"></div><div class="ring r2" id="ring2"></div><div class="ring r3" id="ring3"></div><div class="core"></div></div><div class="ring-controls"><button class="btn ring-btn" data-ring="0"></button><button class="btn ring-btn" data-ring="1"></button><button class="btn ring-btn" data-ring="2"></button></div><div class="target" id="ringStatus">ALIGN THE THREE ECHOES</div></div></div>
+      <div class="copy"><div class="phase">01 · ECHO RING CONSOLE</div><h2>Match the three symbols</h2><p>The Tower recovered one target symbol for each ring. Tap a ring control to cycle its symbol. Your only job is to make all three CURRENT symbols equal their TARGET symbols.</p><div class="puzzle-rule"><strong>HOW TO SOLVE</strong><span class="example">OUTER → ◈ &nbsp; · &nbsp; MIDDLE → ✦ &nbsp; · &nbsp; INNER → ○</span>Tap each control until its CURRENT symbol matches the target printed underneath it.</div></div>
+      <div class="console"><div><div class="rings"><div class="ring r1" id="ring1"></div><div class="ring r2" id="ring2"></div><div class="ring r3" id="ring3"></div><div class="core"></div></div><div class="ring-controls"><button class="btn ring-btn ring-control" data-ring="0"></button><button class="btn ring-btn ring-control" data-ring="1"></button><button class="btn ring-btn ring-control" data-ring="2"></button></div><div class="target" id="ringStatus"><b>RECOVERED PATTERN · ◈ ✦ ○</b><span class="match">RESONANCE MATCH · 0 / 3</span></div></div></div>
     </article>
 
     <article class="puzzle" data-step="2">
@@ -66,7 +66,7 @@ button,a,input{touch-action:manipulation}
 (()=>{
   const SYNC='pv.resonance.sync',CLEAR='pv.locationClear.oldwater',CURRENT='pv.currentLocation',LAST='pv.lastLocation',SEEN='pv.towerArrivalSeen';
   const qs=new URLSearchParams(location.search),from=qs.get('from')||localStorage.getItem(LAST)||'whisper';
-  const arrival=document.getElementById('arrival'),video=document.getElementById('arrivalVideo'),enter=document.getElementById('enterTower'),status=document.getElementById('status');
+  const arrival=document.getElementById('arrival'),video=document.getElementById('arrivalVideo'),enter=document.getElementById('enterTower'),skip=document.getElementById('skipArrival'),arrivalIntro=document.getElementById('arrivalIntro'),status=document.getElementById('status');
   const puzzles=[...document.querySelectorAll('.puzzle')],pips=[...document.querySelectorAll('.pip')],complete=document.getElementById('complete');
   let sync=Math.max(0,Math.min(3,Number(localStorage.getItem(SYNC)||0)));
   try{localStorage.setItem(CURRENT,'oldwater');localStorage.setItem(LAST,from)}catch(_){}
@@ -77,19 +77,45 @@ button,a,input{touch-action:manipulation}
     complete.classList.toggle('show',sync>=3);
     status.textContent=sync>=3?'TOWER LINK · SYNCHRONIZED':`TOWER LINK · CALIBRATION ${sync+1}/3`;
   }
+  let introShown=false;
+  function revealArrivalIntro(){
+    if(introShown||arrival.hidden)return;
+    introShown=true;
+    try{video.pause()}catch(_){}
+    arrival.classList.add('intro');
+    arrivalIntro.hidden=false;
+    requestAnimationFrame(()=>enter.focus?.());
+  }
   function dismissArrival(){arrival.hidden=true;try{video.pause();localStorage.setItem(SEEN,'1')}catch(_){}}
   enter.addEventListener('click',dismissArrival);
-  video.addEventListener('ended',()=>enter.focus?.());
+  skip.addEventListener('click',revealArrivalIntro);
+  video.addEventListener('ended',revealArrivalIntro);
+  video.addEventListener('error',revealArrivalIntro);
   if(localStorage.getItem(SEEN)==='1'||sync>0)arrival.hidden=true;
-  else video.play().catch(()=>{});
+  else {
+    arrivalIntro.hidden=true;
+    video.currentTime=0;
+    const play=video.play();
+    if(play?.catch)play.catch(()=>revealArrivalIntro());
+  }
 
   // Puzzle 1 · Echo Ring Console
   const glyphs=['◇','✦','◈','△','○','✧'],target=[2,1,4],ring=[0,3,1],ringEls=[ring1,ring2,ring3],buttons=[...document.querySelectorAll('.ring-btn')],ringStatus=document.getElementById('ringStatus');
+  const ringNames=['OUTER','MIDDLE','INNER'];
   function ringPaint(){
-    buttons.forEach((b,i)=>{b.textContent=`RING ${i+1} · ${glyphs[ring[i]]}`;ringEls[i].style.setProperty('--r',ring[i])});
-    const ok=ring.every((v,i)=>v===target[i]);
-    ringStatus.innerHTML=ok?'<b>SIGNAL LOCKED</b> · GROVE MEMORY READABLE':'ALIGN THE THREE ECHOES';
-    if(ok)setTimeout(()=>save(1),320);
+    let matches=0;
+    buttons.forEach((b,i)=>{
+      const matched=ring[i]===target[i];
+      if(matched)matches++;
+      b.classList.toggle('matched',matched);
+      b.innerHTML=`<span class="rc-name">${ringNames[i]} RING · TAP TO CHANGE</span><span class="rc-glyph">${glyphs[ring[i]]}</span><span class="rc-goal">TARGET · ${glyphs[target[i]]} ${matched?'✓':''}</span>`;
+      ringEls[i].style.setProperty('--r',ring[i]);
+      ringEls[i].style.borderColor=matched?'#f0d681':'#8beaff88';
+      ringEls[i].style.boxShadow=matched?'0 0 22px #7cecff77,inset 0 0 22px #f0d6812b':'0 0 18px #7cecff18,inset 0 0 18px #8d67ff18';
+    });
+    const ok=matches===3;
+    ringStatus.innerHTML=ok?'<b>SIGNAL LOCKED · GROVE MEMORY READABLE</b><span class="match">RESONANCE MATCH · 3 / 3 ✓</span>':`<b>RECOVERED PATTERN · ◈ ✦ ○</b><span class="match">RESONANCE MATCH · ${matches} / 3</span>`;
+    if(ok)setTimeout(()=>save(1),650);
   }
   buttons.forEach((b,i)=>b.addEventListener('click',()=>{if(sync!==0)return;ring[i]=(ring[i]+1)%glyphs.length;ringPaint()}));
   ringPaint();
