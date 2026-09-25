@@ -259,7 +259,7 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 
 ## LIVE30E1 progression and lexicon pass
 
-- Promoted build: `main-20260925-live30e1`.
+- Promoted build: `main-20260909-live28k27` (progression/lexicon pass retained under the stable K27 witness).
 - Canonical content authority: `src/PVCanon.js`.
 - Auryi title is **Aura Spoken** across BattleConfig and the live result card.
 - Resonarts are sealed until Level 2; the live drawer explains the lock and the Hybrid confirm path enforces it.

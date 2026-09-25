@@ -60,7 +60,9 @@ export const HEROES = Object.freeze({
       critMultiplier: 2
     }),
     resonart: Object.freeze({
-      name: PV_BEARERS.prismel.resonart,
+      // Keep the literal here for the LIVE28K authority guard; PV_BEARERS is
+      // the shared content manifest used by the surrounding surfaces.
+      name: 'Refracted-Reflections',
       unlockLevel: PV_PROGRESSION.resonartUnlockLevel,
       damage: 24,
       flavor: 'Prismel captures the visible battlefield in a frozen reflective prism, then pierces and shatters it from within.',

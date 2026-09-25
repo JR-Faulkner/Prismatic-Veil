@@ -241,7 +241,7 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 
 ## LIVE30E1 progression and lexicon
 
-- `main-20260925-live30e1` adds the shared `src/PVCanon.js` manifest and normalizes Auryi to **Aura Spoken**.
+- The stable `main-20260909-live28k27` witness now also carries the shared `src/PVCanon.js` manifest and normalizes Auryi to **Aura Spoken**.
 - All three Bearer Resonarts are locked until Level 2. The first Whispering Grove clear pays 100 XP to Prismel, Auryi, and Kineza, so the reward screen demonstrates the unlock.
 - The Hybrid drawer shows the sealed state before Level 2; the live wrapper and encounter adapter both reject an early confirm.
 - No battle cinematic authority or approved battle-critical art changed in this pass.
