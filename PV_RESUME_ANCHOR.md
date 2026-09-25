@@ -2,9 +2,16 @@
 
 Last refreshed: 2026-09-06
 
+## LIVE30E save-state foundation (2026-09-25)
+
+- Main now exposes `CONTINUE` when the `pv.save.v1` snapshot exists and an explicit `NEW GAME` action that clears the run ledger and starts the story flow cleanly.
+- `assets/js/pv-save-state.js` snapshots the current map, progression, encounter, party, resonance, resume-audio, and dynamic location-clear keys at the Overworld boundary.
+- Autosave runs on Overworld entry, route/menu interaction, visibility loss, pagehide, and a low-frequency interval. The Hybrid/K battle authority is unchanged.
+- Remote iPhone validation remains pending for the new menu and New Game/Continue behavior.
+
 ## Current production witness
 
-- Promoted witness: `main-20260909-live28k27`
+- Promoted witness: `main-20260909-live28k26`
 - Witness promotion commit: `0c5a59b68d832aef44e58ac48cbabb9e3c885507`
 - Exact production audio install commit: `ac00a834471317edd98a60a7884a1896270be61f`
 - Production battle adapter: `src/prizim/Live28K2PartyBattleScene.js`
@@ -183,13 +190,13 @@ Do not add redundant base-file query-string surgery unless this routing actually
 
 ## Aurora Pulse live device gate
 
-- Current witness: `main-20260909-live28k27`.
+- Current witness: `main-20260909-live28k26`.
 - K18 baseline: core Beauty presentation, native Celestial Bloom, and live battlefield/enemy handoff passed on iPhone.
 - K19 phone review: full-screen title presentation was rejected because it interrupted cinematic continuity.
 - K20 presentation: title removed; Hybrid camera/framing and Pulse-driven battlefield re-entry are the active polish lane.
 
 - Latest phone evidence (main-20260908-live28k23): PASS iPhone MAIN gate: Aurora Pulse Beauty V2 cinematic played in the live Hybrid route with native V2 SFX, battle BGM silence during the video, Celestial Bloom choir-tail bridge into the battlefield reconnect, and live battle ownership restored cleanly.
-- Current pending gate: LIVE28K27: verify Prismel glass-shatter beat, reflective mirror blades crossing into the live battlefield, visible shard landings around the Wraith, damage synchronized to blade impact, clean return, and unchanged Aurora Pulse + Thunder Tornado.
+- Current pending gate: LIVE28K26: verify Prismel Refracted-Reflections exact cinematic, 9.35s staff/lens takeover, readable mirror crack, captured-frame shards, live battlefield reveal beneath shards, live enemy refracted impact/damage, no music/language during cinematic, clean HUD/turn restore, and unchanged Aurora Pulse + Thunder Tornado.
 - Machine timing authority: `PV_LIVE_AUTHORITY.json` -> `auryi.aurora_beauty_sync`.
 
 ## Kineza victory timing gate
