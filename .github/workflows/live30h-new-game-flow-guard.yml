@@ -48,7 +48,7 @@ jobs:
           if 'Whispering Grove' not in story or 'Begin at Home.' not in story: errors.append('current prologue objective missing')
           for token in ["'pv.currentLocation':'home'","'pv.lastLocation':'home'","'pv.partySelected':'prismel'","function initializeNewRun()"]:
               if token not in save: errors.append(f'fresh-run seed missing: {token}')
-          if not all(re.search(r"pvasset=save\\d+", source) for source in (index, story, overworld)): errors.append('save-state cache bust missing')
+          if not all(re.search(r"pvasset=save\d+", source) for source in (index, story, overworld)): errors.append('save-state cache bust missing')
           if build.get('id')!='main-20260909-live28k27': errors.append('K27 battle witness drift')
           if build.get('hybrid')!='hybrid-main.html': errors.append('Hybrid battle route drift')
           if build.get('overworld')!='hybrid-overworld.html': errors.append('Overworld route authority missing')
