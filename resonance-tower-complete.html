@@ -13,7 +13,7 @@ button,a,input{touch-action:manipulation}
 .arrival{position:fixed;inset:0;z-index:40;background:#020611;display:grid;place-items:center;overflow:hidden}
 .arrival[hidden]{display:none}.arrival video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(1.04) contrast(1.03)}
 .arrival:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#02061122,#02061120 45%,#020611da 100%),radial-gradient(circle at 50% 40%,transparent 20%,#02061166 78%)}
-.arrival-ui{position:relative;z-index:2;align-self:end;width:min(700px,90vw);margin-bottom:max(26px,env(safe-area-inset-bottom));padding:16px 18px;text-align:center;border:1px solid #ead07f88;background:#061128dc;box-shadow:0 16px 45px #000c,0 0 30px #7cecff28;backdrop-filter:blur(7px);animation:pvArrivalCard .28s ease-out both}.arrival-ui[hidden]{display:none!important}.arrival-skip{position:absolute;z-index:3;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));border:1px solid #ead07f77;background:#061128b8;color:#f8edcf;padding:8px 11px;font:900 8px system-ui;letter-spacing:.14em;backdrop-filter:blur(6px)}.arrival.intro .arrival-skip{display:none}.arrival.intro:after{background:linear-gradient(180deg,#02061144,#02061130 42%,#020611e6 100%),radial-gradient(circle at 50% 40%,transparent 18%,#02061188 82%)}@keyframes pvArrivalCard{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.arrival-ui{position:relative;z-index:2;align-self:end;width:min(700px,90vw);margin-bottom:max(26px,env(safe-area-inset-bottom));padding:16px 18px;text-align:center;border:1px solid #ead07f88;background:#061128dc;box-shadow:0 16px 45px #000c,0 0 30px #7cecff28;backdrop-filter:blur(7px);animation:pvArrivalCard .28s ease-out both}.arrival-ui[hidden]{display:none!important}.arrival-skip{position:absolute;z-index:3;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));border:1px solid #ead07f77;background:#061128b8;color:#f8edcf;padding:8px 11px;font:900 8px system-ui;letter-spacing:.14em;backdrop-filter:blur(6px)}.arrival-skip[hidden],.arrival-play[hidden],.arrival-state[hidden]{display:none!important}.arrival.intro .arrival-skip,.arrival.intro .arrival-play,.arrival.intro .arrival-state{display:none!important}.arrival-play{position:absolute;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);min-width:min(280px,72vw);padding:14px 18px;border:1px solid #ead07faa;background:linear-gradient(180deg,#17345c,#09172f);color:#fff0bd;font:900 10px system-ui;letter-spacing:.16em;box-shadow:0 12px 36px #000c,0 0 28px #7cecff44}.arrival-state{position:absolute;z-index:3;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);padding:7px 11px;border:1px solid #7cecff38;background:#061128b0;color:#bcd0e8;font:800 7px system-ui;letter-spacing:.14em;white-space:nowrap;backdrop-filter:blur(5px)}.arrival.intro:after{background:linear-gradient(180deg,#02061144,#02061130 42%,#020611e6 100%),radial-gradient(circle at 50% 40%,transparent 18%,#02061188 82%)}@keyframes pvArrivalCard{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 .arrival-ui b{display:block;color:var(--cyan);font:900 9px system-ui;letter-spacing:.22em}.arrival-ui strong{display:block;margin-top:5px;color:var(--gold);font-size:clamp(24px,5vw,48px);font-weight:500}
 .arrival-ui span{display:block;margin:7px auto 12px;max-width:58ch;color:#c7d4e8;font:700 11px/1.4 system-ui}.btn{border:1px solid #e3c67499;background:linear-gradient(180deg,#18335b,#0b1a39);color:#fff0bd;padding:10px 15px;font:900 9px system-ui;letter-spacing:.13em;text-transform:uppercase;box-shadow:0 5px 18px #0008}.btn:disabled{opacity:.42}
 .tower{position:fixed;inset:0;display:grid;grid-template-rows:auto 1fr auto;padding:max(9px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(9px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));gap:8px}
@@ -34,8 +34,10 @@ button,a,input{touch-action:manipulation}
 </head>
 <body>
 <div id="arrival" class="arrival">
-  <video id="arrivalVideo" playsinline webkit-playsinline muted autoplay preload="auto" src="./assets/ui/overworld/v2/resonance_tower_arrival_v1.mp4"></video>
-  <button id="skipArrival" class="arrival-skip" type="button">SKIP</button>
+  <video id="arrivalVideo" playsinline webkit-playsinline muted autoplay preload="auto" disablepictureinpicture src="./assets/ui/overworld/v2/resonance_tower_arrival_v1.mp4?pvasset=tower-arrival2"></video>
+  <button id="skipArrival" class="arrival-skip" type="button" hidden>SKIP</button>
+  <button id="playArrival" class="arrival-play" type="button" hidden>PLAY ARRIVAL CINEMATIC</button>
+  <div id="arrivalState" class="arrival-state">PREPARING ARRIVAL…</div>
   <div id="arrivalIntro" class="arrival-ui" hidden><b>ROUTE CALIBRATED · TOWER SIGNAL ACQUIRED</b><strong>Resonance Tower</strong><span>The Grove signal reaches an old water tower rebuilt around a Veil conduit. Three calibration locks stand between the Bearers and the next route.</span><button id="enterTower" class="btn">ENTER TOWER</button></div>
 </div>
 
@@ -66,7 +68,7 @@ button,a,input{touch-action:manipulation}
 (()=>{
   const SYNC='pv.resonance.sync',CLEAR='pv.locationClear.oldwater',CURRENT='pv.currentLocation',LAST='pv.lastLocation',SEEN='pv.towerArrivalSeen';
   const qs=new URLSearchParams(location.search),from=qs.get('from')||localStorage.getItem(LAST)||'whisper';
-  const arrival=document.getElementById('arrival'),video=document.getElementById('arrivalVideo'),enter=document.getElementById('enterTower'),skip=document.getElementById('skipArrival'),arrivalIntro=document.getElementById('arrivalIntro'),status=document.getElementById('status');
+  const arrival=document.getElementById('arrival'),video=document.getElementById('arrivalVideo'),enter=document.getElementById('enterTower'),skip=document.getElementById('skipArrival'),playArrival=document.getElementById('playArrival'),arrivalState=document.getElementById('arrivalState'),arrivalIntro=document.getElementById('arrivalIntro'),status=document.getElementById('status');
   const puzzles=[...document.querySelectorAll('.puzzle')],pips=[...document.querySelectorAll('.pip')],complete=document.getElementById('complete');
   let sync=Math.max(0,Math.min(3,Number(localStorage.getItem(SYNC)||0)));
   try{localStorage.setItem(CURRENT,'oldwater');localStorage.setItem(LAST,from)}catch(_){}
@@ -77,26 +79,71 @@ button,a,input{touch-action:manipulation}
     complete.classList.toggle('show',sync>=3);
     status.textContent=sync>=3?'TOWER LINK · SYNCHRONIZED':`TOWER LINK · CALIBRATION ${sync+1}/3`;
   }
-  let introShown=false;
+  let introShown=false,cinematicStarted=false,autoplayWatch=0;
   function revealArrivalIntro(){
     if(introShown||arrival.hidden)return;
     introShown=true;
+    clearTimeout(autoplayWatch);
     try{video.pause()}catch(_){}
     arrival.classList.add('intro');
+    skip.hidden=true;playArrival.hidden=true;arrivalState.hidden=true;
     arrivalIntro.hidden=false;
     requestAnimationFrame(()=>enter.focus?.());
+  }
+  function markPlaying(){
+    cinematicStarted=true;
+    clearTimeout(autoplayWatch);
+    playArrival.hidden=true;
+    arrivalState.hidden=true;
+    skip.hidden=false;
+  }
+  async function startCinematic(fromGesture=false){
+    if(arrival.hidden||introShown)return;
+    try{
+      video.muted=true;
+      if(video.currentTime>0.15)video.currentTime=0;
+      const p=video.play();
+      if(p?.then)await p;
+      // 'playing' is the visual authority. Do not show SKIP merely because
+      // play() resolved while Safari is still stalled on the first frame.
+      if(fromGesture&&!cinematicStarted){
+        arrivalState.textContent='STARTING ARRIVAL…';
+        arrivalState.hidden=false;
+      }
+    }catch(_){
+      if(fromGesture){
+        arrivalState.textContent='CINEMATIC COULD NOT START';
+        arrivalState.hidden=false;
+      }
+    }
+  }
+  function offerManualPlay(){
+    if(arrival.hidden||introShown||cinematicStarted)return;
+    skip.hidden=true;
+    arrivalState.textContent='TAP TO START THE ARRIVAL';
+    arrivalState.hidden=false;
+    playArrival.hidden=false;
   }
   function dismissArrival(){arrival.hidden=true;try{video.pause();localStorage.setItem(SEEN,'1')}catch(_){}}
   enter.addEventListener('click',dismissArrival);
   skip.addEventListener('click',revealArrivalIntro);
+  playArrival.addEventListener('click',()=>startCinematic(true));
+  video.addEventListener('playing',markPlaying);
+  video.addEventListener('timeupdate',()=>{if(video.currentTime>0.08&&!cinematicStarted)markPlaying()});
   video.addEventListener('ended',revealArrivalIntro);
-  video.addEventListener('error',revealArrivalIntro);
+  video.addEventListener('error',()=>{
+    clearTimeout(autoplayWatch);
+    arrivalState.textContent='CINEMATIC UNAVAILABLE · CONTINUING TO TOWER';
+    arrivalState.hidden=false;
+    setTimeout(revealArrivalIntro,900);
+  });
   if(localStorage.getItem(SEEN)==='1'||sync>0)arrival.hidden=true;
   else {
-    arrivalIntro.hidden=true;
-    video.currentTime=0;
-    const play=video.play();
-    if(play?.catch)play.catch(()=>revealArrivalIntro());
+    arrivalIntro.hidden=true;skip.hidden=true;playArrival.hidden=true;
+    arrivalState.textContent='PREPARING ARRIVAL…';arrivalState.hidden=false;
+    try{video.currentTime=0}catch(_){}
+    startCinematic(false);
+    autoplayWatch=setTimeout(offerManualPlay,1100);
   }
 
   // Puzzle 1 · Echo Ring Console
