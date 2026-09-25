@@ -1,7 +1,8 @@
 // v34 — full-fidelity Hushling art, matching the approved concept design.
-// Hushlings are wider and heavier than Veil Wraiths. The animation
-// language emphasizes mass: slow weight shift, short lunge, hard recoil,
-// and a downward collapse. A low-alpha ADD-blended glow layer breathes
+// Hushlings keep the same armored resonance family as the approved reference,
+// but they are the short, stocky companion silhouette beside a Wraith. The
+// animation language emphasizes mass: slow weight shift, short lunge, hard
+// recoil, and a downward collapse. A low-alpha ADD-blended glow layer breathes
 // behind the sprite, echoing its molten-core design.
 export const HUSHLING_TEXTURES = Object.freeze({
   idle: 'Hushling_v34_Idle',
@@ -50,15 +51,22 @@ export default class EnemyHushlingView {
     const compact = width < 560 || height < 520;
 
     if (landscape) {
-      this.baseX = Math.round(width * (compact ? 0.66 : 0.69));
+      this.baseX = Math.round(width * 0.72);
       this.baseY = Math.round(height * 0.92);
     } else {
       this.baseX = Math.round(width * (compact ? 0.76 : 0.78));
       this.baseY = Math.round(height - (compact ? 284 : 264));
     }
-    const targetHeight = landscape
-      ? Math.min(255, height * 0.66)
-      : Math.min(compact ? 286 : 350, height * (compact ? 0.36 : 0.45));
+    // Keep the Hushling at roughly half the Wraith's visible height. This is
+    // a display treatment only: it preserves the approved v34 source bytes
+    // while making the encounter read as one tall Wraith with a smaller,
+    // grounded Hushling beside it on every device.
+    const wraithReferenceHeight = landscape
+      ? (width >= 1100 && height >= 600
+        ? Math.min(285, height * 0.66)
+        : Math.min(250, height * 0.62))
+      : Math.min(compact ? 250 : 310, height * (compact ? 0.31 : 0.39));
+    const targetHeight = Math.max(96, Math.round(wraithReferenceHeight * 0.5));
 
     // The v34 art is tall and narrow, not square like the old locked
     // sprites — forcing a square display box would squash it. Derive
@@ -253,3 +261,4 @@ export default class EnemyHushlingView {
     this.startIdle();
   }
 }
+

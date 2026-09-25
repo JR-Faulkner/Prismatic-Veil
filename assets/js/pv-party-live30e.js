@@ -13,7 +13,7 @@
 
   let progression=null;
   let lastSig='';
-  const moduleUrl=new URL('./src/progression/PVProgression.js?v=live30e1',document.baseURI).href;
+  const moduleUrl=new URL('./src/progression/PVProgression.js?v=live30e2',document.baseURI).href;
   const currentId=()=>document.querySelector('.slot.selected')?.dataset.character||localStorage.getItem('pv.partySelected')||'prismel';
 
   async function authority(){
@@ -37,7 +37,9 @@
     let note=body.querySelector('.pv30e-growth-note');
     if(!note){note=document.createElement('div');note.className='pv30e-growth-note';body.appendChild(note)}
     const hero=state.heroes?.[id]||{xp:0,level:null};
-    note.innerHTML=`<b>PROGRESSION BANK</b><br><strong>${Number(hero.xp||0).toLocaleString()} XP</strong> banked for this Bearer. Level curve and player-directed per-level point quantities remain pending the production balance lock; earned XP will carry forward when that curve is assigned.`;
+    const level=hero.level||progression?.levelForXp?.(hero.xp||0)||1;
+    const next=progression?.nextLevelXp?.(level||1)||0;
+    note.innerHTML=`<b>PROGRESSION BANK</b><br><strong>LEVEL ${level||1} · ${Number(hero.xp||0).toLocaleString()} XP</strong> banked for this Bearer. Next threshold: ${Number(next).toLocaleString()} XP. The curve remains provisional so balance can change without discarding earned XP.`;
   }
 
   async function render(){
@@ -45,11 +47,13 @@
       const api=await authority();
       const state=api.loadProgression();
       const id=currentId(),hero=state.heroes?.[id]||{xp:0,level:null},inv=state.inventory||{};
+      const level=hero.level||api.levelForXp(hero.xp||0);
+      const nextXp=api.nextLevelXp(level);
       const sig=[id,hero.xp,hero.level,inv.veilShard,inv.memoryFragment,state.tuningRevision].join('|');
       const strip=ensureStrip();
       if(strip&&sig!==lastSig){
         lastSig=sig;
-        strip.innerHTML=`<div class="xp"><b>XP Banked</b><strong>${Number(hero.xp||0).toLocaleString()} XP</strong></div><div class="curve">${state.levelCurveLocked&&hero.level?`LEVEL ${hero.level}`:'LEVEL CURVE PENDING'}</div><div class="pv30e-loot"><b>Party Finds</b><span>SHARD <i>×${Number(inv.veilShard||0)}</i></span><span>MEMORY <i>×${Number(inv.memoryFragment||0)}</i></span></div>`;
+        strip.innerHTML=`<div class="xp"><b>XP Banked</b><strong>${Number(hero.xp||0).toLocaleString()} XP</strong></div><div class="curve">LEVEL ${level}<br><small>${Number(nextXp||0).toLocaleString()} XP NEXT</small></div><div class="pv30e-loot"><b>Party Finds</b><span>SHARD <i>×${Number(inv.veilShard||0)}</i></span><span>MEMORY <i>×${Number(inv.memoryFragment||0)}</i></span></div>`;
       }
       decorateGrowthModal(state,id);
       document.documentElement.dataset.pvPartyProgression='LIVE30E';
@@ -62,3 +66,4 @@
   addEventListener('storage',e=>{if(e.key==='pv.progression.v1')render()});
   render();
 })();
+

@@ -12,7 +12,7 @@
     echo:{name:'Echo Playground',x:36.7,y:35.8,state:'Reachable',desc:'A familiar neighborhood playground distorted by Resonance. The laughter is gone, but something in the Veil still answers.',objective:'Stabilize the disturbance at Echo Playground.',meta:['Encounter','First Clear','Resonance'],threats:['Veil Wraith','Hushling'],rewards:['Experience','Veil Shard','Memory Fragment'],travel:'Enter Echo Playground',type:'battle'},
     glassway:{name:'Glassway Bridge',x:50.2,y:61.8,state:'Route Sealed',desc:'A luminous bridge spanning the fractured waterways. Its glasswork resonates with paths that have not fully opened.',objective:'Stabilize Echo Playground to reveal the Glassway route.',meta:['Route','Bridge','Discovery'],threats:['Unknown'],rewards:['Route Access'],travel:'Route Not Yet Open',type:'locked'},
     whisper:{name:'Whispering Grove',x:46.0,y:28.3,state:'Route Sealed',desc:'A grove where prismatic leaves repeat fragments of voices from nearby realities.',objective:'Stabilize Echo Playground to reveal the Grove route.',meta:['Route','Mystery','Discovery'],threats:['Unknown'],rewards:['Discovery'],travel:'Route Not Yet Open',type:'locked'},
-    oldwater:{name:'Old Water Tower',x:67.8,y:49.0,state:'Distant Signal',desc:'An old landmark now broadcasting a faint Veil pulse across the region. The road is visible, but not yet stable.',objective:'Open the routes beyond Glassway Bridge or Whispering Grove.',meta:['Landmark','Signal','Story'],threats:['Unknown'],rewards:['Unknown'],travel:'Path Unstable',type:'locked'},
+    oldwater:{name:'Resonance Tower',x:67.8,y:49.0,state:'Tower Signal',desc:'A former water tower rebuilt around a Veil conduit. It reads the memories of places, creatures, and Bearers, then routes their resonance toward the next stable path.',objective:'Route the Grove signal through the Resonance Tower.',meta:['Puzzle','Resonance','Story'],threats:['Echo Distortion'],rewards:['Route Calibration'],travel:'Enter Resonance Tower',type:'puzzle'},
     rift:{name:'Veil Rift',x:85.1,y:24.2,state:'Locked',desc:'A wound in the spectrum where several realities appear to overlap. Its route remains beyond the party’s current reach.',objective:'Find a stable path to the Veil Rift.',meta:['Story','Fracture','Locked'],threats:['Unknown'],rewards:['Unknown'],travel:'Path Locked',type:'locked'}
   });
 
@@ -169,7 +169,7 @@
     if(locationState)locationState.textContent=statusFor(selected);
     if(locationDesc)locationDesc.textContent=d.desc;
     if(locationMeta)locationMeta.innerHTML=d.meta.map(x=>`<span>${x}</span>`).join('');
-    if(travel){travel.textContent=actionFor(selected);travel.disabled=(selected===current&&selected==='home')||(!isUnlocked&&selected!=='echo')||(selected!=='home'&&selected!=='echo');}
+    if(travel){travel.textContent=actionFor(selected);travel.disabled=(selected===current&&selected==='home')||(!isUnlocked&&selected!=='echo')||(selected!=='home'&&selected!=='echo'&&selected!=='oldwater');}
     if(intel){
       const threats=d.threats?.length?d.threats.join(' · '):'None known';
       const rewards=d.rewards?.length?d.rewards.join(' · '):'—';
@@ -191,7 +191,8 @@
     const b=e.target.closest?.('#travelButton');if(!b)return;
     if(selected==='echo')return;
     e.preventDefault();e.stopImmediatePropagation();
-    if(selected==='home'&&current!=='home'){
+    if(selected==='oldwater'&&unlocked(selected)){window.location.href='./resonance-tower-complete.html?from='+encodeURIComponent(current);
+    }else if(selected==='home'&&current!=='home'){
       localStorage.setItem(LAST_KEY,current);current='home';localStorage.setItem(CURRENT_KEY,current);select('home');window.PVMenuSFX?.play?.('confirm');
     }else if(!unlocked(selected))window.PVMenuSFX?.play?.('locked');
   },true);

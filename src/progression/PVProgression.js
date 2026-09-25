@@ -15,13 +15,12 @@ export const ALL_BEARERS = Object.freeze(['prismel', 'auryi', 'kineza', 'saralle
 // The level curve remains intentionally unlocked until production balance authority
 // is established. XP is banked now and will survive that later curve assignment.
 export const PROGRESSION_TUNING = Object.freeze({
-  revision: 'live30e-provisional1',
+  revision: 'live30e-provisional2',
   levelCurveLocked: false,
+  // Provisional player-facing curve. The curve is intentionally data-owned
+  // and remains unlocked so balance can change without rewriting save data.
+  levelCurve: Object.freeze({ baseXp: 100, growth: 1.35, maxLevel: 50 }),
   encounters: Object.freeze({
-    whisper: Object.freeze({
-      firstClear: Object.freeze({ xpEach: 50, items: Object.freeze({ veilShard: 1, memoryFragment: 1 }) }),
-      repeat: Object.freeze({ xpEach: 20, items: Object.freeze({}) })
-    }),
     echo: Object.freeze({
       firstClear: Object.freeze({ xpEach: 50, items: Object.freeze({ veilShard: 1, memoryFragment: 1 }) }),
       repeat: Object.freeze({ xpEach: 20, items: Object.freeze({}) })
@@ -31,6 +30,26 @@ export const PROGRESSION_TUNING = Object.freeze({
 
 const now = () => Date.now();
 const asInt = (value, fallback = 0) => Number.isFinite(Number(value)) ? Math.max(0, Math.floor(Number(value))) : fallback;
+
+export function xpForLevel(level) {
+  const n = Math.max(1, Math.floor(Number(level) || 1));
+  if (n <= 1) return 0;
+  const { baseXp, growth } = PROGRESSION_TUNING.levelCurve;
+  return Math.round(baseXp * Math.pow(growth, n - 2));
+}
+
+export function levelForXp(xp) {
+  const value = asInt(xp, 0);
+  const { maxLevel } = PROGRESSION_TUNING.levelCurve;
+  let level = 1;
+  while (level < maxLevel && value >= xpForLevel(level + 1)) level += 1;
+  return level;
+}
+
+export function nextLevelXp(levelOrXp, fromXp = null) {
+  const level = fromXp == null ? levelForXp(levelOrXp) : Math.max(1, Math.floor(Number(levelOrXp) || 1));
+  return xpForLevel(Math.min(PROGRESSION_TUNING.levelCurve.maxLevel, level + 1));
+}
 
 function blankHero() {
   return { level: null, xp: 0 };
@@ -109,9 +128,13 @@ export function applyEncounterReward(locationId, options = {}, storage = globalT
   const reward = firstClear ? table.firstClear : table.repeat;
   const xpEach = asInt(reward.xpEach, 0);
   const heroXp = {};
+  const levelUps = {};
   for (const id of CORE_BATTLE_BEARERS) {
+    const beforeLevel = state.heroes[id].level || levelForXp(state.heroes[id].xp);
     state.heroes[id].xp += xpEach;
+    state.heroes[id].level = levelForXp(state.heroes[id].xp);
     heroXp[id] = state.heroes[id].xp;
+    levelUps[id] = Math.max(0, state.heroes[id].level - beforeLevel);
   }
 
   const items = {};
@@ -134,6 +157,9 @@ export function applyEncounterReward(locationId, options = {}, storage = globalT
     xpEach,
     bearers: [...CORE_BATTLE_BEARERS],
     heroXp,
+    levels: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, state.heroes[id].level])),
+    levelUps,
+    nextLevelXp: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, nextLevelXp(state.heroes[id].level)])),
     items,
     levelCurveLocked: PROGRESSION_TUNING.levelCurveLocked,
     tuningRevision: PROGRESSION_TUNING.revision
@@ -158,3 +184,4 @@ export function progressionSummary(storage = globalThis.localStorage) {
     encounters: clone(state.encounters || {})
   };
 }
+
