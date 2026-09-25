@@ -158,6 +158,7 @@
   function actionFor(id){
     if(id==='home')return current==='home'?'Current Location':'Return Home';
     if(id==='echo')return cleared('echo')?'Revisit Encounter':'Enter Echo Playground';
+    if(id==='oldwater'&&unlocked(id))return cleared('oldwater')?'Re-enter Resonance Tower':'Enter Resonance Tower';
     if(!unlocked(id))return LOCATIONS[id].travel;
     return 'Route Available Soon';
   }
@@ -187,11 +188,18 @@
   function clearSelection(){selected=current;syncNodes();renderRoutes();renderPanel()}
 
   clear?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();clearSelection()},true);
-  document.addEventListener('click',e=>{
+  document.addEventListener('click',async e=>{
     const b=e.target.closest?.('#travelButton');if(!b)return;
     if(selected==='echo')return;
     e.preventDefault();e.stopImmediatePropagation();
-    if(selected==='oldwater'&&unlocked(selected)){window.location.href='./resonance-tower-complete.html?from='+encodeURIComponent(current);
+    if(selected==='oldwater'&&unlocked(selected)){
+      const from=current;
+      b.disabled=true;b.textContent='Traveling to Resonance Tower…';
+      try{
+        if(window.PV_OVERWORLD30G?.moveTo)await window.PV_OVERWORLD30G.moveTo('oldwater',{from,stepMs:260,holdMs:260});
+      }catch(err){console.warn('[PV] Tower route animation skipped',err)}
+      try{localStorage.setItem(LAST_KEY,from);localStorage.setItem(CURRENT_KEY,'oldwater')}catch(_){}
+      window.location.href='./resonance-tower-complete.html?from='+encodeURIComponent(from);
     }else if(selected==='home'&&current!=='home'){
       localStorage.setItem(LAST_KEY,current);current='home';localStorage.setItem(CURRENT_KEY,current);select('home');window.PVMenuSFX?.play?.('confirm');
     }else if(!unlocked(selected))window.PVMenuSFX?.play?.('locked');

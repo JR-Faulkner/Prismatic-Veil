@@ -55,7 +55,7 @@ export default class EnemyHushlingView {
       // LIVE29G recenter: Hushling is much narrower than the Wraith, so its
       // optical center needs a slightly farther-right anchor in enemy space.
       this.baseX = Math.round(width * (largeLandscape ? 0.78 : 0.76));
-      this.baseY = Math.round(height * 0.92);
+      this.baseY = Math.round(height * (largeLandscape ? 0.885 : 0.89));
     } else {
       this.baseX = Math.round(width * (compact ? 0.76 : 0.78));
       this.baseY = Math.round(height - (compact ? 284 : 264));

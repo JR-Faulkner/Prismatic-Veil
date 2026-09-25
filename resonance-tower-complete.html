@@ -1,2 +1,128 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Resonance Tower · Signal Calibration</title><style>html,body{margin:0;height:100%;background:#030914;color:#f5e9c6;font-family:Georgia,serif}body{display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#29366d,#050b19 70%)}.shell{width:min(920px,92vw);padding:22px;border:1px solid #d9b96b99;background:#071228ee;box-shadow:0 20px 60px #000b}.eyebrow{font:800 10px system-ui;letter-spacing:.2em;color:#73eaff}.title{font-size:clamp(28px,5vw,54px);font-weight:500;margin:8px 0}.copy{color:#bfccdf;line-height:1.5;max-width:70ch}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:20px 0}.step{border:1px solid #7b70a455;background:#0b1a35;padding:13px}.step b{display:block;color:#e8c96f;font:800 10px system-ui;letter-spacing:.12em}.step span{display:block;color:#aebed5;font-size:12px;margin-top:6px;line-height:1.3}.step.done{border-color:#73eaff;box-shadow:0 0 16px #6e5cff55}.actions{display:flex;flex-wrap:wrap;gap:9px}.actions button{border:1px solid #d9b96b99;background:#14264a;color:#fff0bd;padding:11px 15px;font:800 10px system-ui;letter-spacing:.1em}.actions button:hover{border-color:#fff0bd;box-shadow:0 0 14px #7864ff}.note{margin-top:15px;color:#9fb3d1;font:11px system-ui}@media(max-width:640px){.steps{grid-template-columns:1fr}}</style></head><body><main class="shell"><div class="eyebrow">THE PRISMATIC VEIL · RESONANCE TOWER</div><h1 class="title">Signal Calibration</h1><p class="copy">The Tower is not matching elements. It is reading the relationship between Whispering Grove, the Wraith distortion, and the Bearers’ shared resonance.</p><section class="steps"><div class="step" data-step="1"><b>01 · LISTEN</b><span>Read the living memory carried by the Grove.</span></div><div class="step" data-step="2"><b>02 · ALIGN</b><span>Bring the party signatures into one readable pattern.</span></div><div class="step" data-step="3"><b>03 · UNSEAL</b><span>Open the Grimoire page that is still written in Veil script.</span></div></section><div class="actions"><button id="listen">TUNE GROVE MEMORY</button><button id="align">ALIGN PARTY RESONANCE</button><button id="open" disabled>OPEN PRISMODIAL GRIMOIRE</button><button onclick="location.href='./hybrid-overworld.html'">RETURN TO OVERWORLD</button></div><div class="note" id="note">Progress is stored locally for this route.</div></main><script>(()=>{let n=Number(localStorage.getItem('pv.resonance.sync')||0);const steps=[...document.querySelectorAll('.step')],listen=document.getElementById('listen'),align=document.getElementById('align'),open=document.getElementById('open'),note=document.getElementById('note');function paint(){steps.forEach((x,i)=>x.classList.toggle('done',n>i));open.disabled=n<3;note.textContent=n<3?'The Tower is listening. Complete all three resonance steps.':'The Grimoire page is synchronized and ready.'}listen.onclick=()=>{n=Math.max(n,1);localStorage.setItem('pv.resonance.sync',n);paint()};align.onclick=()=>{if(n<1)return; n=Math.max(n,2);localStorage.setItem('pv.resonance.sync',n);paint()};open.onclick=()=>{if(n>=3)location.href='./prismodial-grimoire.html?from=tower'};paint()})();</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#030914">
+<title>Resonance Tower · Signal Calibration</title>
+<style>
+:root{--gold:#ead07f;--cyan:#7cecff;--violet:#a878ff;--ink:#f8edcf;--muted:#aebed6;--panel:#07152bea;--deep:#020611}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--deep);color:var(--ink);font-family:Georgia,serif}
+body{background:radial-gradient(circle at 52% 36%,#27336a 0,#09132c 42%,#020611 82%)}
+button,a,input{touch-action:manipulation}
+.arrival{position:fixed;inset:0;z-index:40;background:#020611;display:grid;place-items:center;overflow:hidden}
+.arrival[hidden]{display:none}.arrival video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(1.04) contrast(1.03)}
+.arrival:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#02061122,#02061120 45%,#020611da 100%),radial-gradient(circle at 50% 40%,transparent 20%,#02061166 78%)}
+.arrival-ui{position:relative;z-index:2;align-self:end;width:min(700px,90vw);margin-bottom:max(26px,env(safe-area-inset-bottom));padding:16px 18px;text-align:center;border:1px solid #ead07f88;background:#061128dc;box-shadow:0 16px 45px #000c,0 0 30px #7cecff28;backdrop-filter:blur(7px)}
+.arrival-ui b{display:block;color:var(--cyan);font:900 9px system-ui;letter-spacing:.22em}.arrival-ui strong{display:block;margin-top:5px;color:var(--gold);font-size:clamp(24px,5vw,48px);font-weight:500}
+.arrival-ui span{display:block;margin:7px auto 12px;max-width:58ch;color:#c7d4e8;font:700 11px/1.4 system-ui}.btn{border:1px solid #e3c67499;background:linear-gradient(180deg,#18335b,#0b1a39);color:#fff0bd;padding:10px 15px;font:900 9px system-ui;letter-spacing:.13em;text-transform:uppercase;box-shadow:0 5px 18px #0008}.btn:disabled{opacity:.42}
+.tower{position:fixed;inset:0;display:grid;grid-template-rows:auto 1fr auto;padding:max(9px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(9px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));gap:8px}
+.top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:9px 12px;border:1px solid #d9bc6a88;background:#061329e8;box-shadow:0 8px 25px #0008}.eyebrow{color:var(--cyan);font:900 7px system-ui;letter-spacing:.22em}.title{margin:2px 0 0;font-size:clamp(21px,3vw,34px);font-weight:500}.progress{display:flex;gap:6px}.pip{width:29px;height:29px;display:grid;place-items:center;border:1px solid #7183aa66;background:#07152e;color:#7587a8;font:900 8px system-ui;transform:rotate(45deg)}.pip span{transform:rotate(-45deg)}.pip.done{border-color:#7cecff;color:#fff0bd;box-shadow:0 0 13px #7cecff55}
+.stage{position:relative;min-height:0;border:1px solid #d9bc6a55;background:radial-gradient(circle at 50% 35%,#35408130,transparent 47%),linear-gradient(145deg,#07152bf0,#050a19f5);overflow:auto;box-shadow:inset 0 0 55px #040611,0 14px 34px #0009}
+.puzzle{display:none;min-height:100%;padding:clamp(14px,2.7vw,28px)}.puzzle.active{display:grid;grid-template-columns:minmax(220px,.86fr) minmax(280px,1.14fr);gap:clamp(15px,3vw,34px);align-items:center}
+.copy h2{margin:0;color:var(--gold);font-size:clamp(25px,4vw,45px);font-weight:500}.copy p{color:#c0cee2;font:700 clamp(10px,1.35vw,14px)/1.5 system-ui;max-width:54ch}.phase{color:var(--cyan);font:900 8px system-ui;letter-spacing:.18em}.hint{margin-top:11px;padding:9px 11px;border-left:2px solid var(--violet);background:#0a1730;color:#9fb2cf;font:700 9px/1.4 system-ui}
+.console{display:grid;place-items:center;min-height:250px}.rings{position:relative;width:min(330px,56vh,44vw);aspect-ratio:1}.ring{position:absolute;left:50%;top:50%;border:1px solid #8beaff88;border-radius:50%;transform:translate(-50%,-50%) rotate(calc(var(--r)*60deg));transition:transform .22s ease;box-shadow:0 0 18px #7cecff18,inset 0 0 18px #8d67ff18}.ring:before{content:"◆";position:absolute;left:50%;top:-7px;transform:translateX(-50%);color:var(--gold);text-shadow:0 0 8px #fff0a8}.r1{width:100%;height:100%}.r2{width:72%;height:72%}.r3{width:44%;height:44%}.core{position:absolute;left:50%;top:50%;width:18%;height:18%;transform:translate(-50%,-50%) rotate(45deg);border:1px solid #ead07faa;background:radial-gradient(circle,#7cecff66,#35236f 52%,#070b1d);box-shadow:0 0 28px #7cecff88}
+.ring-controls,.cal-grid,.route-map{display:grid;gap:8px}.ring-controls{grid-template-columns:repeat(3,1fr);margin-top:10px}.ring-controls button{min-height:42px}
+.target{margin-top:10px;text-align:center;color:#8fa7c6;font:800 8px system-ui;letter-spacing:.13em}.target b{color:#f5dc92}
+.cal-grid{grid-template-columns:1fr}.band{padding:10px;border:1px solid #8092ba44;background:#061228c9}.band-head{display:flex;justify-content:space-between;color:#d5e4f7;font:800 9px system-ui;letter-spacing:.09em}.band small{color:var(--cyan)}input[type=range]{width:100%;accent-color:#9a72ff;margin-top:9px}
+.cal-readout{text-align:center;padding:12px;border:1px solid #7cecff44;background:#06152e;color:#aebfd8;font:800 9px system-ui;letter-spacing:.12em}.cal-readout.locked{color:#fff0bd;border-color:#ead07f99;box-shadow:0 0 20px #7cecff33}
+.route-map{grid-template-columns:repeat(5,1fr);align-items:center;position:relative;padding:34px 6px}.route-map:before{content:"";position:absolute;left:8%;right:8%;top:50%;height:1px;background:linear-gradient(90deg,#7cecff33,#ead07f88,#a878ff55)}.node{position:relative;z-index:2;aspect-ratio:1;max-width:76px;width:100%;justify-self:center;border:1px solid #8797bb77;border-radius:50%;background:#07152e;color:#aebed5;font:900 7px system-ui;letter-spacing:.07em;box-shadow:0 0 0 5px #030914}.node.hit{border-color:#7cecff;color:#fff0bd;background:#142b4d;box-shadow:0 0 0 5px #030914,0 0 18px #7cecff55}.node.wrong{border-color:#ff7790;color:#ffd6dd}
+.route-readout{text-align:center;color:#9eb2d0;font:800 9px system-ui;letter-spacing:.11em;min-height:20px}
+.complete{display:none;min-height:100%;place-items:center;text-align:center;padding:26px}.complete.show{display:grid}.complete h2{font-size:clamp(30px,5vw,56px);font-weight:500;color:var(--gold);margin:7px 0}.complete p{max-width:58ch;color:#c7d4e8;font:700 12px/1.5 system-ui}.complete-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin-top:18px}.complete-actions a{text-decoration:none}
+.bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 11px;border:1px solid #d9bc6a55;background:#061329dc;color:#8fa5c2;font:800 7px system-ui;letter-spacing:.13em}.bottom a{color:#f2d88f;text-decoration:none}
+@media(max-width:760px),(max-height:520px){.puzzle.active{grid-template-columns:.82fr 1.18fr;padding:10px;gap:12px}.copy p{font-size:9px}.hint{font-size:8px}.rings{width:min(230px,47vh,36vw)}.ring-controls button{font-size:7px;padding:7px}.top{padding:6px 9px}.pip{width:24px;height:24px}.route-map{padding:14px 4px}.node{max-width:52px}.bottom{padding:5px 8px}}
+</style>
+</head>
+<body>
+<div id="arrival" class="arrival">
+  <video id="arrivalVideo" playsinline muted autoplay preload="auto" src="./assets/ui/overworld/v2/resonance_tower_arrival_v1.mp4"></video>
+  <div class="arrival-ui"><b>ROUTE CALIBRATED · TOWER SIGNAL ACQUIRED</b><strong>Resonance Tower</strong><span>The Grove signal reaches an old water tower rebuilt around a Veil conduit. Three calibration locks stand between the Bearers and the next route.</span><button id="enterTower" class="btn">ENTER TOWER</button></div>
+</div>
 
+<main class="tower">
+  <header class="top"><div><div class="eyebrow">THE PRISMATIC VEIL · RESONANCE TOWER</div><h1 class="title">Signal Calibration</h1></div><div class="progress"><div class="pip" data-pip="1"><span>01</span></div><div class="pip" data-pip="2"><span>02</span></div><div class="pip" data-pip="3"><span>03</span></div></div></header>
+  <section class="stage">
+    <article class="puzzle" data-step="1">
+      <div class="copy"><div class="phase">01 · ECHO RING CONSOLE</div><h2>Listen to the Grove</h2><p>The Tower receives Whispering Grove as three overlapping memory tones. Rotate the three echo rings until their glyphs match the recovered pattern.</p><div class="hint">TARGET PATTERN · <b>◈ · ✦ · ○</b><br>Each ring advances one resonance glyph when tapped.</div></div>
+      <div class="console"><div><div class="rings"><div class="ring r1" id="ring1"></div><div class="ring r2" id="ring2"></div><div class="ring r3" id="ring3"></div><div class="core"></div></div><div class="ring-controls"><button class="btn ring-btn" data-ring="0"></button><button class="btn ring-btn" data-ring="1"></button><button class="btn ring-btn" data-ring="2"></button></div><div class="target" id="ringStatus">ALIGN THE THREE ECHOES</div></div></div>
+    </article>
+
+    <article class="puzzle" data-step="2">
+      <div class="copy"><div class="phase">02 · TOWER ASCENT CALIBRATION</div><h2>Balance the signal</h2><p>The Grove memory is readable, but the Tower cannot carry it upward until the Bearers tune three harmonic bands into their calibration windows.</p><div class="hint">Bring each band within <b>±4</b> of its target. The core locks only when all three harmonics settle together.</div></div>
+      <div class="cal-grid"><div class="band"><div class="band-head"><span>LOW HARMONIC</span><small>TARGET 62</small></div><input class="cal" data-target="62" type="range" min="0" max="100" value="18"></div><div class="band"><div class="band-head"><span>MID HARMONIC</span><small>TARGET 38</small></div><input class="cal" data-target="38" type="range" min="0" max="100" value="82"></div><div class="band"><div class="band-head"><span>HIGH HARMONIC</span><small>TARGET 76</small></div><input class="cal" data-target="76" type="range" min="0" max="100" value="31"></div><div id="calReadout" class="cal-readout">SIGNAL DRIFT · 133</div><button id="lockCalibration" class="btn">LOCK CALIBRATION</button></div>
+    </article>
+
+    <article class="puzzle" data-step="3">
+      <div class="copy"><div class="phase">03 · RESONANCE ROUTING MAP</div><h2>Route the Bearers</h2><p>The final seal does not want three separate voices. Route the recovered Grove memory through the Bearers in sequence and into the Tower core.</p><div class="hint">TRACE · <b>GROVE → PRISMEL → AURYI → KINEZA → CORE</b><br>A wrong connection drops the route and restarts the trace.</div></div>
+      <div><div class="route-map"><button class="node" data-route="grove">GROVE</button><button class="node" data-route="prismel">PRISMEL</button><button class="node" data-route="auryi">AURYI</button><button class="node" data-route="kineza">KINEZA</button><button class="node" data-route="core">CORE</button></div><div id="routeReadout" class="route-readout">ROUTE WAITING · START AT GROVE</div></div>
+    </article>
+
+    <section id="complete" class="complete"><div><div class="phase">TOWER CALIBRATION COMPLETE</div><h2>Resonance Synchronized</h2><p>The Tower now reads Whispering Grove and the three Bearers as one stable key. The Prismodial Grimoire can translate the sealed page, and the route toward the Veil Rift is now visible.</p><div class="complete-actions"><a class="btn" href="./prismodial-grimoire.html?from=tower">OPEN PRISMODIAL GRIMOIRE</a><a class="btn" href="./hybrid-overworld.html?pvreturn=oldwater&pvresult=victory">RETURN TO OVERWORLD</a></div></div></section>
+  </section>
+  <footer class="bottom"><span id="status">TOWER LINK · WAITING</span><a href="./hybrid-overworld.html">RETURN TO OVERWORLD</a></footer>
+</main>
+
+<script>
+(()=>{
+  const SYNC='pv.resonance.sync',CLEAR='pv.locationClear.oldwater',CURRENT='pv.currentLocation',LAST='pv.lastLocation',SEEN='pv.towerArrivalSeen';
+  const qs=new URLSearchParams(location.search),from=qs.get('from')||localStorage.getItem(LAST)||'whisper';
+  const arrival=document.getElementById('arrival'),video=document.getElementById('arrivalVideo'),enter=document.getElementById('enterTower'),status=document.getElementById('status');
+  const puzzles=[...document.querySelectorAll('.puzzle')],pips=[...document.querySelectorAll('.pip')],complete=document.getElementById('complete');
+  let sync=Math.max(0,Math.min(3,Number(localStorage.getItem(SYNC)||0)));
+  try{localStorage.setItem(CURRENT,'oldwater');localStorage.setItem(LAST,from)}catch(_){}
+  function save(n){sync=Math.max(sync,n);try{localStorage.setItem(SYNC,String(sync))}catch(_){}paint()}
+  function paint(){
+    pips.forEach((p,i)=>p.classList.toggle('done',sync>i));
+    puzzles.forEach((p,i)=>p.classList.toggle('active',sync===i&&sync<3));
+    complete.classList.toggle('show',sync>=3);
+    status.textContent=sync>=3?'TOWER LINK · SYNCHRONIZED':`TOWER LINK · CALIBRATION ${sync+1}/3`;
+  }
+  function dismissArrival(){arrival.hidden=true;try{video.pause();localStorage.setItem(SEEN,'1')}catch(_){}}
+  enter.addEventListener('click',dismissArrival);
+  video.addEventListener('ended',()=>enter.focus?.());
+  if(localStorage.getItem(SEEN)==='1'||sync>0)arrival.hidden=true;
+  else video.play().catch(()=>{});
+
+  // Puzzle 1 · Echo Ring Console
+  const glyphs=['◇','✦','◈','△','○','✧'],target=[2,1,4],ring=[0,3,1],ringEls=[ring1,ring2,ring3],buttons=[...document.querySelectorAll('.ring-btn')],ringStatus=document.getElementById('ringStatus');
+  function ringPaint(){
+    buttons.forEach((b,i)=>{b.textContent=`RING ${i+1} · ${glyphs[ring[i]]}`;ringEls[i].style.setProperty('--r',ring[i])});
+    const ok=ring.every((v,i)=>v===target[i]);
+    ringStatus.innerHTML=ok?'<b>SIGNAL LOCKED</b> · GROVE MEMORY READABLE':'ALIGN THE THREE ECHOES';
+    if(ok)setTimeout(()=>save(1),320);
+  }
+  buttons.forEach((b,i)=>b.addEventListener('click',()=>{if(sync!==0)return;ring[i]=(ring[i]+1)%glyphs.length;ringPaint()}));
+  ringPaint();
+
+  // Puzzle 2 · Tower Ascent Calibration
+  const sliders=[...document.querySelectorAll('.cal')],calReadout=document.getElementById('calReadout'),lock=document.getElementById('lockCalibration');
+  function calibration(){
+    const drift=sliders.reduce((sum,s)=>sum+Math.abs(Number(s.value)-Number(s.dataset.target)),0);
+    const ok=sliders.every(s=>Math.abs(Number(s.value)-Number(s.dataset.target))<=4);
+    calReadout.textContent=ok?'CALIBRATION WINDOW · STABLE':`SIGNAL DRIFT · ${drift}`;
+    calReadout.classList.toggle('locked',ok);lock.disabled=!ok;
+    return ok;
+  }
+  sliders.forEach(s=>s.addEventListener('input',calibration));
+  lock.addEventListener('click',()=>{if(sync===1&&calibration())save(2)});
+  calibration();
+
+  // Puzzle 3 · Resonance Routing Map
+  const sequence=['grove','prismel','auryi','kineza','core'],nodes=[...document.querySelectorAll('.node')],readout=document.getElementById('routeReadout');let routeIndex=0;
+  function resetRoute(wrong=null){routeIndex=0;nodes.forEach(n=>n.classList.remove('hit','wrong'));if(wrong){wrong.classList.add('wrong');setTimeout(()=>wrong.classList.remove('wrong'),240)}readout.textContent='ROUTE DROPPED · START AGAIN AT GROVE'}
+  nodes.forEach(node=>node.addEventListener('click',()=>{
+    if(sync!==2)return;
+    const id=node.dataset.route;
+    if(id!==sequence[routeIndex]){resetRoute(node);return}
+    node.classList.add('hit');routeIndex++;readout.textContent=routeIndex<sequence.length?`ROUTE STABLE · NEXT ${sequence[routeIndex].toUpperCase()}`:'ROUTE COMPLETE · TOWER CORE OPEN';
+    if(routeIndex===sequence.length){
+      try{localStorage.setItem(CLEAR,'1');localStorage.setItem(CURRENT,'oldwater')}catch(_){}
+      setTimeout(()=>save(3),420);
+    }
+  }));
+  if(sync>=3){try{localStorage.setItem(CLEAR,'1')}catch(_){}}
+  paint();
+})();
+</script>
+</body>
+</html>

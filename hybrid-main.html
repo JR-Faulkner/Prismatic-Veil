@@ -34,7 +34,7 @@
   // K27 remains the normal battle authority. LIVE29G is an isolated child adapter
   // layered over Live29FEncounterBattleScene.js so reward/return behavior stays intact.
   const battleAdapter=live28kLineage?(encounterMode?'Live29GEncounterBattleScene.js':'Live28K27BattleGuardScene.js'):'Live28PartyBattleScene.js';
-  const battleTag=encounterMode?'encounter3':'guard1';
+  const battleTag=encounterMode?'encounter4':'guard1';
   const formationAdapter=live28kLineage?'Live28K7PartyFormationView.js':'Live28PartyFormationView.js';
   document.documentElement.dataset.pvbuild=id;
   if(encounterMode)document.documentElement.dataset.pvEncounter='1';
