@@ -50,7 +50,7 @@ export default class EnemyHushlingView {
     const compact = width < 560 || height < 520;
 
     if (landscape) {
-      this.baseX = Math.round(width * 0.72);
+      this.baseX = Math.round(width * (compact ? 0.66 : 0.69));
       this.baseY = Math.round(height * 0.92);
     } else {
       this.baseX = Math.round(width * (compact ? 0.76 : 0.78));
