@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated": "2026-09-09",
+  "updated": "2026-09-26",
   "witness": "main-20260909-live28k27",
   "production_route": [
     "index.html",
@@ -14,6 +14,12 @@
     "battle_adapter": "src/prizim/Live28K2PartyBattleScene.js",
     "formation_adapter": "src/prizim/Live28K7PartyFormationView.js",
     "base_scene": "src/PartyBattleScene.js"
+  },
+  "progression": {
+    "first_overworld_encounter": "Whispering Grove",
+    "reward_authority": "src/progression/PVProgression.js",
+    "whispering_grove_reward_key": "whisper",
+    "legacy_echo_alias": true
   },
   "hard_gates": {
     "production_battle_must_use_hybrid_stack": true,
@@ -235,4 +241,5 @@
     "refracted_reflections_blade_policy": "The broken reflection must continue into the live battlefield as reflective cyan/violet/gold/white mirror blades. Blades visibly cross toward the real enemy, strike around/through the target, leave readable landed shards on the battlefield, then fade after the impact settles."
   }
 }
+
 
