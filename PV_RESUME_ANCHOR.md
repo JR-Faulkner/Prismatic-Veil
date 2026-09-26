@@ -24,7 +24,7 @@ Last refreshed: 2026-09-25
 
 - Main exposes `CONTINUE` when the `pv.save.v1` snapshot exists; fresh players see `ENTER THE VEIL`, while saved players get `NEW GAME`. Fresh-run initialization clears the old ledger and seeds Home/Prismel before the Prologue.
 - `assets/js/pv-save-state.js` snapshots the current map, progression, encounter, party, resonance, resume-audio, and dynamic location-clear keys at the Overworld boundary.
-- Autosave runs on Overworld entry, route/menu interaction, visibility loss, pagehide, and a low-frequency interval. The Hybrid/K battle authority is unchanged.
+- Autosave runs on Overworld entry, route/menu interaction, visibility loss, pagehide, and a low-frequency interval. Encounter completion now snapshots `pv.save.v1` from the Hybrid result bridge too, before the player chooses Return to Map or MAIN.
 - Remote iPhone validation remains pending for the new menu and New Game/Continue behavior.
 
 ## Current production witness
