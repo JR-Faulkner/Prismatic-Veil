@@ -82,6 +82,12 @@ export default class Live29FEncounterBattleScene extends Live28K27BattleGuardSce
       globalThis.localStorage?.removeItem(PENDING_KEY);
     } catch (_) { /* return still proceeds if storage is blocked */ }
 
+    // The player can leave the result screen for MAIN before the map shell
+    // gets a chance to run its normal autosave. Snapshot the completed route
+    // here as well so CONTINUE cannot restore a pre-encounter run over a
+    // freshly recorded Whispering Grove clear and reward ledger.
+    try { globalThis.PVSaveState?.saveRun?.(); } catch (_) { /* map autosave remains the fallback */ }
+
     const returnToOverworld = () => {
       const q = new URLSearchParams({ pvreturn: locationId, pvresult: result });
       globalThis.location.href = `./hybrid-overworld.html?${q.toString()}`;
@@ -110,4 +116,5 @@ export default class Live29FEncounterBattleScene extends Live28K27BattleGuardSce
     this._queueEncounterReturn('defeat', 2300);
   }
 }
+
 
