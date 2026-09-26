@@ -19,7 +19,8 @@
     "first_overworld_encounter": "Whispering Grove",
     "reward_authority": "src/progression/PVProgression.js",
     "whispering_grove_reward_key": "whisper",
-    "legacy_echo_alias": true
+    "legacy_echo_alias": true,
+    "battle_result_snapshot": "src/prizim/Live29FEncounterBattleScene.js"
   },
   "hard_gates": {
     "production_battle_must_use_hybrid_stack": true,
