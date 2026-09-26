@@ -3,6 +3,12 @@
 Last refreshed: 2026-09-25
 Current promoted build: `main-20260909-live28k27` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
 
+## LIVE30E2 Whispering Grove progression repair (2026-09-26)
+
+- The live bridge was writing `pv.locationClear.whisper`, but the progression reward table only recognized the retired `echo` key. Whispering Grove now has the authoritative first-clear/repeat reward entry; `echo` remains a compatibility alias.
+- Local verification passed: first clear `+100 XP` each plus `Veil Shard` and `Memory Fragment`; repeat clear `+20 XP` each; both wins persist in `pv.progression.v1`.
+- Validate on device through **RETURN TO MAP**, then confirm the Resonance Tower route is revealed. Returning to MAIN and selecting **NEW GAME** intentionally clears the run; **CONTINUE** restores it.
+
 This is the fast operational failure-prevention ledger for PriZim production.
 
 ## LIVE30H canonical New Game flow (2026-09-25)
@@ -274,5 +280,6 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Logical damage now resolves on the live blade impact instead of the first battlefield-reveal frame.
 - Preserve battle-BGM silence through the cinematic/shatter and preserve Aurora Pulse V2 + Thunder Tornado.
 - iPhone MAIN remains the final runtime/presentation gate.
+
 
 
