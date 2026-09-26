@@ -22,3 +22,7 @@ The status area uses its own reserved row below all rings. At 3/3 the player mus
 - Preserve this behavior during subsequent art improvements. Do not restore screen-plane image tilting to simulate ring rotation.
 
 Publishing is from the latest remote main tree; remote Pages and the new live interaction must be checked before reporting deployment complete.
+
+## User feedback after orbit7
+
+The user subsequently reported "Works pretty well. I like it!" in the continuing iPhone test. The Puzzle 1 interaction direction is accepted. This feedback does not establish physical controller testing or a complete normal-MAIN traversal. The follow-up plan for puzzles 2/3, specific audio, progression and story is approved for planning. See `PV_TOWER_ROADMAP.md` and the separate `tower-design-review.html` mock and sound review. Those new visuals and sounds await approval before live integration.

@@ -1,0 +1,50 @@
+{
+  "sample_rate": 24000,
+  "channels": 1,
+  "format": "PCM16 WAV",
+  "status": "Original synthesized concepts awaiting audition approval",
+  "cues": [
+    {
+      "file": "ring-turn.wav",
+      "duration": 0.4,
+      "peak": 0.0604,
+      "sequence_at": 0.0
+    },
+    {
+      "file": "ring-align.wav",
+      "duration": 1.3,
+      "peak": 0.1718,
+      "sequence_at": 1.25
+    },
+    {
+      "file": "harmonic-search.wav",
+      "duration": 1.8,
+      "peak": 0.1574,
+      "sequence_at": 3.4
+    },
+    {
+      "file": "harmonic-lock.wav",
+      "duration": 1.8,
+      "peak": 0.1692,
+      "sequence_at": 6.05
+    },
+    {
+      "file": "memory-link.wav",
+      "duration": 1.25,
+      "peak": 0.1253,
+      "sequence_at": 8.7
+    },
+    {
+      "file": "route-release.wav",
+      "duration": 0.85,
+      "peak": 0.1026,
+      "sequence_at": 10.8
+    },
+    {
+      "file": "tower-resolve.wav",
+      "duration": 3.6,
+      "peak": 0.2144,
+      "sequence_at": 12.5
+    }
+  ]
+}
