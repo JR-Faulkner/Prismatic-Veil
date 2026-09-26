@@ -78,8 +78,10 @@ body:after{content:"";position:fixed;inset:0;pointer-events:none;background:line
 (()=>{
   const SYNC='pv.resonance.sync',CLEAR='pv.locationClear.oldwater',CURRENT='pv.currentLocation',LAST='pv.lastLocation',SEEN='pv.towerArrivalSeen';
   const qs=new URLSearchParams(location.search),from=qs.get('from')||localStorage.getItem(LAST)||'whisper';
+  const fresh=qs.get('fresh')==='1';
   const arrival=document.getElementById('arrival'),video=document.getElementById('arrivalVideo'),enter=document.getElementById('enterTower'),skip=document.getElementById('skipArrival'),playArrival=document.getElementById('playArrival'),arrivalState=document.getElementById('arrivalState'),arrivalIntro=document.getElementById('arrivalIntro'),status=document.getElementById('status');
   const puzzles=[...document.querySelectorAll('.puzzle')],pips=[...document.querySelectorAll('.pip')],complete=document.getElementById('complete');
+  if(fresh){try{localStorage.removeItem(SYNC);localStorage.removeItem(CLEAR)}catch(_){} }
   let sync=Math.max(0,Math.min(3,Number(localStorage.getItem(SYNC)||0)));
   try{localStorage.setItem(CURRENT,'oldwater');localStorage.setItem(LAST,from)}catch(_){}
   function save(n){sync=Math.max(sync,n);try{localStorage.setItem(SYNC,String(sync))}catch(_){}paint()}
@@ -237,3 +239,4 @@ body:after{content:"";position:fixed;inset:0;pointer-events:none;background:line
 </script>
 </body>
 </html>
+
