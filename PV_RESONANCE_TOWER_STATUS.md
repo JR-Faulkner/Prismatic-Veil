@@ -25,4 +25,5 @@ Publishing is from the latest remote main tree; remote Pages and the new live in
 
 ## User feedback after orbit7
 
-The user subsequently reported "Works pretty well. I like it!" in the continuing iPhone test. The Puzzle 1 interaction direction is accepted. This feedback does not establish physical controller testing or a complete normal-MAIN traversal. The follow-up plan for puzzles 2/3, specific audio, progression and story is approved for planning. See `PV_TOWER_ROADMAP.md` and the separate `tower-design-review.html` mock and sound review. Those new visuals and sounds await approval before live integration.
+The user subsequently reported "Works pretty well. I like it!" in the continuing iPhone test. The Puzzle 1 interaction direction is accepted. This feedback does not establish physical controller testing or a complete normal-MAIN traversal. The follow-up plan for puzzles 2/3, specific audio, progression and story is approved for planning. The user has now approved the current Harmonic Calibration and Resonance Routing visual direction for build-out. See `PV_TOWER_ROADMAP.md` and the separate `tower-design-review.html` mock and sound review. The new visuals are approved as direction; the sound cues remain audition-only until live integration.
+

@@ -10,12 +10,12 @@ The user reported that Puzzle 1 orbit7 "Works pretty well. I like it!" after the
 
 - Puzzle 2 high-fidelity mock: `assets/ui/tower/review-v1/harmonic-calibration.png`.
 - Puzzle 3 high-fidelity mock: `assets/ui/tower/review-v1/resonance-routing.png`.
-- Seven original synthetic sound-effect concepts plus full audition WAV under `assets/audio/tower/audition-v1/`. Reproducible source: `tools/tower_sound_audition.py`. They have NOT been approved or wired into live game hooks.
+- Seven original synthetic sound-effect concepts plus full audition WAV under `assets/audio/tower/audition-v1/`. Reproducible source: `tools/tower_sound_audition.py`. The user approved the current Puzzle 2/Puzzle 3 visual direction; the cues remain audition-only until their live mix is implemented and checked.
 - Image-generation prompts retained in `assets/ui/tower/review-v1/prompts.json`. Built-in image generation uses the existing Tower chamber as style reference. These images are visual targets, not production sprites or implemented screens.
 
 ## Order and acceptance gates
 
-1. User reviews mocks and remotely playable sounds. Preserve approved art; generate the necessary separate production assets only after visual approval.
+1. **Approved:** user reviewed the remote mocks and approved the current Harmonic Calibration / Resonance Routing direction. Preserve those references; generate the separate production layers for Puzzle 2 next.
 2. Puzzle 2: replace the range-input presentation with tactile tuning instruments, live waveforms, marked tolerance windows and stable-state feedback. Retain 62/38/76 targets and ±4 tolerance initially. Low/mid/high are signal bands, not elements. Require explicit Lock Calibration.
 3. Puzzle 3: build a readable network around Grove → Prismel → Auryi → Kineza → Tower core. Show clues that justify each connection. Support tap source/tap destination, drag as optional shortcut, controller focus, Undo and explicit Confirm Route. Preserve completed links after mistakes. The current live puzzle resets its route on a mistake; change that deliberately in this pass.
 4. Tower payoff: resolution scene → reward summary → Grimoire entry → visible next objective. Decide exact XP, item and route unlock requirements after auditing existing progression. Do not invent grants here.
@@ -48,3 +48,4 @@ The user reported that Puzzle 1 orbit7 "Works pretty well. I like it!" after the
 ## Completion evidence
 
 Mocks require visual approval. Audition playback requires user listening approval. Browser viewport tests are not physical iPhone or Xbox tests. Pages success plus live asset and control inspection is deployment evidence; normal MAIN-route device feedback is the final runtime gate.
+
