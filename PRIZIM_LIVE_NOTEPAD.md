@@ -1,6 +1,6 @@
 # PriZim Live Notepad
 
-Last refreshed: 2026-09-26
+Last refreshed: 2026-09-25
 Current promoted build: `main-20260909-live28k27` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
 
 ## LIVE30E2 Whispering Grove progression repair (2026-09-26)
@@ -26,7 +26,7 @@ This is the fast operational failure-prevention ledger for PriZim production.
 
 - `pv.save.v1` is the snapshot key for the current run. Main shows `CONTINUE` only when that snapshot exists.
 - `NEW GAME` clears the run keys and all `pv.locationClear.*` flags, seeds the clean Home/Prismel start, then enters the refreshed Prologue; the Prologue exits to Overworld.
-- Autosave is scoped to the Overworld shell; battle/cinematic resolution remains in the Hybrid/K chain.
+- Autosave remains owned by the Overworld shell, with an explicit Hybrid result-bridge snapshot after encounter resolution so leaving the victory screen for MAIN cannot restore a pre-battle snapshot.
 - Verify the normal MAIN route on iPhone before treating this as a witnessed user-facing save flow.
 
 
