@@ -7,7 +7,7 @@
 import Live29FEncounterBattleScene from './Live29FEncounterBattleScene.js?v=live29g2';
 import { ENEMY_IDS, selectEnemy } from '../EnemyCatalog.js?v=live29g1';
 import { HUSHLING_TEXTURES } from '../EnemyHushlingView.js?v=live29g3';
-import { createEnemyView } from './Live25EnemyViewFactory.js?v=live29g1';
+import { createEnemyView } from './Live25EnemyViewFactory.js?v=live30e4-center';
 import EnemyAudioDirector from '../EnemyAudioDirector.js?v=live29g1';
 
 const LOCATION_ENEMY = Object.freeze({

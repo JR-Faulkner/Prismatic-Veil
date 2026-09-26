@@ -1,6 +1,22 @@
 # The Prismatic Veil — Resume Anchor
 
-Last refreshed: 2026-09-25
+Last refreshed: 2026-09-26
+
+## LIVE30E5 first-encounter Hushling layout (2026-09-26)
+
+- Whispering Grove currently fields one Hushling. Its live encounter adapter now anchors that single enemy at the screen center across landscape and portrait layouts.
+- The Wraith and generic battle layouts are untouched. Multi-enemy stagger remains deliberately unimplemented until a real enemy-formation controller exists.
+
+## LIVE30E4 party-board movement cue (2026-09-26)
+
+- The Overworld board piece now plays one quiet step cue for every route hop after its starting position.
+- The cue uses the established Overworld move sound and respects the existing music/audio toggle. Arrival remains visual so repeated travel does not become noisy.
+
+## LIVE30E3 trailer refresh (2026-09-26)
+
+- `trailer.html` now plays the user-supplied **Trail2** cut from `assets/video/Trail2.mp4` (`56,759,102` bytes; SHA-256 `b01d30c49a6e20ae43035a4c82f3a33257ae911f0d1cd02289d17dcb6bdd7300`).
+- The MAIN-page **Trailer** entry remains unchanged and opens `trailer.html`; only the video source changed.
+- The prior `assets/video/CineTrail.mp4` remains in the repository as the immediate rollback asset.
 
 ## LIVE30E2 Whispering Grove progression repair (2026-09-26)
 
@@ -291,6 +307,12 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 - Whispering Grove first clear awards 100 XP per core Bearer, producing the first Level 2 unlock and a readable level-up result.
 - This is a progression/content pass; the accepted Aurora Pulse, Thunder Tornado, and Prismel reflected-blades presentation lanes remain unchanged.
 - iPhone MAIN remains the final runtime gate for this build.
+## LIVE30K1 Resonance Tower first-arrival repair (2026-09-26)
 
+- A New Game now stamps a run identity. The first Resonance Tower visit for that identity clears stale Tower sync, tower-clear, and arrival-seen values before rendering. It therefore plays the muted Tower arrival video and then opens Puzzle 1, the Echo Ring Console.
+- A normal return to a partially completed Tower in the same run still resumes that exact calibration step. The old text-and-slider screen remains Puzzle 2 only; it cannot become a new-run first puzzle.
+- Save and route cache tags were advanced so the main menu, prologue, Overworld, and Tower route load the matching reset logic.
+## LIVE30K2 Trail2 exact multipart delivery (2026-09-26)
 
-
+- GitHub's browser uploader rejects the 54 MB source file. Trail2 is therefore delivered as fourteen sub-5 MB exact byte segments and rebuilt as one local MP4 Blob before trailer playback.
+- The complete reassembled bytes hash to `b01d30c49a6e20ae43035a4c82f3a33257ae911f0d1cd02289d17dcb6bdd7300`; no visual or audio re-encode was used. CineTrail remains a deployment-only fallback if a segment is temporarily unavailable.

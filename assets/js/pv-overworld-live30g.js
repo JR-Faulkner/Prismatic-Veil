@@ -6,6 +6,8 @@
   const CURRENT_KEY='pv.currentLocation';
   const LAST_KEY='pv.lastLocation';
   const ASSET='./assets/ui/overworld/v2/party_board_piece.svg?pvasset=live30g1';
+  const STEP_CUE='./assets/audio/overworld/menu_sfx/pv_menu_move_harvest.m4a?pvasset=boardstep1';
+  const stepVoices=[];
   const POS=Object.freeze({
     home:[27.2,70.0],
     whisper:[34.8,43.2],
@@ -92,6 +94,22 @@
     wrap.appendChild(s);
     setTimeout(()=>s.remove(),980);
   }
+  function playStep(){
+    if(localStorage.getItem('pv.musicEnabled')==='0')return;
+    try{
+      const Native=window.__PVNativeAudio||window.Audio;
+      let voice=stepVoices.find(x=>x.paused||x.ended);
+      if(!voice){
+        voice=new Native(STEP_CUE);
+        voice.__PVAuthority=true;
+        voice.preload='auto';
+        stepVoices.push(voice);
+      }
+      voice.currentTime=0;
+      voice.volume=.32;
+      voice.play().catch(()=>{});
+    }catch(_){}
+  }
   function sync(id=currentId()){
     setPosition(piece,POS[id]||POS.home);
   }
@@ -101,8 +119,9 @@
     const points=route(from,to);
     piece.classList.add('moving');
     piece.classList.remove('arrived');
-    for(const point of points){
+    for(const [index,point] of points.entries()){
       setPosition(piece,point);
+      if(index>0)playStep();
       spark(point);
       await wait(opts.stepMs||330);
     }

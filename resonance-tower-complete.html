@@ -112,12 +112,20 @@ body{height:100dvh}
 
 <script>
 (()=>{
-  const SYNC='pv.resonance.sync',CLEAR='pv.locationClear.oldwater',CURRENT='pv.currentLocation',LAST='pv.lastLocation',SEEN='pv.towerArrivalSeen';
+  const SYNC='pv.resonance.sync',CLEAR='pv.locationClear.oldwater',CURRENT='pv.currentLocation',LAST='pv.lastLocation',SEEN='pv.towerArrivalSeen',RUN='pv.run.id',TOWER_RUN='pv.tower.run.id';
   const qs=new URLSearchParams(location.search),from=qs.get('from')||localStorage.getItem(LAST)||'whisper';
   const fresh=qs.get('fresh')==='1';
   const arrival=document.getElementById('arrival'),video=document.getElementById('arrivalVideo'),enter=document.getElementById('enterTower'),skip=document.getElementById('skipArrival'),playArrival=document.getElementById('playArrival'),arrivalState=document.getElementById('arrivalState'),arrivalIntro=document.getElementById('arrivalIntro'),status=document.getElementById('status');
   const puzzles=[...document.querySelectorAll('.puzzle')],pips=[...document.querySelectorAll('.pip')],complete=document.getElementById('complete');
-  if(fresh){try{localStorage.removeItem(SYNC);localStorage.removeItem(CLEAR)}catch(_){} }
+  // A New Game gets a fresh Tower arrival even if an older Tower value survived
+  // in browser storage.  Once this run has entered the Tower, its normal
+  // in-progress calibration state is preserved for a deliberate re-entry.
+  const runId=localStorage.getItem(RUN)||'';
+  const firstTowerVisitForRun=!!runId&&localStorage.getItem(TOWER_RUN)!==runId;
+  if(fresh||firstTowerVisitForRun){try{
+    localStorage.removeItem(SYNC);localStorage.removeItem(CLEAR);localStorage.removeItem(SEEN);
+    if(runId)localStorage.setItem(TOWER_RUN,runId);
+  }catch(_){} }
   let sync=Math.max(0,Math.min(3,Number(localStorage.getItem(SYNC)||0)));
   try{localStorage.setItem(CURRENT,'oldwater');localStorage.setItem(LAST,from)}catch(_){}
   function save(n){sync=Math.max(sync,n);try{localStorage.setItem(SYNC,String(sync))}catch(_){}paint()}

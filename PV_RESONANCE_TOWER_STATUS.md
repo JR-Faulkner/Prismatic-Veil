@@ -26,4 +26,8 @@ Publishing is from the latest remote main tree; remote Pages and the new live in
 ## User feedback after orbit7
 
 The user subsequently reported "Works pretty well. I like it!" in the continuing iPhone test. The Puzzle 1 interaction direction is accepted. This feedback does not establish physical controller testing or a complete normal-MAIN traversal. The follow-up plan for puzzles 2/3, specific audio, progression and story is approved for planning. The user has now approved the current Harmonic Calibration and Resonance Routing visual direction for build-out. See `PV_TOWER_ROADMAP.md` and the separate `tower-design-review.html` mock and sound review. The new visuals are approved as direction; the sound cues remain audition-only until live integration.
+## LIVE30K1 Resonance Tower first-arrival repair (2026-09-26)
 
+- A New Game now stamps a run identity. The first Resonance Tower visit for that identity clears stale Tower sync, tower-clear, and arrival-seen values before rendering. It therefore plays the muted Tower arrival video and then opens Puzzle 1, the Echo Ring Console.
+- A normal return to a partially completed Tower in the same run still resumes that exact calibration step. The old text-and-slider screen remains Puzzle 2 only; it cannot become a new-run first puzzle.
+- Save and route cache tags were advanced so the main menu, prologue, Overworld, and Tower route load the matching reset logic.

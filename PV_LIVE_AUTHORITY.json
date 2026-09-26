@@ -22,6 +22,31 @@
     "legacy_echo_alias": true,
     "battle_result_snapshot": "src/prizim/Live29FEncounterBattleScene.js"
   },
+  "trailer": {
+    "entry": "trailer.html",
+    "active_asset": "assets/video/Trail2.part01 through Trail2.part14",
+    "active_asset_sha256": "b01d30c49a6e20ae43035a4c82f3a33257ae911f0d1cd02289d17dcb6bdd7300",
+    "active_asset_bytes": 56759102,
+    "multipart_delivery": "Fourteen exact byte segments are fetched and reassembled as one local MP4 Blob by trailer.html because GitHub browser uploads cap individual files at 25 MB.",
+    "source_dropbox_path": "/Prismatic Veil/Trail2.mp4",
+    "previous_asset_retained": "assets/video/CineTrail.mp4"
+  },
+  "overworld": {
+    "party_board_piece": "assets/ui/overworld/v2/party_board_piece.svg",
+    "party_board_step_audio": "assets/audio/overworld/menu_sfx/pv_menu_move_harvest.m4a",
+    "party_board_step_policy": "Play one quiet board-step cue for each route hop after the starting tile; respect the Overworld audio toggle."
+  },
+  "tower_first_arrival": {
+    "entry": "resonance-tower-complete.html",
+    "new_game_policy": "A New Game stamps pv.run.id. The first Resonance Tower visit for that run clears stale Tower sync/arrival state, plays the arrival cinematic, and opens Puzzle 1: the Echo Ring Console.",
+    "resume_policy": "A deliberate re-entry during the same run preserves the current Tower calibration step.",
+    "puzzle_1": "Echo Ring Console with fixed physical art and orbiting glyphs. The text-and-range-input calibration screen is Puzzle 2 and must never be the first-arrival screen."
+  },
+  "first_encounter": {
+    "enemy": "Hushling",
+    "single_enemy_layout": "center-screen",
+    "multi_enemy_layout": "Reserved for a future formation controller; no stagger is applied to one enemy."
+  },
   "hard_gates": {
     "production_battle_must_use_hybrid_stack": true,
     "numeric_live28k_must_resolve_to_k_adapter": true,

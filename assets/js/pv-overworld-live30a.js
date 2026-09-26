@@ -207,7 +207,7 @@
         if(window.PV_OVERWORLD30G?.moveTo)await window.PV_OVERWORLD30G.moveTo('oldwater',{from,stepMs:260,holdMs:260});
       }catch(err){console.warn('[PV] Tower route animation skipped',err)}
       try{localStorage.setItem(LAST_KEY,from);localStorage.setItem(CURRENT_KEY,'oldwater')}catch(_){}
-      window.location.href='./resonance-tower-complete.html?pv=live30j2&from='+encodeURIComponent(from);
+      window.location.href='./resonance-tower-complete.html?pv=live30k1&from='+encodeURIComponent(from);
     }else if(selected==='home'&&current!=='home'){
       localStorage.setItem(LAST_KEY,current);current='home';localStorage.setItem(CURRENT_KEY,current);select('home');window.PVMenuSFX?.play?.('confirm');
     }else if(!unlocked(selected))window.PVMenuSFX?.play?.('locked');

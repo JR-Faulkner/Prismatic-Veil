@@ -6,7 +6,8 @@
   const isOverworld=/hybrid-overworld\.html$/i.test(location.pathname);
   const RUN_KEYS=Object.freeze([
     'pv.currentLocation','pv.lastLocation','pv.resonance.sync','pv.progression.v1',
-    'pv.encounterResult','pv.pendingEncounter','pv.partySelected','pv.homecomingResume','pv.towerArrivalSeen'
+    'pv.encounterResult','pv.pendingEncounter','pv.partySelected','pv.homecomingResume','pv.towerArrivalSeen',
+    'pv.run.id','pv.tower.run.id'
   ]);
   const CLEAR_PREFIX='pv.locationClear.';
   const NEW_RUN_DEFAULTS=Object.freeze({
@@ -58,6 +59,10 @@
   function newGame(){clearRun();remove(SAVE_KEY);return true}
   function initializeNewRun(){
     newGame();
+    // A run identity makes a first Tower arrival unambiguous.  The Tower can
+    // then reset only its own initial cinematic/puzzle state once per new run,
+    // while an intentional return to an in-progress Tower still resumes.
+    write('pv.run.id',`${Date.now()}-${Math.random().toString(36).slice(2,8)}`);
     Object.entries(NEW_RUN_DEFAULTS).forEach(([key,value])=>write(key,value));
     return captureRun();
   }
