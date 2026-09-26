@@ -40,6 +40,42 @@ body:after{content:"";position:fixed;inset:0;pointer-events:none;background:line
 /* Production art layer · independent ring and prism assets */
 .ring{isolation:isolate;cursor:grab;touch-action:none}.ring:active{cursor:grabbing}.ring-art{position:absolute;left:-7%;top:-52%;width:114%;height:204%;object-fit:contain;mix-blend-mode:normal;opacity:.98;pointer-events:none;z-index:0;filter:saturate(1.08) contrast(1.04)}.ring:before{display:none}.ring:after{z-index:3}.ring-band{z-index:3}.ring-control{z-index:6}.core{width:170px;height:330px;transform:translate(-50%,-50%);border:0;background:transparent;box-shadow:none;animation:corePulseAsset 3.2s ease-in-out infinite}.core-art{display:block;width:100%;height:100%;object-fit:contain;mix-blend-mode:normal;filter:saturate(1.08);pointer-events:none}.core:after{display:none}@keyframes corePulseAsset{0%,100%{filter:brightness(.9) drop-shadow(0 0 22px #7cecff77)}50%{filter:brightness(1.2) drop-shadow(0 0 46px #7cecffcc)}}
 @media(max-width:760px),(max-height:600px){.core{width:116px;height:245px}.ring-art{left:-9%;top:-58%;width:118%;height:216%}}
+
+/* Ring interaction v7: level art, orbiting signal, fixed touch surfaces. */
+body{height:100dvh}
+.top{top:max(6px,env(safe-area-inset-top));padding:6px 12px}
+.top .title{font-size:clamp(18px,3vh,28px)}
+.bottom{bottom:max(6px,env(safe-area-inset-bottom));padding:6px 10px}
+.puzzle[data-step="1"] .console{inset:70px max(12px,env(safe-area-inset-right)) 42px max(12px,env(safe-area-inset-left))}
+.resonance-console{width:100%;height:100%;padding:0;display:grid;grid-template-rows: minmax(0,1fr) 62px;gap:4px}
+.console-brand,.console-meta,.console-rail,.target-legend,.console-caption{display:none}
+.rings{width:min(860px,100%);height:100%;margin:0 auto;min-height:0}
+.rings:before{display:none}
+.ring{left:50%;width:calc(100% - 108px);height:29%;border:0!important;border-radius:0;background:none!important;box-shadow:none!important;transform:translate(-50%,-50%)!important;transition:none;pointer-events:none;isolation:auto}
+.r1{top:17%}.r2{top:50%}.r3{top:83%}
+.ring-art{left:0;top:0;width:100%;height:100%;object-fit:contain;opacity:1;filter:saturate(.95);z-index:0}
+.ring:before,.ring:after{display:none!important}
+.ring-band{bottom:auto;top:3%;left:50%;font:700 clamp(9px,1.65vh,12px) system-ui;letter-spacing:.08em;background:#061329cc;padding:2px 8px;z-index:3}
+.orbit-marker{position:absolute;display:grid;place-items:center;width:clamp(23px,5vh,38px);height:clamp(23px,5vh,38px);border:1px solid var(--signal);border-radius:50%;background:#071329e8;color:#fff2c2;font:700 clamp(19px,4vh,27px) Georgia;box-shadow:0 0 12px var(--signal);pointer-events:none;will-change:left,top,transform}
+.r1{--signal:#c69bff}.r2{--signal:#78edff}.r3{--signal:#f4d47a}
+.alignment-notch{position:absolute;left:50%;top:81%;transform:translate(-50%,-50%);width:clamp(31px,6vh,46px);height:clamp(31px,6vh,46px);border:2px solid #fff1b8;border-radius:6px;box-shadow:0 0 10px #fff1b866;z-index:4;pointer-events:none}
+.ring.matched .alignment-notch{border-color:#98ffcd;box-shadow:0 0 17px #98ffcd99}
+.core{left:50%;top:50%;width:11%;height:94%;opacity:.65;z-index:0;pointer-events:none;animation:none;filter:drop-shadow(0 0 12px #83edff88)}
+.ring-controls{inset:0;z-index:6;pointer-events:none}
+.ring-control{left:54px!important;right:54px!important;top:auto;width:auto!important;height:29%!important;bottom:auto!important;min-height:44px;transform:translateY(-50%)!important;border-radius:8px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.ring-control[data-ring="0"]{top:17%!important}.ring-control[data-ring="1"]{top:50%!important}.ring-control[data-ring="2"]{top:83%!important}
+.ring-control:before,.ring-control:after{display:none}
+.ring-control:focus-visible,.ring-control.selected{outline:1px solid #baf5ff!important;outline-offset:2px;box-shadow:inset 0 0 18px #7cecff20!important}
+.ring-step{position:absolute;top:var(--row);transform:translateY(-50%);width:46px;height:46px;min-height:44px;padding:0;border:1px solid #ead07f88;border-radius:8px;background:#061329e8;color:#ffedb3;font:700 26px system-ui;pointer-events:auto;touch-action:manipulation}
+.ring-step.prev{left:0}.ring-step.next{right:0}
+.target{position:relative;left:auto;bottom:auto;transform:none;width:min(860px,100%);height:62px;justify-self:center;padding:5px 8px;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;font:700 11px/1.4 system-ui;letter-spacing:.025em}
+.target .match{margin:0;font-size:12px}.target b{font-size:12px}.signal-help{color:#c0d6ed;font-size:11px}
+#stabilizeSignal{min-height:44px;padding:6px 14px;border:1px solid #f4d47a;border-radius:6px;background:#193a4e;color:#fff0bd;font:700 12px system-ui}
+#stabilizeSignal:disabled{opacity:.48}#stabilizeSignal:focus-visible{outline:2px solid #baf5ff}
+@media(max-height:500px){.puzzle[data-step="1"] .console{inset:59px max(14px,env(safe-area-inset-right)) 34px max(14px,env(safe-area-inset-left))}.resonance-console{grid-template-rows:minmax(0,1fr) 52px}.target{height:52px}.top .eyebrow{font-size:7px}.top .title{font-size:18px}.top{padding:4px 10px}.ring-band{font-size:9px;padding:0 6px}.ring-art{opacity:1}.signal-help{font-size:10px}}
+@media(orientation:portrait){.puzzle[data-step="1"] .console{inset:80px 10px 46px}.resonance-console{grid-template-rows:minmax(0,1fr) 94px}.target{height:94px;flex-wrap:wrap}.target>div{flex:1 1 100%}.ring-art{object-fit:contain}.ring{width:calc(100% - 100px)}.core{width:20%}.ring-band{top:14%}}
+@media(prefers-reduced-motion:reduce){.orbit-marker{will-change:auto}}
+
 </style>
 </head>
 <body>
@@ -158,54 +194,114 @@ body:after{content:"";position:fixed;inset:0;pointer-events:none;background:line
     autoplayWatch=setTimeout(offerManualPlay,1100);
   }
 
-  // Puzzle 1 · Echo Ring Console
-  const glyphs=['◇','✦','◈','△','○','✧'],target=[2,1,4],ring=[0,3,1],ringEls=[ring1,ring2,ring3],buttons=[...document.querySelectorAll('.ring-btn')],ringStatus=document.getElementById('ringStatus');
-  const ringNames=['OUTER','MIDDLE','INNER'];
+  // Puzzle 1 · Fixed level rings with orbiting resonance glyphs.
+  const glyphs=['◇','✦','◈','△','○','✧'],target=[2,1,4],ring=[0,3,1];
+  const ringEls=[...document.querySelectorAll('.ring')];
+  const buttons=[...document.querySelectorAll('.ring-btn')];
+  const ringStatus=document.getElementById('ringStatus'),ringNames=['OUTER','MIDDLE','INNER'];
+  const positions=[...ring],motions=[null,null,null],markers=[];
+  let selectedRing=0,activeDrag=null;
+  const mod=n=>((n%glyphs.length)+glyphs.length)%glyphs.length;
+  ringStatus.innerHTML='<div><b id="signalMatch"></b><span class="signal-help">Drag a band · align its target at the front notch. Arrows also turn.</span></div><button id="stabilizeSignal" type="button" disabled>STABILIZE SIGNAL</button>';
+  const matchReadout=document.getElementById('signalMatch'),stabilize=document.getElementById('stabilizeSignal');
+  ringEls.forEach((el,i)=>{
+    el.querySelector('.ring-band').textContent=`${ringNames[i]} · TARGET ${glyphs[target[i]]}`;
+    markers[i]=glyphs.map(g=>{
+      const m=document.createElement('span');m.className='orbit-marker';m.textContent=g;m.setAttribute('aria-hidden','true');el.append(m);return m;
+    });
+    const notch=document.createElement('span');notch.className='alignment-notch';el.append(notch);
+    for(const direction of [-1,1]){
+      const b=document.createElement('button');b.type='button';b.className=`ring-step ${direction<0?'prev':'next'}`;
+      b.style.setProperty('--row',`${17+33*i}%`);b.textContent=direction<0?'‹':'›';
+      b.setAttribute('aria-label',`Turn ${ringNames[i].toLowerCase()} ring ${direction<0?'backward':'forward'}`);
+      b.addEventListener('click',()=>stepRing(i,direction));document.querySelector('.ring-controls').append(b);
+    }
+  });
+  function drawOrbit(i,position){
+    markers[i].forEach((m,j)=>{
+      const angle=(j-position)*Math.PI/3,front=Math.cos(angle);
+      m.style.left=`${50+40*Math.sin(angle)}%`;m.style.top=`${52+29*front}%`;
+      m.style.transform=`translate(-50%,-50%) scale(${.74+.26*(front+1)/2})`;
+      m.style.opacity=String(.3+.7*(front+1)/2);m.style.zIndex=front>=0?'3':'1';
+    });
+  }
+  function selectRing(i){selectedRing=mod(i+3)%3;buttons.forEach((b,j)=>b.classList.toggle('selected',j===selectedRing))}
   function ringPaint(){
     let matches=0;
     buttons.forEach((b,i)=>{
-      const matched=ring[i]===target[i];
-      if(matched)matches++;
-      b.classList.toggle('matched',matched);
-      b.setAttribute('aria-label',`${ringNames[i]} ring, current ${glyphs[ring[i]]}, target ${glyphs[target[i]]}. ${matched?'Matched.':'Swipe or tap to rotate.'}`);
-      b.innerHTML=`<span class="rc-name">${ringNames[i]}</span><span class="rc-glyph">${glyphs[ring[i]]}</span><span class="rc-goal">TARGET ${glyphs[target[i]]} ${matched?'✓':'· SWIPE'}</span>`;
-      ringEls[i].setAttribute('data-glyph',glyphs[ring[i]]);
-      ringEls[i].querySelector('.ring-band').textContent=`${ringNames[i]} RESONANCE`;
-      ringEls[i].style.setProperty('--r',ring[i]);
-      ringEls[i].style.borderColor=matched?'#f0d681':'#8beaff88';
-      ringEls[i].style.boxShadow=matched?'0 0 22px #7cecff77,inset 0 0 22px #f0d6812b':'0 0 18px #7cecff18,inset 0 0 18px #8d67ff18';
+      const matched=ring[i]===target[i];if(matched)matches++;
+      ringEls[i].classList.toggle('matched',matched);b.classList.toggle('matched',matched);
+      b.setAttribute('aria-label',`${ringNames[i]} ring, current ${glyphs[ring[i]]}, target ${glyphs[target[i]]}. ${matched?'Matched.':'Drag or use left and right arrows.'}`);
     });
-    const ok=matches===3;
-    ringStatus.innerHTML=ok?'<b>SIGNAL LOCKED · GROVE MEMORY READABLE</b><span class="match">RESONANCE MATCH · 3 / 3 ✓</span>':`<b>TARGET GLYPHS · ◈ ✦ ○</b><span class="match">RESONANCE MATCH · ${matches} / 3</span>`;
-    if(ok)setTimeout(()=>save(1),650);
+    matchReadout.textContent=matches===3?'SIGNAL ALIGNED · 3 / 3':`RESONANCE MATCH · ${matches} / 3`;
+    stabilize.disabled=matches!==3||!!activeDrag||motions.some(Boolean);
   }
-  function bindRingInput(el,i){
-    let startX=0,moved=false;
-    el.addEventListener('pointerdown',event=>{
-      if(sync!==0)return;
-      startX=event.clientX;moved=false;
-      el.setPointerCapture?.(event.pointerId);
-    },{passive:true});
-    el.addEventListener('pointerup',event=>{
-      if(sync!==0)return;
-      const delta=event.clientX-startX;
-      if(Math.abs(delta)>18){
-        moved=true;
-        ring[i]=(ring[i]+(delta<0?1:-1)+glyphs.length)%glyphs.length;
-        ringPaint();
+  function settleRing(i,destination){
+    motions[i]={from:positions[i],to:destination,start:performance.now()};
+    ring[i]=mod(destination);ringPaint();
+  }
+  function stepRing(i,direction){
+    if(sync!==0||!arrival.hidden||activeDrag)return;
+    selectRing(i);settleRing(i,Math.round(motions[i]?.to??positions[i])+direction);
+  }
+  buttons.forEach((b,i)=>{
+    b.replaceChildren();
+    b.addEventListener('pointerdown',event=>{
+      if(sync!==0||!arrival.hidden||activeDrag||event.isPrimary===false||event.button>0)return;
+      event.preventDefault();selectRing(i);motions[i]=null;
+      activeDrag={i,id:event.pointerId,startX:event.clientX,lastX:event.clientX,origin:positions[i],moved:false,unit:Math.max(32,b.getBoundingClientRect().width/6)};
+      b.setPointerCapture(event.pointerId);b.focus({preventScroll:true});ringPaint();
+    });
+    b.addEventListener('pointermove',event=>{
+      const d=activeDrag;if(!d||d.i!==i||d.id!==event.pointerId)return;
+      event.preventDefault();d.lastX=event.clientX;
+      if(Math.abs(event.clientX-d.startX)>5)d.moved=true;
+      positions[i]=d.origin+(d.startX-event.clientX)/d.unit;drawOrbit(i,positions[i]);
+    });
+    const finish=(event,cancelled=false)=>{
+      const d=activeDrag;if(!d||d.i!==i||d.id!==event.pointerId)return;
+      activeDrag=null;
+      const destination=cancelled?Math.round(d.origin):d.moved?Math.round(d.origin+(d.startX-event.clientX)/d.unit):Math.round(d.origin)+1;
+      settleRing(i,destination);
+      if(b.hasPointerCapture(event.pointerId))b.releasePointerCapture(event.pointerId);
+    };
+    b.addEventListener('pointerup',event=>finish(event));
+    b.addEventListener('pointercancel',event=>finish(event,true));
+    b.addEventListener('lostpointercapture',event=>finish(event,true));
+    // Pointer taps commit on release; only keyboard/assistive clicks enter here.
+    b.addEventListener('click',event=>{if(event.detail===0)stepRing(i,1)});
+    b.addEventListener('focus',()=>selectRing(i));
+  });
+  stabilize.addEventListener('click',()=>{if(sync===0&&!stabilize.disabled&&ring.every((v,i)=>v===target[i]))save(1)});
+  document.addEventListener('keydown',event=>{
+    if(sync!==0||!arrival.hidden||event.target===stabilize||event.target.closest?.('.ring-step'))return;
+    if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter',' '].includes(event.key))return;
+    event.preventDefault();
+    if(event.key==='ArrowUp'||event.key==='ArrowDown'){selectRing((selectedRing+(event.key==='ArrowUp'?2:1))%3);buttons[selectedRing].focus({preventScroll:true})}
+    else stepRing(selectedRing,event.key==='ArrowLeft'?-1:1);
+  });
+  let padPrevious={},padRepeatAt=0;
+  function animateRings(now){
+    motions.forEach((motion,i)=>{
+      if(!motion)return;
+      const t=Math.min(1,(now-motion.start)/(matchMedia('(prefers-reduced-motion: reduce)').matches?1:180));
+      positions[i]=motion.from+(motion.to-motion.from)*(1-Math.pow(1-t,3));drawOrbit(i,positions[i]);
+      if(t===1){motions[i]=null;ringPaint()}
+    });
+    const pad=[...(navigator.getGamepads?.()||[])].find(p=>p?.connected);
+    if(pad&&sync===0&&arrival.hidden){
+      const down={up:pad.buttons[12]?.pressed||pad.axes[1]<-.55,down:pad.buttons[13]?.pressed||pad.axes[1]>.55,left:pad.buttons[14]?.pressed||pad.axes[0]<-.55,right:pad.buttons[15]?.pressed||pad.axes[0]>.55,a:pad.buttons[0]?.pressed};
+      for(const key of ['up','down','left','right','a'])if(down[key]&&(!padPrevious[key]||(key!=='a'&&now>padRepeatAt))){
+        if(key==='up'||key==='down')selectRing((selectedRing+(key==='up'?2:1))%3);
+        else if(key==='a'&&!stabilize.disabled)stabilize.click();
+        else stepRing(selectedRing,key==='left'?-1:1);
+        padRepeatAt=now+280;
       }
-    },{passive:true});
-    el.addEventListener('pointercancel',()=>{moved=false},{passive:true});
-    el.addEventListener('click',()=>{
-      if(sync!==0)return;
-      if(moved){moved=false;return}
-      ring[i]=(ring[i]+1)%glyphs.length;
-      ringPaint();
-    });
+      padPrevious=down;
+    }else padPrevious={};
+    requestAnimationFrame(animateRings);
   }
-  buttons.forEach((b,i)=>bindRingInput(b,i));
-  ringEls.forEach((el,i)=>bindRingInput(el,i));
-  ringPaint();
+  positions.forEach((p,i)=>drawOrbit(i,p));selectRing(0);ringPaint();requestAnimationFrame(animateRings);
 
   // Puzzle 2 · Tower Ascent Calibration
   const sliders=[...document.querySelectorAll('.cal')],calReadout=document.getElementById('calReadout'),lock=document.getElementById('lockCalibration');
@@ -239,4 +335,3 @@ body:after{content:"";position:fixed;inset:0;pointer-events:none;background:line
 </script>
 </body>
 </html>
-
