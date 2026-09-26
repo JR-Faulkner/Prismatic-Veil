@@ -1,6 +1,6 @@
 # PriZim Live Notepad
 
-Last refreshed: 2026-09-25
+Last refreshed: 2026-09-26
 Current promoted build: `main-20260909-live28k27` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
 
 ## LIVE30E2 Whispering Grove progression repair (2026-09-26)
