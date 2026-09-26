@@ -2,6 +2,13 @@
 
 Last refreshed: 2026-09-25
 
+## LIVE30E2 Whispering Grove progression repair (2026-09-26)
+
+- The first overworld encounter is **Whispering Grove**. Its clear flag already persists as `pv.locationClear.whisper`; the missing piece was the reward table key.
+- `src/progression/PVProgression.js` now owns a `whisper` first-clear/repeat reward table. The legacy `echo` key remains as a back-compat alias for older direct links.
+- Verified with an isolated storage test: first clear grants 100 XP each plus Veil Shard and Memory Fragment; repeat clear grants 20 XP each; the ledger persists both wins.
+- Final device gate remains: complete Whispering Grove on the normal MAIN route, use **RETURN TO MAP**, confirm Resonance Tower unlocks, then reload MAIN and use **CONTINUE** rather than **NEW GAME**.
+
 ## LIVE30H canonical New Game flow (2026-09-25)
 
 - Normal title flow is now player-facing only: **ENTER THE VEIL** when no save exists; **CONTINUE + NEW GAME** when a valid `pv.save.v1` exists.
@@ -284,5 +291,6 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 - Whispering Grove first clear awards 100 XP per core Bearer, producing the first Level 2 unlock and a readable level-up result.
 - This is a progression/content pass; the accepted Aurora Pulse, Thunder Tornado, and Prismel reflected-blades presentation lanes remain unchanged.
 - iPhone MAIN remains the final runtime gate for this build.
+
 
 
