@@ -24,6 +24,13 @@ export const PROGRESSION_TUNING = Object.freeze({
   // and remains unlocked so balance can change without rewriting save data.
   levelCurve: Object.freeze({ baseXp: 100, growth: 1.35, maxLevel: 50 }),
   encounters: Object.freeze({
+    // Whispering Grove is the player-facing first encounter. Keep the
+    // legacy Echo key as an alias so older runs and direct test links still
+    // resolve the same reward contract.
+    whisper: Object.freeze({
+      firstClear: Object.freeze({ xpEach: 100, items: Object.freeze({ veilShard: 1, memoryFragment: 1 }) }),
+      repeat: Object.freeze({ xpEach: 20, items: Object.freeze({}) })
+    }),
     echo: Object.freeze({
       firstClear: Object.freeze({ xpEach: 100, items: Object.freeze({ veilShard: 1, memoryFragment: 1 }) }),
       repeat: Object.freeze({ xpEach: 20, items: Object.freeze({}) })
@@ -197,4 +204,5 @@ export function progressionSummary(storage = globalThis.localStorage) {
     encounters: clone(state.encounters || {})
   };
 }
+
 
