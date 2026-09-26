@@ -88,7 +88,7 @@
   function patchVisibleMap(){
     const whisperNode=paintNode('whisper','Whispering Grove',34.8,43.2,'♧',false);
     if(whisperNode){whisperNode.classList.remove('locked');whisperNode.removeAttribute('disabled');whisperNode.setAttribute('aria-label','Whispering Grove, reachable encounter');}
-    paintNode('echo','Echo Castle',83.0,31.0,'♜',false);
+    paintNode('echo','Echo Castle',77.0,31.0,'♜',false);
     paintNode('frigid','Frigid Hills',16.0,18.0,'❄',false);
     document.querySelector('.pv30-node[data-location="whisper"]')?.classList.toggle('pv-cleared',isCleared());
   }
@@ -98,7 +98,7 @@
     if(!document.querySelector('script[data-pv-overworld-live30g]')){
       await new Promise(resolve=>{
         const s=document.createElement('script');
-        s.src='./assets/js/pv-overworld-live30g.js?pvasset=live30g1';
+        s.src='./assets/js/pv-overworld-live30g.js?pvasset=live30g3';
         s.dataset.pvOverworldLive30g='1';
         s.onload=resolve;
         s.onerror=resolve;
@@ -119,7 +119,9 @@
     else if(window.PV_OVERWORLD30G&&typeof window.PV_OVERWORLD30G.animateTo==='function')await window.PV_OVERWORLD30G.animateTo(dest);
     const labels={echo:'Echo Castle',frigid:'Frigid Hills',whisper:'Whispering Grove',home:'Home'};
     try{localStorage.setItem('pv.currentLocation',dest)}catch(_){}
-    setText('currentLocation',labels[dest]||dest);
+    window.PV_OVERWORLD30A?.setCurrent?.(dest);
+    const currentLocation=document.querySelector('.pv30b-location span');
+    if(currentLocation)currentLocation.textContent=labels[dest]||dest;
     setText('locationState','Party Positioned');
     forceTravel('Party Positioned',false,dest);
   }
@@ -212,5 +214,6 @@
     },80);
   }
 })();
+
 
 

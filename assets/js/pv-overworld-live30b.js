@@ -24,7 +24,7 @@
 
   .pv30b-title{position:absolute;z-index:18;left:2.3vw;top:2.1vh;pointer-events:auto;text-shadow:0 2px 10px #000c}
   .pv30b-title a{color:#efd395;text-decoration:none;display:block;font:500 clamp(25px,3.7vw,58px)/.92 Georgia,serif;letter-spacing:.018em}
-  .pv30b-title small{display:block;margin-top:7px;padding-left:24px;color:#d9d8dc;font:700 clamp(6px,.7vw,10px)/1 system-ui;letter-spacing:.34em;text-transform:uppercase;white-space:nowrap}
+  .pv30b-title small{display:none!important}
   .pv30b-title small:before{content:"";display:inline-block;width:22px;height:1px;margin:0 8px 2px 0;background:#d4b66e88}
 
   .pv30b-location{position:absolute;z-index:18;right:2.4vw;top:2vh;min-width:clamp(190px,17vw,285px);padding:10px 15px 10px 44px;border:1px solid #d9bb6a55;background:linear-gradient(135deg,#061126d9,#0a1730c7);clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);box-shadow:0 10px 24px #0008,0 0 24px #6a5cff18;backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
@@ -88,7 +88,7 @@
   }
   const shell=document.querySelector('.shell');
   if(shell&&!document.querySelector('.pv30b-title')){
-    const title=document.createElement('div');title.className='pv30b-title';title.innerHTML='<a href="./index.html">PRISMATIC VEIL</a><small>The World Remembers</small>';
+    const title=document.createElement('div');title.className='pv30b-title';title.innerHTML='<a href="./index.html">PRISMATIC VEIL</a>';
     const loc=document.createElement('div');loc.className='pv30b-location';loc.innerHTML='<b>Current Location</b><span>Home</span>';
     shell.append(title,loc);
   }
@@ -101,6 +101,8 @@
   }
   syncLocation();
   document.addEventListener('click',()=>setTimeout(syncLocation,0),true);
+  window.addEventListener('pv-location-ready',syncLocation);
+  window.addEventListener('pv-location-change',syncLocation);
   addEventListener('pageshow',syncLocation);
 
   // Keep modal content from inheriting stale fixed-width spacing.
@@ -114,3 +116,4 @@
   });
   const modal=document.getElementById('overlay');if(modal)observer.observe(modal,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden']});
 })();
+

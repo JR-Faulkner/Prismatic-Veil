@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#020207">
+  <title>The Prismatic Veil · Trailer</title>
+  <style>
+    :root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020207;color:#f8e8bf;font-family:Georgia,serif}body{display:grid;place-items:center}.stage{position:fixed;inset:0;background:#020207;display:grid;place-items:center}.trailer{display:block;width:100%;height:100%;object-fit:contain;background:#020207}.veil{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 50%,transparent 42%,#0008 100%)}.back{position:fixed;top:max(14px,env(safe-area-inset-top));left:max(14px,env(safe-area-inset-left));z-index:2;padding:9px 14px;border:1px solid #d7b86c99;border-radius:999px;background:#050611cc;color:#f8e8bf;text-decoration:none;font:bold 11px Georgia;letter-spacing:.14em;box-shadow:0 5px 18px #000b}.back:focus{outline:none;box-shadow:0 0 0 2px #8ee9ff,0 0 22px #8d4dff99}.play{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;padding:16px 26px;border:1px solid #f0d17e;border-radius:999px;background:#070817dd;color:#f8e8bf;font:bold 14px Georgia;letter-spacing:.16em;box-shadow:0 0 32px #8d4dff66,0 8px 24px #000b}.play[hidden]{display:none}.play:focus{outline:none;box-shadow:0 0 0 2px #8ee9ff,0 0 30px #8d4dffbb}
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <video id="trailer" class="trailer" preload="auto" playsinline webkit-playsinline controls poster="./title_screen.jpg?pvasset=live30g-splash-restore">
+      <source src="./assets/video/CineTrail.mp4?pvasset=cinetrail1" type="video/mp4">
+    </video>
+    <div class="veil" aria-hidden="true"></div>
+  </main>
+  <a class="back" href="./index.html">BACK TO TITLE</a>
+  <button id="play" class="play" type="button">PLAY TRAILER</button>
+  <script>
+    const video=document.getElementById('trailer');
+    const play=document.getElementById('play');
+    async function start(){try{await video.play();play.hidden=true}catch(e){play.hidden=false}}
+    play.addEventListener('click',start);
+    video.addEventListener('play',()=>{play.hidden=true});
+    video.addEventListener('ended',()=>{play.hidden=false;play.textContent='REPLAY TRAILER'});
+    addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();start()}if(e.key==='Escape')location.href='./index.html'});
+    addEventListener('pointerdown',e=>{if(e.target===video)start()},{once:true});
+    start();
+  </script>
+</body>
+</html>
+

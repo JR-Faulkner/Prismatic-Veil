@@ -9,21 +9,22 @@
 
   const LOCATIONS=Object.freeze({
     home:{name:'Home',x:18.3,y:69.6,state:'Safe Haven',desc:'The Bearers’ anchor point between journeys. Recover, reorganize, consult the Grimoire, and choose the next route.',objective:'Choose a destination beyond Home.',meta:['Safe Haven','Party','Save'],threats:[],rewards:[],travel:'Return Home',type:'home'},
-    echo:{name:'Echo Playground',x:36.7,y:35.8,state:'Reachable',desc:'A familiar neighborhood playground distorted by Resonance. The laughter is gone, but something in the Veil still answers.',objective:'Stabilize the disturbance at Echo Playground.',meta:['Encounter','First Clear','Resonance'],threats:['Veil Wraith','Hushling'],rewards:['Experience','Veil Shard','Memory Fragment'],travel:'Enter Echo Playground',type:'battle'},
-    glassway:{name:'Glassway Bridge',x:50.2,y:61.8,state:'Route Sealed',desc:'A luminous bridge spanning the fractured waterways. Its glasswork resonates with paths that have not fully opened.',objective:'Stabilize Echo Playground to reveal the Glassway route.',meta:['Route','Bridge','Discovery'],threats:['Unknown'],rewards:['Route Access'],travel:'Route Not Yet Open',type:'locked'},
-    whisper:{name:'Whispering Grove',x:46.0,y:28.3,state:'Route Sealed',desc:'A grove where prismatic leaves repeat fragments of voices from nearby realities.',objective:'Stabilize Echo Playground to reveal the Grove route.',meta:['Route','Mystery','Discovery'],threats:['Unknown'],rewards:['Discovery'],travel:'Route Not Yet Open',type:'locked'},
-    oldwater:{name:'Resonance Tower',x:67.8,y:49.0,state:'Tower Signal',desc:'A former water tower rebuilt around a Veil conduit. It reads the memories of places, creatures, and Bearers, then routes their resonance toward the next stable path.',objective:'Route the Grove signal through the Resonance Tower.',meta:['Puzzle','Resonance','Story'],threats:['Echo Distortion'],rewards:['Route Calibration'],travel:'Enter Resonance Tower',type:'puzzle'},
+    echo:{name:'Echo Castle',x:77.0,y:31.0,state:'Move Point',desc:'A high castle overlooking the fractured routes. Its repeating signal is clear, but the inner gate is not open yet.',objective:'Reach Whispering Grove to reveal the castle route.',meta:['Castle','Signal','Move'],threats:['Unknown'],rewards:['Route Access'],travel:'Move to Echo Castle',type:'move'},
+    glassway:{name:'Glassway Bridge',x:50.2,y:61.8,state:'Route Sealed',desc:'A luminous bridge spanning the fractured waterways. Its glasswork resonates with paths that have not fully opened.',objective:'Stabilize Whispering Grove to reveal the Glassway route.',meta:['Route','Bridge','Discovery'],threats:['Unknown'],rewards:['Route Access'],travel:'Route Not Yet Open',type:'locked'},
+    whisper:{name:'Whispering Grove',x:34.8,y:43.2,state:'Reachable',desc:'A living grove where prismatic leaves echo voices from nearby realities. The party’s first active disturbance waits beneath the canopy.',objective:'Stabilize the Whispering Grove disturbance.',meta:['First Encounter','Resonance','Story'],threats:['Veil Wraith','Hushling'],rewards:['Experience','Veil Shard','Memory Fragment'],travel:'Enter Whispering Grove',type:'battle'},
+    frigid:{name:'Frigid Hills',x:16.0,y:18.0,state:'Move Point',desc:'A winter-bright rise beyond the safe road. Frosted resonance marks a future route through the highlands.',objective:'Reach Whispering Grove to reveal the highland route.',meta:['Highlands','Frost','Move'],threats:['Unknown'],rewards:['Route Access'],travel:'Move to Frigid Hills',type:'move'},
+    oldwater:{name:'Resonance Tower',x:72.0,y:50.5,state:'Tower Signal',desc:'A former water tower rebuilt around a Veil conduit. It reads the memories of places, creatures, and Bearers, then routes their resonance toward the next stable path.',objective:'Route the Grove signal through the Resonance Tower.',meta:['Puzzle','Resonance','Story'],threats:['Echo Distortion'],rewards:['Route Calibration'],travel:'Enter Resonance Tower',type:'puzzle'},
     rift:{name:'Veil Rift',x:85.1,y:24.2,state:'Locked',desc:'A wound in the spectrum where several realities appear to overlap. Its route remains beyond the party’s current reach.',objective:'Find a stable path to the Veil Rift.',meta:['Story','Fracture','Locked'],threats:['Unknown'],rewards:['Unknown'],travel:'Path Locked',type:'locked'}
   });
 
   const EDGES=Object.freeze([
-    ['home','echo','M18.3 69.6 C24 64,30 49,36.7 35.8'],
+    ['home','whisper','M18.3 69.6 C24 62,29 50,34.8 43.2'],
     ['home','glassway','M18.3 69.6 C29 73,40 68,50.2 61.8'],
-    ['echo','glassway','M36.7 35.8 C41 44,45 54,50.2 61.8'],
-    ['echo','whisper','M36.7 35.8 C39 31,42.5 29,46 28.3'],
-    ['glassway','oldwater','M50.2 61.8 C57 59,62 53,67.8 49'],
-    ['whisper','oldwater','M46 28.3 C54 31,61 40,67.8 49'],
-    ['oldwater','rift','M67.8 49 C75 43,81 32,85.1 24.2']
+    ['whisper','glassway','M34.8 43.2 C40 49,45 57,50.2 61.8'],
+    ['whisper','frigid','M34.8 43.2 C28 34,22 25,16 18'],
+    ['glassway','oldwater','M50.2 61.8 C58 59,65 54,72 50.5'],
+    ['whisper','oldwater','M34.8 43.2 C47 44,60 47,72 50.5'],
+    ['oldwater','rift','M72 50.5 C65 38,58 26,50 18.7']
   ]);
 
   const edgeKey=(a,b)=>[a,b].sort().join('|');
@@ -34,7 +35,8 @@
   function cleared(id){return localStorage.getItem(CLEAR_PREFIX+id)==='1'}
   function unlocked(id){
     if(id==='home'||id==='echo')return true;
-    if(id==='glassway'||id==='whisper')return cleared('echo');
+    if(id==='glassway')return cleared('whisper');
+    if(id==='whisper'||id==='frigid'||id==='echo')return true;
     if(id==='oldwater')return cleared('glassway')||cleared('whisper');
     if(id==='rift')return cleared('oldwater');
     return false;
@@ -151,13 +153,14 @@
   function statusFor(id){
     if(id===current)return 'Current Location';
     if(cleared(id))return 'Cleared · Route Stable';
-    if(unlocked(id))return (id==='home'||id==='echo')?LOCATIONS[id].state:'Route Revealed';
+    if(unlocked(id))return (id==='home'||id==='echo'||id==='whisper'||id==='frigid')?LOCATIONS[id].state:'Route Revealed';
     return LOCATIONS[id].state;
   }
 
   function actionFor(id){
     if(id==='home')return current==='home'?'Current Location':'Return Home';
-    if(id==='echo')return cleared('echo')?'Revisit Encounter':'Enter Echo Playground';
+    if(id==='whisper')return cleared('whisper')?'Revisit Encounter':'Enter Whispering Grove';
+    if(id==='echo'||id==='frigid')return `Move to ${LOCATIONS[id].name}`;
     if(id==='oldwater'&&unlocked(id))return cleared('oldwater')?'Re-enter Resonance Tower':'Enter Resonance Tower';
     if(!unlocked(id))return LOCATIONS[id].travel;
     return 'Route Available Soon';
@@ -170,7 +173,7 @@
     if(locationState)locationState.textContent=statusFor(selected);
     if(locationDesc)locationDesc.textContent=d.desc;
     if(locationMeta)locationMeta.innerHTML=d.meta.map(x=>`<span>${x}</span>`).join('');
-    if(travel){travel.textContent=actionFor(selected);travel.disabled=(selected===current&&selected==='home')||(!isUnlocked&&selected!=='echo')||(selected!=='home'&&selected!=='echo'&&selected!=='oldwater');}
+    if(travel){travel.textContent=actionFor(selected);travel.disabled=(selected===current&&selected==='home')||(!isUnlocked&&selected!=='echo'&&selected!=='frigid'&&selected!=='whisper')||(selected!=='home'&&selected!=='echo'&&selected!=='frigid'&&selected!=='whisper'&&selected!=='oldwater');}
     if(intel){
       const threats=d.threats?.length?d.threats.join(' · '):'None known';
       const rewards=d.rewards?.length?d.rewards.join(' · '):'—';
@@ -181,7 +184,7 @@
   function select(id){
     if(!LOCATIONS[id])return;
     selected=id;
-    if(id==='echo'){try{localStorage.setItem(LAST_KEY,current)}catch(_){}}
+    if(id==='whisper'){try{localStorage.setItem(LAST_KEY,current)}catch(_){}}
     syncNodes();renderRoutes();renderPanel();
   }
 
@@ -190,9 +193,14 @@
   clear?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();clearSelection()},true);
   document.addEventListener('click',async e=>{
     const b=e.target.closest?.('#travelButton');if(!b)return;
-    if(selected==='echo')return;
+    if(selected==='whisper')return;
     e.preventDefault();e.stopImmediatePropagation();
-    if(selected==='oldwater'&&unlocked(selected)){
+    if((selected==='echo'||selected==='frigid')&&unlocked(selected)){
+      const from=current;
+      b.disabled=true;b.textContent=`Moving to ${LOCATIONS[selected].name}…`;
+      try{if(window.PV_OVERWORLD30G?.moveTo)await window.PV_OVERWORLD30G.moveTo(selected,{from,stepMs:260,holdMs:260})}catch(err){console.warn('[PV] map route animation skipped',err)}
+      setCurrent(selected); b.disabled=false; renderPanel(); return;
+    }else if(selected==='oldwater'&&unlocked(selected)){
       const from=current;
       b.disabled=true;b.textContent='Traveling to Resonance Tower…';
       try{
@@ -208,5 +216,14 @@
   select(returned&&LOCATIONS[returned]?returned:current);
   if(returned&&LOCATIONS[returned])setTimeout(()=>{select(returned);},160);
 
-  window.PV_OVERWORLD30A={locations:LOCATIONS,edges:EDGES,get current(){return current},get selected(){return selected},select};
+  function setCurrent(id){
+    if(!LOCATIONS[id])return;
+    current=id;selected=id;
+    try{localStorage.setItem(CURRENT_KEY,id)}catch(_){ }
+    syncNodes();renderRoutes();renderPanel();
+    window.dispatchEvent(new CustomEvent('pv-location-change',{detail:{id,name:LOCATIONS[id].name}}));
+  }
+  window.PV_OVERWORLD30A={locations:LOCATIONS,edges:EDGES,get current(){return current},get selected(){return selected},select,setCurrent};
+  window.dispatchEvent(new CustomEvent('pv-location-ready',{detail:{id:current,name:LOCATIONS[current].name}}));
 })();
+
