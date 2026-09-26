@@ -19,17 +19,17 @@ permissions:
 
 jobs:
   stage:
-    if: github.event.head_commit.message != 'chore: stage approved PV assets [skip ci]'
+    if: "${{ github.event.head_commit.message != 'chore: stage approved PV assets [skip ci]' }}"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Download approved PV binaries
         env:
-          CINETRAIL_URL: 'https://uc48c6d67b2a587bf712ff9debfe.dl.dropboxusercontent.com/cd/0/get/DI55DCOMe8io8oP1YViuVJUIDdb7Hpe_I5xfNC2trYmHgzp5ckrocBq7gIseqdfGk8ol0m-dY4bisJVSJosN0Or9XzJzAFAWMhV3YEDwbCpgBi1ap_Z-KimESDPzLeWUZIMdxeLSsUjGx1EiNbmttOzYIRu6dljDMCUV5yzFnux1Lg/file?c_luid=9bd25e73'
-          TOWER_AUDIO_URL: 'https://uc8ded050228a5471bd74aedf9d7.dl.dropboxusercontent.com/cd/0/get/DI6vzeqWYz_AEhC2lxmdGtiIz-mXwRuWOC2rOPkeuHZ_R7e__9C6obZiHQ-TL9QfTwFMoPmhXboE2YN5RJ-cVi9c2ePzR-kOMlVeYtLzwgmh0ULJhkQ8zaBRQSveZ9AsTyAksePERCTOkFB120LlMkob_F9mCknXcc3XRklW_mXEKA/file?c_luid=9bd25e73'
-          PRISM_CORE_URL: 'https://ucaf63fed193504ec2e9f86c8f54.dl.dropboxusercontent.com/cd/0/get/DI5a4CQcDNE0Yy7KewxeU3T2eUCdKOnR4_-xnapKwyTpyFp3flVhemgQN25Qj-soAfdVZ9N1MhniNwr7gFjK8_8O8n9lvTvtZqi10QTEYNm3CCTRLLmuxVzNp6gYr7wX8WKbbZbWX-Cx62Vosb9u1qx5ncKT1YOmqjFLcHMx-Zjv9A/file?c_luid=9bd25e73'
-          HARMONIC_URL: 'https://uca4bcfd23dc200d101f46273cfc.dl.dropboxusercontent.com/cd/0/get/DI6HmiP9aGbhjpEpfRJID_7PeqxfAlICxDUvQ-4kUImdk-GQEX0BQl0Ny-M_u1511VfCOKZ87wA-9n1RSCvXbGbjkoqdbiX7BqFMEmGAjykEAGA7xMYqEMlmp7OmRfMt9cHLNWJu6CRWsPZkfGrsbtARxlrfIBMCmMj6TL_tTJK6hg/file?c_luid=9bd25e73'
-          ROUTING_URL: 'https://uc7f0e3404c409417f22656461f2.dl.dropboxusercontent.com/cd/0/get/DI41EcpPdP9_pAGADoaMWT05zalugX3p06_S0uJRZEMTEh9CVpRSU5kMWLOYZSnXD91MhZXQ2EX7firSzg5Svf76JBWBWJGAvBUIXMo7hE6nNB6I2dx0YkuK2V7Gz6Y7ECMMoTGF2gFDBcB4IUYHqlJ8xH-BD5EJnnzAnwDApVq9EA/file?c_luid=9bd25e73'
+          CINETRAIL_URL: 'https://uc2f183e6b6e3290d3b549f6d406.dl.dropboxusercontent.com/cd/0/get/DI517rbiYEviRP2vQ66WzknWlJ-pbyQsiizPmghQLRUTUvwtPupuiIP40sln28pGY3ecBAgPM0DIHCxRp8hQBoy1HsyZD6brveXmVmVuFwRS1b4_65B0Nj97d0IaZX0tjIDyr1RZQhMkqoX8Itzn_W-IEGldABQ95HCZt_HVBo61rw/file?c_luid=9bd25e73'
+          TOWER_AUDIO_URL: 'https://uc47c528d0cf08388e79d024c8cf.dl.dropboxusercontent.com/cd/0/get/DI6uc7do90ld4_pzZuAwLDlVSr7jTe2T5XFuH2UkBnm1PIYhXB9qMveUId1otp1kx9yUs_YynlzoIv1BAbaxdxfCPUafchyvmNCpiAeKrNGD6DObeQ8TizJexgczgJQ-acu3TwqZL6x0cC9u1aCcr6N5J75lhp8dJyZlE7DLlgUYMw/file?c_luid=9bd25e73'
+          PRISM_CORE_URL: 'https://ucf59103ecb7a70bb0d153f506fd.dl.dropboxusercontent.com/cd/0/get/DI7MRXYItJ0Mz_tgWzpRgBlp-HL_yiSPJUkgExziw_Ivbriv2XLk36FnHs1EdYoYZFm22eUhFL3UQYjxmDBNOTv824F2vuGXYoZTMi2A-PlVNDiPIVCLlqSXICT6Bpmds8J77EwHeOMky5V_68xV_KWwCqzwZraHQR97GajqJfrPig/file?c_luid=9bd25e73'
+          HARMONIC_URL: 'https://uc607b0e656d9a575c6eff375191.dl.dropboxusercontent.com/cd/0/get/DI5M6hf9p7qoOpcQ6Q-EOH0t2Nj1j8CKjbbsVeh6_UqdtbkAxfseKkR5UC60CtdXtCCYUiFrZrONGxa1b0HXPJuRGOfJP435ws6tPf5jMytMnZE3nst0EmfT7AnyFawyVRYkS3bzTn5lJvAmYNSGfEp0BhZmIuzWecPIiOhcN1iHKA/file?c_luid=9bd25e73'
+          ROUTING_URL: 'https://ucad79c254b93f54e57fb93f106f.dl.dropboxusercontent.com/cd/0/get/DI4Bi7jd9ddl5poqDc2bOdKXMSTFRJXQnVjP1v3rYqt4VciTCc_bOfisZ_mYrvnb7ApgLlKbOFqgsDLTxhQqws6prHXLbrjvJT3jkf2a1raQCSt1DwHHWi7JxXv95VQO63GFvDBJOyGUTyY9j81gREYeqdB_Wuvi3w5-Q5KdtUGq9g/file?c_luid=9bd25e73'
         run: |
           set -euo pipefail
           mkdir -p assets/video assets/audio/tower/audition-v1 assets/ui/overworld/v2 assets/ui/tower/review-v1
