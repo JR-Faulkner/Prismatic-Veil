@@ -353,3 +353,11 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 - Live XP/reward/resonance overlays now cover the matching source panels, and bearer cards cover the full source card bounds so static placeholder text cannot double underneath.
 - The single Hushling remains center-stage per the encounter authority. Prismel, Auryi, and Kineza use a dedicated left-side lane for that one-enemy encounter; multi-enemy formation behavior remains unchanged.
 - Pages/device validation remains pending after this geometry pass.
+
+## LIVE30K7 Victory bearer XP display correction (2026-09-27)
+
+- Bearer XP overlays in `hybrid-battle-live.html` now use the full 16:9 result-stage coordinate system. The previous narrow overlay container made the three cards too small and left the render's placeholder XP text visible below them.
+- Prismel, Kineza, and Auryi now use per-card widths matching the approved Victory render; opaque cards cover the static placeholder text without entering the reward panel or footer.
+- The result layer reads the persisted progression ledger when a legacy or incomplete encounter snapshot is missing payout fields, so a completed clear does not display `+0 XP` merely because an older snapshot omitted the payout.
+- Payout authority remains `PVProgression` / `Live29FEncounterBattleScene`; no reward balance or battle timing changed.
+- Pages/device validation remains pending on the normal MAIN route.

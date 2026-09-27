@@ -344,3 +344,10 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - The Hushling is still the centered single enemy; the party shifts left only for the Hushling encounter so the enemy no longer sits under Auryi/Kineza. No multi-enemy stagger was introduced.
 - This is a presentation/layout pass. Progression payout authority and battle cinematic lanes remain unchanged.
 - Device validation remains pending on MAIN iPhone, iPad, and Xbox Edge.
+
+## LIVE30K7 Victory bearer XP display correction (2026-09-27)
+
+- Corrected the result-layer bearer cards in `hybrid-battle-live.html`: the card container now spans the full fitted 16:9 render, and each card has a source-matched width/offset. This removes the clipped XP lines that were falling into the footer and prevents the Auryi card from crossing into Rewards.
+- Cards are opaque over the approved render's static placeholder text, so live level/role/XP values appear once and remain readable.
+- Added a progression-ledger fallback for legacy result records with no payout object. Completed encounter results now use the canonical encounter XP table and current hero ledger rather than rendering placeholder `0` values.
+- No battle adapter, enemy, cinematic, reward balance, or route semantics changed. Pages/device validation remains pending on MAIN iPhone, iPad, and Xbox Edge.

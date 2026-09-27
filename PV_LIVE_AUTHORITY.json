@@ -291,7 +291,7 @@
       "memoryFragment"
     ],
     "first_clear_unlock": "Resonance Tower",
-    "production_commit": "4b985b1b297e061f3d9a1f854cf5ed554c9c0af3",
+    "production_commit": "3235df9",
     "pending_device_validation": true,
     "live_components": [
       "heroXp",
@@ -302,10 +302,10 @@
       "firstClear",
       "locationId"
     ],
-    "dynamic_presentation": "XP callout, resonance state strip, reward cards, progress bars, level-up handoff, and Resonance Tower unlock are populated from the encounter payout",
+    "dynamic_presentation": "XP callout, resonance state strip, reward cards, progress bars, level-up handoff, and Resonance Tower unlock are populated from the encounter payout; missing legacy snapshots fall back to the progression ledger so placeholder zeroes are never shown for a completed encounter",
     "approved_render": "assets/ui/victory/victory-screen-approved.png",
     "approved_render_bytes": 2361503,
     "approved_render_runtime": "The approved composite is the actual result visual; live payout data is layered above it and the result surface is fixed with scrolling disabled.",
-    "geometry_policy": "Approved render is fitted at native 16:9; live overlays align to the source panels and result scrolling is disabled."
+    "geometry_policy": "Approved render is fitted at native 16:9; live overlays align to the source panels and result scrolling is disabled. Bearer XP cards use full-stage coordinates with per-card widths matching the approved render, opaque coverage over the static placeholder text, and no overflow into the footer or reward panel."
   }
 }

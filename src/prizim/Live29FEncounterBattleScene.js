@@ -107,6 +107,9 @@ export default class Live29FEncounterBattleScene extends Live28K27BattleGuardSce
     super._onVictory();
     // Keep the existing victory presentation/audio visible before returning.
     this._queueEncounterReturn('victory', 2300);
+    // Refresh the Hybrid result layer after the payout snapshot is written so
+    // live cards never remain on the approved render's placeholder zeroes.
+    this.pub?.(true);
   }
 
   _onDefeat() {
