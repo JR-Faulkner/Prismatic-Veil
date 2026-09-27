@@ -305,3 +305,9 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 
 - GitHub's browser uploader rejects the 54 MB source file. Trail2 is therefore delivered as fourteen sub-5 MB exact byte segments and rebuilt as one local MP4 Blob before trailer playback.
 - The complete reassembled bytes hash to `b01d30c49a6e20ae43035a4c82f3a33257ae911f0d1cd02289d17dcb6bdd7300`; no visual or audio re-encode was used. CineTrail remains a deployment-only fallback if a segment is temporarily unavailable.
+
+
+## 2026-09-27 — Victory screen pass
+- `hybrid-battle-live.html` now replaces the compact placeholder result card with the approved Overworld Victory presentation: party XP cards, real reward items, level-up continuation, and the Resonance Tower first-clear destination unlock.
+- Party mock remains reference for the existing Party screen; this pass is limited to the post-battle result layer.
+- Pages/deployment evidence is separate from user device validation; verify the MAIN route on iPhone/iPad and Xbox Edge before promoting the witness.
