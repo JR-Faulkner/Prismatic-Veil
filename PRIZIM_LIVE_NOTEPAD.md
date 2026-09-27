@@ -3,6 +3,13 @@
 Last refreshed: 2026-09-27
 Current promoted build: `main-20260909-live28k27` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
 
+## LIVE30K5 Overworld stage selection emphasis (2026-09-27)
+
+- Added a final Overworld selection layer in `assets/js/pv-overworld-live30h.js`.
+- Committed destination nodes use a larger prismatic beacon, double ring, glow pulse, and `SELECTED STAGE` label; controller/keyboard focus uses a distinct cyan `LOOKING AT` state.
+- Destination Intel now receives a selected-stage readout, highlighted preview/card, and active travel treatment. No location, unlock, or route logic changed.
+- Local validation passed at the default viewport and an 844×390 landscape viewport with Whispering Grove selection and no horizontal/vertical page overflow. Pages and device validation remain separate gates.
+
 ## LIVE30E6 stale-run cleanup (2026-09-26)\n\n- New Game now performs a cache-safe hard reset after the story entry loads, clearing the save snapshot, all `pv.locationClear.*` flags, Tower sync/arrival markers, progression, encounter, party, and run identity keys before seeding Home.\n- The Tower treats a direct Whispering Grove entry without a run marker as a legacy first visit, clears stale completion state, and opens the arrival cinematic plus Puzzle 1. Same-run re-entry still resumes calibration.\n\n## LIVE30E5 first-encounter Hushling layout (2026-09-26)
 
 - The Whispering Grove route presently uses one Hushling, so LIVE29G now resolves its visual through `Live30E4HushlingView` at horizontal center.

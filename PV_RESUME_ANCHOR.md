@@ -1,6 +1,12 @@
 # The Prismatic Veil — Resume Anchor
 
-Last refreshed: 2026-09-26
+Last refreshed: 2026-09-27
+
+## LIVE30K5 Overworld stage selection emphasis (2026-09-27)
+
+- The active Overworld destination now has a high-contrast gold/cyan beacon, an explicit `SELECTED STAGE` map label, a highlighted preview, and a matching Destination Intel readout.
+- Keyboard/controller navigation adds a separate cyan `LOOKING AT` focus treatment so the player can see what will be selected before confirming it.
+- Selection semantics and travel routes are unchanged; this is a presentation/accessibility pass in `assets/js/pv-overworld-live30h.js`.
 
 ## LIVE30E6 stale-run cleanup (2026-09-26)\n\n- New Game now hard-clears the save snapshot, every `pv.locationClear.*` flag, Tower sync/arrival markers, progression, encounter, party, and run identity keys after the story entry loads, covering cached legacy save scripts.\n- A Tower entry from Whispering Grove without a run marker is treated as a legacy first arrival and clears old completion state before showing the cinematic and Puzzle 1.\n\n## LIVE30E5 first-encounter Hushling layout (2026-09-26)
 
