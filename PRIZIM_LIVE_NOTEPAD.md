@@ -324,3 +324,10 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Live payout overlays remain authoritative from `PVProgression` and `Live29FEncounterBattleScene`, while the image supplies the full visual composition and party art.
 - The result surface is fixed to the viewport with no page scroll; Continue, Party, Journal, and Menu hit targets remain interactive.
 - Pages deployment is not device evidence; normal MAIN iPhone, iPad, and Xbox Edge validation remains pending.
+
+## LIVE30K4 Victory geometry and solo Hushling spacing (2026-09-27)
+
+- Corrected the Victory render presentation by fitting the approved 16:9 composite to the available viewport and anchoring live overlays to the render's actual XP, resonance, rewards, and bearer-card panels.
+- The Hushling is still the centered single enemy; the party shifts left only for the Hushling encounter so the enemy no longer sits under Auryi/Kineza. No multi-enemy stagger was introduced.
+- This is a presentation/layout pass. Progression payout authority and battle cinematic lanes remain unchanged.
+- Device validation remains pending on MAIN iPhone, iPad, and Xbox Edge.

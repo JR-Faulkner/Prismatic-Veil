@@ -334,3 +334,10 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 - The user-approved Victory composite is now the actual result-screen visual at `assets/ui/victory/victory-screen-approved.png`.
 - Live values are layered over the render for bearer XP bars, XP gain, first/repeat clear, rewards, level-up handoff, destination unlock, and the action rail.
 - The result layer is fixed to one viewport with scrolling disabled; device validation remains pending on the normal MAIN route.
+
+## LIVE30K4 Victory geometry and solo Hushling spacing (2026-09-27)
+
+- The approved Victory composite keeps its native 16:9 ratio inside the result viewport; short landscape browser chrome no longer vertically compresses the render.
+- Live XP/reward/resonance overlays now cover the matching source panels, and bearer cards cover the full source card bounds so static placeholder text cannot double underneath.
+- The single Hushling remains center-stage per the encounter authority. Prismel, Auryi, and Kineza use a dedicated left-side lane for that one-enemy encounter; multi-enemy formation behavior remains unchanged.
+- Pages/device validation remains pending after this geometry pass.

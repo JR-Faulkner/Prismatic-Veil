@@ -83,6 +83,10 @@ export default class Live29GEncounterBattleScene extends Live29FEncounterBattleS
 
     this.enemyView = createEnemyView(this, this.enemy);
     this.enemyView.create();
+    // Re-run the party layout after the location-specific Hushling swap so
+    // the single-enemy left lane is applied in the same frame as the center
+    // Hushling view.
+    this.formation?.layout?.();
 
     // PartyBattleAudioController snapshots enemy.audioBank when its director
     // is created, so replace only that child director after the data swap.

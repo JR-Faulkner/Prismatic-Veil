@@ -289,6 +289,19 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
 
   layout() {
     super.layout();
+
+    if (this.scene.enemy?.viewId === 'hushling') {
+      const w = this.scene.scale.width;
+      const lane = { prismel: 0.17, auryi: 0.30, kineza: 0.43 };
+      this.actors.forEach((actor, id) => {
+        if (actor._snapshot || lane[id] == null) return;
+        const x = Math.round(w * lane[id]);
+        actor.sprite.setX(x);
+        actor.ghost.setX(x);
+        actor.ring.setX(x);
+      });
+    }
+
     const auryiBodyH = responsiveAuryiBodyHeight(this.scene);
 
     const auryi = this.actors?.get('auryi');
