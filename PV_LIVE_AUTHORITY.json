@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated": "2026-09-26",
+  "updated": "2026-09-27",
   "witness": "main-20260909-live28k27",
   "production_route": [
     "index.html",
@@ -121,7 +121,7 @@
     "aurora_beauty_sync": {
       "live_intro_ms": 900,
       "live_handoff_ms": 220,
-      "video_sfx_reveal": 0.0,
+      "video_sfx_reveal": 0,
       "celestial_bloom_choir_tail_video_time": 9.35,
       "celestial_bloom_choir_tail_source_time": 3.86,
       "battlefield_reveal_crossfade": 9.5,
@@ -186,7 +186,7 @@
     "pending_gate_summary": "LIVE28K27: verify Prismel glass-shatter beat, reflective mirror blades crossing into the live battlefield, visible shard landings around the Wraith, damage synchronized to blade impact, clean return, and unchanged Aurora Pulse + Thunder Tornado.",
     "live28k17_pending_iphone_validation": true,
     "live28k17_boot_decode_failed": true,
-    "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR \u00b7 Decoding failed",
+    "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR · Decoding failed",
     "live28k17_aurora_test_blocked_by_boot": true,
     "live28k17_bloom_not_validly_tested_in_recording": true,
     "live28k18_pending_iphone_validation": false,
@@ -211,7 +211,8 @@
     "live28k24_pending_iphone_validation": true,
     "live28k25_pending_iphone_validation": true,
     "live28k26_pending_iphone_validation": true,
-    "live28k27_pending_iphone_validation": true
+    "live28k27_pending_iphone_validation": true,
+    "victory_screen_pending_iphone_validation": true
   },
   "hybrid_boot_policy": "hybrid-main must retry live-build.json and hybrid-battle-live.html no-store fetches with bounded exponential backoff before surfacing LIVE BOOT ERROR.",
   "kineza": {
@@ -266,7 +267,25 @@
     "refracted_reflections_audio_policy": "Sound effects only. No music or language. Normal battle BGM is fully silent during the cinematic/shatter; embedded cinematic SFX remain audible, with only sparse nonverbal exertion permitted.",
     "refracted_reflections_glass_shatter_policy": "At the start of mirror separation, play a short procedural glass/crystal shatter synchronized to the first moving shards. Preserve cinematic embedded SFX and keep battle BGM silent.",
     "refracted_reflections_blade_policy": "The broken reflection must continue into the live battlefield as reflective cyan/violet/gold/white mirror blades. Blades visibly cross toward the real enemy, strike around/through the target, leave readable landed shards on the battlefield, then fade after the impact settles."
+  },
+  "victory_result": {
+    "entry": "hybrid-battle-live.html",
+    "presentation": "full-screen Overworld victory result with party XP cards, item rewards, level-up handoff, and first-clear destination unlock",
+    "data_authority": [
+      "src/progression/PVProgression.js",
+      "src/prizim/Live29FEncounterBattleScene.js"
+    ],
+    "party_cards": [
+      "prismel",
+      "kineza",
+      "auryi"
+    ],
+    "reward_items": [
+      "veilShard",
+      "memoryFragment"
+    ],
+    "first_clear_unlock": "Resonance Tower",
+    "production_commit": "5cc847eafd83758bfb37f805347200e3f484e9e5",
+    "pending_device_validation": true
   }
 }
-
-
