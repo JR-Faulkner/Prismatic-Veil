@@ -3,7 +3,7 @@
 Last refreshed: 2026-09-26
 Current promoted build: `main-20260909-live28k27` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
 
-## LIVE30E5 first-encounter Hushling layout (2026-09-26)
+## LIVE30E6 stale-run cleanup (2026-09-26)\n\n- New Game now performs a cache-safe hard reset after the story entry loads, clearing the save snapshot, all `pv.locationClear.*` flags, Tower sync/arrival markers, progression, encounter, party, and run identity keys before seeding Home.\n- The Tower treats a direct Whispering Grove entry without a run marker as a legacy first visit, clears stale completion state, and opens the arrival cinematic plus Puzzle 1. Same-run re-entry still resumes calibration.\n\n## LIVE30E5 first-encounter Hushling layout (2026-09-26)
 
 - The Whispering Grove route presently uses one Hushling, so LIVE29G now resolves its visual through `Live30E4HushlingView` at horizontal center.
 - This is a live encounter-adapter change only: no Wraith movement, no base-scene change, and no pretend multi-enemy staggering before that system exists.
@@ -17,7 +17,7 @@ Current promoted build: `main-20260909-live28k27` — **Hybrid production author
 
 - The MAIN-page **Trailer** entry continues to open `trailer.html`; it now streams `assets/video/Trail2.mp4` with a new cache version.
 - Source provenance: user Dropbox `/Prismatic Veil/Trail2.mp4`; `56,759,102` bytes; SHA-256 `b01d30c49a6e20ae43035a4c82f3a33257ae911f0d1cd02289d17dcb6bdd7300`.
-- `assets/video/CineTrail.mp4` is preserved as the rollback asset. Validate the normal MAIN Trailer entry on iPhone/Xbox after Pages promotion.
+- The obsolete `assets/video/CineTrail.mp4` fallback has been removed. Trailer playback now uses only the exact Trail2 multipart reconstruction; a failed segment load stays visibly unavailable instead of silently serving an old cut.
 
 ## LIVE30E2 Whispering Grove progression repair (2026-09-26)
 
