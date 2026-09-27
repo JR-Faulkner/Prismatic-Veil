@@ -186,7 +186,7 @@
     "pending_gate_summary": "LIVE28K27: verify Prismel glass-shatter beat, reflective mirror blades crossing into the live battlefield, visible shard landings around the Wraith, damage synchronized to blade impact, clean return, and unchanged Aurora Pulse + Thunder Tornado.",
     "live28k17_pending_iphone_validation": true,
     "live28k17_boot_decode_failed": true,
-    "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR · Decoding failed",
+    "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR \u00b7 Decoding failed",
     "live28k17_aurora_test_blocked_by_boot": true,
     "live28k17_bloom_not_validly_tested_in_recording": true,
     "live28k18_pending_iphone_validation": false,
@@ -296,6 +296,9 @@
       "firstClear",
       "locationId"
     ],
-    "dynamic_presentation": "XP callout, resonance state strip, reward cards, progress bars, level-up handoff, and Resonance Tower unlock are populated from the encounter payout"
+    "dynamic_presentation": "XP callout, resonance state strip, reward cards, progress bars, level-up handoff, and Resonance Tower unlock are populated from the encounter payout",
+    "approved_render": "assets/ui/victory/victory-screen-approved.png",
+    "approved_render_bytes": 2361503,
+    "approved_render_runtime": "The approved composite is the actual result visual; live payout data is layered above it and the result surface is fixed with scrolling disabled."
   }
 }
