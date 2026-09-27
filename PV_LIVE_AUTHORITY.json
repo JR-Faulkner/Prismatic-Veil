@@ -270,7 +270,7 @@
   },
   "victory_result": {
     "entry": "hybrid-battle-live.html",
-    "presentation": "full-screen Overworld victory result with party XP cards, item rewards, level-up handoff, and first-clear destination unlock",
+    "presentation": "approved full-screen Overworld Victory render with live party XP cards, item rewards, level-up handoff, and first-clear destination unlock overlays",
     "data_authority": [
       "src/progression/PVProgression.js",
       "src/prizim/Live29FEncounterBattleScene.js"
@@ -285,7 +285,7 @@
       "memoryFragment"
     ],
     "first_clear_unlock": "Resonance Tower",
-    "production_commit": "b912f2fe082feb9000642a144201c19010cc09c9",
+    "production_commit": "fb0399d7ff30e4dbe57810aecfc5a9024f4e96d0",
     "pending_device_validation": true,
     "live_components": [
       "heroXp",
