@@ -58,11 +58,10 @@
   }
   function newGame(){clearRun();remove(SAVE_KEY);return true}
   function initializeNewRun(){
+    // New Game is a hard run boundary: remove every persisted completion flag,
+    // including legacy Tower/Overworld keys, before seeding Home again.
     newGame();
-    // A run identity makes a first Tower arrival unambiguous.  The Tower can
-    // then reset only its own initial cinematic/puzzle state once per new run,
-    // while an intentional return to an in-progress Tower still resumes.
-    write('pv.run.id',`${Date.now()}-${Math.random().toString(36).slice(2,8)}`);
+    write('pv.run.id',String(Date.now())+'-'+Math.random().toString(36).slice(2,8));
     Object.entries(NEW_RUN_DEFAULTS).forEach(([key,value])=>write(key,value));
     return captureRun();
   }
