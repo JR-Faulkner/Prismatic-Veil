@@ -2,7 +2,7 @@
 
 Last refreshed: 2026-09-26
 
-## LIVE30E5 first-encounter Hushling layout (2026-09-26)
+## LIVE30E6 stale-run cleanup (2026-09-26)\n\n- New Game now hard-clears the save snapshot, every `pv.locationClear.*` flag, Tower sync/arrival markers, progression, encounter, party, and run identity keys after the story entry loads, covering cached legacy save scripts.\n- A Tower entry from Whispering Grove without a run marker is treated as a legacy first arrival and clears old completion state before showing the cinematic and Puzzle 1.\n\n## LIVE30E5 first-encounter Hushling layout (2026-09-26)
 
 - Whispering Grove currently fields one Hushling. Its live encounter adapter now anchors that single enemy at the screen center across landscape and portrait layouts.
 - The Wraith and generic battle layouts are untouched. Multi-enemy stagger remains deliberately unimplemented until a real enemy-formation controller exists.
@@ -16,7 +16,7 @@ Last refreshed: 2026-09-26
 
 - `trailer.html` now plays the user-supplied **Trail2** cut from `assets/video/Trail2.mp4` (`56,759,102` bytes; SHA-256 `b01d30c49a6e20ae43035a4c82f3a33257ae911f0d1cd02289d17dcb6bdd7300`).
 - The MAIN-page **Trailer** entry remains unchanged and opens `trailer.html`; only the video source changed.
-- The prior `assets/video/CineTrail.mp4` remains in the repository as the immediate rollback asset.
+- The obsolete `assets/video/CineTrail.mp4` fallback has been removed; Trailer now has one authoritative Trail2 multipart path and reports an unavailable state instead of loading an old cut.
 
 ## LIVE30E2 Whispering Grove progression repair (2026-09-26)
 
