@@ -46,7 +46,8 @@
   "first_encounter": {
     "enemy": "Hushling",
     "single_enemy_layout": "center-screen",
-    "multi_enemy_layout": "Reserved for a future formation controller; no stagger is applied to one enemy."
+    "multi_enemy_layout": "Reserved for a future formation controller; no stagger is applied to one enemy.",
+    "single_enemy_party_lane": "Left-side bearer lane while the single Hushling remains centered; multi-enemy spacing is reserved."
   },
   "hard_gates": {
     "production_battle_must_use_hybrid_stack": true,
@@ -285,7 +286,7 @@
       "memoryFragment"
     ],
     "first_clear_unlock": "Resonance Tower",
-    "production_commit": "fb0399d7ff30e4dbe57810aecfc5a9024f4e96d0",
+    "production_commit": "3a0343cfacd078055840c114b4ce3319539d2ce6",
     "pending_device_validation": true,
     "live_components": [
       "heroXp",
@@ -299,6 +300,7 @@
     "dynamic_presentation": "XP callout, resonance state strip, reward cards, progress bars, level-up handoff, and Resonance Tower unlock are populated from the encounter payout",
     "approved_render": "assets/ui/victory/victory-screen-approved.png",
     "approved_render_bytes": 2361503,
-    "approved_render_runtime": "The approved composite is the actual result visual; live payout data is layered above it and the result surface is fixed with scrolling disabled."
+    "approved_render_runtime": "The approved composite is the actual result visual; live payout data is layered above it and the result surface is fixed with scrolling disabled.",
+    "geometry_policy": "Approved render is fitted at native 16:9; live overlays align to the source panels and result scrolling is disabled."
   }
 }
