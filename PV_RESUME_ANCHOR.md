@@ -316,3 +316,9 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 
 - GitHub's browser uploader rejects the 54 MB source file. Trail2 is therefore delivered as fourteen sub-5 MB exact byte segments and rebuilt as one local MP4 Blob before trailer playback.
 - The complete reassembled bytes hash to `b01d30c49a6e20ae43035a4c82f3a33257ae911f0d1cd02289d17dcb6bdd7300`; no visual or audio re-encode was used. CineTrail remains a deployment-only fallback if a segment is temporarily unavailable.
+
+
+## 2026-09-27 — Victory result presentation
+- Published `hybrid-battle-live.html` commit `5cc847eafd83758bfb37f805347200e3f484e9e5` with a full-screen Overworld Victory result layer.
+- Result cards now read the real encounter payout for Prismel, Kineza, and Auryi, show XP progress, item rewards, level-up handoff, and a first-clear Resonance Tower unlock.
+- Visual/device gate: pending normal MAIN iPhone, iPad, and Xbox/Edge validation; no device pass is claimed from Pages deployment alone.
