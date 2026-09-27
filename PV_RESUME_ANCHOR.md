@@ -322,3 +322,9 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 - Published `hybrid-battle-live.html` commit `5cc847eafd83758bfb37f805347200e3f484e9e5` with a full-screen Overworld Victory result layer.
 - Result cards now read the real encounter payout for Prismel, Kineza, and Auryi, show XP progress, item rewards, level-up handoff, and a first-clear Resonance Tower unlock.
 - Visual/device gate: pending normal MAIN iPhone, iPad, and Xbox/Edge validation; no device pass is claimed from Pages deployment alone.
+
+
+## 2026-09-27 — Victory result live wiring pass
+- Kept the approved Victory mock as the presentation reference; no generated composite is used as a runtime text/background asset.
+- `hybrid-battle-live.html` now exposes live payout state in the result presentation: bearer XP bars, XP callout, resonance status, item cards, first-clear/repeat state, level-up continuation, and the Resonance Tower unlock.
+- Production commit: `b912f2fe082feb9000642a144201c19010cc09c9`. Device validation remains pending on the normal MAIN route.
