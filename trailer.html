@@ -41,10 +41,9 @@
           const files=await Promise.all(TRAILER_PARTS.map(async url=>{const response=await fetch(url,{cache:'force-cache'});if(!response.ok)throw Error('Trailer segment unavailable');return response.arrayBuffer()}));
           video.src=URL.createObjectURL(new Blob(files,{type:'video/mp4'}));await waitForReady();
         }catch(error){
-          // The previously published local trailer is retained only as a
-          // network-failure fallback while the multipart asset is deploying.
-          video.src='./assets/video/CineTrail.mp4?pvasset=cinetrail1';await waitForReady();
-        }finally{play.disabled=false;play.textContent='PLAY TRAILER'}
+          play.textContent='TRAILER UNAVAILABLE · RETRY';
+          throw error;
+        }finally{play.disabled=false;if(video.src)play.textContent='PLAY TRAILER'}
       })();
       return ready;
     }
