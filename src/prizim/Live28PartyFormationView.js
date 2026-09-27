@@ -292,7 +292,7 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
 
     if (this.scene.enemy?.viewId === 'hushling') {
       const w = this.scene.scale.width;
-      const lane = { prismel: 0.17, auryi: 0.30, kineza: 0.43 };
+      const lane = { prismel: 0.14, auryi: 0.27, kineza: 0.40 };
       this.actors.forEach((actor, id) => {
         if (actor._snapshot || lane[id] == null) return;
         const x = Math.round(w * lane[id]);
@@ -380,3 +380,4 @@ export default class Live28PartyFormationView extends Live26PartyFormationView {
     }
   }
 }
+
