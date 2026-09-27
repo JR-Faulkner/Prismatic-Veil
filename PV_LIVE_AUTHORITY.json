@@ -47,7 +47,7 @@
     "enemy": "Hushling",
     "single_enemy_layout": "center-screen",
     "multi_enemy_layout": "Reserved for a future formation controller; no stagger is applied to one enemy.",
-    "single_enemy_party_lane": "Left-side bearer lane while the single Hushling remains centered; multi-enemy spacing is reserved."
+    "single_enemy_party_lane": "Left-side bearer lane (Prismel 0.14, Auryi 0.27, Kineza 0.40) while the single Hushling remains centered; multi-enemy spacing is reserved."
   },
   "hard_gates": {
     "production_battle_must_use_hybrid_stack": true,
@@ -286,7 +286,7 @@
       "memoryFragment"
     ],
     "first_clear_unlock": "Resonance Tower",
-    "production_commit": "3a0343cfacd078055840c114b4ce3319539d2ce6",
+    "production_commit": "725fce782564cfe4052db1d0a6c538842babfac2",
     "pending_device_validation": true,
     "live_components": [
       "heroXp",
