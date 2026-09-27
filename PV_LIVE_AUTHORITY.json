@@ -285,7 +285,17 @@
       "memoryFragment"
     ],
     "first_clear_unlock": "Resonance Tower",
-    "production_commit": "5cc847eafd83758bfb37f805347200e3f484e9e5",
-    "pending_device_validation": true
+    "production_commit": "b912f2fe082feb9000642a144201c19010cc09c9",
+    "pending_device_validation": true,
+    "live_components": [
+      "heroXp",
+      "levels",
+      "nextLevelXp",
+      "levelUps",
+      "items",
+      "firstClear",
+      "locationId"
+    ],
+    "dynamic_presentation": "XP callout, resonance state strip, reward cards, progress bars, level-up handoff, and Resonance Tower unlock are populated from the encounter payout"
   }
 }
