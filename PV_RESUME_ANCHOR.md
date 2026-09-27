@@ -328,3 +328,9 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 - Kept the approved Victory mock as the presentation reference; no generated composite is used as a runtime text/background asset.
 - `hybrid-battle-live.html` now exposes live payout state in the result presentation: bearer XP bars, XP callout, resonance status, item cards, first-clear/repeat state, level-up continuation, and the Resonance Tower unlock.
 - Production commit: `b912f2fe082feb9000642a144201c19010cc09c9`. Device validation remains pending on the normal MAIN route.
+
+## LIVE30K3 Approved Victory render runtime (2026-09-27)
+
+- The user-approved Victory composite is now the actual result-screen visual at `assets/ui/victory/victory-screen-approved.png`.
+- Live values are layered over the render for bearer XP bars, XP gain, first/repeat clear, rewards, level-up handoff, destination unlock, and the action rail.
+- The result layer is fixed to one viewport with scrolling disabled; device validation remains pending on the normal MAIN route.

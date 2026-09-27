@@ -317,3 +317,10 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Approved Victory visual retained as the reference; live UI pieces remain data-driven from `PVProgression` and `Live29FEncounterBattleScene` payout snapshots.
 - Added dynamic resonance status strip alongside XP, reward cards, progress bars, level-up handoff, and the first-clear Resonance Tower unlock.
 - Production commit: `b912f2fe082feb9000642a144201c19010cc09c9`; validate on iPhone/iPad/Xbox Edge after Pages promotion.
+
+## LIVE30K3 Approved Victory render runtime (2026-09-27)
+
+- The approved Victory render is the actual `hybrid-battle-live.html` result screen; it is no longer only a presentation reference.
+- Live payout overlays remain authoritative from `PVProgression` and `Live29FEncounterBattleScene`, while the image supplies the full visual composition and party art.
+- The result surface is fixed to the viewport with no page scroll; Continue, Party, Journal, and Menu hit targets remain interactive.
+- Pages deployment is not device evidence; normal MAIN iPhone, iPad, and Xbox Edge validation remains pending.
