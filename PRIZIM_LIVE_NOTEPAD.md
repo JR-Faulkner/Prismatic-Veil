@@ -1,6 +1,6 @@
 # PriZim Live Notepad
 
-Last refreshed: 2026-09-26
+Last refreshed: 2026-09-27
 Current promoted build: `main-20260909-live28k27` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
 
 ## LIVE30E6 stale-run cleanup (2026-09-26)\n\n- New Game now performs a cache-safe hard reset after the story entry loads, clearing the save snapshot, all `pv.locationClear.*` flags, Tower sync/arrival markers, progression, encounter, party, and run identity keys before seeding Home.\n- The Tower treats a direct Whispering Grove entry without a run marker as a legacy first visit, clears stale completion state, and opens the arrival cinematic plus Puzzle 1. Same-run re-entry still resumes calibration.\n\n## LIVE30E5 first-encounter Hushling layout (2026-09-26)
