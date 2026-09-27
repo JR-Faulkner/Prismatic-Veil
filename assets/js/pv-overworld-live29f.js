@@ -11,9 +11,13 @@
     .hotspot[data-location="whisper"].pv-cleared{filter:drop-shadow(0 0 13px #77ffd388) brightness(1.08)!important}
     .hotspot[data-location="whisper"].pv-cleared:after{content:"✓";position:absolute;right:-7px;top:-8px;display:grid;place-items:center;width:20px;height:20px;border:1px solid #e7ca76;border-radius:50%;background:#071a23;color:#8effd2;font:900 11px system-ui;box-shadow:0 0 13px #6dffd366}
     .pv-encounter-curtain{position:fixed;inset:0;z-index:9998;display:grid;place-items:center;background:radial-gradient(circle at 50% 48%,#263469dd,#070916f7 64%);opacity:0;transition:opacity .22s ease;pointer-events:none}
-    .pv-encounter-curtain.show{opacity:1}
-    .pv-encounter-card{min-width:min(560px,78vw);padding:18px 24px 20px;border:1px solid #e1c46f99;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);background:radial-gradient(circle at 50% 0,#745cff3d,transparent 42%),linear-gradient(150deg,#101d3cf2,#080c1df5);text-align:center;box-shadow:0 18px 50px #000c,0 0 35px #805dff33}
-    .pv-encounter-card b{display:block;color:#f4d77d;font:900 clamp(18px,3vw,30px) Georgia,serif;letter-spacing:.15em}.pv-encounter-card>span{display:block;margin-top:7px;color:#b9cae8;font:800 8px system-ui;letter-spacing:.2em;text-transform:uppercase}.pv-encounter-threats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:15px auto 0;max-width:440px}.pv-encounter-threat{display:grid;grid-template-columns:34px 1fr;align-items:center;gap:8px;padding:8px 10px;border:1px solid #7feeff44;background:#061329c9;text-align:left;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}.pv-encounter-threat i{width:28px;height:28px;display:grid;place-items:center;transform:rotate(45deg);border:1px solid #e1c46f99;background:linear-gradient(135deg,#1a1333,#071a33);box-shadow:0 0 13px #7feeff44}.pv-encounter-threat i:after{content:'◆';transform:rotate(-45deg);color:#c9b3ff;font-size:12px;text-shadow:0 0 8px #9b68ff}.pv-encounter-threat strong{display:block;color:#f9e7b0;font:900 10px Georgia,serif;letter-spacing:.06em}.pv-encounter-threat small{display:block;margin-top:3px;color:#86daf1;font:800 6px system-ui;letter-spacing:.16em;text-transform:uppercase}.pv-encounter-cta{margin:16px auto 0;max-width:360px;padding:10px 18px;border:1px solid #7feeffaa;background:linear-gradient(90deg,#07152de8,#0b2947e8);color:#fdf2c8;font:900 10px system-ui;letter-spacing:.22em;text-transform:uppercase;box-shadow:0 0 18px #7feeff33}
+    .pv-encounter-curtain.show{opacity:1;pointer-events:auto}
+    .pv-encounter-curtain.confirmed{opacity:0;pointer-events:none}
+    .pv-encounter-card{min-width:min(560px,78vw);padding:18px 24px 20px;border:1px solid #e1c46f99;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);background:radial-gradient(circle at 50% 0,#745cff3d,transparent 42%),linear-gradient(150deg,#101d3cf2,#080c1df5);text-align:center;box-shadow:0 18px 50px #000c,0 0 35px #805dff33;animation:pv29fCardIn .3s ease-out both}
+    .pv-encounter-curtain.confirmed .pv-encounter-card{transform:scale(1.03);opacity:.72;transition:transform .18s ease,opacity .18s ease}
+    @keyframes pv29fCardIn{from{transform:translateY(8px) scale(.97);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+    .pv-encounter-card b{display:block;color:#f4d77d;font:900 clamp(18px,3vw,30px) Georgia,serif;letter-spacing:.15em}.pv-encounter-card>span{display:block;margin-top:7px;color:#b9cae8;font:800 8px system-ui;letter-spacing:.2em;text-transform:uppercase}.pv-encounter-threats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:15px auto 0;max-width:440px}.pv-encounter-threat{display:grid;grid-template-columns:34px 1fr;align-items:center;gap:8px;padding:8px 10px;border:1px solid #7feeff44;background:#061329c9;text-align:left;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}.pv-encounter-threat i{width:28px;height:28px;display:grid;place-items:center;transform:rotate(45deg);border:1px solid #e1c46f99;background:linear-gradient(135deg,#1a1333,#071a33);box-shadow:0 0 13px #7feeff44}.pv-encounter-threat i:after{content:'◆';transform:rotate(-45deg);color:#c9b3ff;font-size:12px;text-shadow:0 0 8px #9b68ff}.pv-encounter-threat strong{display:block;color:#f9e7b0;font:900 10px Georgia,serif;letter-spacing:.06em}.pv-encounter-threat small{display:block;margin-top:3px;color:#86daf1;font:800 6px system-ui;letter-spacing:.16em;text-transform:uppercase}.pv-encounter-cta{display:block;width:min(360px,100%);margin:16px auto 0;padding:11px 18px;border:1px solid #ffe19aaa;background:linear-gradient(90deg,#112e52f5,#26356ae8 55%,#132647f5);color:#fff4c9;font:900 10px system-ui;letter-spacing:.22em;text-transform:uppercase;box-shadow:0 0 18px #7feeff55,0 0 30px #8e63ff33;cursor:pointer;appearance:none;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+    .pv-encounter-cta:hover,.pv-encounter-cta:focus-visible{border-color:#fff2b8;box-shadow:0 0 0 2px #071126,0 0 22px #ffe18a,0 0 36px #7feeff77;transform:translateY(-1px);outline:none}.pv-encounter-cta:active{transform:translateY(1px)}.pv-encounter-cta:disabled{cursor:wait;opacity:.8}.pv-encounter-hint{display:block;margin-top:9px;color:#a9c6e3;font:800 7px system-ui;letter-spacing:.16em;text-transform:uppercase}
     .pv-return-toast{position:fixed;left:50%;top:10%;z-index:9997;transform:translate(-50%,-14px);opacity:0;transition:.24s ease;min-width:min(440px,78vw);padding:11px 18px;border:1px solid #e3c77288;background:#081127f3;color:#f6df99;text-align:center;box-shadow:0 12px 30px #000a,0 0 22px #6e5cff33;pointer-events:none;clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px)}.pv-return-toast.show{opacity:1;transform:translate(-50%,0)}
     .pv-return-toast b{display:block;color:#f6df99;font:900 10px system-ui;letter-spacing:.14em}.pv-return-toast span{display:block;margin-top:5px;color:#b9d7ee;font:800 7px system-ui;letter-spacing:.10em}
     .pv-return-toast.defeat{border-color:#a283c688;color:#d9c7ed;box-shadow:0 12px 30px #000a,0 0 22px #8b5cff2e}.pv-return-toast.defeat b{color:#d9c7ed}
@@ -126,10 +130,15 @@
     forceTravel('Party Positioned',false,dest);
   }
 
-  function curtain(mode){
+  function curtain(mode,onConfirm){
     const el=document.createElement('div');el.className='pv-encounter-curtain';
-    el.innerHTML=`<div class="pv-encounter-card"><b>WHISPERING GROVE</b><span>${mode==='first-clear'?'First Encounter':'Resonance Rematch'}</span><div class="pv-encounter-threats"><div class="pv-encounter-threat"><i></i><span><strong>Veil Wraith</strong><small>Primary threat</small></span></div><div class="pv-encounter-threat"><i></i><span><strong>Hushling</strong><small>Support threat</small></span></div></div><div class="pv-encounter-cta">Entering Battle</div></div>`;
-    document.body.appendChild(el);requestAnimationFrame(()=>el.classList.add('show'));return el;
+    el.innerHTML=`<div class="pv-encounter-card" role="dialog" aria-modal="true" aria-labelledby="pvEncounterTitle"><b id="pvEncounterTitle">WHISPERING GROVE</b><span>${mode==='first-clear'?'First Encounter':'Resonance Rematch'}</span><div class="pv-encounter-threats"><div class="pv-encounter-threat"><i></i><span><strong>Veil Wraith</strong><small>Primary threat</small></span></div><div class="pv-encounter-threat"><i></i><span><strong>Hushling</strong><small>Support threat</small></span></div></div><button class="pv-encounter-cta" type="button">Begin Encounter</button><small class="pv-encounter-hint">Tap, press Enter, or press A to enter</small></div>`;
+    document.body.appendChild(el);
+    const cta=el.querySelector('.pv-encounter-cta');let confirmed=false;
+    const confirm=()=>{if(confirmed)return;confirmed=true;cta.disabled=true;cta.textContent='Opening Encounter…';el.classList.add('confirmed');document.removeEventListener('keydown',onKey,true);setTimeout(()=>{el.remove();onConfirm?.()},190)};
+    const onKey=e=>{if(!el.isConnected)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();confirm()}};
+    cta.addEventListener('click',confirm);document.addEventListener('keydown',onKey,true);
+    requestAnimationFrame(()=>{el.classList.add('show');cta.focus()});return {el,confirm};
   }
   function rewardLine(result){
     const p=result?.payout;if(!p?.awarded)return '';
@@ -161,14 +170,13 @@
     const mode=isCleared()?'revisit':'first-clear';
     try{localStorage.setItem(PENDING_KEY,JSON.stringify({locationId:LOCATION,mode,enteredAt:Date.now()}))}catch(_){}
     await runTravelPiece();
-    curtain(mode);
     let entry='./hybrid-main.html';
     try{
       const r=await fetch(`./live-build.json?ts=${Date.now()}`,{cache:'no-store'});
       if(r.ok){const build=await r.json();if(build.hybrid)entry=`./${build.hybrid}`}
     }catch(_){}
     const q=new URLSearchParams({pvloc:LOCATION,pvencounter:mode});
-    setTimeout(()=>{location.href=`${entry}?${q.toString()}`},520);
+    curtain(mode,()=>{location.href=`${entry}?${q.toString()}`});
   }
 
   document.addEventListener('click',e=>{

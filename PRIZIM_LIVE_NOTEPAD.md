@@ -3,6 +3,12 @@
 Last refreshed: 2026-09-27
 Current promoted build: `main-20260909-live28k27` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
 
+## LIVE30K6 encounter-entry confirmation (2026-09-27)
+
+- The Whispering Grove pre-battle curtain no longer auto-advances after a short flash. It remains visible until the player confirms `BEGIN ENCOUNTER`.
+- Tap, Enter, and Space are supported; the confirmation button is focused when the card opens so a controller/browser action can confirm it.
+- Local validation held the card for more than one second and then reached `hybrid-main.html?pvloc=whisper&pvencounter=first-clear` only after the button click. Pages/device validation remains separate.
+
 ## LIVE30K5 Overworld stage selection emphasis (2026-09-27)
 
 - Added a final Overworld selection layer in `assets/js/pv-overworld-live30h.js`.

@@ -38,7 +38,9 @@
     "party_board_step_policy": "Play one quiet board-step cue for each route hop after the starting tile; respect the Overworld audio toggle.",
     "stage_selection_runtime": "assets/js/pv-overworld-live30h.js",
     "stage_selection_visual": "High-contrast selected-stage beacon, map label, controller-focus ring, and Destination Intel active state.",
-    "stage_selection_policy": "Committed selection uses the gold/cyan beacon and SELECTED STAGE treatment; keyboard/controller focus uses the cyan LOOKING AT treatment without changing route or unlock semantics."
+    "stage_selection_policy": "Committed selection uses the gold/cyan beacon and SELECTED STAGE treatment; keyboard/controller focus uses the cyan LOOKING AT treatment without changing route or unlock semantics.",
+    "encounter_entry_card_runtime": "assets/js/pv-overworld-live29f.js",
+    "encounter_entry_card_policy": "Whispering Grove shows a persistent pre-battle card with threat context and BEGIN ENCOUNTER confirmation; it never auto-advances on a short timer."
   },
   "tower_first_arrival": {
     "entry": "resonance-tower-complete.html",

@@ -2,6 +2,12 @@
 
 Last refreshed: 2026-09-27
 
+## LIVE30K6 encounter-entry confirmation (2026-09-27)
+
+- The Whispering Grove pre-battle card now stays open as a real confirmation beat instead of navigating away after 520ms.
+- The card lists the Veil Wraith and Hushling, exposes a focused `BEGIN ENCOUNTER` button, and accepts tap, Enter, or Space. Navigation begins only after confirmation.
+- The underlying `hybrid-main.html?pvloc=whisper&pvencounter=...` route and battle authority are unchanged.
+
 ## LIVE30K5 Overworld stage selection emphasis (2026-09-27)
 
 - The active Overworld destination now has a high-contrast gold/cyan beacon, an explicit `SELECTED STAGE` map label, a highlighted preview, and a matching Destination Intel readout.
