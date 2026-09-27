@@ -311,3 +311,9 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - `hybrid-battle-live.html` now replaces the compact placeholder result card with the approved Overworld Victory presentation: party XP cards, real reward items, level-up continuation, and the Resonance Tower first-clear destination unlock.
 - Party mock remains reference for the existing Party screen; this pass is limited to the post-battle result layer.
 - Pages/deployment evidence is separate from user device validation; verify the MAIN route on iPhone/iPad and Xbox Edge before promoting the witness.
+
+
+## 2026-09-27 — Victory result live wiring pass
+- Approved Victory visual retained as the reference; live UI pieces remain data-driven from `PVProgression` and `Live29FEncounterBattleScene` payout snapshots.
+- Added dynamic resonance status strip alongside XP, reward cards, progress bars, level-up handoff, and the first-clear Resonance Tower unlock.
+- Production commit: `b912f2fe082feb9000642a144201c19010cc09c9`; validate on iPhone/iPad/Xbox Edge after Pages promotion.
