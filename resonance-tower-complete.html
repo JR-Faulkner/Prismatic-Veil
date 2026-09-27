@@ -120,11 +120,16 @@ body{height:100dvh}
   // A New Game gets a fresh Tower arrival even if an older Tower value survived
   // in browser storage.  Once this run has entered the Tower, its normal
   // in-progress calibration state is preserved for a deliberate re-entry.
-  const runId=localStorage.getItem(RUN)||'';
-  const firstTowerVisitForRun=!!runId&&localStorage.getItem(TOWER_RUN)!==runId;
+  let runId=localStorage.getItem(RUN)||'';
+  // A stale cached build may arrive without the run marker. Treat a direct
+  // Whispering Grove -> Tower entry as a legacy first visit and clear old
+  // completion state before choosing the cinematic/Puzzle 1 path.
+  const legacyTowerEntry=!runId&&from==='whisper';
+  const firstTowerVisitForRun=legacyTowerEntry||!!runId&&localStorage.getItem(TOWER_RUN)!==runId;
   if(fresh||firstTowerVisitForRun){try{
     localStorage.removeItem(SYNC);localStorage.removeItem(CLEAR);localStorage.removeItem(SEEN);
-    if(runId)localStorage.setItem(TOWER_RUN,runId);
+    if(!runId)runId='migrated-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+    localStorage.setItem(RUN,runId);localStorage.setItem(TOWER_RUN,runId);
   }catch(_){} }
   let sync=Math.max(0,Math.min(3,Number(localStorage.getItem(SYNC)||0)));
   try{localStorage.setItem(CURRENT,'oldwater');localStorage.setItem(LAST,from)}catch(_){}
