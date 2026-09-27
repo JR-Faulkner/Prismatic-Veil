@@ -351,3 +351,9 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Cards are opaque over the approved render's static placeholder text, so live level/role/XP values appear once and remain readable.
 - Added a progression-ledger fallback for legacy result records with no payout object. Completed encounter results now use the canonical encounter XP table and current hero ledger rather than rendering placeholder `0` values.
 - No battle adapter, enemy, cinematic, reward balance, or route semantics changed. Pages/device validation remains pending on MAIN iPhone, iPad, and Xbox Edge.
+
+## LIVE30K8 Hushling center and Overworld masthead cleanup (2026-09-27)
+
+- Presentation-only patch on the existing `main-20260909-live28k27` witness. `Live30E4HushlingView` keeps the first single Hushling centered and raises it on landscape screens so the full art clears the party cards; no multi-enemy stagger or encounter logic changed.
+- `pv-overworld-live30b.js` no longer creates the repeated top-left `PRISMATIC VEIL` title. The map, Current Location panel, Destination Intel, selected-stage beacon, and travel routes remain live.
+- Hybrid battle/Overworld cache-busts were advanced for the nested module and layer updates. Local smoke checks passed; Pages and real-device MAIN validation remain required before calling the presentation gate complete.

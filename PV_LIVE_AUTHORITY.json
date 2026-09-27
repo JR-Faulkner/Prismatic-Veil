@@ -40,7 +40,9 @@
     "stage_selection_visual": "High-contrast selected-stage beacon, map label, controller-focus ring, and Destination Intel active state.",
     "stage_selection_policy": "Committed selection uses the gold/cyan beacon and SELECTED STAGE treatment; keyboard/controller focus uses the cyan LOOKING AT treatment without changing route or unlock semantics.",
     "encounter_entry_card_runtime": "assets/js/pv-overworld-live29f.js",
-    "encounter_entry_card_policy": "Whispering Grove shows a persistent pre-battle card with threat context and BEGIN ENCOUNTER confirmation; it never auto-advances on a short timer."
+    "encounter_entry_card_policy": "Whispering Grove shows a persistent pre-battle card with threat context and BEGIN ENCOUNTER confirmation; it never auto-advances on a short timer.",
+    "overworld_masthead_runtime": "assets/js/pv-overworld-live30b.js",
+    "overworld_masthead_policy": "The Overworld map keeps the Current Location and destination panels but omits the redundant top-left PRISMATIC VEIL masthead; branding remains on the splash/title surfaces."
   },
   "tower_first_arrival": {
     "entry": "resonance-tower-complete.html",
@@ -52,7 +54,9 @@
     "enemy": "Hushling",
     "single_enemy_layout": "center-screen",
     "multi_enemy_layout": "Reserved for a future formation controller; no stagger is applied to one enemy.",
-    "single_enemy_party_lane": "Left-side bearer lane (Prismel 0.12, Auryi 0.25, Kineza 0.38) while the single Hushling remains centered; multi-enemy spacing is reserved."
+    "single_enemy_party_lane": "Left-side bearer lane (Prismel 0.12, Auryi 0.25, Kineza 0.38) while the single Hushling remains centered; multi-enemy spacing is reserved.",
+    "single_enemy_runtime": "src/prizim/Live30E4HushlingView.js",
+    "single_enemy_view_policy": "The single Hushling uses a centered x anchor and a raised landscape baseline so its full silhouette remains above the fixed party status strip; target card, enemy identity, and multi-enemy spacing remain unchanged."
   },
   "hard_gates": {
     "production_battle_must_use_hybrid_stack": true,
@@ -192,7 +196,7 @@
     "pending_gate_summary": "LIVE28K27: verify Prismel glass-shatter beat, reflective mirror blades crossing into the live battlefield, visible shard landings around the Wraith, damage synchronized to blade impact, clean return, and unchanged Aurora Pulse + Thunder Tornado.",
     "live28k17_pending_iphone_validation": true,
     "live28k17_boot_decode_failed": true,
-    "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR \u00b7 Decoding failed",
+    "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR · Decoding failed",
     "live28k17_aurora_test_blocked_by_boot": true,
     "live28k17_bloom_not_validly_tested_in_recording": true,
     "live28k18_pending_iphone_validation": false,

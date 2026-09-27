@@ -22,7 +22,9 @@
   .pv30b-crystal{position:absolute;z-index:5;left:50%;top:1.6%;width:clamp(20px,2.6vw,38px);aspect-ratio:.7;transform:translateX(-50%) rotate(45deg);border:1px solid #f4d88899;background:linear-gradient(145deg,#92ecff88,#845cff66 48%,#f0c66d88);box-shadow:0 0 14px #74e9ff,0 0 32px #825cff77,0 0 52px #d9b86944;pointer-events:none;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
   .pv30b-crystal:after{content:"";position:absolute;inset:22%;border:1px solid #fff9;box-shadow:0 0 10px #fff7}
 
-  .pv30b-title{position:absolute;z-index:18;left:2.3vw;top:2.1vh;pointer-events:auto;text-shadow:0 2px 10px #000c}
+  /* The map is the Overworld identity surface; the full masthead belongs to
+     the splash screen and only competes with the map when repeated here. */
+  .pv30b-title{display:none!important}
   .pv30b-title a{color:#efd395;text-decoration:none;display:block;font:500 clamp(25px,3.7vw,58px)/.92 Georgia,serif;letter-spacing:.018em}
   .pv30b-title small{display:none!important}
   .pv30b-title small:before{content:"";display:inline-block;width:22px;height:1px;margin:0 8px 2px 0;background:#d4b66e88}
@@ -87,10 +89,9 @@
     map.append(arch,crystal);
   }
   const shell=document.querySelector('.shell');
-  if(shell&&!document.querySelector('.pv30b-title')){
-    const title=document.createElement('div');title.className='pv30b-title';title.innerHTML='<a href="./index.html">PRISMATIC VEIL</a>';
+  if(shell&&!document.querySelector('.pv30b-location')){
     const loc=document.createElement('div');loc.className='pv30b-location';loc.innerHTML='<b>Current Location</b><span>Home</span>';
-    shell.append(title,loc);
+    shell.append(loc);
   }
 
   function syncLocation(){

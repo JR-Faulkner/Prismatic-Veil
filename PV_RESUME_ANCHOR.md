@@ -361,3 +361,10 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 - The result layer reads the persisted progression ledger when a legacy or incomplete encounter snapshot is missing payout fields, so a completed clear does not display `+0 XP` merely because an older snapshot omitted the payout.
 - Payout authority remains `PVProgression` / `Live29FEncounterBattleScene`; no reward balance or battle timing changed.
 - Pages/device validation remains pending on the normal MAIN route.
+
+## LIVE30K8 Hushling center and Overworld masthead cleanup (2026-09-27)
+
+- The Whispering Grove single Hushling remains the location-authoritative enemy and now uses `src/prizim/Live30E4HushlingView.js` to stay centered with a raised landscape baseline. Its full silhouette clears the fixed party strip; the target card, HP, weakness, damage, and encounter flow are unchanged.
+- The Overworld map no longer injects the redundant top-left `PRISMATIC VEIL` masthead. Current Location, Destination Intel, stage selection, board-piece travel, and route semantics remain intact.
+- Cache-busts were advanced through the Hybrid battle adapter and Overworld 30B layer so nested module/style changes are fetched on Pages.
+- Local battle and Overworld smoke checks passed. Normal MAIN iPhone/iPad/Xbox Edge validation remains the final runtime gate.
