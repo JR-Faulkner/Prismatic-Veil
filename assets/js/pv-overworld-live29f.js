@@ -4,6 +4,8 @@
   const CLEAR_KEY=`pv.locationClear.${LOCATION}`;
   const RESULT_KEY='pv.encounterResult';
   const PENDING_KEY='pv.pendingEncounter';
+  const CURRENT_KEY='pv.currentLocation';
+  const LAST_KEY='pv.lastLocation';
 
   const style=document.createElement('style');
   style.id='pv-live29f-overworld';
@@ -13,6 +15,7 @@
     .pv-encounter-curtain{position:fixed;inset:0;z-index:9998;display:grid;place-items:center;background:radial-gradient(circle at 50% 48%,#263469dd,#070916f7 64%);opacity:0;transition:opacity .22s ease;pointer-events:none}
     .pv-encounter-curtain.show{opacity:1;pointer-events:auto}
     .pv-encounter-curtain.confirmed{opacity:0;pointer-events:none}
+    body.pv-encounter-launching .map-wrap .pv30-node,body.pv-encounter-launching #travelButton,body.pv-encounter-launching #clearButton{pointer-events:none!important}
     .pv-encounter-card{min-width:min(560px,78vw);padding:18px 24px 20px;border:1px solid #e1c46f99;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);background:radial-gradient(circle at 50% 0,#745cff3d,transparent 42%),linear-gradient(150deg,#101d3cf2,#080c1df5);text-align:center;box-shadow:0 18px 50px #000c,0 0 35px #805dff33;animation:pv29fCardIn .3s ease-out both}
     .pv-encounter-curtain.confirmed .pv-encounter-card{transform:scale(1.03);opacity:.72;transition:transform .18s ease,opacity .18s ease}
     @keyframes pv29fCardIn{from{transform:translateY(8px) scale(.97);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
@@ -25,6 +28,7 @@
   document.head.appendChild(style);
 
   const safeParse=raw=>{try{return raw?JSON.parse(raw):null}catch(_){return null}};
+  let encounterLaunching=false;
   const isCleared=()=>localStorage.getItem(CLEAR_KEY)==='1';
   const encounterNode=()=>document.querySelector('.hotspot[data-location="whisper"]');
 
@@ -135,9 +139,9 @@
     el.innerHTML=`<div class="pv-encounter-card" role="dialog" aria-modal="true" aria-labelledby="pvEncounterTitle"><b id="pvEncounterTitle">WHISPERING GROVE</b><span>${mode==='first-clear'?'First Encounter':'Resonance Rematch'}</span><div class="pv-encounter-threats"><div class="pv-encounter-threat"><i></i><span><strong>Veil Wraith</strong><small>Primary threat</small></span></div><div class="pv-encounter-threat"><i></i><span><strong>Hushling</strong><small>Support threat</small></span></div></div><button class="pv-encounter-cta" type="button">Begin Encounter</button><small class="pv-encounter-hint">Tap, press Enter, or press A to enter</small></div>`;
     document.body.appendChild(el);
     const cta=el.querySelector('.pv-encounter-cta');let confirmed=false;
-    const confirm=()=>{if(confirmed)return;confirmed=true;cta.disabled=true;cta.textContent='Opening Encounter…';el.classList.add('confirmed');document.removeEventListener('keydown',onKey,true);setTimeout(()=>{el.remove();onConfirm?.()},190)};
-    const onKey=e=>{if(!el.isConnected)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();confirm()}};
-    cta.addEventListener('click',confirm);document.addEventListener('keydown',onKey,true);
+    const confirm=()=>{if(confirmed)return;confirmed=true;cta.disabled=true;cta.textContent='Opening Encounter…';el.classList.add('confirmed');window.removeEventListener('keydown',onKey,true);setTimeout(()=>{el.remove();onConfirm?.()},190)};
+    const onKey=e=>{if(!el.isConnected)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopImmediatePropagation();confirm()}};
+    cta.addEventListener('click',confirm);window.addEventListener('keydown',onKey,true);
     requestAnimationFrame(()=>{el.classList.add('show');cta.focus()});return {el,confirm};
   }
   function rewardLine(result){
@@ -167,17 +171,44 @@
   }
 
   async function enterEncounter(){
+    if(encounterLaunching)return;
+    encounterLaunching=true;
+    document.body.classList.add('pv-encounter-launching');
+    document.documentElement.dataset.pvEncounterLaunch='travel';
     const mode=isCleared()?'revisit':'first-clear';
-    try{localStorage.setItem(PENDING_KEY,JSON.stringify({locationId:LOCATION,mode,enteredAt:Date.now()}))}catch(_){}
-    await runTravelPiece();
+    const from=window.PV_OVERWORLD30A?.current||localStorage.getItem(CURRENT_KEY)||'home';
+    const enteredAt=Date.now();
+    try{
+      localStorage.setItem(LAST_KEY,from);
+      localStorage.setItem(PENDING_KEY,JSON.stringify({locationId:LOCATION,mode,enteredAt,from}));
+    }catch(_){}
+    try{
+      await runTravelPiece();
+    }catch(err){
+      // Travel presentation must never become a routing gate. If a TV/browser
+      // drops an animation/audio callback, continue into the encounter.
+      console.warn('[PV] Whispering Grove travel presentation skipped',err);
+    }
+    // Commit the party to the Grove before opening confirmation. Victory stays
+    // here; defeat can still use LAST_KEY to retreat to the true origin.
+    try{localStorage.setItem(CURRENT_KEY,LOCATION)}catch(_){}
+    window.PV_OVERWORLD30A?.setCurrent?.(LOCATION);
     let entry='./hybrid-main.html';
     try{
       const r=await fetch(`./live-build.json?ts=${Date.now()}`,{cache:'no-store'});
       if(r.ok){const build=await r.json();if(build.hybrid)entry=`./${build.hybrid}`}
     }catch(_){}
     const q=new URLSearchParams({pvloc:LOCATION,pvencounter:mode});
-    curtain(mode,()=>{location.href=`${entry}?${q.toString()}`});
+    document.documentElement.dataset.pvEncounterLaunch='confirm';
+    curtain(mode,()=>{location.assign(`${entry}?${q.toString()}`)});
   }
+
+  document.addEventListener('click',e=>{
+    if(!encounterLaunching||e.target.closest?.('.pv-encounter-cta'))return;
+    if(e.target.closest?.('.pv30-node[data-location],#travelButton,#clearButton,.tab')){
+      e.preventDefault();e.stopImmediatePropagation();
+    }
+  },true);
 
   document.addEventListener('click',e=>{
     if(e.target.closest?.('.hotspot[data-location="whisper"],.pv30-node[data-location="whisper"]'))setTimeout(()=>{patchVisibleMap();showWhisperPanel();syncClearMarker();patchEncounterPanel()},0);

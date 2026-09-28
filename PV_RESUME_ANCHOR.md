@@ -1,5 +1,12 @@
 # The Prismatic Veil — Resume Anchor
 
+## LIVE31D TV encounter stability (2026-09-28)
+
+- TV/browser witness exposed two separate first-encounter defects: the Whispering Grove handoff could race map/controller input and leave the party positioned at Echo Castle instead of entering battle, and the single Hushling was forced to geometric screen center where it overlapped Kineza's foreground lane.
+- Whispering Grove launch is now atomic: once travel begins, map/controller click targets are locked; travel animation/audio is presentation-only and cannot block routing; `pv.lastLocation` preserves the true origin; `pv.currentLocation` commits to `whisper` before the confirmation card; Enter/Space confirmation captures at window level so map handlers cannot also consume it.
+- `Live30E4HushlingView` moves the single Hushling to the enemy-side lane on landscape, with a higher TV-safe baseline. K27 party formation, enemy identity/stats, combat logic, progression, and Resonart lanes are unchanged.
+- Pending gates: branch encounter guard + canonical PriZim preflight + Pages, then real TV/iPhone witness.
+
 Last refreshed: 2026-09-28
 
 ## LIVE31B Prismel growth polish (2026-09-28)
