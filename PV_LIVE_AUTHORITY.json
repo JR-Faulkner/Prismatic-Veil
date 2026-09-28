@@ -61,7 +61,7 @@
     "stage_selection_visual": "High-contrast selected-stage beacon, map label, controller-focus ring, and Destination Intel active state.",
     "stage_selection_policy": "Committed selection uses the gold/cyan beacon and SELECTED STAGE treatment; keyboard/controller focus uses the cyan LOOKING AT treatment without changing route or unlock semantics.",
     "encounter_entry_card_runtime": "assets/js/pv-overworld-live29f.js",
-    "encounter_entry_card_policy": "Whispering Grove shows a persistent pre-battle card with threat context and BEGIN ENCOUNTER confirmation; it never auto-advances on a short timer.",
+    "encounter_entry_card_policy": "Whispering Grove shows a persistent pre-battle card with threat context and BEGIN ENCOUNTER confirmation. Once encounter launch starts, map/controller input is locked, travel presentation is non-blocking, the Grove becomes current before confirmation, and LAST_KEY preserves the true retreat origin.",
     "overworld_masthead_runtime": "assets/js/pv-overworld-live30b.js",
     "overworld_masthead_policy": "The Overworld map keeps the Current Location and destination panels but omits the redundant top-left PRISMATIC VEIL masthead; branding remains on the splash/title surfaces."
   },
@@ -73,11 +73,11 @@
   },
   "first_encounter": {
     "enemy": "Hushling",
-    "single_enemy_layout": "center-screen",
+    "single_enemy_layout": "enemy-side lane on landscape; never geometric-center overlap with the front bearer",
     "multi_enemy_layout": "Reserved for a future formation controller; no stagger is applied to one enemy.",
-    "single_enemy_party_lane": "Left-side bearer lane (Prismel 0.12, Auryi 0.25, Kineza 0.38) while the single Hushling remains centered; multi-enemy spacing is reserved.",
+    "single_enemy_party_lane": "Preserve the locked K27 party formation. The single Hushling must remain visibly separated to the enemy side rather than sharing Kineza's foreground lane.",
     "single_enemy_runtime": "src/prizim/Live30E4HushlingView.js",
-    "single_enemy_view_policy": "The single Hushling uses a centered x anchor and a raised landscape baseline so its full silhouette remains above the fixed party status strip; target card, enemy identity, and multi-enemy spacing remain unchanged."
+    "single_enemy_view_policy": "The single Hushling uses a responsive enemy-side x anchor and raised landscape baseline so its full silhouette stays clear of Kineza and the fixed party status strip. Large landscape/TV target is ~0.72w,0.71h; smaller landscape target is ~0.70w,0.73h. Portrait behavior remains inherited."
   },
   "hard_gates": {
     "production_battle_must_use_hybrid_stack": true,
