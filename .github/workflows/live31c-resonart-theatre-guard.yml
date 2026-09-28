@@ -1,0 +1,63 @@
+name: LIVE31C Resonart Theatre Guard
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'resonart-theatre.html'
+      - '.github/workflows/live31c-resonart-theatre-guard.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'resonart-theatre.html'
+      - '.github/workflows/live31c-resonart-theatre-guard.yml'
+
+jobs:
+  theatre-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Resonart Theatre contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          errors=[]
+          index=Path('index.html').read_text(encoding='utf-8')
+          theatre=Path('resonart-theatre.html').read_text(encoding='utf-8')
+          masters=[
+            'assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4',
+            'assets/characters/kineza/animations/thunder_tornado/cinematic/Kineza_ThunderTornado_Resonart_MASTER.mp4',
+            'assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4',
+          ]
+          if 'href="./resonart-theatre.html"' not in index or 'RESONART THEATRE' not in index:
+              errors.append('main-menu Resonart Theatre entry missing')
+          for path in masters:
+              p=Path(path)
+              if not p.is_file() or p.stat().st_size < 1000000:
+                  errors.append(f'production master missing or undersized: {path}')
+              if f'./{path}' not in theatre:
+                  errors.append(f'theatre is not wired to production master: {path}')
+          for token in ['pvResonartTheatre','THEATRE MODE','Save Unchanged','playsinline','RESONART THEATRE']:
+              if token not in theatre:
+                  errors.append(f'theatre contract token missing: {token}')
+          for forbidden in ['localStorage.setItem','PVSaveState.initializeNewRun','PVProgression.award','level >= 2','level>=2']:
+              if forbidden in theatre:
+                  errors.append(f'theatre must remain progression-neutral: {forbidden}')
+          if errors:
+              print('LIVE31C RESONART THEATRE GUARD FAILED')
+              for err in errors: print(' -',err)
+              raise SystemExit(1)
+          print('LIVE31C RESONART THEATRE CONTRACT PASS')
+          PY
+      - name: Run canonical PriZim LIVE28K preflight
+        run: python tools/prizim/preflight_live28k.py
+      - name: Record result
+        if: success()
+        run: |
+          echo '## LIVE31C Resonart Theatre Guard ✅' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Main-menu theatre entry, all three production Resonart masters, progression neutrality, and canonical LIVE28K authority are intact.' >> "$GITHUB_STEP_SUMMARY"
