@@ -139,9 +139,9 @@
     el.innerHTML=`<div class="pv-encounter-card" role="dialog" aria-modal="true" aria-labelledby="pvEncounterTitle"><b id="pvEncounterTitle">WHISPERING GROVE</b><span>${mode==='first-clear'?'First Encounter':'Resonance Rematch'}</span><div class="pv-encounter-threats"><div class="pv-encounter-threat"><i></i><span><strong>Veil Wraith</strong><small>Primary threat</small></span></div><div class="pv-encounter-threat"><i></i><span><strong>Hushling</strong><small>Support threat</small></span></div></div><button class="pv-encounter-cta" type="button">Begin Encounter</button><small class="pv-encounter-hint">Tap, press Enter, or press A to enter</small></div>`;
     document.body.appendChild(el);
     const cta=el.querySelector('.pv-encounter-cta');let confirmed=false;
-    const confirm=()=>{if(confirmed)return;confirmed=true;cta.disabled=true;cta.textContent='Opening Encounter…';el.classList.add('confirmed');document.removeEventListener('keydown',onKey,true);setTimeout(()=>{el.remove();onConfirm?.()},190)};
-    const onKey=e=>{if(!el.isConnected)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();confirm()}};
-    cta.addEventListener('click',confirm);document.addEventListener('keydown',onKey,true);
+    const confirm=()=>{if(confirmed)return;confirmed=true;cta.disabled=true;cta.textContent='Opening Encounter…';el.classList.add('confirmed');window.removeEventListener('keydown',onKey,true);setTimeout(()=>{el.remove();onConfirm?.()},190)};
+    const onKey=e=>{if(!el.isConnected)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopImmediatePropagation();confirm()}};
+    cta.addEventListener('click',confirm);window.addEventListener('keydown',onKey,true);
     requestAnimationFrame(()=>{el.classList.add('show');cta.focus()});return {el,confirm};
   }
   function rewardLine(result){
