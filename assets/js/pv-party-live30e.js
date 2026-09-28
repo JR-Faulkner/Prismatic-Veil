@@ -13,7 +13,7 @@
 
   let progression=null;
   let lastSig='';
-  const moduleUrl=new URL('./src/progression/PVProgression.js?v=live30e2',document.baseURI).href;
+  const moduleUrl=new URL('./src/progression/PVProgression.js?v=live31a1',document.baseURI).href;
   const currentId=()=>document.querySelector('.slot.selected')?.dataset.character||localStorage.getItem('pv.partySelected')||'prismel';
 
   async function authority(){
@@ -49,14 +49,23 @@
       const id=currentId(),hero=state.heroes?.[id]||{xp:0,level:null},inv=state.inventory||{};
       const level=hero.level||api.levelForXp(hero.xp||0);
       const nextXp=api.nextLevelXp(level);
-      const sig=[id,hero.xp,hero.level,inv.veilShard,inv.memoryFragment,state.tuningRevision].join('|');
+      const sig=[id,hero.xp,hero.level,hero.focusPoints,hero.skillPoints,JSON.stringify(hero.stats),JSON.stringify(hero.unlockedNodes),inv.veilShard,inv.memoryFragment,state.tuningRevision].join('|');
+      document.documentElement.dataset.pvPartyProgression='LIVE31A';
+      const hpByHero={prismel:100,auryi:100,kineza:115,sarallel:100,vyan:100};
+      const levelValue=document.getElementById('levelValue'),hpValue=document.getElementById('hpValue'),resourceValue=document.getElementById('resourceValue');
+      if(levelValue)levelValue.textContent=level;
+      if(hpValue)hpValue.textContent=hpByHero[id]||100;
+      if(resourceValue)resourceValue.textContent='100 RP';
+      const statCells=[...document.querySelectorAll('#coreGrid .core')];
+      statCells.forEach((cell,index)=>{const stat=api.STAT_KEYS?.[index],value=cell.querySelector('span');if(!stat||!value)return;value.textContent=hero.stats?.[stat]??'—';value.className='pv-live-stat'});
+      const kicker=document.querySelector('.core-wrap .section-kicker');if(kicker)kicker.innerHTML='<span>Core Stats</span><small style="float:right;color:#7fe8ff;font-size:6px;letter-spacing:.1em">FOCUS '+Number(hero.focusPoints||0)+' · SKILL '+Number(hero.skillPoints||0)+'</small>';
       const strip=ensureStrip();
       if(strip&&sig!==lastSig){
         lastSig=sig;
         strip.innerHTML=`<div class="xp"><b>XP Banked</b><strong>${Number(hero.xp||0).toLocaleString()} XP</strong></div><div class="curve">LEVEL ${level}<br><small>${Number(nextXp||0).toLocaleString()} XP NEXT</small></div><div class="pv30e-loot"><b>Party Finds</b><span>SHARD <i>×${Number(inv.veilShard||0)}</i></span><span>MEMORY <i>×${Number(inv.memoryFragment||0)}</i></span></div>`;
       }
       decorateGrowthModal(state,id);
-      document.documentElement.dataset.pvPartyProgression='LIVE30E';
+      document.documentElement.dataset.pvPartyProgression='LIVE31A';
     }catch(err){console.warn('[PV] Party progression readout unavailable',err)}
   }
 

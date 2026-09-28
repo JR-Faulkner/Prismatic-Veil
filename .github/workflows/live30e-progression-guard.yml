@@ -7,7 +7,12 @@ on:
       - 'src/prizim/Live29FEncounterBattleScene.js'
       - 'assets/js/pv-overworld-live29f.js'
       - 'assets/js/pv-party-live30e.js'
+      - 'assets/js/pv-party-live29e.js'
       - 'hybrid-party-live.html'
+      - 'hybrid-battle-live.html'
+      - 'hybrid-level-up.html'
+      - 'hybrid-growth.html'
+      - 'assets/ui/progression/v1/**'
       - '.github/workflows/live30e-progression-guard.yml'
   push:
     branches: [main]
@@ -16,7 +21,12 @@ on:
       - 'src/prizim/Live29FEncounterBattleScene.js'
       - 'assets/js/pv-overworld-live29f.js'
       - 'assets/js/pv-party-live30e.js'
+      - 'assets/js/pv-party-live29e.js'
       - 'hybrid-party-live.html'
+      - 'hybrid-battle-live.html'
+      - 'hybrid-level-up.html'
+      - 'hybrid-growth.html'
+      - 'assets/ui/progression/v1/**'
       - '.github/workflows/live30e-progression-guard.yml'
 
 jobs:
@@ -30,6 +40,7 @@ jobs:
           set -euo pipefail
           node --check assets/js/pv-overworld-live29f.js
           node --check assets/js/pv-party-live30e.js
+          node --check assets/js/pv-party-live29e.js
           node --input-type=module --check < src/progression/PVProgression.js
           node --input-type=module --check < src/prizim/Live29FEncounterBattleScene.js
       - name: Exercise progression persistence and duplicate guard
@@ -44,7 +55,19 @@ jobs:
           const first=p.applyEncounterReward('echo',{firstClear:true,encounterId:'echo:test:first'},storage);
           if(!first.awarded||!first.firstClear||first.xpEach!==100)throw new Error('first-clear XP payout drift');
           let s=p.loadProgression(storage);
-          for(const id of p.CORE_BATTLE_BEARERS)if(s.heroes[id].xp!==100||s.heroes[id].level!==2)throw new Error(`first-clear level unlock missing for ${id}`);
+          for(const id of p.CORE_BATTLE_BEARERS){
+            const h=s.heroes[id];
+            if(h.xp!==100||h.level!==2)throw new Error(`first-clear level unlock missing for ${id}`);
+            if(h.focusPoints!==1||h.skillPoints!==1)throw new Error(`growth points missing for ${id}`);
+          }
+          const prismel=s.heroes.prismel;
+          const expected={Might:12,Mind:16,Spirit:15,Agility:13,Resilience:14,Harmony:12};
+          for(const [stat,value] of Object.entries(expected))if(prismel.stats[stat]!==value)throw new Error(`Prismel natural growth drift: ${stat}`);
+          if(!p.allocateFocus('prismel','Might',storage).ok)throw new Error('Focus allocation failed');
+          if(!p.unlockSkillNode('prismel','prism_focus',storage).ok)throw new Error('Skill unlock failed');
+          s=p.loadProgression(storage);
+          if(s.heroes.prismel.stats.Might!==13||s.heroes.prismel.focusPoints!==0)throw new Error('Focus persistence failed');
+          if(!s.heroes.prismel.unlockedNodes.includes('prism_focus')||s.heroes.prismel.skillPoints!==0)throw new Error('Skill persistence failed');
           if(s.inventory.veilShard!==1||s.inventory.memoryFragment!==1)throw new Error('first-clear item payout drift');
           const duplicate=p.applyEncounterReward('echo',{firstClear:true,encounterId:'echo:test:first'},storage);
           if(!duplicate.duplicate||duplicate.awarded)throw new Error('duplicate claim guard failed');
@@ -74,6 +97,9 @@ jobs:
           progression=read('src/progression/PVProgression.js')
           party=read('hybrid-party-live.html')
           party_ui=read('assets/js/pv-party-live30e.js')
+          battle=read('hybrid-battle-live.html')
+          level_up=read('hybrid-level-up.html')
+          growth=read('hybrid-growth.html')
           overworld=read('assets/js/pv-overworld-live29f.js')
           hybrid=read('hybrid-main.html')
           build=json.loads(read('live-build.json'))
@@ -82,9 +108,18 @@ jobs:
           if "applyEncounterReward" not in bridge or "payout" not in bridge: errors.append('LIVE30E payout bridge missing')
           if "PROGRESSION_STORAGE_KEY = 'pv.progression.v1'" not in progression: errors.append('progression storage authority drift')
           if "levelCurveLocked: false" not in progression: errors.append('unlocked level-curve contract drift')
+          for token in ['PROGRESSION_SCHEMA = 2','allocateFocus','unlockSkillNode','NATURAL_GROWTH']:
+              if token not in progression: errors.append(f'LIVE31A progression contract missing: {token}')
           if "firstClearClaimed !== true" not in progression: errors.append('one-time first-clear ledger guard missing')
           if "pv-party-live30e.js" not in party: errors.append('Party progression UI not loaded')
           if "pv.progression.v1" not in party_ui: errors.append('Party progression refresh key missing')
+          if 'hybrid-growth.html?view=atlas' not in party: errors.append('Party Growth route missing')
+          if 'hybrid-level-up.html?source=victory' not in battle: errors.append('Victory level-up handoff missing')
+          if 'resonance-ascension.png' not in level_up: errors.append('approved Ascension art not live')
+          for token in ['prismodial-growth-map.png','spectrum-atlas.png','unlockSkillNode','allocateFocus']:
+              if token not in growth: errors.append(f'Growth screen contract missing: {token}')
+          for path in ['assets/ui/progression/v1/resonance-ascension.png','assets/ui/progression/v1/prismodial-growth-map.png','assets/ui/progression/v1/spectrum-atlas.png']:
+              if not Path(path).is_file() or Path(path).stat().st_size < 1000000: errors.append(f'approved progression art missing: {path}')
           if 'NO REWARDS AWARDED' not in overworld: errors.append('defeat reward presentation missing')
           for token in ['Live28K27BattleGuardScene.js','Live29FEncounterBattleScene.js','Live28K7PartyFormationView.js']:
               if token not in hybrid: errors.append(f'Hybrid battle authority missing: {token}')

@@ -1,6 +1,14 @@
 # PriZim Live Notepad
 
 Last refreshed: 2026-09-27
+
+## LIVE31A Resonance growth interface (2026-09-27)
+
+- The three approved progression mocks are now production assets rather than visual references: Resonance Ascension, the Prismodial Grimoire growth map, and the Spectrum Atlas. Their full PNG compositions remain the visible screen foundation while live values and controls layer over them.
+- Whispering Grove's first clear now reaches the real `hybrid-level-up.html` handoff. Natural stat gains, one Focus Point per level, and one Skill Point on even levels persist through schema 2 of the existing `pv.progression.v1` save.
+- `hybrid-growth.html` provides the Grimoire and Atlas views with hero switching, stat allocation, prerequisite-aware skill nodes, touch/keyboard/Xbox navigation, and explicit confirmation. The live Party Growth command opens the Atlas.
+- Existing XP, encounter claims, inventory, clear history, save key, K27 Hybrid battle authority, and approved Victory composition remain intact. Pages and normal MAIN device validation remain the final user-facing gate.
+
 Current promoted build: `main-20260909-live28k27` — **Hybrid production authority; iPhone evidence remains final runtime gate.**
 
 ## LIVE30K6 encounter-entry confirmation (2026-09-27)

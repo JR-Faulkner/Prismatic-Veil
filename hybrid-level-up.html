@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#050914">
+<title>The Prismatic Veil · Resonance Ascension</title>
+<style>
+:root{--gold:#f0cf78;--cyan:#8bf3ff;--navy:#061126;--violet:#8958ff}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:#030610;color:#f8edcd;font-family:Georgia,serif;touch-action:manipulation}
+body{display:grid;place-items:center}.stage{position:relative;width:min(100vw,calc(100dvh * 16 / 9));height:min(100dvh,calc(100vw * 9 / 16));overflow:hidden;background:#071126;container-type:size;box-shadow:0 0 60px #000}
+.art{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;user-select:none;-webkit-user-drag:none}
+.live-head{position:absolute;left:2.5%;top:2.8%;width:19%;height:10.5%;display:grid;grid-template-columns:1fr auto;gap:2%;align-items:center;padding:1.1cqh 1.2cqw;background:linear-gradient(135deg,#061027f4,#11163cf0);border:1px solid #e2c576;box-shadow:0 0 20px #45d9ff34,inset 0 0 0 1px #fff2a61d}
+.live-head strong{font-size:2.2cqw;letter-spacing:.06em}.live-head span{display:block;color:var(--cyan);font:800 .72cqw system-ui;letter-spacing:.16em}.live-head b{font:900 1.25cqw system-ui;padding:.6cqh .7cqw;border:1px solid #8bcfff80;background:#172253}
+.points{position:absolute;right:1.7%;top:2.8%;width:18.5%;min-height:11%;padding:1.4cqh 1.2cqw;background:linear-gradient(145deg,#061126f6,#10163af2);border:1px solid #e2c576;display:grid;gap:.65cqh;box-shadow:0 0 18px #0009}
+.point{display:flex;justify-content:space-between;align-items:center;color:#e9eefc;font:800 .8cqw system-ui;letter-spacing:.12em}.point strong{font:900 1.5cqw Georgia;color:var(--gold)}
+.statbar{position:absolute;left:2.4%;right:2.4%;bottom:9.2%;height:10.2%;display:grid;grid-template-columns:repeat(6,1fr);gap:.55cqw;padding:.8cqh .7cqw;background:#041026f2;border:1px solid #d9bb6e;box-shadow:0 -5px 20px #0009}
+.stat{min-width:0;border:1px solid #95b8e03d;background:linear-gradient(145deg,#0b1734e8,#071126e8);color:#edf4ff;text-align:left;padding:.65cqh .75cqw;cursor:pointer}.stat small{display:block;color:#c6d3e8;font:800 .58cqw system-ui;letter-spacing:.12em;white-space:nowrap}.stat strong{display:block;margin-top:.2cqh;color:#fff3c4;font-size:1.25cqw}.stat em{float:right;color:#7dffcb;font:900 .68cqw system-ui;font-style:normal}.stat.selected,.stat:focus-visible,.stat.navfocus{outline:none;border-color:#fff0a5;box-shadow:0 0 0 2px #59dfff,0 0 18px #8d4dffaa;transform:translateY(-2px)}
+.message{position:absolute;left:26%;bottom:20.2%;width:48%;min-height:4.8%;display:grid;place-items:center;padding:.5cqh 1cqw;background:#041026d9;border:1px solid #d9bb6e;color:#dff8ff;font:800 .68cqw system-ui;letter-spacing:.08em;text-align:center}
+.actions{position:absolute;left:24%;right:24%;bottom:1.2%;height:6.3%;display:grid;grid-template-columns:1.15fr 1.55fr 1fr;gap:.8cqw}.actions button,.actions a{display:grid;place-items:center;border:1px solid #ddc173;background:linear-gradient(180deg,#162449f5,#071126f6);color:#fff0c7;text-decoration:none;font:800 .82cqw system-ui;letter-spacing:.09em;cursor:pointer}.actions .primary{background:linear-gradient(180deg,#bc813df2,#5f3319f5);box-shadow:0 0 18px #ffb84a77}.actions button:focus-visible,.actions a:focus-visible,.actions .navfocus{outline:none;box-shadow:0 0 0 2px #75edff,0 0 20px #8d4dff}.actions button:disabled{opacity:.42}
+.rotate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#030610;color:#f6dfa1;font:900 16px system-ui;letter-spacing:.12em}.rotate[hidden]{display:none}
+@media(max-height:420px){.live-head strong{font-size:2cqw}.message{font-size:.62cqw}}
+</style>
+</head>
+<body>
+<main class="stage" aria-label="Resonance Ascension">
+  <img class="art" src="./assets/ui/progression/v1/resonance-ascension.png?pvasset=live31a1" alt="Resonance Ascension">
+  <section class="live-head"><div><strong>PRISMEL</strong><span>PRISM WEAVER</span></div><b id="level">LV 1</b></section>
+  <section class="points"><div class="point"><span>FOCUS POINT</span><strong id="focusPoints">0</strong></div><div class="point"><span>SKILL POINT</span><strong id="skillPoints">0</strong></div></section>
+  <div class="message" id="message">Natural growth has settled. Choose a stat to preview a Focus Point.</div>
+  <section class="statbar" id="statbar"></section>
+  <nav class="actions">
+    <button id="confirm" class="primary" disabled>CONFIRM +1</button>
+    <a id="growthMap" href="./hybrid-growth.html?view=book&source=levelup&hero=prismel">OPEN GROWTH MAP</a>
+    <a id="continue" href="./hybrid-overworld.html?pvreturn=whisper&pvresult=victory">CONTINUE</a>
+  </nav>
+</main>
+<div id="rotate" class="rotate" hidden>ROTATE TO LANDSCAPE</div>
+<script type="module">
+import { STAT_KEYS, allocateFocus, loadProgression, naturalGainsForLevel } from './src/progression/PVProgression.js?v=live31a1';
+const params=new URLSearchParams(location.search),heroId='prismel',returnLocation=params.get('return')||'whisper';
+const level=document.getElementById('level'),focusPoints=document.getElementById('focusPoints'),skillPoints=document.getElementById('skillPoints'),statbar=document.getElementById('statbar'),message=document.getElementById('message'),confirm=document.getElementById('confirm'),growthMap=document.getElementById('growthMap'),continueLink=document.getElementById('continue');
+let selected=null,state=null;
+growthMap.href=`./hybrid-growth.html?view=book&source=levelup&hero=${heroId}&return=${encodeURIComponent(returnLocation)}`;
+continueLink.href=`./hybrid-overworld.html?pvreturn=${encodeURIComponent(returnLocation)}&pvresult=victory`;
+function render(){state=loadProgression();const hero=state.heroes[heroId],heroLevel=hero.level||1,gains=naturalGainsForLevel(heroId,heroLevel);level.textContent=`LV ${heroLevel}`;focusPoints.textContent=hero.focusPoints;skillPoints.textContent=hero.skillPoints;statbar.innerHTML=STAT_KEYS.map(stat=>{const natural=gains.filter(x=>x===stat).length;return `<button class="stat${selected===stat?' selected':''}" data-stat="${stat}"><small>${stat.toUpperCase()}</small><strong>${hero.stats[stat]}${natural?`<em>+${natural}▲</em>`:''}</strong></button>`}).join('');confirm.disabled=!selected||hero.focusPoints<1;message.textContent=hero.focusPoints<1?'All available Focus Points are currently assigned. Open the Growth Map to review skills.':selected?`${selected} will increase from ${hero.stats[selected]} to ${hero.stats[selected]+1}. Confirm to spend one Focus Point.`:`Natural growth: ${gains.join(' • ')||'settled'}. Choose a stat to preview your Focus Point.`;bind()}
+function bind(){statbar.querySelectorAll('[data-stat]').forEach(button=>button.onclick=()=>{selected=button.dataset.stat;render()})}
+confirm.onclick=()=>{if(!selected)return;const result=allocateFocus(heroId,selected);message.textContent=result.ok?`${selected} increased. Prismel’s growth has been recorded.`:'No Focus Point is available.';selected=null;render()};
+function targets(){return[...document.querySelectorAll('.stat,.actions button,.actions a')].filter(el=>!el.disabled)}let navIndex=0,lastButtons=[],stamp=0;function focusAt(index){const list=targets();document.querySelectorAll('.navfocus').forEach(el=>el.classList.remove('navfocus'));if(!list.length)return;navIndex=(index+list.length)%list.length;list[navIndex].classList.add('navfocus');list[navIndex].focus({preventScroll:true})}function move(delta){focusAt(navIndex+delta)}function activate(){targets()[navIndex]?.click()}
+addEventListener('keydown',event=>{if(['ArrowLeft','ArrowUp','ArrowRight','ArrowDown','Enter',' '].includes(event.key))event.preventDefault();if(event.key==='ArrowLeft'||event.key==='ArrowUp')move(-1);else if(event.key==='ArrowRight'||event.key==='ArrowDown')move(1);else if(event.key==='Enter'||event.key===' ')activate()});
+function gamepad(){const pad=navigator.getGamepads?.()[0];if(pad){const now=performance.now(),edge=i=>!!pad.buttons[i]?.pressed&&!lastButtons[i],left=edge(14)||(pad.axes[0]||0)<-.62||(pad.axes[1]||0)<-.62,right=edge(15)||(pad.axes[0]||0)>.62||(pad.axes[1]||0)>.62;if(now-stamp>175){if(left){move(-1);stamp=now}else if(right){move(1);stamp=now}else if(edge(0)){activate();stamp=now}else if(edge(1)){continueLink.click();stamp=now}}lastButtons=pad.buttons.map(button=>button.pressed)}requestAnimationFrame(gamepad)}gamepad();
+const orient=()=>rotate.hidden=innerWidth>=innerHeight;orient();addEventListener('resize',orient);render();
+</script>
+</body>
+</html>

@@ -60,7 +60,7 @@
     const sig=[id,slot,leader?1:0,affinity(),title()].join('|');
     const firstMini=document.querySelector('.mini-stat b');
     const firstCore=document.querySelector('#coreGrid .core span');
-    const alreadyEnhanced=firstMini?.textContent==='Formation'&&!!firstCore&&(firstCore.classList.contains('pv-growth-stars')||firstCore.classList.contains('pv-growth-pending'));
+    const alreadyEnhanced=firstMini?.textContent==='Formation'&&!!firstCore&&(firstCore.classList.contains('pv-growth-stars')||firstCore.classList.contains('pv-growth-pending')||firstCore.classList.contains('pv-live-stat'));
     if(sig===lastDataSig&&alreadyEnhanced)return;
     lastDataSig=sig;
     const mini=[...document.querySelectorAll('.mini-stat')];
@@ -71,7 +71,7 @@
     const kicker=coreWrap?.querySelector('.section-kicker');
     if(kicker){kicker.innerHTML='<span>Natural Growth</span><small style="float:right;color:#7488a7;font-size:6px;letter-spacing:.1em">CURRENT STATS PENDING LOCK</small>'}
     const cores=[...document.querySelectorAll('#coreGrid .core')];
-    cores.forEach((cell,i)=>{const stat=ORDER[i],v=cell.querySelector('span');if(!v)return;if(g){v.textContent=stars(g[stat]);v.className='pv-growth-stars'}else{v.textContent='PENDING';v.className='pv-growth-pending'}});
+    if(document.documentElement.dataset.pvPartyProgression!=='LIVE31A')cores.forEach((cell,i)=>{const stat=ORDER[i],v=cell.querySelector('span');if(!v)return;if(g){v.textContent=stars(g[stat]);v.className='pv-growth-stars'}else{v.textContent='PENDING';v.className='pv-growth-pending'}});
     const ct=document.getElementById('contextTitle'),cb=document.getElementById('contextBody');
     if(ct&&cb){
       if(leader){ct.textContent='Leader Readout';cb.innerHTML=`<b>${name()}</b> is the current Leader. Affinity: ${affinity()}. Turn Priority remains <b>Agility − Action Time ± modifiers</b>; Leader selection does not overwrite combat order.`}

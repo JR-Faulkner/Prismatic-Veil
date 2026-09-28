@@ -20,7 +20,20 @@
     "reward_authority": "src/progression/PVProgression.js",
     "whispering_grove_reward_key": "whisper",
     "legacy_echo_alias": true,
-    "battle_result_snapshot": "src/prizim/Live29FEncounterBattleScene.js"
+    "battle_result_snapshot": "src/prizim/Live29FEncounterBattleScene.js",
+    "schema": 2,
+    "storage_key": "pv.progression.v1",
+    "level_up_entry": "hybrid-level-up.html",
+    "growth_map_entry": "hybrid-growth.html?view=book",
+    "spectrum_atlas_entry": "hybrid-growth.html?view=atlas",
+    "approved_visual_assets": [
+      "assets/ui/progression/v1/resonance-ascension.png",
+      "assets/ui/progression/v1/prismodial-growth-map.png",
+      "assets/ui/progression/v1/spectrum-atlas.png"
+    ],
+    "growth_policy": "Each level after 1 grants one Focus Point. Even levels grant one Skill Point. Natural growth automatically raises three stats on even levels and two on odd levels, while Focus allocations remain player-directed.",
+    "migration_policy": "Schema-1 saves remain on pv.progression.v1 and are normalized into schema 2 without discarding XP, levels, inventory, cleared encounters, or reward claims.",
+    "party_route": "The live Party Growth command opens the Spectrum Atlas. Victory Continue opens Resonance Ascension before returning to the Overworld."
   },
   "trailer": {
     "entry": "trailer.html",
@@ -196,7 +209,7 @@
     "pending_gate_summary": "LIVE28K27: verify Prismel glass-shatter beat, reflective mirror blades crossing into the live battlefield, visible shard landings around the Wraith, damage synchronized to blade impact, clean return, and unchanged Aurora Pulse + Thunder Tornado.",
     "live28k17_pending_iphone_validation": true,
     "live28k17_boot_decode_failed": true,
-    "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR · Decoding failed",
+    "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR \u00b7 Decoding failed",
     "live28k17_aurora_test_blocked_by_boot": true,
     "live28k17_bloom_not_validly_tested_in_recording": true,
     "live28k18_pending_iphone_validation": false,

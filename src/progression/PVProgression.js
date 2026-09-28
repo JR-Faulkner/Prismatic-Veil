@@ -1,32 +1,69 @@
-// LIVE30E progression state + encounter payout authority.
-//
-// Purpose: make the Overworld -> encounter -> reward -> Party loop real without
-// prematurely locking the final level curve or per-level stat-point economy.
-// Natural-growth profiles remain owned by the Party UI authority.
+// LIVE31A progression, stat-growth, and skill-map authority.
+// Existing XP remains under the stable pv.progression.v1 storage key.
+// Schema 2 adds deterministic natural growth, Focus allocation, and skill nodes.
 
 export const PROGRESSION_STORAGE_KEY = 'pv.progression.v1';
-export const PROGRESSION_SCHEMA = 1;
+export const PROGRESSION_SCHEMA = 2;
 
 export const CORE_BATTLE_BEARERS = Object.freeze(['prismel', 'auryi', 'kineza']);
 export const ALL_BEARERS = Object.freeze(['prismel', 'auryi', 'kineza', 'sarallel', 'vyan']);
-// Keep progression self-contained so the CI contract can exercise this module
-// from a temporary location without needing to copy unrelated content files.
 export const RESONART_UNLOCK_LEVEL = 2;
+export const STAT_KEYS = Object.freeze(['Might', 'Mind', 'Spirit', 'Agility', 'Resilience', 'Harmony']);
 
-// TUNING NOTE: XP payout is deliberately isolated here so it can be rebalanced
-// without changing persistence, battle resolution, or the locked stat-growth split.
-// The level curve remains intentionally unlocked until production balance authority
-// is established. XP is banked now and will survive that later curve assignment.
+export const NATURAL_GROWTH = Object.freeze({
+  prismel: Object.freeze({ Might: 1, Mind: 5, Spirit: 4, Agility: 3, Resilience: 2, Harmony: 3 }),
+  kineza: Object.freeze({ Might: 5, Mind: 2, Spirit: 2, Agility: 4, Resilience: 4, Harmony: 3 }),
+  auryi: Object.freeze({ Might: 1, Mind: 4, Spirit: 5, Agility: 2, Resilience: 3, Harmony: 5 })
+});
+
+// Prismel's deterministic Level 2 gains produce the approved Ascension mock's
+// 12 / 16 / 15 / 13 / 14 / 12 stat row.
+export const BASE_STATS = Object.freeze({
+  prismel: Object.freeze({ Might: 12, Mind: 15, Spirit: 14, Agility: 12, Resilience: 14, Harmony: 12 }),
+  kineza: Object.freeze({ Might: 15, Mind: 11, Spirit: 11, Agility: 14, Resilience: 14, Harmony: 12 }),
+  auryi: Object.freeze({ Might: 10, Mind: 14, Spirit: 15, Agility: 11, Resilience: 13, Harmony: 15 }),
+  sarallel: Object.freeze({ Might: 11, Mind: 16, Spirit: 15, Agility: 13, Resilience: 12, Harmony: 16 }),
+  vyan: Object.freeze({ Might: 14, Mind: 15, Spirit: 14, Agility: 15, Resilience: 15, Harmony: 13 })
+});
+
+const NATURAL_ROTATION = Object.freeze({
+  prismel: Object.freeze(['Mind', 'Spirit', 'Agility', 'Harmony', 'Mind', 'Spirit', 'Resilience', 'Mind', 'Agility', 'Harmony']),
+  kineza: Object.freeze(['Might', 'Agility', 'Resilience', 'Might', 'Harmony', 'Agility', 'Resilience', 'Might', 'Mind', 'Spirit']),
+  auryi: Object.freeze(['Spirit', 'Harmony', 'Mind', 'Spirit', 'Harmony', 'Resilience', 'Mind', 'Spirit', 'Harmony', 'Agility'])
+});
+
+export const SKILL_NODES = Object.freeze({
+  prismel: Object.freeze([
+    Object.freeze({ id: 'prism_focus', branch: 'identity', name: 'Prism Focus', description: 'Refractive techniques gain a steadier resonance pattern.', cost: 1, requires: null }),
+    Object.freeze({ id: 'split_spectrum', branch: 'identity', name: 'Split Spectrum', description: 'Refracted-Reflections opens a second mastery path.', cost: 1, requires: 'prism_focus' }),
+    Object.freeze({ id: 'guiding_light', branch: 'bond', name: 'Guiding Light', description: 'Improves linked actions with the active Leader and Supports.', cost: 1, requires: null }),
+    Object.freeze({ id: 'shared_lens', branch: 'bond', name: 'Shared Lens', description: 'Allies read Prismel’s refracted openings more clearly.', cost: 1, requires: 'guiding_light' }),
+    Object.freeze({ id: 'resonance_sight', branch: 'veilcraft', name: 'Resonance Sight', description: 'Reveals additional Grimoire and Tower resonance information.', cost: 1, requires: null }),
+    Object.freeze({ id: 'scriptweave', branch: 'veilcraft', name: 'Scriptweave', description: 'Makes partially synchronized Grimoire script more readable.', cost: 1, requires: 'resonance_sight' })
+  ]),
+  kineza: Object.freeze([
+    Object.freeze({ id: 'momentum_drive', branch: 'identity', name: 'Momentum Drive', description: 'Kineza carries more force through consecutive actions.', cost: 1, requires: null }),
+    Object.freeze({ id: 'breakthrough', branch: 'identity', name: 'Breakthrough', description: 'Momentum techniques press harder against guarded targets.', cost: 1, requires: 'momentum_drive' }),
+    Object.freeze({ id: 'rally_link', branch: 'bond', name: 'Rally Link', description: 'Raises assist readiness after Kineza takes action.', cost: 1, requires: null }),
+    Object.freeze({ id: 'tandem_rush', branch: 'bond', name: 'Tandem Rush', description: 'Linked attacks preserve part of Kineza’s momentum.', cost: 1, requires: 'rally_link' }),
+    Object.freeze({ id: 'impact_sense', branch: 'veilcraft', name: 'Impact Sense', description: 'Reads unstable routes and physical resonance points.', cost: 1, requires: null }),
+    Object.freeze({ id: 'kinetic_key', branch: 'veilcraft', name: 'Kinetic Key', description: 'Allows momentum to activate certain dormant mechanisms.', cost: 1, requires: 'impact_sense' })
+  ]),
+  auryi: Object.freeze([
+    Object.freeze({ id: 'aurora_focus', branch: 'identity', name: 'Aurora Focus', description: 'Auryi holds a denser Aurora field before release.', cost: 1, requires: null }),
+    Object.freeze({ id: 'horizon_pulse', branch: 'identity', name: 'Horizon Pulse', description: 'Aurora Pulse expands farther through the field.', cost: 1, requires: 'aurora_focus' }),
+    Object.freeze({ id: 'warm_accord', branch: 'bond', name: 'Warm Accord', description: 'Healing and buffs gain strength from party Harmony.', cost: 1, requires: null }),
+    Object.freeze({ id: 'united_radiance', branch: 'bond', name: 'United Radiance', description: 'Linked support effects linger for an additional beat.', cost: 1, requires: 'warm_accord' }),
+    Object.freeze({ id: 'aura_reading', branch: 'veilcraft', name: 'Aura Reading', description: 'Reveals emotional and living resonance traces.', cost: 1, requires: null }),
+    Object.freeze({ id: 'veil_lantern', branch: 'veilcraft', name: 'Veil Lantern', description: 'Illuminates concealed resonance paths and warnings.', cost: 1, requires: 'aura_reading' })
+  ])
+});
+
 export const PROGRESSION_TUNING = Object.freeze({
-  revision: 'live30e-provisional2',
+  revision: 'live31a-growth1',
   levelCurveLocked: false,
-  // Provisional player-facing curve. The curve is intentionally data-owned
-  // and remains unlocked so balance can change without rewriting save data.
   levelCurve: Object.freeze({ baseXp: 100, growth: 1.35, maxLevel: 50 }),
   encounters: Object.freeze({
-    // Whispering Grove is the player-facing first encounter. Keep the
-    // legacy Echo key as an alias so older runs and direct test links still
-    // resolve the same reward contract.
     whisper: Object.freeze({
       firstClear: Object.freeze({ xpEach: 100, items: Object.freeze({ veilShard: 1, memoryFragment: 1 }) }),
       repeat: Object.freeze({ xpEach: 20, items: Object.freeze({}) })
@@ -68,8 +105,66 @@ export function isResonartUnlocked(levelOrHero) {
   return Math.max(1, Math.floor(Number(level) || 1)) >= RESONART_UNLOCK_LEVEL;
 }
 
-function blankHero() {
-  return { level: null, xp: 0 };
+function naturalGainCount(level) {
+  return level <= 1 ? 0 : (level % 2 === 0 ? 3 : 2);
+}
+
+export function naturalGainsForLevel(heroId, level) {
+  const rotation = NATURAL_ROTATION[heroId] || STAT_KEYS;
+  const n = Math.max(1, asInt(level, 1));
+  if (n <= 1) return [];
+  let offset = 0;
+  for (let prior = 2; prior < n; prior += 1) offset += naturalGainCount(prior);
+  return Array.from({ length: naturalGainCount(n) }, (_, index) => rotation[(offset + index) % rotation.length]);
+}
+
+export function naturalStatsForLevel(heroId, level) {
+  const base = BASE_STATS[heroId] || Object.fromEntries(STAT_KEYS.map(stat => [stat, 10]));
+  const stats = Object.fromEntries(STAT_KEYS.map(stat => [stat, asInt(base[stat], 10)]));
+  const n = Math.max(1, asInt(level, 1));
+  for (let current = 2; current <= n; current += 1) {
+    for (const stat of naturalGainsForLevel(heroId, current)) stats[stat] += 1;
+  }
+  return stats;
+}
+
+function normalizeAllocations(raw) {
+  return Object.fromEntries(STAT_KEYS.map(stat => [stat, asInt(raw?.[stat], 0)]));
+}
+
+function nodeIdsFor(heroId) {
+  return new Set((SKILL_NODES[heroId] || []).map(node => node.id));
+}
+
+function normalizeHero(heroId, raw) {
+  const xp = asInt(raw?.xp, 0);
+  const rawLevel = raw?.level;
+  const level = rawLevel == null || rawLevel === '' ? null : Math.max(1, asInt(rawLevel, levelForXp(xp)));
+  const effectiveLevel = level || levelForXp(xp);
+  const focusAllocations = normalizeAllocations(raw?.focusAllocations);
+  const allowed = nodeIdsFor(heroId);
+  const unlockedNodes = [...new Set(Array.isArray(raw?.unlockedNodes) ? raw.unlockedNodes.filter(id => allowed.has(id)) : [])];
+  const natural = naturalStatsForLevel(heroId, effectiveLevel);
+  const stats = Object.fromEntries(STAT_KEYS.map(stat => [stat, natural[stat] + focusAllocations[stat]]));
+  const focusEarned = Math.max(0, effectiveLevel - 1) + asInt(raw?.bonusFocusPoints, 0);
+  const focusSpent = STAT_KEYS.reduce((sum, stat) => sum + focusAllocations[stat], 0);
+  const skillEarned = Math.floor(effectiveLevel / 2) + asInt(raw?.bonusSkillPoints, 0);
+  const skillSpent = unlockedNodes.reduce((sum, id) => sum + asInt((SKILL_NODES[heroId] || []).find(node => node.id === id)?.cost, 1), 0);
+  return {
+    level,
+    xp,
+    stats,
+    focusAllocations,
+    focusPoints: Math.max(0, focusEarned - focusSpent),
+    skillPoints: Math.max(0, skillEarned - skillSpent),
+    unlockedNodes,
+    bonusFocusPoints: asInt(raw?.bonusFocusPoints, 0),
+    bonusSkillPoints: asInt(raw?.bonusSkillPoints, 0)
+  };
+}
+
+function blankHero(heroId) {
+  return normalizeHero(heroId, { level: null, xp: 0 });
 }
 
 export function createDefaultProgression() {
@@ -77,7 +172,7 @@ export function createDefaultProgression() {
     schema: PROGRESSION_SCHEMA,
     tuningRevision: PROGRESSION_TUNING.revision,
     levelCurveLocked: PROGRESSION_TUNING.levelCurveLocked,
-    heroes: Object.fromEntries(ALL_BEARERS.map(id => [id, blankHero()])),
+    heroes: Object.fromEntries(ALL_BEARERS.map(id => [id, blankHero(id)])),
     inventory: { veilShard: 0, memoryFragment: 0 },
     encounters: {},
     claims: {},
@@ -88,14 +183,7 @@ export function createDefaultProgression() {
 function normalize(raw) {
   const base = createDefaultProgression();
   const src = raw && typeof raw === 'object' ? raw : {};
-  for (const id of ALL_BEARERS) {
-    const h = src.heroes?.[id];
-    const rawLevel = h?.level;
-    base.heroes[id] = {
-      level: rawLevel == null || rawLevel === '' ? null : (Number.isFinite(Number(rawLevel)) ? Math.max(1, Math.floor(Number(rawLevel))) : null),
-      xp: asInt(h?.xp, 0)
-    };
-  }
+  for (const id of ALL_BEARERS) base.heroes[id] = normalizeHero(id, src.heroes?.[id]);
   base.inventory.veilShard = asInt(src.inventory?.veilShard, 0);
   base.inventory.memoryFragment = asInt(src.inventory?.memoryFragment, 0);
   base.encounters = src.encounters && typeof src.encounters === 'object' ? { ...src.encounters } : {};
@@ -114,11 +202,35 @@ export function loadProgression(storage = globalThis.localStorage) {
 
 export function saveProgression(state, storage = globalThis.localStorage) {
   const normalized = normalize(state);
+  normalized.schema = PROGRESSION_SCHEMA;
   normalized.updatedAt = now();
   normalized.tuningRevision = PROGRESSION_TUNING.revision;
   normalized.levelCurveLocked = PROGRESSION_TUNING.levelCurveLocked;
   try { storage?.setItem(PROGRESSION_STORAGE_KEY, JSON.stringify(normalized)); } catch (_) {}
   return normalized;
+}
+
+export function allocateFocus(heroId, stat, storage = globalThis.localStorage) {
+  if (!ALL_BEARERS.includes(heroId) || !STAT_KEYS.includes(stat)) return { ok: false, reason: 'invalid-selection' };
+  const state = loadProgression(storage);
+  const hero = state.heroes[heroId];
+  if (!hero?.focusPoints) return { ok: false, reason: 'no-focus-points', hero };
+  hero.focusAllocations[stat] = asInt(hero.focusAllocations[stat], 0) + 1;
+  const saved = saveProgression(state, storage);
+  return { ok: true, hero: saved.heroes[heroId], stat };
+}
+
+export function unlockSkillNode(heroId, nodeId, storage = globalThis.localStorage) {
+  const node = (SKILL_NODES[heroId] || []).find(candidate => candidate.id === nodeId);
+  if (!node) return { ok: false, reason: 'unknown-node' };
+  const state = loadProgression(storage);
+  const hero = state.heroes[heroId];
+  if (hero.unlockedNodes.includes(nodeId)) return { ok: false, reason: 'already-unlocked', hero, node };
+  if (node.requires && !hero.unlockedNodes.includes(node.requires)) return { ok: false, reason: 'prerequisite', hero, node };
+  if (hero.skillPoints < node.cost) return { ok: false, reason: 'no-skill-points', hero, node };
+  hero.unlockedNodes.push(nodeId);
+  const saved = saveProgression(state, storage);
+  return { ok: true, hero: saved.heroes[heroId], node };
 }
 
 function trimClaims(claims, max = 40) {
@@ -130,28 +242,31 @@ export function applyEncounterReward(locationId, options = {}, storage = globalT
   const state = loadProgression(storage);
   const table = PROGRESSION_TUNING.encounters[locationId];
   if (!table) return { awarded: false, reason: 'no-reward-table', locationId };
-
   const encounterId = String(options.encounterId || `${locationId}:${options.enteredAt || now()}`);
-  if (state.claims[encounterId]) {
-    return { ...state.claims[encounterId].payout, awarded: false, duplicate: true };
-  }
+  if (state.claims[encounterId]) return { ...state.claims[encounterId].payout, awarded: false, duplicate: true };
 
   const encounter = state.encounters[locationId] && typeof state.encounters[locationId] === 'object'
     ? { ...state.encounters[locationId] }
     : { wins: 0, firstClearClaimed: false };
-  // The progression ledger is the final first-clear loot authority. Even if a map
-  // clear flag is lost or a query is replayed, unique loot cannot be claimed twice.
   const firstClear = !!options.firstClear && encounter.firstClearClaimed !== true;
   const reward = firstClear ? table.firstClear : table.repeat;
   const xpEach = asInt(reward.xpEach, 0);
   const heroXp = {};
   const levelUps = {};
+  const growth = {};
   for (const id of CORE_BATTLE_BEARERS) {
     const beforeLevel = state.heroes[id].level || levelForXp(state.heroes[id].xp);
     state.heroes[id].xp += xpEach;
     state.heroes[id].level = levelForXp(state.heroes[id].xp);
+    state.heroes[id] = normalizeHero(id, state.heroes[id]);
     heroXp[id] = state.heroes[id].xp;
     levelUps[id] = Math.max(0, state.heroes[id].level - beforeLevel);
+    growth[id] = {
+      natural: levelUps[id] ? naturalGainsForLevel(id, state.heroes[id].level) : [],
+      focusPoints: state.heroes[id].focusPoints,
+      skillPoints: state.heroes[id].skillPoints,
+      stats: { ...state.heroes[id].stats }
+    };
   }
 
   const items = {};
@@ -176,10 +291,9 @@ export function applyEncounterReward(locationId, options = {}, storage = globalT
     heroXp,
     levels: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, state.heroes[id].level])),
     levelUps,
+    growth,
     nextLevelXp: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, nextLevelXp(state.heroes[id].level)])),
-    unlocks: {
-      resonart: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, isResonartUnlocked(state.heroes[id])] ))
-    },
+    unlocks: { resonart: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, isResonartUnlocked(state.heroes[id])])) },
     items,
     levelCurveLocked: PROGRESSION_TUNING.levelCurveLocked,
     tuningRevision: PROGRESSION_TUNING.revision
@@ -192,9 +306,7 @@ export function applyEncounterReward(locationId, options = {}, storage = globalT
 
 export function progressionSummary(storage = globalThis.localStorage) {
   const state = loadProgression(storage);
-  const clone = value => typeof globalThis.structuredClone === 'function'
-    ? globalThis.structuredClone(value)
-    : JSON.parse(JSON.stringify(value));
+  const clone = value => typeof globalThis.structuredClone === 'function' ? globalThis.structuredClone(value) : JSON.parse(JSON.stringify(value));
   return {
     schema: state.schema,
     tuningRevision: state.tuningRevision,
@@ -204,5 +316,3 @@ export function progressionSummary(storage = globalThis.localStorage) {
     encounters: clone(state.encounters || {})
   };
 }
-
-
