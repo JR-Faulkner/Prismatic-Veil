@@ -209,6 +209,7 @@ body{height:100dvh}
 
   // Puzzle 1 · Fixed level rings with orbiting resonance glyphs.
   const glyphs=['◇','✦','◈','△','○','✧'],target=[2,1,4],ring=[0,3,1];
+  const resonanceSightActive=(()=>{try{const p=JSON.parse(localStorage.getItem('pv.progression.v1')||'null');return p?.heroes?.prismel?.unlockedNodes?.includes('resonance_sight')}catch(_){return false}})();
   const ringEls=[...document.querySelectorAll('.ring')];
   const buttons=[...document.querySelectorAll('.ring-btn')];
   const ringStatus=document.getElementById('ringStatus'),ringNames=['OUTER','MIDDLE','INNER'];
@@ -243,6 +244,7 @@ body{height:100dvh}
     let matches=0;
     buttons.forEach((b,i)=>{
       const matched=ring[i]===target[i];if(matched)matches++;
+      if(resonanceSightActive){const forward=mod(target[i]-ring[i]),backward=mod(ring[i]-target[i]),steps=Math.min(forward,backward),direction=matched?'ALIGNED':forward<=backward?'RIGHT':'LEFT';ringEls[i].querySelector('.ring-band').textContent=`${ringNames[i]} · SIGHT ${direction}${matched?'':` ${steps}`}`}
       ringEls[i].classList.toggle('matched',matched);b.classList.toggle('matched',matched);
       b.setAttribute('aria-label',`${ringNames[i]} ring, current ${glyphs[ring[i]]}, target ${glyphs[target[i]]}. ${matched?'Matched.':'Drag or use left and right arrows.'}`);
     });

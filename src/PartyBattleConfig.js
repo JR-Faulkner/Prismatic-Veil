@@ -127,6 +127,21 @@ export function projectedDamage(hero, command) {
   return { low: Math.round(base * 0.85), high: Math.round(base * 1.15) };
 }
 
-export function hitChanceFor(command) {
-  return command === 'Resonart' ? RESONART_HIT_CHANCE : BASIC_ATTACK_HIT_CHANCE;
+function unlockedPrismelNodes() {
+  try {
+    const state = JSON.parse(globalThis.localStorage?.getItem('pv.progression.v1') || 'null');
+    return new Set(Array.isArray(state?.heroes?.prismel?.unlockedNodes) ? state.heroes.prismel.unlockedNodes : []);
+  } catch (_) { return new Set(); }
+}
+
+export function hitChanceFor(command, heroId = null) {
+  let chance = command === 'Resonart' ? RESONART_HIT_CHANCE : BASIC_ATTACK_HIT_CHANCE;
+  if (command !== 'Attack') return chance;
+  const nodes = unlockedPrismelNodes();
+  if (heroId === 'prismel' && nodes.has('prism_focus')) chance += .04;
+  try {
+    const leader = String(globalThis.localStorage?.getItem('pv.frontHero') || globalThis.localStorage?.getItem('pv.leader') || '').toLowerCase();
+    if (leader === 'prismel' && nodes.has('guiding_light')) chance += .02;
+  } catch (_) {}
+  return Math.min(1, chance);
 }

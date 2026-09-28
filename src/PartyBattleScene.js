@@ -815,7 +815,7 @@ export default class PartyBattleScene extends Phaser.Scene {
 
     if (label === 'Attack') {
       const { low, high } = projectedDamage(hero, 'Attack');
-      const hitPct = Math.round(hitChanceFor('Attack') * 100);
+      const hitPct = Math.round(hitChanceFor('Attack', hero.id) * 100);
       this._drawer.title.setText('ATTACK');
       this._drawer.detail.setText('A basic strike — free, always available.');
       this._drawer.stats.setText(
@@ -825,7 +825,7 @@ export default class PartyBattleScene extends Phaser.Scene {
       this._showTargetCursor();
     } else if (label === 'Resonart') {
       const { low, high } = projectedDamage(hero, 'Resonart');
-      const hitPct = Math.round(hitChanceFor('Resonart') * 100);
+      const hitPct = Math.round(hitChanceFor('Resonart', hero.id) * 100);
       const affordable = hero.currentRp >= RESONART_RP_COST;
       this._drawer.title.setText(hero.attack.name.toUpperCase());
       this._drawer.detail.setText(hero.attack.flavor || 'A signature technique.');
@@ -927,7 +927,7 @@ export default class PartyBattleScene extends Phaser.Scene {
     this._turnLock = true;
     this._hideCommandRail();
     const { low, high } = projectedDamage(hero, command);
-    const hitRoll = Math.random() < hitChanceFor(command);
+    const hitRoll = Math.random() < hitChanceFor(command, hero.id);
 
     // FAI-BATTLE-PRESENTATION-04 (ANIMATION_AUTHORITY_CORRECTION.md):
     // Kineza's real current-authority Basic Attack sheet outranks the

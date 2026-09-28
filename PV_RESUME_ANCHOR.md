@@ -1,6 +1,13 @@
 # The Prismatic Veil — Resume Anchor
 
-Last refreshed: 2026-09-27
+Last refreshed: 2026-09-28
+
+## LIVE31B Prismel growth polish (2026-09-28)
+
+- Resonance Ascension and both growth views retain the approved full-screen compositions while adding restrained prismatic entry, natural-growth, node-ready, and commit animation layers.
+- `assets/js/pv-growth-audio.js` uses existing Overworld and Resonance Tower recordings for navigation, preview, locked, Focus, Skill, and Ascension feedback. It contains no oscillator synthesis or generic arcade bloops and respects the existing audio-off preference.
+- Prismel's first nodes now have live effects: Prism Focus raises his basic Attack accuracy by 4%; Guiding Light raises party basic Attack accuracy by 2% while Prismel is Leader; Resonance Sight reveals the shortest ring direction and step count in Tower Puzzle 1.
+- CI now guards the sound-source files, skill-aware accuracy path, Tower hint, and Hybrid battle identity handoff. K27 Hybrid/cinematic authority is unchanged; MAIN device audition remains the user-facing sound and feel gate.
 
 ## LIVE31A Resonance growth interface (2026-09-27)
 

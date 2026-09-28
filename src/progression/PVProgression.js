@@ -34,11 +34,11 @@ const NATURAL_ROTATION = Object.freeze({
 
 export const SKILL_NODES = Object.freeze({
   prismel: Object.freeze([
-    Object.freeze({ id: 'prism_focus', branch: 'identity', name: 'Prism Focus', description: 'Refractive techniques gain a steadier resonance pattern.', cost: 1, requires: null }),
+    Object.freeze({ id: 'prism_focus', branch: 'identity', name: 'Prism Focus', description: 'Refractive Burst gains +4% accuracy.', cost: 1, requires: null }),
     Object.freeze({ id: 'split_spectrum', branch: 'identity', name: 'Split Spectrum', description: 'Refracted-Reflections opens a second mastery path.', cost: 1, requires: 'prism_focus' }),
-    Object.freeze({ id: 'guiding_light', branch: 'bond', name: 'Guiding Light', description: 'Improves linked actions with the active Leader and Supports.', cost: 1, requires: null }),
+    Object.freeze({ id: 'guiding_light', branch: 'bond', name: 'Guiding Light', description: 'While Prismel is Leader, party basic attacks gain +2% accuracy.', cost: 1, requires: null }),
     Object.freeze({ id: 'shared_lens', branch: 'bond', name: 'Shared Lens', description: 'Allies read Prismel’s refracted openings more clearly.', cost: 1, requires: 'guiding_light' }),
-    Object.freeze({ id: 'resonance_sight', branch: 'veilcraft', name: 'Resonance Sight', description: 'Reveals additional Grimoire and Tower resonance information.', cost: 1, requires: null }),
+    Object.freeze({ id: 'resonance_sight', branch: 'veilcraft', name: 'Resonance Sight', description: 'Tower rings reveal the shortest rotation toward their target glyphs.', cost: 1, requires: null }),
     Object.freeze({ id: 'scriptweave', branch: 'veilcraft', name: 'Scriptweave', description: 'Makes partially synchronized Grimoire script more readable.', cost: 1, requires: 'resonance_sight' })
   ]),
   kineza: Object.freeze([

@@ -8,10 +8,14 @@ on:
       - 'assets/js/pv-overworld-live29f.js'
       - 'assets/js/pv-party-live30e.js'
       - 'assets/js/pv-party-live29e.js'
+      - 'assets/js/pv-growth-audio.js'
       - 'hybrid-party-live.html'
       - 'hybrid-battle-live.html'
       - 'hybrid-level-up.html'
       - 'hybrid-growth.html'
+      - 'resonance-tower-complete.html'
+      - 'src/PartyBattleConfig.js'
+      - 'src/PartyBattleScene.js'
       - 'assets/ui/progression/v1/**'
       - '.github/workflows/live30e-progression-guard.yml'
   push:
@@ -22,10 +26,14 @@ on:
       - 'assets/js/pv-overworld-live29f.js'
       - 'assets/js/pv-party-live30e.js'
       - 'assets/js/pv-party-live29e.js'
+      - 'assets/js/pv-growth-audio.js'
       - 'hybrid-party-live.html'
       - 'hybrid-battle-live.html'
       - 'hybrid-level-up.html'
       - 'hybrid-growth.html'
+      - 'resonance-tower-complete.html'
+      - 'src/PartyBattleConfig.js'
+      - 'src/PartyBattleScene.js'
       - 'assets/ui/progression/v1/**'
       - '.github/workflows/live30e-progression-guard.yml'
 
@@ -41,8 +49,11 @@ jobs:
           node --check assets/js/pv-overworld-live29f.js
           node --check assets/js/pv-party-live30e.js
           node --check assets/js/pv-party-live29e.js
+          node --check assets/js/pv-growth-audio.js
           node --input-type=module --check < src/progression/PVProgression.js
           node --input-type=module --check < src/prizim/Live29FEncounterBattleScene.js
+          node --input-type=module --check < src/PartyBattleConfig.js
+          node --input-type=module --check < src/PartyBattleScene.js
       - name: Exercise progression persistence and duplicate guard
         shell: bash
         run: |
@@ -85,6 +96,28 @@ jobs:
           if(s.levelCurveLocked!==false)throw new Error('level curve was accidentally locked');
           console.log('LIVE30E progression exercise PASS');
           JS
+      - name: Exercise Prismel skill effects
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed "s|import { HEROES } from .*|const HEROES = {};|" src/PartyBattleConfig.js > /tmp/PartyBattleConfig.mjs
+          node --input-type=module <<'JS'
+          const cfg=await import('file:///tmp/PartyBattleConfig.mjs');
+          const mem=new Map();
+          globalThis.localStorage={getItem:k=>mem.has(k)?mem.get(k):null,setItem:(k,v)=>mem.set(k,String(v))};
+          if(cfg.hitChanceFor('Attack','prismel')!==.96)throw new Error('base attack accuracy drift');
+          mem.set('pv.progression.v1',JSON.stringify({heroes:{prismel:{unlockedNodes:['prism_focus']}}}));
+          if(cfg.hitChanceFor('Attack','prismel')!==1)throw new Error('Prism Focus effect missing');
+          if(cfg.hitChanceFor('Attack','kineza')!==.96)throw new Error('Prism Focus leaked to allies');
+          mem.set('pv.progression.v1',JSON.stringify({heroes:{prismel:{unlockedNodes:['guiding_light']}}}));
+          mem.set('pv.leader','Prismel');
+          if(cfg.hitChanceFor('Attack','kineza')!==.98)throw new Error('Guiding Light effect missing');
+          mem.delete('pv.leader');
+          mem.set('pv.frontHero','prismel');
+          if(cfg.hitChanceFor('Attack','auryi')!==.98)throw new Error('Guiding Light overworld leader compatibility missing');
+          if(cfg.hitChanceFor('Resonart','prismel')!==.92)throw new Error('skill effect leaked to Resonart');
+          console.log('LIVE31B Prismel skill effects PASS');
+          JS
       - name: Validate integration boundaries
         shell: bash
         run: |
@@ -100,6 +133,10 @@ jobs:
           battle=read('hybrid-battle-live.html')
           level_up=read('hybrid-level-up.html')
           growth=read('hybrid-growth.html')
+          growth_audio=read('assets/js/pv-growth-audio.js')
+          battle_config=read('src/PartyBattleConfig.js')
+          battle_scene=read('src/PartyBattleScene.js')
+          tower=read('resonance-tower-complete.html')
           overworld=read('assets/js/pv-overworld-live29f.js')
           hybrid=read('hybrid-main.html')
           build=json.loads(read('live-build.json'))
@@ -118,6 +155,13 @@ jobs:
           if 'resonance-ascension.png' not in level_up: errors.append('approved Ascension art not live')
           for token in ['prismodial-growth-map.png','spectrum-atlas.png','unlockSkillNode','allocateFocus']:
               if token not in growth: errors.append(f'Growth screen contract missing: {token}')
+          for page_name,page in [('Ascension',level_up),('Growth',growth)]:
+              if 'pv-growth-audio.js' not in page: errors.append(f'{page_name} PV audio controller missing')
+          for token in ['ring-turn.wav','memory-link.wav','harmonic-lock.wav','tower-resolve.wav']:
+              if token not in growth_audio: errors.append(f'PV growth audio source missing: {token}')
+          if 'hitChanceFor(command, heroId' not in battle_config: errors.append('Prismel skill-aware battle accuracy missing')
+          if "hitChanceFor(command, hero.id)" not in battle_scene: errors.append('Battle execution does not publish hero identity to accuracy rules')
+          if 'resonanceSightActive' not in tower or 'SIGHT ${direction}' not in tower: errors.append('Resonance Sight Tower effect missing')
           for path in ['assets/ui/progression/v1/resonance-ascension.png','assets/ui/progression/v1/prismodial-growth-map.png','assets/ui/progression/v1/spectrum-atlas.png']:
               if not Path(path).is_file() or Path(path).stat().st_size < 1000000: errors.append(f'approved progression art missing: {path}')
           if 'NO REWARDS AWARDED' not in overworld: errors.append('defeat reward presentation missing')

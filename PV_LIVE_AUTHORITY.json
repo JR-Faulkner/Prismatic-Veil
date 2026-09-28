@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated": "2026-09-27",
+  "updated": "2026-09-28",
   "witness": "main-20260909-live28k27",
   "production_route": [
     "index.html",
@@ -33,7 +33,15 @@
     ],
     "growth_policy": "Each level after 1 grants one Focus Point. Even levels grant one Skill Point. Natural growth automatically raises three stats on even levels and two on odd levels, while Focus allocations remain player-directed.",
     "migration_policy": "Schema-1 saves remain on pv.progression.v1 and are normalized into schema 2 without discarding XP, levels, inventory, cleared encounters, or reward claims.",
-    "party_route": "The live Party Growth command opens the Spectrum Atlas. Victory Continue opens Resonance Ascension before returning to the Overworld."
+    "party_route": "The live Party Growth command opens the Spectrum Atlas. Victory Continue opens Resonance Ascension before returning to the Overworld.",
+    "polish_runtime": "assets/js/pv-growth-audio.js",
+    "sound_policy": "Ascension and growth interactions use existing PV Overworld and Resonance Tower sample recordings through HTML Audio. Do not replace them with oscillator synthesis, generic arcade bloops, or placeholder beeps.",
+    "ascension_motion_policy": "Use the approved Resonance Ascension and growth-map compositions as the fixed visual foundation, with restrained prismatic sweeps, panel settling, node breathing, and explicit commit flashes layered above them.",
+    "prismel_skill_effects": {
+      "prism_focus": "Prismel basic Attack accuracy +4%, capped at 100%.",
+      "guiding_light": "While Prismel is the selected leader, all party basic Attack accuracy +2%, capped at 100%.",
+      "resonance_sight": "Tower Puzzle 1 shows the shortest left/right ring rotation and remaining steps."
+    }
   },
   "trailer": {
     "entry": "trailer.html",
@@ -209,7 +217,7 @@
     "pending_gate_summary": "LIVE28K27: verify Prismel glass-shatter beat, reflective mirror blades crossing into the live battlefield, visible shard landings around the Wraith, damage synchronized to blade impact, clean return, and unchanged Aurora Pulse + Thunder Tornado.",
     "live28k17_pending_iphone_validation": true,
     "live28k17_boot_decode_failed": true,
-    "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR \u00b7 Decoding failed",
+    "live28k17_boot_error_text": "LIVE BATTLE BOOT ERROR · Decoding failed",
     "live28k17_aurora_test_blocked_by_boot": true,
     "live28k17_bloom_not_validly_tested_in_recording": true,
     "live28k18_pending_iphone_validation": false,
