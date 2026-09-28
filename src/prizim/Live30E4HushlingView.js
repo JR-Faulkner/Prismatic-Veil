@@ -10,15 +10,15 @@ export default class Live30E4HushlingView extends EnemyHushlingView {
     const height = this.scene.scale.height;
     const landscape = width > height;
 
-    // The first encounter has one Hushling. Keep it optically centered in the
-    // open battlefield, with its full silhouette above the fixed party strip.
-    // The base view's grounded 0.885h anchor works for a large Wraith, but the
-    // Hushling is half that height; using the same floor line leaves almost all
-    // of the smaller source image behind the HUD cards on wide screens.
-    this.baseX = Math.round(width * 0.5);
+    // One Hushling still owns a single enemy lane, but "center screen" is not
+    // the same thing as "enemy space": Kineza's live formation sits near 0.54w,
+    // so a 0.50w Hushling overlaps the party on TVs and wide browsers.
+    // Keep the smaller enemy clearly across the field and slightly raised so
+    // its full silhouette reads above the fixed party/status strip.
     if (landscape) {
       const largeLandscape = width >= 1100 && height >= 600;
-      this.baseY = Math.round(height * (largeLandscape ? 0.78 : 0.76));
+      this.baseX = Math.round(width * (largeLandscape ? 0.72 : 0.70));
+      this.baseY = Math.round(height * (largeLandscape ? 0.71 : 0.73));
     }
     this.container.setPosition(this.baseX, this.baseY);
   }
