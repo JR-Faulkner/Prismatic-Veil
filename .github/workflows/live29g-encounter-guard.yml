@@ -9,8 +9,6 @@ on:
       - 'src/EnemyHushlingView.js'
       - 'src/prizim/Live30E4HushlingView.js'
       - 'assets/js/pv-overworld-live29f.js'
-      - 'src/prizim/Live30E4HushlingView.js'
-      - 'assets/js/pv-overworld-live29f.js'
       - 'assets/enemy/hushling/**'
       - 'assets/ui/portrait_hushling_v34.png'
       - 'hybrid-main.html'
@@ -97,7 +95,7 @@ jobs:
           if "encounterMode?'Live29GEncounterBattleScene.js':'Live28K27BattleGuardScene.js'" not in hybrid: errors.append('Hybrid encounter routing not on LIVE29G/K27 split')
           if "LIVE29G" not in hybrid: errors.append('LIVE29G build witness missing')
           if "name: 'Hushling'" not in catalog or "name: 'Hush Crush'" not in catalog: errors.append('Canonical Hushling catalog drift')
-          for token in ["encounterLaunching=true","pv-encounter-launching","localStorage.setItem(CURRENT_KEY,LOCATION)","localStorage.setItem(LAST_KEY,from)","stopImmediatePropagation()","location.assign"]:
+          for token in ["encounterLaunching=true","pv-encounter-launching","localStorage.setItem(CURRENT_KEY,LOCATION)","localStorage.setItem(LAST_KEY,from)","window.addEventListener('keydown',onKey,true)","stopImmediatePropagation()","location.assign"]:
               if token not in overworld29f: errors.append(f'Atomic Grove handoff token missing: {token}')
           if "await runTravelPiece()" not in overworld29f or "Whispering Grove travel presentation skipped" not in overworld29f:
               errors.append('Travel presentation is still allowed to block encounter routing')
