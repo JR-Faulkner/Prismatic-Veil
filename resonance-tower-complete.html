@@ -75,6 +75,7 @@ body{height:100dvh}
 @media(max-height:500px){.puzzle[data-step="1"] .console{inset:59px max(14px,env(safe-area-inset-right)) 34px max(14px,env(safe-area-inset-left))}.resonance-console{grid-template-rows:minmax(0,1fr) 52px}.target{height:52px}.top .eyebrow{font-size:7px}.top .title{font-size:18px}.top{padding:4px 10px}.ring-band{font-size:9px;padding:0 6px}.ring-art{opacity:1}.signal-help{font-size:10px}}
 @media(orientation:portrait){.puzzle[data-step="1"] .console{inset:80px 10px 46px}.resonance-console{grid-template-rows:minmax(0,1fr) 94px}.target{height:94px;flex-wrap:wrap}.target>div{flex:1 1 100%}.ring-art{object-fit:contain}.ring{width:calc(100% - 100px)}.core{width:20%}.ring-band{top:14%}}
 @media(prefers-reduced-motion:reduce){.orbit-marker{will-change:auto}}
+.xp-award{position:fixed;z-index:24;left:50%;top:max(74px,calc(env(safe-area-inset-top) + 64px));transform:translate(-50%,-14px);min-width:min(420px,72vw);padding:10px 18px;border:1px solid #f3d477aa;background:linear-gradient(90deg,#08152eea,#182f58ee,#08152eea);color:#fff0b7;text-align:center;font:900 clamp(8px,1.1vw,12px) system-ui;letter-spacing:.14em;box-shadow:0 12px 32px #000c,0 0 28px #7cecff66;opacity:0;pointer-events:none;transition:opacity .22s ease,transform .22s ease}.xp-award.show{opacity:1;transform:translate(-50%,0)}.xp-award b{color:#7cecff}
 
 </style>
 </head>
@@ -109,14 +110,17 @@ body{height:100dvh}
   </section>
   <footer class="bottom"><span id="status">TOWER LINK · WAITING</span><a href="./hybrid-overworld.html">RETURN TO OVERWORLD</a></footer>
 </main>
+<div id="xpAward" class="xp-award" role="status" aria-live="polite"></div>
 
-<script>
+<script src="./assets/js/pv-save-state.js?pvasset=save6-tower"></script>
+<script type="module">
+import { applyProgressReward } from './src/progression/PVProgression.js?v=live31e1';
 (()=>{
   const SYNC='pv.resonance.sync',CLEAR='pv.locationClear.oldwater',CURRENT='pv.currentLocation',LAST='pv.lastLocation',SEEN='pv.towerArrivalSeen',RUN='pv.run.id',TOWER_RUN='pv.tower.run.id';
   const qs=new URLSearchParams(location.search),from=qs.get('from')||localStorage.getItem(LAST)||'whisper';
   const fresh=qs.get('fresh')==='1';
   const arrival=document.getElementById('arrival'),video=document.getElementById('arrivalVideo'),enter=document.getElementById('enterTower'),skip=document.getElementById('skipArrival'),playArrival=document.getElementById('playArrival'),arrivalState=document.getElementById('arrivalState'),arrivalIntro=document.getElementById('arrivalIntro'),status=document.getElementById('status');
-  const puzzles=[...document.querySelectorAll('.puzzle')],pips=[...document.querySelectorAll('.pip')],complete=document.getElementById('complete');
+  const puzzles=[...document.querySelectorAll('.puzzle')],pips=[...document.querySelectorAll('.pip')],complete=document.getElementById('complete'),xpAward=document.getElementById('xpAward');
   // A New Game gets a fresh Tower arrival even if an older Tower value survived
   // in browser storage.  Once this run has entered the Tower, its normal
   // in-progress calibration state is preserved for a deliberate re-entry.
@@ -133,7 +137,20 @@ body{height:100dvh}
   }catch(_){} }
   let sync=Math.max(0,Math.min(3,Number(localStorage.getItem(SYNC)||0)));
   try{localStorage.setItem(CURRENT,'oldwater');localStorage.setItem(LAST,from)}catch(_){}
-  function save(n){sync=Math.max(sync,n);try{localStorage.setItem(SYNC,String(sync))}catch(_){}paint()}
+  const towerRewards=[null,'tower:ring-console','tower:harmonic-calibration','tower:resonance-routing'];
+  const rewardCue=new Audio('./assets/audio/tower/audition-v1/memory-link.wav?pvasset=live31e1');rewardCue.preload='auto';rewardCue.volume=.34;
+  function showReward(payout){
+    if(!payout?.awarded)return;
+    const leveled=Object.values(payout.levelUps||{}).some(Number);
+    xpAward.innerHTML=`<b>+${payout.xpEach} XP EACH</b> · ${payout.label.toUpperCase()}${leveled?' · LEVEL UP':''}`;
+    xpAward.classList.add('show');clearTimeout(showReward.timer);showReward.timer=setTimeout(()=>xpAward.classList.remove('show'),2200);
+    if(localStorage.getItem('pv.musicEnabled')!=='0'){try{const cue=rewardCue.cloneNode(true);cue.volume=rewardCue.volume;cue.play().catch(()=>{})}catch(_){}}
+  }
+  function awardStep(step){
+    const activityId=towerRewards[step];if(!activityId)return;
+    try{showReward(applyProgressReward(activityId,{claimId:`activity:${activityId}`}));window.PVSaveState?.saveRun?.()}catch(error){console.warn('[PV] Tower progress reward failed',error)}
+  }
+  function save(n){const previous=sync;sync=Math.max(sync,n);try{localStorage.setItem(SYNC,String(sync))}catch(_){}for(let step=previous+1;step<=sync;step++)awardStep(step);paint()}
   function paint(){
     pips.forEach((p,i)=>p.classList.toggle('done',sync>i));
     puzzles.forEach((p,i)=>p.classList.toggle('active',sync===i&&sync<3));

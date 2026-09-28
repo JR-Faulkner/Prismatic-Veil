@@ -1,9 +1,9 @@
-// LIVE31A progression, stat-growth, and skill-map authority.
+// LIVE31E progression, stat-growth, and skill-map authority.
 // Existing XP remains under the stable pv.progression.v1 storage key.
-// Schema 2 adds deterministic natural growth, Focus allocation, and skill nodes.
+// Schema 3 makes level thresholds cumulative and records non-battle progress.
 
 export const PROGRESSION_STORAGE_KEY = 'pv.progression.v1';
-export const PROGRESSION_SCHEMA = 2;
+export const PROGRESSION_SCHEMA = 3;
 
 export const CORE_BATTLE_BEARERS = Object.freeze(['prismel', 'auryi', 'kineza']);
 export const ALL_BEARERS = Object.freeze(['prismel', 'auryi', 'kineza', 'sarallel', 'vyan']);
@@ -60,8 +60,8 @@ export const SKILL_NODES = Object.freeze({
 });
 
 export const PROGRESSION_TUNING = Object.freeze({
-  revision: 'live31a-growth1',
-  levelCurveLocked: false,
+  revision: 'live31e-progression1',
+  levelCurveLocked: true,
   levelCurve: Object.freeze({ baseXp: 100, growth: 1.35, maxLevel: 50 }),
   encounters: Object.freeze({
     whisper: Object.freeze({
@@ -72,6 +72,11 @@ export const PROGRESSION_TUNING = Object.freeze({
       firstClear: Object.freeze({ xpEach: 100, items: Object.freeze({ veilShard: 1, memoryFragment: 1 }) }),
       repeat: Object.freeze({ xpEach: 20, items: Object.freeze({}) })
     })
+  }),
+  activities: Object.freeze({
+    'tower:ring-console': Object.freeze({ xpEach: 20, label: 'Echo Ring Console' }),
+    'tower:harmonic-calibration': Object.freeze({ xpEach: 20, label: 'Harmonic Calibration' }),
+    'tower:resonance-routing': Object.freeze({ xpEach: 35, label: 'Resonance Routing' })
   })
 });
 
@@ -82,7 +87,11 @@ export function xpForLevel(level) {
   const n = Math.max(1, Math.floor(Number(level) || 1));
   if (n <= 1) return 0;
   const { baseXp, growth } = PROGRESSION_TUNING.levelCurve;
-  return Math.round(baseXp * Math.pow(growth, n - 2));
+  let total = 0;
+  for (let target = 2; target <= n; target += 1) {
+    total += Math.round(baseXp * Math.pow(growth, target - 2));
+  }
+  return total;
 }
 
 export function levelForXp(xp) {
@@ -136,11 +145,16 @@ function nodeIdsFor(heroId) {
   return new Set((SKILL_NODES[heroId] || []).map(node => node.id));
 }
 
-function normalizeHero(heroId, raw) {
-  const xp = asInt(raw?.xp, 0);
-  const rawLevel = raw?.level;
-  const level = rawLevel == null || rawLevel === '' ? null : Math.max(1, asInt(rawLevel, levelForXp(xp)));
-  const effectiveLevel = level || levelForXp(xp);
+function normalizeHero(heroId, raw, sourceSchema = PROGRESSION_SCHEMA) {
+  let xp = asInt(raw?.xp, 0);
+  const recordedLevel = raw?.level == null || raw?.level === '' ? 1 : Math.max(1, asInt(raw.level, 1));
+  // Schema 1/2 compared total XP against non-cumulative thresholds. Preserve
+  // every already-earned level by moving legacy XP to the equivalent schema-3
+  // threshold once; never lower a Bearer during migration.
+  if (asInt(sourceSchema, 1) < 3 && recordedLevel > levelForXp(xp)) {
+    xp = Math.max(xp, xpForLevel(recordedLevel));
+  }
+  const effectiveLevel = levelForXp(xp);
   const focusAllocations = normalizeAllocations(raw?.focusAllocations);
   const allowed = nodeIdsFor(heroId);
   const unlockedNodes = [...new Set(Array.isArray(raw?.unlockedNodes) ? raw.unlockedNodes.filter(id => allowed.has(id)) : [])];
@@ -151,7 +165,7 @@ function normalizeHero(heroId, raw) {
   const skillEarned = Math.floor(effectiveLevel / 2) + asInt(raw?.bonusSkillPoints, 0);
   const skillSpent = unlockedNodes.reduce((sum, id) => sum + asInt((SKILL_NODES[heroId] || []).find(node => node.id === id)?.cost, 1), 0);
   return {
-    level,
+    level: effectiveLevel,
     xp,
     stats,
     focusAllocations,
@@ -164,7 +178,7 @@ function normalizeHero(heroId, raw) {
 }
 
 function blankHero(heroId) {
-  return normalizeHero(heroId, { level: null, xp: 0 });
+  return normalizeHero(heroId, { level: 1, xp: 0 });
 }
 
 export function createDefaultProgression() {
@@ -175,6 +189,7 @@ export function createDefaultProgression() {
     heroes: Object.fromEntries(ALL_BEARERS.map(id => [id, blankHero(id)])),
     inventory: { veilShard: 0, memoryFragment: 0 },
     encounters: {},
+    activities: {},
     claims: {},
     updatedAt: now()
   };
@@ -183,10 +198,12 @@ export function createDefaultProgression() {
 function normalize(raw) {
   const base = createDefaultProgression();
   const src = raw && typeof raw === 'object' ? raw : {};
-  for (const id of ALL_BEARERS) base.heroes[id] = normalizeHero(id, src.heroes?.[id]);
+  const sourceSchema = asInt(src.schema, 1);
+  for (const id of ALL_BEARERS) base.heroes[id] = normalizeHero(id, src.heroes?.[id], sourceSchema);
   base.inventory.veilShard = asInt(src.inventory?.veilShard, 0);
   base.inventory.memoryFragment = asInt(src.inventory?.memoryFragment, 0);
   base.encounters = src.encounters && typeof src.encounters === 'object' ? { ...src.encounters } : {};
+  base.activities = src.activities && typeof src.activities === 'object' ? { ...src.activities } : {};
   base.claims = src.claims && typeof src.claims === 'object' ? { ...src.claims } : {};
   base.updatedAt = asInt(src.updatedAt, now());
   return base;
@@ -238,6 +255,45 @@ function trimClaims(claims, max = 40) {
   return Object.fromEntries(entries.slice(0, max));
 }
 
+function awardCoreXp(state, xpEach) {
+  const heroXpBefore = {};
+  const heroXp = {};
+  const levelUps = {};
+  const growth = {};
+  for (const id of CORE_BATTLE_BEARERS) {
+    const hero = state.heroes[id];
+    const beforeXp = asInt(hero.xp, 0);
+    const beforeLevel = levelForXp(beforeXp);
+    heroXpBefore[id] = beforeXp;
+    hero.xp = beforeXp + xpEach;
+    hero.level = levelForXp(hero.xp);
+    state.heroes[id] = normalizeHero(id, hero);
+    const afterLevel = state.heroes[id].level;
+    const naturalByLevel = [];
+    for (let level = beforeLevel + 1; level <= afterLevel; level += 1) {
+      naturalByLevel.push({ level, stats: naturalGainsForLevel(id, level) });
+    }
+    heroXp[id] = state.heroes[id].xp;
+    levelUps[id] = Math.max(0, afterLevel - beforeLevel);
+    growth[id] = {
+      natural: naturalByLevel.flatMap(entry => entry.stats),
+      naturalByLevel,
+      focusPoints: state.heroes[id].focusPoints,
+      skillPoints: state.heroes[id].skillPoints,
+      stats: { ...state.heroes[id].stats }
+    };
+  }
+  return {
+    heroXpBefore,
+    heroXp,
+    levels: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, state.heroes[id].level])),
+    levelUps,
+    growth,
+    nextLevelXp: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, nextLevelXp(state.heroes[id].level)])),
+    unlocks: { resonart: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, isResonartUnlocked(state.heroes[id])])) }
+  };
+}
+
 export function applyEncounterReward(locationId, options = {}, storage = globalThis.localStorage) {
   const state = loadProgression(storage);
   const table = PROGRESSION_TUNING.encounters[locationId];
@@ -251,23 +307,7 @@ export function applyEncounterReward(locationId, options = {}, storage = globalT
   const firstClear = !!options.firstClear && encounter.firstClearClaimed !== true;
   const reward = firstClear ? table.firstClear : table.repeat;
   const xpEach = asInt(reward.xpEach, 0);
-  const heroXp = {};
-  const levelUps = {};
-  const growth = {};
-  for (const id of CORE_BATTLE_BEARERS) {
-    const beforeLevel = state.heroes[id].level || levelForXp(state.heroes[id].xp);
-    state.heroes[id].xp += xpEach;
-    state.heroes[id].level = levelForXp(state.heroes[id].xp);
-    state.heroes[id] = normalizeHero(id, state.heroes[id]);
-    heroXp[id] = state.heroes[id].xp;
-    levelUps[id] = Math.max(0, state.heroes[id].level - beforeLevel);
-    growth[id] = {
-      natural: levelUps[id] ? naturalGainsForLevel(id, state.heroes[id].level) : [],
-      focusPoints: state.heroes[id].focusPoints,
-      skillPoints: state.heroes[id].skillPoints,
-      stats: { ...state.heroes[id].stats }
-    };
-  }
+  const advancement = awardCoreXp(state, xpEach);
 
   const items = {};
   for (const [id, qtyRaw] of Object.entries(reward.items || {})) {
@@ -288,17 +328,42 @@ export function applyEncounterReward(locationId, options = {}, storage = globalT
     firstClear,
     xpEach,
     bearers: [...CORE_BATTLE_BEARERS],
-    heroXp,
-    levels: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, state.heroes[id].level])),
-    levelUps,
-    growth,
-    nextLevelXp: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, nextLevelXp(state.heroes[id].level)])),
-    unlocks: { resonart: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, isResonartUnlocked(state.heroes[id])])) },
+    ...advancement,
     items,
     levelCurveLocked: PROGRESSION_TUNING.levelCurveLocked,
     tuningRevision: PROGRESSION_TUNING.revision
   };
   state.claims[encounterId] = { at: now(), payout };
+  state.claims = trimClaims(state.claims);
+  saveProgression(state, storage);
+  return payout;
+}
+
+export function applyProgressReward(activityId, options = {}, storage = globalThis.localStorage) {
+  const activity = PROGRESSION_TUNING.activities[activityId];
+  if (!activity) return { awarded: false, reason: 'no-activity-table', activityId };
+  const state = loadProgression(storage);
+  const claimId = String(options.claimId || `activity:${activityId}`);
+  if (state.claims[claimId]) return { ...state.claims[claimId].payout, awarded: false, duplicate: true };
+  const xpEach = asInt(activity.xpEach, 0);
+  const advancement = awardCoreXp(state, xpEach);
+  const payout = {
+    awarded: true,
+    type: 'progress',
+    activityId,
+    label: activity.label,
+    xpEach,
+    bearers: [...CORE_BATTLE_BEARERS],
+    ...advancement,
+    levelCurveLocked: PROGRESSION_TUNING.levelCurveLocked,
+    tuningRevision: PROGRESSION_TUNING.revision
+  };
+  state.activities[activityId] = {
+    completed: true,
+    completedAt: now(),
+    xpEach
+  };
+  state.claims[claimId] = { at: now(), payout };
   state.claims = trimClaims(state.claims);
   saveProgression(state, storage);
   return payout;
@@ -313,6 +378,7 @@ export function progressionSummary(storage = globalThis.localStorage) {
     levelCurveLocked: state.levelCurveLocked,
     heroes: clone(state.heroes),
     inventory: { ...state.inventory },
-    encounters: clone(state.encounters || {})
+    encounters: clone(state.encounters || {}),
+    activities: clone(state.activities || {})
   };
 }

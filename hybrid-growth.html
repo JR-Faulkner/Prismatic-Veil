@@ -31,7 +31,7 @@
 <div id="rotate" class="rotate" hidden>ROTATE TO LANDSCAPE</div>
 <script src="./assets/js/pv-growth-audio.js?pvasset=live31b1"></script>
 <script type="module">
-import { SKILL_NODES, STAT_KEYS, allocateFocus, loadProgression, unlockSkillNode } from './src/progression/PVProgression.js?v=live31b1';
+import { SKILL_NODES, STAT_KEYS, allocateFocus, loadProgression, unlockSkillNode } from './src/progression/PVProgression.js?v=live31e1';
 const META={prismel:{name:'PRISMEL',role:'PRISM WEAVER',accent:'#70eaff'},kineza:{name:'KINEZA',role:'MOMENTUM BORN',accent:'#ff667c'},auryi:{name:'AURYI',role:'AURA SPOKEN',accent:'#f4d479'}};
 const params=new URLSearchParams(location.search),source=params.get('source')||'party',returnLocation=params.get('return')||'whisper';let view=params.get('view')==='atlas'?'atlas':'book',heroId=META[params.get('hero')]?params.get('hero'):'prismel',selectedNode=null,selectedStat=null,focusOpen=false,navIndex=0,lastButtons=[],stamp=0;
 const stage=document.getElementById('stage'),art=document.getElementById('art'),nodes=document.getElementById('nodes'),focusTray=document.getElementById('focusTray'),heroName=document.getElementById('heroName'),heroRole=document.getElementById('heroRole'),focusPoints=document.getElementById('focusPoints'),skillPoints=document.getElementById('skillPoints'),selectionName=document.getElementById('selectionName'),selectionDescription=document.getElementById('selectionDescription'),selectionStatus=document.getElementById('selectionStatus'),confirm=document.getElementById('confirm'),focusMode=document.getElementById('focusMode'),modeToggle=document.getElementById('modeToggle'),back=document.getElementById('back'),toast=document.getElementById('toast');

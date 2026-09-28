@@ -13,7 +13,7 @@
 
   let progression=null;
   let lastSig='';
-  const moduleUrl=new URL('./src/progression/PVProgression.js?v=live31a1',document.baseURI).href;
+  const moduleUrl=new URL('./src/progression/PVProgression.js?v=live31e1',document.baseURI).href;
   const currentId=()=>document.querySelector('.slot.selected')?.dataset.character||localStorage.getItem('pv.partySelected')||'prismel';
 
   async function authority(){
@@ -39,7 +39,7 @@
     const hero=state.heroes?.[id]||{xp:0,level:null};
     const level=hero.level||progression?.levelForXp?.(hero.xp||0)||1;
     const next=progression?.nextLevelXp?.(level||1)||0;
-    note.innerHTML=`<b>PROGRESSION BANK</b><br><strong>LEVEL ${level||1} · ${Number(hero.xp||0).toLocaleString()} XP</strong> banked for this Bearer. Next threshold: ${Number(next).toLocaleString()} XP. The curve remains provisional so balance can change without discarding earned XP.`;
+    note.innerHTML=`<b>PROGRESSION BANK</b><br><strong>LEVEL ${level||1} · ${Number(hero.xp||0).toLocaleString()} XP</strong> banked for this Bearer. Next threshold: ${Number(next).toLocaleString()} XP. The cumulative journey curve is locked; earned XP and levels persist.`;
   }
 
   async function render(){

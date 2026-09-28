@@ -63,6 +63,7 @@ jobs:
           const p=await import('file:///tmp/PVProgression.mjs');
           const mem=new Map();
           const storage={getItem:k=>mem.has(k)?mem.get(k):null,setItem:(k,v)=>mem.set(k,String(v))};
+          if(p.xpForLevel(2)!==100||p.xpForLevel(3)!==235||p.xpForLevel(4)!==417)throw new Error('cumulative XP curve drift');
           const first=p.applyEncounterReward('echo',{firstClear:true,encounterId:'echo:test:first'},storage);
           if(!first.awarded||!first.firstClear||first.xpEach!==100)throw new Error('first-clear XP payout drift');
           let s=p.loadProgression(storage);
@@ -93,7 +94,23 @@ jobs:
           s=p.loadProgression(storage);
           for(const id of p.CORE_BATTLE_BEARERS)if(s.heroes[id].xp!==140)throw new Error(`repeat XP missing for ${id}`);
           if(s.inventory.veilShard!==1||s.inventory.memoryFragment!==1)throw new Error('repeat incorrectly duplicated first-clear items');
-          if(s.levelCurveLocked!==false)throw new Error('level curve was accidentally locked');
+          if(s.levelCurveLocked!==true)throw new Error('cumulative level curve is not locked');
+          const towerMem=new Map();
+          const towerStorage={getItem:k=>towerMem.has(k)?towerMem.get(k):null,setItem:(k,v)=>towerMem.set(k,String(v))};
+          p.applyEncounterReward('whisper',{firstClear:true,encounterId:'whisper:journey'},towerStorage);
+          const ring=p.applyProgressReward('tower:ring-console',{},towerStorage);
+          const harmonic=p.applyProgressReward('tower:harmonic-calibration',{},towerStorage);
+          const routing=p.applyProgressReward('tower:resonance-routing',{},towerStorage);
+          if(ring.xpEach!==20||harmonic.xpEach!==20||routing.xpEach!==35)throw new Error('Tower progression payout drift');
+          const towerDuplicate=p.applyProgressReward('tower:ring-console',{},towerStorage);
+          if(!towerDuplicate.duplicate||towerDuplicate.awarded)throw new Error('Tower progression duplicate guard failed');
+          const towerState=p.loadProgression(towerStorage);
+          for(const id of p.CORE_BATTLE_BEARERS)if(towerState.heroes[id].xp!==175||towerState.heroes[id].level!==2)throw new Error(`Tower journey pacing drift for ${id}`);
+          const legacyMem=new Map();
+          legacyMem.set(p.PROGRESSION_STORAGE_KEY,JSON.stringify({schema:2,heroes:{prismel:{xp:135,level:3,focusAllocations:{Might:1}}}}));
+          const legacyStorage={getItem:k=>legacyMem.has(k)?legacyMem.get(k):null,setItem:(k,v)=>legacyMem.set(k,String(v))};
+          const migrated=p.loadProgression(legacyStorage);
+          if(migrated.heroes.prismel.level!==3||migrated.heroes.prismel.xp!==235||migrated.heroes.prismel.focusAllocations.Might!==1)throw new Error('schema-2 earned-level migration failed');
           console.log('LIVE30E progression exercise PASS');
           JS
       - name: Exercise Prismel skill effects
@@ -144,12 +161,15 @@ jobs:
           if "import Live28K27BattleGuardScene from './Live28K27BattleGuardScene.js?v=live29f1'" not in bridge: errors.append('LIVE29F no longer inherits K27')
           if "applyEncounterReward" not in bridge or "payout" not in bridge: errors.append('LIVE30E payout bridge missing')
           if "PROGRESSION_STORAGE_KEY = 'pv.progression.v1'" not in progression: errors.append('progression storage authority drift')
-          if "levelCurveLocked: false" not in progression: errors.append('unlocked level-curve contract drift')
-          for token in ['PROGRESSION_SCHEMA = 2','allocateFocus','unlockSkillNode','NATURAL_GROWTH']:
-              if token not in progression: errors.append(f'LIVE31A progression contract missing: {token}')
+          if "levelCurveLocked: true" not in progression: errors.append('locked cumulative level-curve contract drift')
+          for token in ['PROGRESSION_SCHEMA = 3','applyProgressReward','tower:ring-console','allocateFocus','unlockSkillNode','NATURAL_GROWTH']:
+              if token not in progression: errors.append(f'LIVE31E progression contract missing: {token}')
           if "firstClearClaimed !== true" not in progression: errors.append('one-time first-clear ledger guard missing')
           if "pv-party-live30e.js" not in party: errors.append('Party progression UI not loaded')
           if "pv.progression.v1" not in party_ui: errors.append('Party progression refresh key missing')
+          if "pv-party-live30e.js?pvasset=live31e1" not in party: errors.append('Party progression cache tag drift')
+          for page_name,page in [('Party runtime',party_ui),('Battle results',battle),('Ascension',level_up),('Growth',growth),('Tower',tower)]:
+              if 'PVProgression.js?v=live31e1' not in page: errors.append(f'{page_name} progression cache tag drift')
           if 'hybrid-growth.html?view=atlas' not in party: errors.append('Party Growth route missing')
           if 'hybrid-level-up.html?source=victory' not in battle: errors.append('Victory level-up handoff missing')
           if 'resonance-ascension.png' not in level_up: errors.append('approved Ascension art not live')
@@ -162,6 +182,8 @@ jobs:
           if 'hitChanceFor(command, heroId' not in battle_config: errors.append('Prismel skill-aware battle accuracy missing')
           if "hitChanceFor(command, hero.id)" not in battle_scene: errors.append('Battle execution does not publish hero identity to accuracy rules')
           if 'resonanceSightActive' not in tower or 'SIGHT ${direction}' not in tower: errors.append('Resonance Sight Tower effect missing')
+          for token in ['applyProgressReward','tower:ring-console','tower:harmonic-calibration','tower:resonance-routing','PVSaveState?.saveRun']:
+              if token not in tower: errors.append(f'Tower progression integration missing: {token}')
           for path in ['assets/ui/progression/v1/resonance-ascension.png','assets/ui/progression/v1/prismodial-growth-map.png','assets/ui/progression/v1/spectrum-atlas.png']:
               if not Path(path).is_file() or Path(path).stat().st_size < 1000000: errors.append(f'approved progression art missing: {path}')
           if 'NO REWARDS AWARDED' not in overworld: errors.append('defeat reward presentation missing')

@@ -1,5 +1,13 @@
 # The Prismatic Veil — Resume Anchor
 
+## LIVE31E cumulative XP and Tower progression (2026-09-28)
+
+- `pv.progression.v1` advances to schema 3 without changing the storage key. Level thresholds are now cumulative: Level 2 at 100 total XP, Level 3 at 235, Level 4 at 417, and Level 5 at 663. The current curve contract is locked against accidental regression.
+- Schema-1/2 migration preserves every earned level, XP value, Focus allocation, skill node, item, clear, and claim. If an old non-cumulative threshold produced a higher level, migration raises XP to the equivalent cumulative threshold rather than lowering that Bearer.
+- The playable journey now awards progression beyond battle: Resonance Tower locks grant +20, +20, and +35 XP to each active Bearer. Whispering Grove first clear plus all three Tower locks totals 175 XP each, keeping the party at Level 2 and leaving meaningful room before Level 3 at 235.
+- Tower rewards are one-time and duplicate-safe, use the authentic Tower memory-link cue, show a live XP notice, and immediately refresh `pv.save.v1` so MAIN → CONTINUE cannot restore a pre-puzzle ledger.
+- Echo Castle and Frigid Hills remain movement/story locations, so they do not fabricate XP before their encounters exist. K27 Hybrid battle/cinematic authority is unchanged.
+
 ## LIVE31D TV encounter stability (2026-09-28)
 
 - TV/browser witness exposed two separate first-encounter defects: the Whispering Grove handoff could race map/controller input and leave the party positioned at Echo Castle instead of entering battle, and the single Hushling was forced to geometric screen center where it overlapped Kineza's foreground lane.
