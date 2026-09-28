@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#070817">
+<title>Resonart Theatre · The Prismatic Veil</title>
+<style>
+:root{--night:#050714;--panel:#091127e8;--gold:#d8b66a;--gold2:#f6dfa0;--cyan:#7cecff;--violet:#9a68ff;--paper:#f6e7bf}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;min-height:100dvh;background:var(--night);color:var(--paper);font-family:Georgia,serif;overflow:hidden}
+body{background:
+radial-gradient(circle at 50% 8%,#7550ff2c,transparent 34%),
+radial-gradient(circle at 86% 58%,#45d9ff18,transparent 28%),
+linear-gradient(180deg,#091126,#040611 68%,#02030a)}
+.shell{position:fixed;inset:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;padding:max(12px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));gap:12px}
+header{display:flex;align-items:center;justify-content:space-between;gap:14px;min-width:0}
+.title{min-width:0}.kicker{font:700 10px/1 system-ui,sans-serif;letter-spacing:.28em;color:var(--cyan);text-transform:uppercase}
+h1{margin:5px 0 0;font-size:clamp(28px,4.4vw,62px);font-weight:500;letter-spacing:.055em;color:var(--gold2);text-shadow:0 0 22px #f6cf7952}
+.sub{margin-top:5px;font:600 9px/1.2 system-ui,sans-serif;letter-spacing:.14em;color:#b9c9dc;text-transform:uppercase}
+.back{flex:0 0 auto;color:var(--paper);text-decoration:none;border:1px solid #d8b66a88;border-radius:999px;padding:9px 13px;background:#071022d9;font:bold 10px Georgia;letter-spacing:.12em;box-shadow:0 7px 20px #0007}
+.back:focus,.back.navfocus{outline:none;box-shadow:0 0 0 2px var(--cyan),0 0 20px #8768ff8c}
+main{min-height:0;display:grid;grid-template-columns:minmax(0,1fr) clamp(220px,24vw,330px);gap:12px}
+.stage,.library{border:1px solid #d8b66a72;background:linear-gradient(145deg,#081126e8,#050918ee);box-shadow:inset 0 0 0 1px #fff2b80c,0 18px 44px #0008;min-height:0}
+.stage{position:relative;display:grid;grid-template-rows:minmax(0,1fr) auto;overflow:hidden;border-radius:18px}
+.stage:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 18%,#9cecff0d 46%,transparent 69%);z-index:2}
+.viewport{position:relative;min-height:0;background:#010209;display:grid;place-items:center;overflow:hidden}
+video{width:100%;height:100%;object-fit:contain;background:#010209}
+.watermark{position:absolute;left:14px;top:12px;z-index:3;padding:5px 8px;border:1px solid #d8b66a66;background:#040712b5;color:#f1d99b;font:700 8px system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;pointer-events:none}
+.meta{position:relative;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;background:linear-gradient(90deg,#071226f5,#0c1530f5)}
+.metaText{min-width:0}.bearer{font:700 8px system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan)}
+.move{font-size:clamp(18px,2.2vw,30px);color:var(--gold2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.controls{display:flex;gap:7px;flex:0 0 auto}.ctl{min-height:38px;padding:7px 11px;border:1px solid #d8b66a78;border-radius:9px;background:#09132b;color:var(--paper);font:bold 9px Georgia;letter-spacing:.08em}.ctl.primary{background:linear-gradient(#f3dea5,#cba75e);color:#20170c}.ctl:focus,.ctl.navfocus{outline:none;box-shadow:0 0 0 2px var(--cyan),0 0 15px #845cff88}
+.library{border-radius:18px;padding:12px;display:grid;grid-template-rows:auto minmax(0,1fr);gap:9px;overflow:hidden}.library h2{margin:0;font-size:14px;font-weight:500;letter-spacing:.12em;color:#f3d993}.cards{display:grid;gap:8px;align-content:start;overflow:auto;padding:1px 2px 2px}
+.card{appearance:none;width:100%;display:grid;grid-template-columns:42px minmax(0,1fr);gap:10px;align-items:center;text-align:left;padding:10px;border:1px solid #d8b66a4f;border-radius:12px;background:linear-gradient(100deg,#081129ed,#0a1020e8);color:var(--paper);box-shadow:0 7px 16px #0005}
+.card .sigil{width:38px;height:38px;display:grid;place-items:center;transform:rotate(45deg);border:1px solid currentColor;background:#071126;box-shadow:0 0 16px currentColor}.card .sigil span{transform:rotate(-45deg);font:bold 15px Georgia}.card[data-id="prismel"]{color:#a98cff}.card[data-id="kineza"]{color:#ff776d}.card[data-id="auryi"]{color:#f4d26f}
+.cardText{min-width:0}.card b{display:block;color:#f8e7bc;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.card small{display:block;margin-top:3px;color:#9fb2cc;font:600 7.5px system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}.card.selected{border-color:#f0d489;box-shadow:0 0 0 1px #fff4b552,0 0 20px #8a62ff5c}.card:focus,.card.navfocus{outline:none;box-shadow:0 0 0 2px var(--cyan),0 0 18px #8a62ff88}
+footer{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#8496b0;font:600 8px system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
+footer strong{color:#d5c18b;font-weight:700}.hint{white-space:nowrap}
+@media(max-width:800px),(max-height:520px){
+ .shell{gap:7px;padding-top:max(7px,env(safe-area-inset-top));padding-bottom:max(7px,env(safe-area-inset-bottom))}
+ h1{font-size:clamp(24px,5vw,38px);margin-top:2px}.sub{font-size:7px}.kicker{font-size:8px}
+ main{grid-template-columns:minmax(0,1fr) clamp(188px,25vw,238px);gap:7px}.stage,.library{border-radius:12px}
+ .library{padding:8px;gap:6px}.library h2{font-size:11px}.cards{gap:5px}.card{grid-template-columns:31px minmax(0,1fr);gap:7px;padding:7px}.card .sigil{width:28px;height:28px}.card .sigil span{font-size:11px}.card b{font-size:10px}.card small{font-size:6px}
+ .meta{padding:7px 9px}.bearer{font-size:6px}.move{font-size:15px}.controls{gap:4px}.ctl{min-height:30px;padding:5px 8px;font-size:7px}
+ .watermark{left:8px;top:7px;font-size:6px}.back{padding:7px 10px;font-size:8px}
+ footer{font-size:6px}
+}
+@media(max-width:620px) and (orientation:portrait){
+ html,body{overflow:auto}.shell{position:relative;min-height:100dvh;grid-template-rows:auto auto auto}.sub{display:none}
+ main{grid-template-columns:1fr;grid-template-rows:minmax(42vh,55vh) auto}.library{min-height:0}.cards{grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}
+ .card{grid-template-columns:1fr;text-align:center}.card .sigil{margin:auto}.card small{display:none}
+ footer{padding-bottom:4px}.hint{display:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+  <div class="title">
+    <div class="kicker">Cinematic Archive</div>
+    <h1>RESONART THEATRE</h1>
+    <div class="sub">Replay production Resonarts · no level or progression requirement</div>
+  </div>
+  <a class="back navitem" href="./index.html" id="backButton">BACK TO TITLE</a>
+</header>
+<main>
+  <section class="stage" aria-label="Resonart player">
+    <div class="viewport">
+      <div class="watermark">Theatre Playback · Save Unchanged</div>
+      <video id="player" controls playsinline webkit-playsinline preload="metadata"></video>
+    </div>
+    <div class="meta">
+      <div class="metaText"><div class="bearer" id="bearer">Prismel</div><div class="move" id="moveName">Refracted-Reflections</div></div>
+      <div class="controls">
+        <button class="ctl navitem" id="prevButton" type="button">◀ PREV</button>
+        <button class="ctl primary navitem" id="playButton" type="button">PLAY</button>
+        <button class="ctl navitem" id="nextButton" type="button">NEXT ▶</button>
+      </div>
+    </div>
+  </section>
+  <aside class="library">
+    <h2>SELECT RESONART</h2>
+    <div class="cards" id="cards">
+      <button class="card navitem selected" data-id="prismel" type="button"><span class="sigil"><span>◇</span></span><span class="cardText"><b>Refracted-Reflections</b><small>Prismel · Production Master</small></span></button>
+      <button class="card navitem" data-id="kineza" type="button"><span class="sigil"><span>✦</span></span><span class="cardText"><b>Thunder Tornado</b><small>Kineza · Production Master</small></span></button>
+      <button class="card navitem" data-id="auryi" type="button"><span class="sigil"><span>☼</span></span><span class="cardText"><b>Aurora Pulse</b><small>Auryi · Production Master</small></span></button>
+    </div>
+  </aside>
+</main>
+<footer><span><strong>THEATRE MODE</strong> does not unlock skills, award XP, or modify campaign progression.</span><span class="hint">D-PAD / ARROWS · A / ENTER</span></footer>
+</div>
+<script>
+(()=>{
+'use strict';
+const LIBRARY=Object.freeze([
+  {id:'prismel',bearer:'PRISMEL',name:'Refracted-Reflections',src:'./assets/characters/prismel/animations/refracted_reflections/cinematic/Prismel_RefractedReflections_Resonart_MASTER.mp4?pvasset=theatre31c'},
+  {id:'kineza',bearer:'KINEZA',name:'Thunder Tornado',src:'./assets/characters/kineza/animations/thunder_tornado/cinematic/Kineza_ThunderTornado_Resonart_MASTER.mp4?pvasset=theatre31c'},
+  {id:'auryi',bearer:'AURYI',name:'Aurora Pulse',src:'./assets/characters/auryi/animations/aurora_pulse/cinematic/Auryi_AuroraPulse_Resonart_Beauty_v2_KingAI_MASTER.mp4?pvasset=theatre31c'}
+]);
+const player=document.getElementById('player');
+const bearer=document.getElementById('bearer');
+const moveName=document.getElementById('moveName');
+const cards=[...document.querySelectorAll('.card')];
+const prevButton=document.getElementById('prevButton');
+const playButton=document.getElementById('playButton');
+const nextButton=document.getElementById('nextButton');
+const backButton=document.getElementById('backButton');
+let selected=0;
+let focusIndex=0;
+let lastPad={left:false,right:false,up:false,down:false,a:false,b:false};
+const navItems=()=>[backButton,prevButton,playButton,nextButton,...cards].filter(Boolean);
+
+function select(index,{play=false,focusCard=false}={}){
+  selected=(index+LIBRARY.length)%LIBRARY.length;
+  const item=LIBRARY[selected];
+  cards.forEach((card,i)=>card.classList.toggle('selected',i===selected));
+  bearer.textContent=item.bearer;
+  moveName.textContent=item.name;
+  if(!player.src || !player.src.includes(item.src.split('?')[0])){
+    player.pause();
+    player.src=item.src;
+    player.load();
+  }else{
+    try{player.currentTime=0}catch(e){}
+  }
+  if(focusCard){cards[selected].focus({preventScroll:true});focusIndex=navItems().indexOf(cards[selected]);}
+  if(play)player.play().catch(()=>{});
+  const url=new URL(location.href);url.searchParams.set('resonart',item.id);history.replaceState(null,'',url);
+}
+function playSelected(){
+  if(player.ended){try{player.currentTime=0}catch(e){}}
+  if(player.paused)player.play().catch(()=>{});else player.pause();
+}
+function focusNav(delta){
+  const items=navItems();if(!items.length)return;
+  focusIndex=(focusIndex+delta+items.length)%items.length;
+  items.forEach(x=>x.classList.remove('navfocus'));
+  const target=items[focusIndex];target.classList.add('navfocus');target.focus({preventScroll:true});
+}
+cards.forEach((card,i)=>card.addEventListener('click',()=>select(i,{play:true})));
+prevButton.addEventListener('click',()=>select(selected-1,{play:true}));
+nextButton.addEventListener('click',()=>select(selected+1,{play:true}));
+playButton.addEventListener('click',playSelected);
+player.addEventListener('play',()=>playButton.textContent='PAUSE');
+player.addEventListener('pause',()=>playButton.textContent='PLAY');
+player.addEventListener('ended',()=>playButton.textContent='REPLAY');
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();focusNav(1)}
+  else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();focusNav(-1)}
+  else if(e.key==='Enter'||e.key===' '){
+    const active=document.activeElement;
+    if(active===playButton){e.preventDefault();playSelected()}
+  }else if(e.key==='Escape'){location.href='./index.html'}
+});
+function pollGamepad(){
+  const gp=navigator.getGamepads?.()?.[0];
+  if(gp){
+    const state={
+      left:!!(gp.buttons?.[14]?.pressed||(gp.axes?.[0]??0)<-.55),
+      right:!!(gp.buttons?.[15]?.pressed||(gp.axes?.[0]??0)>.55),
+      up:!!(gp.buttons?.[12]?.pressed||(gp.axes?.[1]??0)<-.55),
+      down:!!(gp.buttons?.[13]?.pressed||(gp.axes?.[1]??0)>.55),
+      a:!!gp.buttons?.[0]?.pressed,b:!!gp.buttons?.[1]?.pressed
+    };
+    if((state.right&&!lastPad.right)||(state.down&&!lastPad.down))focusNav(1);
+    if((state.left&&!lastPad.left)||(state.up&&!lastPad.up))focusNav(-1);
+    if(state.a&&!lastPad.a)document.activeElement?.click?.();
+    if(state.b&&!lastPad.b)location.href='./index.html';
+    lastPad=state;
+  }
+  requestAnimationFrame(pollGamepad);
+}
+const requested=new URLSearchParams(location.search).get('resonart');
+const start=Math.max(0,LIBRARY.findIndex(x=>x.id===requested));
+select(start,{play:false});
+requestAnimationFrame(pollGamepad);
+document.documentElement.dataset.pvResonartTheatre='LIVE31C';
+})();
+</script>
+</body>
+</html>
