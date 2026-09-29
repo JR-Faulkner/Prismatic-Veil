@@ -91,7 +91,16 @@
     "entry": "resonance-tower-complete.html",
     "new_game_policy": "A New Game stamps pv.run.id. The first Resonance Tower visit for that run clears stale Tower sync/arrival state, plays the arrival cinematic, and opens Puzzle 1: the Echo Ring Console.",
     "resume_policy": "A deliberate re-entry during the same run preserves the current Tower calibration step.",
-    "puzzle_1": "Echo Ring Console with fixed physical art and orbiting glyphs. The text-and-range-input calibration screen is Puzzle 2 and must never be the first-arrival screen."
+    "lore_function": "The apparent old water tower is an ancient Resonance Relay. Its three authentication locks prevent damaged memories, false echoes, or a single controlling voice from being amplified across the Veil.",
+    "puzzle_1": "Identity lock: the Echo Ring Console separates Whispering Grove's authentic living memory from Veil static. It uses fixed physical art and orbiting glyphs and remains the first playable Tower screen.",
+    "puzzle_2": "Integrity lock: the Bearers balance low, mid, and high harmonics so the Relay can amplify the recovered memory without changing what it remembers.",
+    "puzzle_3": "Consensus lock: the stabilized memory must route Grove to Prismel to Auryi to Kineza to Core, proving that all three Bearers can carry it without one voice controlling it.",
+    "completion_result": "The Relay authenticates the first true Grove memory, the Prismodial Grimoire translates its sealed page, and the route toward the Veil Rift becomes readable.",
+    "battle_return_policy": "A Whispering Grove battle returns to Whispering Grove after victory or defeat. The live battle wrapper defaults missing pvreturn values to whisper so a direct or legacy launch cannot strand the player at Echo Castle.",
+    "intro_music": "assets/music/Prism of Elders.mp3",
+    "interior_music": "assets/music/veil_clockwork_drift.mp3",
+    "interaction_audio": "Existing PV Tower cues under assets/audio/tower/audition-v1 are mapped to ring turns/alignment, harmonic search/lock, route links/errors, and final Relay resolution. No oscillator or generic arcade cues.",
+    "input_policy": "All three locks support touch and keyboard. Puzzle 1 ring control plus Puzzle 2 calibration and Puzzle 3 routing also expose direct Xbox/gamepad paths."
   },
   "first_encounter": {
     "enemy": "Hushling",

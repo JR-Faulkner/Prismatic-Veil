@@ -1,5 +1,13 @@
 # The Prismatic Veil — Resume Anchor
 
+## LIVE31F Resonance Relay lore and audio (2026-09-28)
+
+- The apparent Old Water Tower is now explicitly an ancient Resonance Relay. Its locks exist to stop Veil static, damaged memories, and a single controlling voice from being amplified into the wider world.
+- The three playable locks have canonical purposes: Puzzle 1 authenticates the Grove memory's identity, Puzzle 2 preserves its integrity while amplifying it, and Puzzle 3 forms a consensus key through Prismel, Auryi, and Kineza.
+- The arrival cinematic uses `Prism of Elders` as its low intro bed when browser audio is available, then crossfades into `veil_clockwork_drift` for the Tower interior. A visible audio control handles iPhone/Xbox autoplay restrictions and respects `pv.musicEnabled`.
+- Existing PV Tower recordings now map directly to ring movement/alignment, harmonic search/lock, route links/errors, and final Relay resolution. All three puzzles retain touch/keyboard controls and now expose explicit Xbox/gamepad paths.
+- Progression payouts, Continue snapshots, K27 battle authority, and the LIVE31D TV/Hushling fixes are unchanged.
+
 ## LIVE31E cumulative XP and Tower progression (2026-09-28)
 
 - `pv.progression.v1` advances to schema 3 without changing the storage key. Level thresholds are now cumulative: Level 2 at 100 total XP, Level 3 at 235, Level 4 at 417, and Level 5 at 663. The current curve contract is locked against accidental regression.
@@ -398,3 +406,10 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 - The Overworld map no longer injects the redundant top-left `PRISMATIC VEIL` masthead. Current Location, Destination Intel, stage selection, board-piece travel, and route semantics remain intact.
 - Cache-busts were advanced through the Hybrid battle adapter and Overworld 30B layer so nested module/style changes are fetched on Pages.
 - Local battle and Overworld smoke checks passed. Normal MAIN iPhone/iPad/Xbox Edge validation remains the final runtime gate.
+
+## LIVE31F Resonance Relay audio, puzzle contracts, and battle return (2026-09-28)
+
+- Resonance Tower now explains its three locks in-world: Identity separates the living Grove memory from Veil static, Integrity stabilizes its harmonics without changing the memory, and Consensus proves the signal can pass through all three Bearers without one voice controlling it.
+- Tower arrival uses `Prism of Elders`; the interior uses `veil_clockwork_drift`; existing Tower cues cover ring turns/alignment, harmonic search/lock, route links/errors, and final Relay resolution. Puzzle 2 and Puzzle 3 also expose direct gamepad paths.
+- Fixed the battle wrapper fallback that could strand a Whispering Grove clear on Echo Castle. Missing `pvreturn` now defaults to `whisper`, and the static result link uses the same return location.
+- Local full three-lock Tower flow passed at desktop and 844x390 landscape with no console errors; remote Pages and real-device audio remain the final gates.

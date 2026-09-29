@@ -184,11 +184,15 @@ jobs:
           if 'resonanceSightActive' not in tower or 'SIGHT ${direction}' not in tower: errors.append('Resonance Sight Tower effect missing')
           for token in ['applyProgressReward','tower:ring-console','tower:harmonic-calibration','tower:resonance-routing','PVSaveState?.saveRun']:
               if token not in tower: errors.append(f'Tower progression integration missing: {token}')
+          for token in ['ANCIENT RELAY','Prism%20of%20Elders.mp3?pvasset=live31f1','veil_clockwork_drift.mp3?pvasset=live31f1','ring-turn.wav','ring-align.wav','harmonic-search.wav','harmonic-lock.wav','route-release.wav','tower-resolve.wav','towerPadIndex']:
+              if token not in tower: errors.append(f'LIVE31F Tower lore/audio/input contract missing: {token}')
           for path in ['assets/ui/progression/v1/resonance-ascension.png','assets/ui/progression/v1/prismodial-growth-map.png','assets/ui/progression/v1/spectrum-atlas.png']:
               if not Path(path).is_file() or Path(path).stat().st_size < 1000000: errors.append(f'approved progression art missing: {path}')
           if 'NO REWARDS AWARDED' not in overworld: errors.append('defeat reward presentation missing')
           for token in ['Live28K27BattleGuardScene.js','Live29FEncounterBattleScene.js','Live28K7PartyFormationView.js']:
               if token not in hybrid: errors.append(f'Hybrid battle authority missing: {token}')
+          if "returnLocation=battleParams.get('pvreturn')||'whisper'" not in battle: errors.append('Battle result default return drifted from Whispering Grove')
+          if 'pvreturn=whisper&pvresult=victory' not in battle: errors.append('Battle fallback return link drifted from Whispering Grove')
           if errors:
               print('LIVE30E PROGRESSION GUARD FAILED')
               for e in errors: print(' -',e)

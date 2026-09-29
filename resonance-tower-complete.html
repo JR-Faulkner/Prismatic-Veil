@@ -27,7 +27,7 @@ button,a,input{touch-action:manipulation}
 .cal-readout{text-align:center;padding:12px;border:1px solid #7cecff44;background:#06152e;color:#aebfd8;font:800 9px system-ui;letter-spacing:.12em}.cal-readout.locked{color:#fff0bd;border-color:#ead07f99;box-shadow:0 0 20px #7cecff33}
 .route-map{grid-template-columns:repeat(5,1fr);align-items:center;position:relative;padding:34px 6px}.route-map:before{content:"";position:absolute;left:8%;right:8%;top:50%;height:1px;background:linear-gradient(90deg,#7cecff33,#ead07f88,#a878ff55)}.node{position:relative;z-index:2;aspect-ratio:1;max-width:76px;width:100%;justify-self:center;border:1px solid #8797bb77;border-radius:50%;background:#07152e;color:#aebed5;font:900 7px system-ui;letter-spacing:.07em;box-shadow:0 0 0 5px #030914}.node.hit{border-color:#7cecff;color:#fff0bd;background:#142b4d;box-shadow:0 0 0 5px #030914,0 0 18px #7cecff55}.node.wrong{border-color:#ff7790;color:#ffd6dd}
 .route-readout{text-align:center;color:#9eb2d0;font:800 9px system-ui;letter-spacing:.11em;min-height:20px}
-.complete{display:none;min-height:100%;place-items:center;text-align:center;padding:26px}.complete.show{display:grid}.complete h2{font-size:clamp(30px,5vw,56px);font-weight:500;color:var(--gold);margin:7px 0}.complete p{max-width:58ch;color:#c7d4e8;font:700 12px/1.5 system-ui}.complete-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin-top:18px}.complete-actions a{text-decoration:none}
+.complete{display:none;min-height:100%;place-items:center;text-align:center;padding:26px}.complete.show{display:grid}.complete>div{width:min(720px,88vw);padding:clamp(18px,3vw,30px);border:1px solid #ead07f77;background:linear-gradient(145deg,#061329dc,#050b19e8);box-shadow:0 18px 55px #000c,inset 0 0 34px #7cecff18;backdrop-filter:blur(10px)}.complete h2{font-size:clamp(30px,5vw,56px);font-weight:500;color:var(--gold);margin:7px 0}.complete p{max-width:58ch;margin-left:auto;margin-right:auto;color:#d8e3f1;font:700 12px/1.5 system-ui}.complete-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin-top:18px}.complete-actions a{text-decoration:none}
 .bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 11px;border:1px solid #d9bc6a55;background:#061329dc;color:#8fa5c2;font:800 7px system-ui;letter-spacing:.13em}.bottom a{color:#f2d88f;text-decoration:none}
 @media(max-width:760px),(max-height:520px){.puzzle.active{grid-template-columns:1fr;padding:12px;gap:10px}.copy{text-align:center}.copy p{font-size:9px;margin-left:auto;margin-right:auto}.hint{font-size:8px}.rings{width:min(330px,74vw,46vh)}.ring-control{width:64px;height:64px}.ring-control[data-ring="0"]{right:-1%;top:5%}.ring-control[data-ring="1"]{left:-3%;top:40%}.ring-control[data-ring="2"]{right:1%;bottom:1%}.top{padding:6px 9px}.pip{width:24px;height:24px}.route-map{padding:14px 4px}.node{max-width:52px}.bottom{padding:5px 8px}}
 /* Puzzle 1 visual authority · cinematic first-person console */
@@ -76,6 +76,7 @@ body{height:100dvh}
 @media(orientation:portrait){.puzzle[data-step="1"] .console{inset:80px 10px 46px}.resonance-console{grid-template-rows:minmax(0,1fr) 94px}.target{height:94px;flex-wrap:wrap}.target>div{flex:1 1 100%}.ring-art{object-fit:contain}.ring{width:calc(100% - 100px)}.core{width:20%}.ring-band{top:14%}}
 @media(prefers-reduced-motion:reduce){.orbit-marker{will-change:auto}}
 .xp-award{position:fixed;z-index:24;left:50%;top:max(74px,calc(env(safe-area-inset-top) + 64px));transform:translate(-50%,-14px);min-width:min(420px,72vw);padding:10px 18px;border:1px solid #f3d477aa;background:linear-gradient(90deg,#08152eea,#182f58ee,#08152eea);color:#fff0b7;text-align:center;font:900 clamp(8px,1.1vw,12px) system-ui;letter-spacing:.14em;box-shadow:0 12px 32px #000c,0 0 28px #7cecff66;opacity:0;pointer-events:none;transition:opacity .22s ease,transform .22s ease}.xp-award.show{opacity:1;transform:translate(-50%,0)}.xp-award b{color:#7cecff}
+.tower-audio{position:fixed;z-index:48;right:max(132px,calc(env(safe-area-inset-right) + 120px));top:max(24px,calc(env(safe-area-inset-top) + 20px));padding:6px 9px;border:1px solid #7cecff66;background:#061329df;color:#dcecff;font:900 7px system-ui;letter-spacing:.13em;box-shadow:0 5px 18px #0008;backdrop-filter:blur(7px)}.tower-audio.needs-audio{border-color:#ead07faa;color:#fff0bd;box-shadow:0 0 22px #7cecff55}.arrival:not([hidden])+.tower-audio{left:max(12px,env(safe-area-inset-left));right:auto;top:max(12px,env(safe-area-inset-top))}@media(max-width:760px){.tower-audio{right:max(106px,calc(env(safe-area-inset-right) + 94px));top:max(18px,calc(env(safe-area-inset-top) + 14px));padding:5px 7px;font-size:6px}}
 
 </style>
 </head>
@@ -85,32 +86,35 @@ body{height:100dvh}
   <button id="skipArrival" class="arrival-skip" type="button" hidden>SKIP</button>
   <button id="playArrival" class="arrival-play" type="button" hidden>PLAY ARRIVAL CINEMATIC</button>
   <div id="arrivalState" class="arrival-state">PREPARING ARRIVAL…</div>
-  <div id="arrivalIntro" class="arrival-ui" hidden><b>ROUTE CALIBRATED · TOWER SIGNAL ACQUIRED</b><strong>Resonance Tower</strong><span>The Grove signal reaches an old water tower rebuilt around a Veil conduit. Three calibration locks stand between the Bearers and the next route.</span><button id="enterTower" class="btn">ENTER TOWER</button></div>
+  <div id="arrivalIntro" class="arrival-ui" hidden><b>ANCIENT RELAY · DORMANT SIGNAL ACQUIRED</b><strong>Resonance Tower</strong><span>This was never merely a water tower. It is an ancient Resonance Relay built to keep damaged memories and false echoes from spreading across the Veil. The Grove memory must pass three authentication locks before the relay will carry it onward.</span><button id="enterTower" class="btn">BEGIN RELAY AUTHENTICATION</button></div>
 </div>
+<button id="towerAudio" class="tower-audio" type="button" aria-pressed="true">AUDIO ON</button>
 
 <main class="tower">
   <header class="top"><div><div class="eyebrow">THE PRISMATIC VEIL · RESONANCE TOWER</div><h1 class="title">Signal Calibration</h1></div><div class="progress"><div class="pip" data-pip="1"><span>01</span></div><div class="pip" data-pip="2"><span>02</span></div><div class="pip" data-pip="3"><span>03</span></div></div></header>
   <section class="stage">
     <article class="puzzle" data-step="1">
-      <div class="copy"><div class="phase">01 · ECHO RING CONSOLE</div><h2>Read the Grove memory</h2><p>The Tower has translated one target glyph for each resonance band. Rotate the floating rings until the living pattern matches the recovered signal.</p><div class="puzzle-rule"><strong>TOUCH CALIBRATION</strong><span class="example">SWIPE A RING OR TAP ITS ORBIT HANDLE</span>Match all three glyphs to stabilize the Whispering Grove memory.</div></div>
-      <div class="console"><div class="resonance-console"><div class="console-brand"><span>PRISMATIC VEIL</span><b>RESONANCE TOWER</b></div><div class="console-meta"><span>RESONANCE ARRAY · LIVE</span><span>SWIPE · TAP · KEYBOARD · CONTROLLER</span></div><div class="console-rail rail-left"><small>HARMONIC BANDS</small><span class="rail-glyph violet">◈</span><span class="rail-glyph cyan">✦</span><span class="rail-glyph gold">○</span></div><div class="rings" aria-label="Three-ring resonance console"><div class="ring r1" id="ring1"><img class="ring-art" src="./assets/ui/overworld/v2/resonance_ring_violet_v1.png?pvasset=ring-violet2" alt=""><span class="ring-band">OUTER RESONANCE</span></div><div class="ring r2" id="ring2"><img class="ring-art" src="./assets/ui/overworld/v2/resonance_ring_cyan_v1.png?pvasset=ring-cyan2" alt=""><span class="ring-band">MIDDLE RESONANCE</span></div><div class="ring r3" id="ring3"><img class="ring-art" src="./assets/ui/overworld/v2/resonance_ring_gold_v1.png?pvasset=ring-gold2" alt=""><span class="ring-band">INNER RESONANCE</span></div><div class="core" aria-hidden="true"><img class="core-art" src="./assets/ui/overworld/v2/resonance_prism_core_v1.png?pvasset=prism-core2" alt=""></div><div class="ring-controls"><button class="ring-btn ring-control" data-ring="0" type="button"></button><button class="ring-btn ring-control" data-ring="1" type="button"></button><button class="ring-btn ring-control" data-ring="2" type="button"></button></div></div><aside class="target-legend"><b>TARGET GLYPHS</b><span class="legend-glyph violet">◈</span><span class="legend-glyph cyan">✦</span><span class="legend-glyph gold">○</span><small>ALIGN · LISTEN<br>RESONATE · ASCEND</small></aside><div class="console-caption"><b>ECHO RING CONSOLE</b><span>MATCH THE THREE RESONANCES</span></div><div class="target" id="ringStatus"><b>TARGET GLYPHS · ◈ ✦ ○</b><span class="match">RESONANCE MATCH · 0 / 3</span></div></div></div>
+      <div class="copy"><div class="phase">01 · ECHO RING CONSOLE</div><h2>Identify the true memory</h2><p>The Grove left a living resonance inside the Bearers. Align its three bands so the Relay can separate that authentic memory from Veil static and false echoes.</p><div class="puzzle-rule"><strong>AUTHENTICATION I · IDENTITY</strong><span class="example">SWIPE A RING OR TAP ITS ORBIT HANDLE</span>Match all three glyphs to prove which memory truly came from Whispering Grove.</div></div>
+      <div class="console"><div class="resonance-console"><div class="console-brand"><span>PRISMATIC VEIL</span><b>RESONANCE TOWER</b></div><div class="console-meta"><span>RESONANCE ARRAY · LIVE</span><span>SWIPE · TAP · KEYBOARD · CONTROLLER</span></div><div class="console-rail rail-left"><small>HARMONIC BANDS</small><span class="rail-glyph violet">◈</span><span class="rail-glyph cyan">✦</span><span class="rail-glyph gold">○</span></div><div class="rings" aria-label="Three-ring resonance console"><div class="ring r1" id="ring1"><img class="ring-art" src="./assets/ui/overworld/v2/resonance_ring_violet_v1.png?pvasset=ring-violet2" alt=""><span class="ring-band">OUTER RESONANCE</span></div><div class="ring r2" id="ring2"><img class="ring-art" src="./assets/ui/overworld/v2/resonance_ring_cyan_v1.png?pvasset=ring-cyan2" alt=""><span class="ring-band">MIDDLE RESONANCE</span></div><div class="ring r3" id="ring3"><img class="ring-art" src="./assets/ui/overworld/v2/resonance_ring_gold_v1.png?pvasset=ring-gold2" alt=""><span class="ring-band">INNER RESONANCE</span></div><div class="core" aria-hidden="true"><img class="core-art" src="./assets/ui/overworld/v2/resonance_prism_core_v1.png?pvasset=prism-core2" alt=""></div><div class="ring-controls"><button class="ring-btn ring-control" data-ring="0" type="button"></button><button class="ring-btn ring-control" data-ring="1" type="button"></button><button class="ring-btn ring-control" data-ring="2" type="button"></button></div></div><aside class="target-legend"><b>TARGET GLYPHS</b><span class="legend-glyph violet">◈</span><span class="legend-glyph cyan">✦</span><span class="legend-glyph gold">○</span><small>ALIGN · LISTEN<br>RESONATE · ASCEND</small></aside><div class="console-caption"><b>ECHO RING CONSOLE</b><span>SEPARATE THE GROVE MEMORY FROM VEIL STATIC</span></div><div class="target" id="ringStatus"><b>TARGET GLYPHS · ◈ ✦ ○</b><span class="match">RESONANCE MATCH · 0 / 3</span></div></div></div>
     </article>
 
     <article class="puzzle" data-step="2">
-      <div class="copy"><div class="phase">02 · TOWER ASCENT CALIBRATION</div><h2>Balance the signal</h2><p>The Grove memory is readable, but the Tower cannot carry it upward until the Bearers tune three harmonic bands into their calibration windows.</p><div class="hint">Bring each band within <b>±4</b> of its target. The core locks only when all three harmonics settle together.</div></div>
+      <div class="copy"><div class="phase">02 · TOWER ASCENT CALIBRATION</div><h2>Stabilize the memory</h2><p>The signal is authentic, but amplification could twist it into a false echo. Tune all three harmonic bands so the Relay can lift the Grove memory without changing what it remembers.</p><div class="hint"><b>AUTHENTICATION II · INTEGRITY</b><br>Bring each band within ±4 of its target. The core locks only when all three harmonics settle together.</div></div>
       <div class="cal-grid"><div class="band"><div class="band-head"><span>LOW HARMONIC</span><small>TARGET 62</small></div><input class="cal" data-target="62" type="range" min="0" max="100" value="18"></div><div class="band"><div class="band-head"><span>MID HARMONIC</span><small>TARGET 38</small></div><input class="cal" data-target="38" type="range" min="0" max="100" value="82"></div><div class="band"><div class="band-head"><span>HIGH HARMONIC</span><small>TARGET 76</small></div><input class="cal" data-target="76" type="range" min="0" max="100" value="31"></div><div id="calReadout" class="cal-readout">SIGNAL DRIFT · 133</div><button id="lockCalibration" class="btn">LOCK CALIBRATION</button></div>
     </article>
 
     <article class="puzzle" data-step="3">
-      <div class="copy"><div class="phase">03 · RESONANCE ROUTING MAP</div><h2>Route the Bearers</h2><p>The final seal does not want three separate voices. Route the recovered Grove memory through the Bearers in sequence and into the Tower core.</p><div class="hint">TRACE · <b>GROVE → PRISMEL → AURYI → KINEZA → CORE</b><br>A wrong connection drops the route and restarts the trace.</div></div>
+      <div class="copy"><div class="phase">03 · RESONANCE ROUTING MAP</div><h2>Form a living key</h2><p>The Relay will not trust a single carrier. Route the stabilized memory through Prismel, Auryi, and Kineza so their joined resonance proves the message can be carried without one voice controlling it.</p><div class="hint"><b>AUTHENTICATION III · CONSENSUS</b><br>GROVE → PRISMEL → AURYI → KINEZA → CORE. A wrong connection drops the route.</div></div>
       <div><div class="route-map"><button class="node" data-route="grove">GROVE</button><button class="node" data-route="prismel">PRISMEL</button><button class="node" data-route="auryi">AURYI</button><button class="node" data-route="kineza">KINEZA</button><button class="node" data-route="core">CORE</button></div><div id="routeReadout" class="route-readout">ROUTE WAITING · START AT GROVE</div></div>
     </article>
 
-    <section id="complete" class="complete"><div><div class="phase">TOWER CALIBRATION COMPLETE</div><h2>Resonance Synchronized</h2><p>The Tower now reads Whispering Grove and the three Bearers as one stable key. The Prismodial Grimoire can translate the sealed page, and the route toward the Veil Rift is now visible.</p><div class="complete-actions"><a class="btn" href="./prismodial-grimoire.html?from=tower">OPEN PRISMODIAL GRIMOIRE</a><a class="btn" href="./hybrid-overworld.html?pvreturn=oldwater&pvresult=victory">RETURN TO OVERWORLD</a></div></div></section>
+    <section id="complete" class="complete"><div><div class="phase">RESONANCE RELAY REACTIVATED</div><h2>Memory Accepted</h2><p>The Tower has authenticated Whispering Grove by identity, integrity, and consensus. Its first true memory now travels through the Relay, the Prismodial Grimoire can translate the sealed page, and the route toward the Veil Rift is visible.</p><div class="complete-actions"><a class="btn" href="./prismodial-grimoire.html?from=tower">OPEN PRISMODIAL GRIMOIRE</a><a class="btn" href="./hybrid-overworld.html?pvreturn=oldwater&pvresult=victory">RETURN TO OVERWORLD</a></div></div></section>
   </section>
   <footer class="bottom"><span id="status">TOWER LINK · WAITING</span><a href="./hybrid-overworld.html">RETURN TO OVERWORLD</a></footer>
 </main>
 <div id="xpAward" class="xp-award" role="status" aria-live="polite"></div>
+<audio id="towerIntroMusic" preload="auto" src="./assets/music/Prism%20of%20Elders.mp3?pvasset=live31f1"></audio>
+<audio id="towerMusic" preload="auto" loop src="./assets/music/veil_clockwork_drift.mp3?pvasset=live31f1"></audio>
 
 <script src="./assets/js/pv-save-state.js?pvasset=save6-tower"></script>
 <script type="module">
@@ -121,6 +125,34 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
   const fresh=qs.get('fresh')==='1';
   const arrival=document.getElementById('arrival'),video=document.getElementById('arrivalVideo'),enter=document.getElementById('enterTower'),skip=document.getElementById('skipArrival'),playArrival=document.getElementById('playArrival'),arrivalState=document.getElementById('arrivalState'),arrivalIntro=document.getElementById('arrivalIntro'),status=document.getElementById('status');
   const puzzles=[...document.querySelectorAll('.puzzle')],pips=[...document.querySelectorAll('.pip')],complete=document.getElementById('complete'),xpAward=document.getElementById('xpAward');
+  const audioButton=document.getElementById('towerAudio'),introMusic=document.getElementById('towerIntroMusic'),towerMusic=document.getElementById('towerMusic');
+  const cueRoot='./assets/audio/tower/audition-v1/',cueSources={ringTurn:'ring-turn.wav',ringAlign:'ring-align.wav',harmonicSearch:'harmonic-search.wav',harmonicLock:'harmonic-lock.wav',memoryLink:'memory-link.wav',routeRelease:'route-release.wav',towerResolve:'tower-resolve.wav'};
+  let audioEnabled=localStorage.getItem('pv.musicEnabled')!=='0',audioActivated=false,musicSwapFrame=0;
+  introMusic.volume=.26;towerMusic.volume=.16;
+  function paintAudioButton(needsGesture=false){
+    audioButton.textContent=audioEnabled?(needsGesture?'ENABLE AUDIO':'AUDIO ON'):'AUDIO OFF';
+    audioButton.classList.toggle('needs-audio',audioEnabled&&needsGesture);audioButton.setAttribute('aria-pressed',String(audioEnabled));
+  }
+  async function playMedia(media){if(!audioEnabled)return false;try{await media.play();audioActivated=true;paintAudioButton(false);return true}catch(_){paintAudioButton(true);return false}}
+  function playCue(name,volume=.28){
+    if(!audioEnabled||!cueSources[name])return;
+    const cue=new Audio(`${cueRoot}${cueSources[name]}?pvasset=live31f1`);cue.preload='auto';cue.volume=volume;cue.play().then(()=>{audioActivated=true;paintAudioButton(false)}).catch(()=>paintAudioButton(true));
+  }
+  function startIntroMusic(){if(introMusic.ended)introMusic.currentTime=0;playMedia(introMusic)}
+  async function startTowerMusic(){if(!audioEnabled)return;const started=await playMedia(towerMusic);if(started&&towerMusic.volume<.02)towerMusic.volume=.16}
+  function enterTowerMix(){
+    if(!audioEnabled)return;
+    cancelAnimationFrame(musicSwapFrame);towerMusic.volume=0;
+    playMedia(towerMusic).then(started=>{if(!started)return;const began=performance.now(),introStart=introMusic.paused?0:introMusic.volume;const fade=now=>{const t=Math.min(1,(now-began)/850);towerMusic.volume=.16*t;if(introStart)introMusic.volume=introStart*(1-t);if(t<1)musicSwapFrame=requestAnimationFrame(fade);else{introMusic.pause();introMusic.currentTime=0;introMusic.volume=.26}};musicSwapFrame=requestAnimationFrame(fade)});
+  }
+  function stopTowerAudio(){cancelAnimationFrame(musicSwapFrame);for(const media of [introMusic,towerMusic]){try{media.pause()}catch(_){}}}
+  audioButton.addEventListener('click',()=>{
+    if(audioEnabled&&audioButton.classList.contains('needs-audio')){if(arrival.hidden)enterTowerMix();else startIntroMusic();return}
+    audioEnabled=!audioEnabled;localStorage.setItem('pv.musicEnabled',audioEnabled?'1':'0');
+    if(audioEnabled){if(arrival.hidden)enterTowerMix();else startIntroMusic()}else{audioActivated=false;stopTowerAudio()}
+    paintAudioButton(false);
+  });
+  paintAudioButton(false);
   // A New Game gets a fresh Tower arrival even if an older Tower value survived
   // in browser storage.  Once this run has entered the Tower, its normal
   // in-progress calibration state is preserved for a deliberate re-entry.
@@ -138,13 +170,11 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
   let sync=Math.max(0,Math.min(3,Number(localStorage.getItem(SYNC)||0)));
   try{localStorage.setItem(CURRENT,'oldwater');localStorage.setItem(LAST,from)}catch(_){}
   const towerRewards=[null,'tower:ring-console','tower:harmonic-calibration','tower:resonance-routing'];
-  const rewardCue=new Audio('./assets/audio/tower/audition-v1/memory-link.wav?pvasset=live31e1');rewardCue.preload='auto';rewardCue.volume=.34;
   function showReward(payout){
     if(!payout?.awarded)return;
     const leveled=Object.values(payout.levelUps||{}).some(Number);
     xpAward.innerHTML=`<b>+${payout.xpEach} XP EACH</b> · ${payout.label.toUpperCase()}${leveled?' · LEVEL UP':''}`;
     xpAward.classList.add('show');clearTimeout(showReward.timer);showReward.timer=setTimeout(()=>xpAward.classList.remove('show'),2200);
-    if(localStorage.getItem('pv.musicEnabled')!=='0'){try{const cue=rewardCue.cloneNode(true);cue.volume=rewardCue.volume;cue.play().catch(()=>{})}catch(_){}}
   }
   function awardStep(step){
     const activityId=towerRewards[step];if(!activityId)return;
@@ -163,6 +193,7 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
     introShown=true;
     clearTimeout(autoplayWatch);
     try{video.pause()}catch(_){}
+    startIntroMusic();
     arrival.classList.add('intro');
     skip.hidden=true;playArrival.hidden=true;arrivalState.hidden=true;
     arrivalIntro.hidden=false;
@@ -171,6 +202,7 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
   function markPlaying(){
     cinematicStarted=true;
     clearTimeout(autoplayWatch);
+    startIntroMusic();
     playArrival.hidden=true;
     arrivalState.hidden=true;
     skip.hidden=false;
@@ -178,6 +210,7 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
   async function startCinematic(fromGesture=false){
     if(arrival.hidden||introShown)return;
     try{
+      if(fromGesture)startIntroMusic();
       video.muted=true;
       if(video.currentTime>0.15)video.currentTime=0;
       const p=video.play();
@@ -202,7 +235,7 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
     arrivalState.hidden=false;
     playArrival.hidden=false;
   }
-  function dismissArrival(){arrival.hidden=true;try{video.pause();localStorage.setItem(SEEN,'1')}catch(_){}}
+  function dismissArrival(){arrival.hidden=true;try{video.pause();localStorage.setItem(SEEN,'1')}catch(_){}enterTowerMix()}
   enter.addEventListener('click',dismissArrival);
   skip.addEventListener('click',revealArrivalIntro);
   playArrival.addEventListener('click',()=>startCinematic(true));
@@ -215,7 +248,7 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
     arrivalState.hidden=false;
     setTimeout(revealArrivalIntro,900);
   });
-  if(localStorage.getItem(SEEN)==='1'||sync>0)arrival.hidden=true;
+  if(localStorage.getItem(SEEN)==='1'||sync>0){arrival.hidden=true;startTowerMusic()}
   else {
     arrivalIntro.hidden=true;skip.hidden=true;playArrival.hidden=true;
     arrivalState.textContent='PREPARING ARRIVAL…';arrivalState.hidden=false;
@@ -223,6 +256,11 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
     startCinematic(false);
     autoplayWatch=setTimeout(offerManualPlay,1100);
   }
+  const resumeAudio=()=>{if(audioEnabled){if(arrival.hidden)startTowerMusic();else startIntroMusic()}};
+  document.addEventListener('pointerdown',event=>{if(event.target!==audioButton&&!audioActivated)resumeAudio()},{capture:true});
+  document.addEventListener('keydown',event=>{if(event.target!==audioButton&&!audioActivated)resumeAudio()},{capture:true});
+  addEventListener('pagehide',stopTowerAudio);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stopTowerAudio();else if(audioActivated)resumeAudio()});
 
   // Puzzle 1 · Fixed level rings with orbiting resonance glyphs.
   const glyphs=['◇','✦','◈','△','○','✧'],target=[2,1,4],ring=[0,3,1];
@@ -231,9 +269,9 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
   const buttons=[...document.querySelectorAll('.ring-btn')];
   const ringStatus=document.getElementById('ringStatus'),ringNames=['OUTER','MIDDLE','INNER'];
   const positions=[...ring],motions=[null,null,null],markers=[];
-  let selectedRing=0,activeDrag=null;
+  let selectedRing=0,activeDrag=null,lastMatchCount=0;
   const mod=n=>((n%glyphs.length)+glyphs.length)%glyphs.length;
-  ringStatus.innerHTML='<div><b id="signalMatch"></b><span class="signal-help">Drag a band · align its target at the front notch. Arrows also turn.</span></div><button id="stabilizeSignal" type="button" disabled>STABILIZE SIGNAL</button>';
+  ringStatus.innerHTML='<div><b id="signalMatch"></b><span class="signal-help">AUTHENTICATE THE GROVE MEMORY · separate its living pattern from Veil static.</span></div><button id="stabilizeSignal" type="button" disabled>SEAL TRUE MEMORY</button>';
   const matchReadout=document.getElementById('signalMatch'),stabilize=document.getElementById('stabilizeSignal');
   ringEls.forEach((el,i)=>{
     el.querySelector('.ring-band').textContent=`${ringNames[i]} · TARGET ${glyphs[target[i]]}`;
@@ -265,10 +303,13 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
       ringEls[i].classList.toggle('matched',matched);b.classList.toggle('matched',matched);
       b.setAttribute('aria-label',`${ringNames[i]} ring, current ${glyphs[ring[i]]}, target ${glyphs[target[i]]}. ${matched?'Matched.':'Drag or use left and right arrows.'}`);
     });
+    if(sync===0&&matches>lastMatchCount)playCue('ringAlign',.3);
+    lastMatchCount=matches;
     matchReadout.textContent=matches===3?'SIGNAL ALIGNED · 3 / 3':`RESONANCE MATCH · ${matches} / 3`;
     stabilize.disabled=matches!==3||!!activeDrag||motions.some(Boolean);
   }
   function settleRing(i,destination){
+    if(mod(destination)!==ring[i])playCue('ringTurn',.24);
     motions[i]={from:positions[i],to:destination,start:performance.now()};
     ring[i]=mod(destination);ringPaint();
   }
@@ -304,7 +345,7 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
     b.addEventListener('click',event=>{if(event.detail===0)stepRing(i,1)});
     b.addEventListener('focus',()=>selectRing(i));
   });
-  stabilize.addEventListener('click',()=>{if(sync===0&&!stabilize.disabled&&ring.every((v,i)=>v===target[i]))save(1)});
+  stabilize.addEventListener('click',()=>{if(sync===0&&!stabilize.disabled&&ring.every((v,i)=>v===target[i])){playCue('memoryLink',.36);save(1)}});
   document.addEventListener('keydown',event=>{
     if(sync!==0||!arrival.hidden||event.target===stabilize||event.target.closest?.('.ring-step'))return;
     if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter',' '].includes(event.key))return;
@@ -312,7 +353,7 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
     if(event.key==='ArrowUp'||event.key==='ArrowDown'){selectRing((selectedRing+(event.key==='ArrowUp'?2:1))%3);buttons[selectedRing].focus({preventScroll:true})}
     else stepRing(selectedRing,event.key==='ArrowLeft'?-1:1);
   });
-  let padPrevious={},padRepeatAt=0;
+  let padPrevious={},padRepeatAt=0,towerPadIndex={cal:0,route:0};
   function animateRings(now){
     motions.forEach((motion,i)=>{
       if(!motion)return;
@@ -321,12 +362,22 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
       if(t===1){motions[i]=null;ringPaint()}
     });
     const pad=[...(navigator.getGamepads?.()||[])].find(p=>p?.connected);
-    if(pad&&sync===0&&arrival.hidden){
+    if(pad&&arrival.hidden){
       const down={up:pad.buttons[12]?.pressed||pad.axes[1]<-.55,down:pad.buttons[13]?.pressed||pad.axes[1]>.55,left:pad.buttons[14]?.pressed||pad.axes[0]<-.55,right:pad.buttons[15]?.pressed||pad.axes[0]>.55,a:pad.buttons[0]?.pressed};
       for(const key of ['up','down','left','right','a'])if(down[key]&&(!padPrevious[key]||(key!=='a'&&now>padRepeatAt))){
-        if(key==='up'||key==='down')selectRing((selectedRing+(key==='up'?2:1))%3);
-        else if(key==='a'&&!stabilize.disabled)stabilize.click();
-        else stepRing(selectedRing,key==='left'?-1:1);
+        startTowerMusic();
+        if(sync===0){
+          if(key==='up'||key==='down')selectRing((selectedRing+(key==='up'?2:1))%3);
+          else if(key==='a'&&!stabilize.disabled)stabilize.click();
+          else stepRing(selectedRing,key==='left'?-1:1);
+        }else if(sync===1){
+          if(key==='up'||key==='down'){towerPadIndex.cal=(towerPadIndex.cal+(key==='up'?2:1))%3;sliders[towerPadIndex.cal]?.focus({preventScroll:true})}
+          else if(key==='left'||key==='right'){const slider=sliders[towerPadIndex.cal];slider.value=String(Math.max(0,Math.min(100,Number(slider.value)+(key==='left'?-2:2))));slider.dispatchEvent(new Event('input',{bubbles:true}))}
+          else if(key==='a'&&!lock.disabled)lock.click();
+        }else if(sync===2){
+          if(key==='left'||key==='up'||key==='right'||key==='down'){const delta=key==='left'||key==='up'?-1:1;towerPadIndex.route=(towerPadIndex.route+delta+nodes.length)%nodes.length;nodes[towerPadIndex.route]?.focus({preventScroll:true})}
+          else if(key==='a')nodes[towerPadIndex.route]?.click();
+        }
         padRepeatAt=now+280;
       }
       padPrevious=down;
@@ -337,24 +388,28 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
 
   // Puzzle 2 · Tower Ascent Calibration
   const sliders=[...document.querySelectorAll('.cal')],calReadout=document.getElementById('calReadout'),lock=document.getElementById('lockCalibration');
+  let calibrationStable=false,lastHarmonicCue=0;
   function calibration(){
     const drift=sliders.reduce((sum,s)=>sum+Math.abs(Number(s.value)-Number(s.dataset.target)),0);
     const ok=sliders.every(s=>Math.abs(Number(s.value)-Number(s.dataset.target))<=4);
     calReadout.textContent=ok?'CALIBRATION WINDOW · STABLE':`SIGNAL DRIFT · ${drift}`;
     calReadout.classList.toggle('locked',ok);lock.disabled=!ok;
+    if(sync===1&&ok&&!calibrationStable)playCue('harmonicSearch',.3);
+    calibrationStable=ok;
     return ok;
   }
-  sliders.forEach(s=>s.addEventListener('input',calibration));
-  lock.addEventListener('click',()=>{if(sync===1&&calibration())save(2)});
+  sliders.forEach(s=>s.addEventListener('input',()=>{const ok=calibration(),now=performance.now();if(sync===1&&!ok&&now-lastHarmonicCue>620){playCue('harmonicSearch',.15);lastHarmonicCue=now}}));
+  lock.addEventListener('click',()=>{if(sync===1&&calibration()){playCue('harmonicLock',.38);save(2)}});
   calibration();
 
   // Puzzle 3 · Resonance Routing Map
   const sequence=['grove','prismel','auryi','kineza','core'],nodes=[...document.querySelectorAll('.node')],readout=document.getElementById('routeReadout');let routeIndex=0;
-  function resetRoute(wrong=null){routeIndex=0;nodes.forEach(n=>n.classList.remove('hit','wrong'));if(wrong){wrong.classList.add('wrong');setTimeout(()=>wrong.classList.remove('wrong'),240)}readout.textContent='ROUTE DROPPED · START AGAIN AT GROVE'}
+  function resetRoute(wrong=null){routeIndex=0;nodes.forEach(n=>n.classList.remove('hit','wrong'));if(wrong){playCue('harmonicSearch',.2);wrong.classList.add('wrong');setTimeout(()=>wrong.classList.remove('wrong'),240)}readout.textContent='ROUTE DROPPED · START AGAIN AT GROVE'}
   nodes.forEach(node=>node.addEventListener('click',()=>{
     if(sync!==2)return;
     const id=node.dataset.route;
     if(id!==sequence[routeIndex]){resetRoute(node);return}
+    playCue(id==='core'?'towerResolve':'routeRelease',id==='core'?.42:.22);
     node.classList.add('hit');routeIndex++;readout.textContent=routeIndex<sequence.length?`ROUTE STABLE · NEXT ${sequence[routeIndex].toUpperCase()}`:'ROUTE COMPLETE · TOWER CORE OPEN';
     if(routeIndex===sequence.length){
       try{localStorage.setItem(CLEAR,'1');localStorage.setItem(CURRENT,'oldwater')}catch(_){}
