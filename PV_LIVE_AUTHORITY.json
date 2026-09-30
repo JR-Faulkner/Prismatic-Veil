@@ -33,6 +33,11 @@
     ],
     "growth_policy": "Each level after 1 grants one Focus Point for the selected Bearer. Natural growth automatically raises three stats on even levels and two on odd levels, while Focus allocations remain player-directed. The trio also shares one compact three-node Resonance Path with one party-wide Resonance Point per party level.",
     "migration_policy": "Schema-1/2 saves remain on pv.progression.v1 and migrate to schema 3 without discarding XP, levels, Focus allocations, skill nodes, inventory, clears, encounters, or reward claims. Legacy levels are preserved by lifting XP to the equivalent cumulative threshold when required; no Bearer is down-leveled.",
+    "party_readout_policy": "The live Party renderer owns Level, HP, RP, and all six Core Stats after its progression module mounts; the legacy natural-growth decorator yields and does not observe child-list writes, preventing a self-triggered render loop.",
+    "party_cache_tags": {
+      "natural_growth_decorator": "live31a2",
+      "progression_readout": "live31j2"
+    },
     "party_route": "The live Party Growth command opens the Prismodial Grimoire Resonance Path. Victory Continue opens Resonance Ascension before returning to the Overworld.",
     "shared_resonance_path": {
       "entry": "hybrid-growth.html?view=book",

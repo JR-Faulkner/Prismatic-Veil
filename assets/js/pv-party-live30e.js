@@ -13,7 +13,7 @@
 
   let progression=null;
   let lastSig='';
-  const moduleUrl=new URL('./src/progression/PVProgression.js?v=live31j1',document.baseURI).href;
+  const moduleUrl=new URL('./src/progression/PVProgression.js?v=live31j2',document.baseURI).href;
   const currentId=()=>document.querySelector('.slot.selected')?.dataset.character||localStorage.getItem('pv.partySelected')||'prismel';
 
   async function authority(){
@@ -69,8 +69,12 @@
     }catch(err){console.warn('[PV] Party progression readout unavailable',err)}
   }
 
+  // The renderer writes the same panel it reads. Watching childList here
+  // re-triggered render from its own kicker/strip updates and could starve
+  // the Party route before the readable values appeared. Slot selection is a
+  // class change; progression changes arrive through click/storage events.
   const observer=new MutationObserver(()=>queueMicrotask(render));
-  observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+  observer.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
   document.addEventListener('click',()=>queueMicrotask(render),true);
   addEventListener('storage',e=>{if(e.key==='pv.progression.v1')render()});
   render();

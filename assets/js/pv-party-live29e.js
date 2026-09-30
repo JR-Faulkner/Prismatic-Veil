@@ -56,6 +56,11 @@
   }
   let lastDataSig='';
   function syncPartyData(){
+    // LIVE31A progression owns the readable level/HP/RP/stat cells. The
+    // earlier natural-growth decorator must stand down once that authority
+    // has mounted, otherwise its mini-cell class writes can ping-pong with
+    // the live renderer.
+    if(document.documentElement.dataset.pvPartyProgression==='LIVE31A')return;
     const id=currentId(),slot=slotFor(id),leader=isLeader(id),g=GROWTH[id];
     const sig=[id,slot,leader?1:0,affinity(),title()].join('|');
     const firstMini=document.querySelector('.mini-stat b');

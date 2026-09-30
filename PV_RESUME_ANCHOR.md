@@ -1,5 +1,10 @@
 # The Prismatic Veil — Resume Anchor
 
+## LIVE31K Party stat readout guard (2026-09-30)
+
+- Party progression rendering no longer observes its own child-list writes, and the legacy decorator yields once LIVE31A mounts. This prevents the live Level/HP/RP/Core Stats readout from entering a render loop.
+- The normal route remains `hybrid-party-live.html` → Growth → `hybrid-growth.html?view=book`; only the Party cache tags changed (`live31a2` / `live31j2`).
+
 ## LIVE31J compact shared Resonance Path (2026-09-30)
 
 - Progression now presents one understandable loop: each level gives the selected Bearer a Focus Point for the six core stats, while the trio shares a single party-wide Resonance Path.

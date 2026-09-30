@@ -174,9 +174,10 @@ jobs:
           if "firstClearClaimed !== true" not in progression: errors.append('one-time first-clear ledger guard missing')
           if "pv-party-live30e.js" not in party: errors.append('Party progression UI not loaded')
           if "pv.progression.v1" not in party_ui: errors.append('Party progression refresh key missing')
-          if "pv-party-live30e.js?pvasset=live31j1" not in party: errors.append('Party progression cache tag drift')
+          if "pv-party-live30e.js?pvasset=live31j2" not in party: errors.append('Party progression cache tag drift')
           for page_name,page in [('Party runtime',party_ui),('Battle results',battle),('Ascension',level_up),('Growth',growth),('Tower',tower)]:
-              if 'PVProgression.js?v=live31j1' not in page: errors.append(f'{page_name} progression cache tag drift')
+              expected_progression_tag='live31j2' if page_name=='Party runtime' else 'live31j1'
+              if f'PVProgression.js?v={expected_progression_tag}' not in page: errors.append(f'{page_name} progression cache tag drift')
           if 'hybrid-growth.html?view=book' not in party: errors.append('Party Resonance Path route missing')
           if 'hybrid-level-up.html?source=victory' not in battle: errors.append('Victory level-up handoff missing')
           if 'resonance-ascension.png' not in level_up: errors.append('approved Ascension art not live')
