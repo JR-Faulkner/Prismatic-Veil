@@ -5,6 +5,7 @@
 - The Party progression renderer now observes slot-class changes and storage/click events without observing its own child-list writes. This keeps the route responsive and lets the six live Core Stats replace the initial placeholders reliably.
 - `pv-party-live29e.js` yields to the LIVE31A progression authority after it mounts, preventing the legacy natural-growth decorator from fighting the live Level/HP/RP/stat classes.
 - Cache tags are `live31a3` for the Party decorator and `live31j3` for the progression renderer; the renderer guards its own class writes so its observer cannot self-trigger forever. The approved Resonance Path, growth art, save schema, and battle authority are unchanged.
+- The embedded Party view pauses Overworld music while open and uses an explicit close/pagehide stop handshake so audio cannot continue after the view or browser page is gone.
 
 ## LIVE31J compact shared Resonance Path (2026-09-30)
 

@@ -94,6 +94,7 @@
     "party_board_piece": "assets/ui/overworld/v2/party_board_piece.svg",
     "party_board_step_audio": "assets/audio/overworld/menu_sfx/pv_menu_move_harvest.m4a",
     "party_board_step_policy": "Play one quiet board-step cue for each route hop after the starting tile; respect the Overworld audio toggle.",
+    "party_overlay_audio_policy": "Pause the Overworld track while the embedded Party view is open, resume it only after the overlay closes, and hard-stop both tracks on pagehide/beforeunload or the explicit close handshake.",
     "stage_selection_runtime": "assets/js/pv-overworld-live30h.js",
     "stage_selection_visual": "High-contrast selected-stage beacon, map label, controller-focus ring, and Destination Intel active state.",
     "stage_selection_policy": "Committed selection uses the gold/cyan beacon and SELECTED STAGE treatment; keyboard/controller focus uses the cyan LOOKING AT treatment without changing route or unlock semantics.",

@@ -4,6 +4,7 @@
 
 - Party progression rendering no longer observes its own child-list writes, and the legacy decorator yields once LIVE31A mounts. This prevents the live Level/HP/RP/Core Stats readout from entering a render loop.
 - The normal route remains `hybrid-party-live.html` → Growth → `hybrid-growth.html?view=book`; the Party cache tags are `live31a3` / `live31j3`. The progression renderer guards its own class writes so its class observer cannot self-trigger forever.
+- The embedded Party overlay pauses the Overworld music while open and resumes it only after close; direct Party navigation hard-stops audio on pagehide/beforeunload.
 
 ## LIVE31J compact shared Resonance Path (2026-09-30)
 
