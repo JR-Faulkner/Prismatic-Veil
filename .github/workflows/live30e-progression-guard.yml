@@ -72,6 +72,10 @@ jobs:
             if(h.xp!==100||h.level!==2)throw new Error(`first-clear level unlock missing for ${id}`);
             if(h.focusPoints!==1||h.skillPoints!==1)throw new Error(`growth points missing for ${id}`);
           }
+          if(s.partyPath.points!==1||s.partyPath.unlockedNodes.length)throw new Error('shared Resonance Path point drift');
+          if(!p.unlockPartyResonanceNode('resonance_link',storage).ok)throw new Error('shared Resonance Path unlock failed');
+          s=p.loadProgression(storage);
+          if(s.partyPath.points!==0||!s.partyPath.unlockedNodes.includes('resonance_link'))throw new Error('shared Resonance Path persistence failed');
           const prismel=s.heroes.prismel;
           const expected={Might:12,Mind:16,Spirit:15,Agility:13,Resilience:14,Harmony:12};
           for(const [stat,value] of Object.entries(expected))if(prismel.stats[stat]!==value)throw new Error(`Prismel natural growth drift: ${stat}`);
@@ -129,6 +133,8 @@ jobs:
           mem.set('pv.progression.v1',JSON.stringify({heroes:{prismel:{unlockedNodes:['guiding_light']}}}));
           mem.set('pv.leader','Prismel');
           if(cfg.hitChanceFor('Attack','kineza')!==.98)throw new Error('Guiding Light effect missing');
+          mem.set('pv.progression.v1',JSON.stringify({heroes:{prismel:{unlockedNodes:['guiding_light']}},partyPath:{unlockedNodes:['resonance_link']}}));
+          if(cfg.hitChanceFor('Attack','kineza')!==.98)throw new Error('Resonance Link effect missing');
           mem.delete('pv.leader');
           mem.set('pv.frontHero','prismel');
           if(cfg.hitChanceFor('Attack','auryi')!==.98)throw new Error('Guiding Light overworld leader compatibility missing');
@@ -167,13 +173,13 @@ jobs:
           if "firstClearClaimed !== true" not in progression: errors.append('one-time first-clear ledger guard missing')
           if "pv-party-live30e.js" not in party: errors.append('Party progression UI not loaded')
           if "pv.progression.v1" not in party_ui: errors.append('Party progression refresh key missing')
-          if "pv-party-live30e.js?pvasset=live31e1" not in party: errors.append('Party progression cache tag drift')
+          if "pv-party-live30e.js?pvasset=live31j1" not in party: errors.append('Party progression cache tag drift')
           for page_name,page in [('Party runtime',party_ui),('Battle results',battle),('Ascension',level_up),('Growth',growth),('Tower',tower)]:
-              if 'PVProgression.js?v=live31e1' not in page: errors.append(f'{page_name} progression cache tag drift')
-          if 'hybrid-growth.html?view=atlas' not in party: errors.append('Party Growth route missing')
+              if 'PVProgression.js?v=live31j1' not in page: errors.append(f'{page_name} progression cache tag drift')
+          if 'hybrid-growth.html?view=book' not in party: errors.append('Party Resonance Path route missing')
           if 'hybrid-level-up.html?source=victory' not in battle: errors.append('Victory level-up handoff missing')
           if 'resonance-ascension.png' not in level_up: errors.append('approved Ascension art not live')
-          for token in ['prismodial-growth-map.png','spectrum-atlas.png','unlockSkillNode','allocateFocus']:
+          for token in ['prismodial-growth-map.png','PARTY_RESONANCE_NODES','unlockPartyResonanceNode','allocateFocus','partyPath']:
               if token not in growth: errors.append(f'Growth screen contract missing: {token}')
           for page_name,page in [('Ascension',level_up),('Growth',growth)]:
               if 'pv-growth-audio.js' not in page: errors.append(f'{page_name} PV audio controller missing')

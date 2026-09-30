@@ -1,5 +1,12 @@
 # PriZim Live Notepad
 
+## LIVE31J compact shared Resonance Path (2026-09-30)
+
+- The player-facing progression loop is now Focus Points plus one party-wide three-node Resonance Path. The path belongs to Prismel, Auryi, and Kineza together instead of presenting three separate skill trees and an Atlas mode.
+- `hybrid-growth.html` stays on the approved Grimoire art and exposes only the shared path nodes plus the Focus stat tray. `hybrid-party-live.html` routes Growth to `view=book`; the Atlas asset and legacy per-Bearer skill records remain archived for compatibility.
+- `pv.progression.v1` stores `partyPath.points` and `partyPath.unlockedNodes`. Party level gains award one Resonance Point; old schema-3 saves infer at most one point per existing party level. Focus allocation and old node APIs remain intact for migration safety.
+- Shared effects are live: Resonance Link and Shared Lens raise party basic Attack accuracy, and Resonance Sight also enables the Tower Puzzle 1 direction/step hint. Progression uses the existing PV growth audio lane.
+
 ## LIVE31F Resonance Relay lore and audio (2026-09-28)
 
 - The apparent Old Water Tower is now explicitly an ancient Resonance Relay. Its locks exist to stop Veil static, damaged memories, and a single controlling voice from being amplified into the wider world.

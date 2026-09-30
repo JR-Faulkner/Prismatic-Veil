@@ -1,5 +1,13 @@
 # The Prismatic Veil — Resume Anchor
 
+## LIVE31J compact shared Resonance Path (2026-09-30)
+
+- Progression now presents one understandable loop: each level gives the selected Bearer a Focus Point for the six core stats, while the trio shares a single party-wide Resonance Path.
+- The live path has three connected nodes: Resonance Link (+2% party basic Attack accuracy), Shared Lens (another +2%), and Resonance Sight (the Tower shows the shortest ring direction and remaining steps).
+- The old Spectrum Atlas is archived/reference-only and no longer appears in the Party Growth route. `hybrid-growth.html` keeps the approved Prismodial Grimoire composition, hero tabs for Focus allocation, touch/keyboard/Xbox confirmation, and one shared Resonance Point counter.
+- Existing per-Bearer skill points/nodes remain in `pv.progression.v1` for compatibility. A schema-3 save without `partyPath` infers at most one shared point per existing party level, so old saves are not erased or over-rewarded.
+- `src/PartyBattleConfig.js` and the Tower route consume the shared path effects. The cumulative XP curve, battle authority, approved art, and audio lanes remain unchanged.
+
 ## LIVE31F Resonance Relay lore and audio (2026-09-28)
 
 - The apparent Old Water Tower is now explicitly an ancient Resonance Relay. Its locks exist to stop Veil static, damaged memories, and a single controlling voice from being amplified into the wider world.

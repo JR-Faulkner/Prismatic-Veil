@@ -1,4 +1,4 @@
-// LIVE31E progression, stat-growth, and skill-map authority.
+// LIVE31J progression, stat-growth, and compact shared Resonance Path authority.
 // Existing XP remains under the stable pv.progression.v1 storage key.
 // Schema 3 makes level thresholds cumulative and records non-battle progress.
 
@@ -9,6 +9,16 @@ export const CORE_BATTLE_BEARERS = Object.freeze(['prismel', 'auryi', 'kineza'])
 export const ALL_BEARERS = Object.freeze(['prismel', 'auryi', 'kineza', 'sarallel', 'vyan']);
 export const RESONART_UNLOCK_LEVEL = 2;
 export const STAT_KEYS = Object.freeze(['Might', 'Mind', 'Spirit', 'Agility', 'Resilience', 'Harmony']);
+
+// The player-facing second progression lane is intentionally one shared path
+// for the three active Bearers.  The older per-Bearer skill arrays below stay
+// in the save schema for backward compatibility, but are no longer exposed by
+// the normal growth route.
+export const PARTY_RESONANCE_NODES = Object.freeze([
+  Object.freeze({ id: 'resonance_link', name: 'Resonance Link', description: 'The three Bearers share one battle rhythm. Party basic attacks gain +2% accuracy.', cost: 1, requires: null }),
+  Object.freeze({ id: 'shared_lens', name: 'Shared Lens', description: 'The party reads openings together. Party basic attacks gain another +2% accuracy.', cost: 1, requires: 'resonance_link' }),
+  Object.freeze({ id: 'resonance_sight', name: 'Resonance Sight', description: 'The Tower reveals the shortest rotation toward its target glyphs.', cost: 1, requires: 'shared_lens' })
+]);
 
 export const NATURAL_GROWTH = Object.freeze({
   prismel: Object.freeze({ Might: 1, Mind: 5, Spirit: 4, Agility: 3, Resilience: 2, Harmony: 3 }),
@@ -60,7 +70,7 @@ export const SKILL_NODES = Object.freeze({
 });
 
 export const PROGRESSION_TUNING = Object.freeze({
-  revision: 'live31e-progression1',
+  revision: 'live31j-progression1',
   levelCurveLocked: true,
   levelCurve: Object.freeze({ baseXp: 100, growth: 1.35, maxLevel: 50 }),
   encounters: Object.freeze({
@@ -145,6 +155,28 @@ function nodeIdsFor(heroId) {
   return new Set((SKILL_NODES[heroId] || []).map(node => node.id));
 }
 
+function partyNodeIds() {
+  return new Set(PARTY_RESONANCE_NODES.map(node => node.id));
+}
+
+function normalizePartyPath(raw, heroes) {
+  const allowed = partyNodeIds();
+  const source = raw?.partyPath && typeof raw.partyPath === 'object' ? raw.partyPath : null;
+  const unlockedNodes = [...new Set(Array.isArray(source?.unlockedNodes) ? source.unlockedNodes.filter(id => allowed.has(id)) : [])];
+  // A schema-3 save predates the shared path. Infer at most one point per
+  // party level from the old per-Bearer skill banks, so a first-clear save
+  // does not suddenly receive three copies of the same point.
+  const inferredPoints = source
+    ? asInt(source.points, 0)
+    : Math.max(0, ...CORE_BATTLE_BEARERS.map(id => asInt(heroes[id]?.skillPoints, 0)));
+  const spent = unlockedNodes.reduce((sum, id) => sum + asInt(PARTY_RESONANCE_NODES.find(node => node.id === id)?.cost, 1), 0);
+  return {
+    points: Math.max(0, inferredPoints - spent),
+    unlockedNodes,
+    bonusPoints: asInt(source?.bonusPoints, 0)
+  };
+}
+
 function normalizeHero(heroId, raw, sourceSchema = PROGRESSION_SCHEMA) {
   let xp = asInt(raw?.xp, 0);
   const recordedLevel = raw?.level == null || raw?.level === '' ? 1 : Math.max(1, asInt(raw.level, 1));
@@ -187,6 +219,7 @@ export function createDefaultProgression() {
     tuningRevision: PROGRESSION_TUNING.revision,
     levelCurveLocked: PROGRESSION_TUNING.levelCurveLocked,
     heroes: Object.fromEntries(ALL_BEARERS.map(id => [id, blankHero(id)])),
+    partyPath: { points: 0, unlockedNodes: [], bonusPoints: 0 },
     inventory: { veilShard: 0, memoryFragment: 0 },
     encounters: {},
     activities: {},
@@ -200,6 +233,7 @@ function normalize(raw) {
   const src = raw && typeof raw === 'object' ? raw : {};
   const sourceSchema = asInt(src.schema, 1);
   for (const id of ALL_BEARERS) base.heroes[id] = normalizeHero(id, src.heroes?.[id], sourceSchema);
+  base.partyPath = normalizePartyPath(src, base.heroes);
   base.inventory.veilShard = asInt(src.inventory?.veilShard, 0);
   base.inventory.memoryFragment = asInt(src.inventory?.memoryFragment, 0);
   base.encounters = src.encounters && typeof src.encounters === 'object' ? { ...src.encounters } : {};
@@ -250,6 +284,24 @@ export function unlockSkillNode(heroId, nodeId, storage = globalThis.localStorag
   return { ok: true, hero: saved.heroes[heroId], node };
 }
 
+export function partyResonanceNodeUnlocked(nodeId, storage = globalThis.localStorage) {
+  return loadProgression(storage).partyPath.unlockedNodes.includes(nodeId);
+}
+
+export function unlockPartyResonanceNode(nodeId, storage = globalThis.localStorage) {
+  const node = PARTY_RESONANCE_NODES.find(candidate => candidate.id === nodeId);
+  if (!node) return { ok: false, reason: 'unknown-node' };
+  const state = loadProgression(storage);
+  const path = state.partyPath;
+  if (path.unlockedNodes.includes(nodeId)) return { ok: false, reason: 'already-unlocked', path, node };
+  if (node.requires && !path.unlockedNodes.includes(node.requires)) return { ok: false, reason: 'prerequisite', path, node };
+  if (path.points < node.cost) return { ok: false, reason: 'no-resonance-points', path, node };
+  path.unlockedNodes.push(nodeId);
+  path.points -= node.cost;
+  const saved = saveProgression(state, storage);
+  return { ok: true, path: saved.partyPath, node };
+}
+
 function trimClaims(claims, max = 40) {
   const entries = Object.entries(claims || {}).sort((a, b) => asInt(b[1]?.at) - asInt(a[1]?.at));
   return Object.fromEntries(entries.slice(0, max));
@@ -260,6 +312,7 @@ function awardCoreXp(state, xpEach) {
   const heroXp = {};
   const levelUps = {};
   const growth = {};
+  const partyLevelBefore = Math.max(...CORE_BATTLE_BEARERS.map(id => levelForXp(state.heroes[id].xp)));
   for (const id of CORE_BATTLE_BEARERS) {
     const hero = state.heroes[id];
     const beforeXp = asInt(hero.xp, 0);
@@ -283,12 +336,15 @@ function awardCoreXp(state, xpEach) {
       stats: { ...state.heroes[id].stats }
     };
   }
+  const partyLevelAfter = Math.max(...CORE_BATTLE_BEARERS.map(id => state.heroes[id].level));
+  if (partyLevelAfter > partyLevelBefore) state.partyPath.points += partyLevelAfter - partyLevelBefore;
   return {
     heroXpBefore,
     heroXp,
     levels: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, state.heroes[id].level])),
     levelUps,
     growth,
+    partyPath: { ...state.partyPath },
     nextLevelXp: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, nextLevelXp(state.heroes[id].level)])),
     unlocks: { resonart: Object.fromEntries(CORE_BATTLE_BEARERS.map(id => [id, isResonartUnlocked(state.heroes[id])])) }
   };

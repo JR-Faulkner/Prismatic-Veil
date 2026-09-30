@@ -118,7 +118,7 @@ body{height:100dvh}
 
 <script src="./assets/js/pv-save-state.js?pvasset=save6-tower"></script>
 <script type="module">
-import { applyProgressReward } from './src/progression/PVProgression.js?v=live31e1';
+import { applyProgressReward, partyResonanceNodeUnlocked } from './src/progression/PVProgression.js?v=live31j1';
 (()=>{
   const SYNC='pv.resonance.sync',CLEAR='pv.locationClear.oldwater',CURRENT='pv.currentLocation',LAST='pv.lastLocation',SEEN='pv.towerArrivalSeen',RUN='pv.run.id',TOWER_RUN='pv.tower.run.id';
   const qs=new URLSearchParams(location.search),from=qs.get('from')||localStorage.getItem(LAST)||'whisper';
@@ -264,7 +264,7 @@ import { applyProgressReward } from './src/progression/PVProgression.js?v=live31
 
   // Puzzle 1 · Fixed level rings with orbiting resonance glyphs.
   const glyphs=['◇','✦','◈','△','○','✧'],target=[2,1,4],ring=[0,3,1];
-  const resonanceSightActive=(()=>{try{const p=JSON.parse(localStorage.getItem('pv.progression.v1')||'null');return p?.heroes?.prismel?.unlockedNodes?.includes('resonance_sight')}catch(_){return false}})();
+  const resonanceSightActive=(()=>{try{const p=JSON.parse(localStorage.getItem('pv.progression.v1')||'null');return p?.heroes?.prismel?.unlockedNodes?.includes('resonance_sight')||partyResonanceNodeUnlocked('resonance_sight')}catch(_){return false}})();
   const ringEls=[...document.querySelectorAll('.ring')];
   const buttons=[...document.querySelectorAll('.ring-btn')];
   const ringStatus=document.getElementById('ringStatus'),ringNames=['OUTER','MIDDLE','INNER'];

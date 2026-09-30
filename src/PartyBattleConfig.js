@@ -134,9 +134,19 @@ function unlockedPrismelNodes() {
   } catch (_) { return new Set(); }
 }
 
+function unlockedPartyNodes() {
+  try {
+    const state = JSON.parse(globalThis.localStorage?.getItem('pv.progression.v1') || 'null');
+    return new Set(Array.isArray(state?.partyPath?.unlockedNodes) ? state.partyPath.unlockedNodes : []);
+  } catch (_) { return new Set(); }
+}
+
 export function hitChanceFor(command, heroId = null) {
   let chance = command === 'Resonart' ? RESONART_HIT_CHANCE : BASIC_ATTACK_HIT_CHANCE;
   if (command !== 'Attack') return chance;
+  const partyNodes = unlockedPartyNodes();
+  if (partyNodes.has('resonance_link')) chance += .02;
+  if (partyNodes.has('shared_lens')) chance += .02;
   const nodes = unlockedPrismelNodes();
   if (heroId === 'prismel' && nodes.has('prism_focus')) chance += .04;
   try {

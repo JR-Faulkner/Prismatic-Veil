@@ -25,15 +25,25 @@
     "storage_key": "pv.progression.v1",
     "level_up_entry": "hybrid-level-up.html",
     "growth_map_entry": "hybrid-growth.html?view=book",
-    "spectrum_atlas_entry": "hybrid-growth.html?view=atlas",
+    "spectrum_atlas_entry": "archived reference only; removed from the live player route",
     "approved_visual_assets": [
       "assets/ui/progression/v1/resonance-ascension.png",
       "assets/ui/progression/v1/prismodial-growth-map.png",
       "assets/ui/progression/v1/spectrum-atlas.png"
     ],
-    "growth_policy": "Each level after 1 grants one Focus Point. Even levels grant one Skill Point. Natural growth automatically raises three stats on even levels and two on odd levels, while Focus allocations remain player-directed.",
+    "growth_policy": "Each level after 1 grants one Focus Point for the selected Bearer. Natural growth automatically raises three stats on even levels and two on odd levels, while Focus allocations remain player-directed. The trio also shares one compact three-node Resonance Path with one party-wide Resonance Point per party level.",
     "migration_policy": "Schema-1/2 saves remain on pv.progression.v1 and migrate to schema 3 without discarding XP, levels, Focus allocations, skill nodes, inventory, clears, encounters, or reward claims. Legacy levels are preserved by lifting XP to the equivalent cumulative threshold when required; no Bearer is down-leveled.",
-    "party_route": "The live Party Growth command opens the Spectrum Atlas. Victory Continue opens Resonance Ascension before returning to the Overworld.",
+    "party_route": "The live Party Growth command opens the Prismodial Grimoire Resonance Path. Victory Continue opens Resonance Ascension before returning to the Overworld.",
+    "shared_resonance_path": {
+      "entry": "hybrid-growth.html?view=book",
+      "nodes": [
+        "resonance_link: party basic Attack accuracy +2%",
+        "shared_lens: party basic Attack accuracy +2% more",
+        "resonance_sight: Tower Puzzle 1 reveals shortest ring direction and steps"
+      ],
+      "currency": "One party-wide Resonance Point per party level; legacy saves infer at most one point per existing party level.",
+      "legacy_policy": "Per-Bearer skill points and unlocked nodes remain in pv.progression.v1 for compatibility but are not shown on the normal player route."
+    },
     "polish_runtime": "assets/js/pv-growth-audio.js",
     "sound_policy": "Ascension and growth interactions use existing PV Overworld and Resonance Tower sample recordings through HTML Audio. Do not replace them with oscillator synthesis, generic arcade bloops, or placeholder beeps.",
     "ascension_motion_policy": "Use the approved Resonance Ascension and growth-map compositions as the fixed visual foundation, with restrained prismatic sweeps, panel settling, node breathing, and explicit commit flashes layered above them.",
