@@ -101,8 +101,8 @@ jobs:
               errors.append('Travel presentation is still allowed to block encounter routing')
           if "width * 0.5" in hush_layout:
               errors.append('Hushling still forced into geometric-center / Kineza overlap lane')
-          for token in ["0.72","0.71","0.70","0.73"]:
-              if token not in hush_layout: errors.append(f'Hushling responsive enemy-side anchor missing: {token}')
+          for token in ["0.76","0.80","0.78"]:
+              if token not in hush_layout: errors.append(f'Hushling stable enemy-side anchor missing: {token}')
 
           if errors:
               print('LIVE29G ENCOUNTER GUARD FAILED')
