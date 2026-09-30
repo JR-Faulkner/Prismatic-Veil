@@ -23,7 +23,7 @@
 - `Live30E4HushlingView` moves the single Hushling to the enemy-side lane on landscape, with a higher TV-safe baseline. K27 party formation, enemy identity/stats, combat logic, progression, and Resonart lanes are unchanged.
 - Pending gates: branch encounter guard + canonical PriZim preflight + Pages, then real TV/iPhone witness.
 
-Last refreshed: 2026-09-28
+Last refreshed: 2026-09-30
 
 ## LIVE31B Prismel growth polish (2026-09-28)
 
