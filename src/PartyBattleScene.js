@@ -941,6 +941,7 @@ export default class PartyBattleScene extends Phaser.Scene {
       const cfg = this.formation.actors.get(hero.id).attackSheetConfig;
       const isMarkerFrame = (frameIndex, marker) => cfg.markerFrames[marker].includes(frameIndex);
       let dmg = 0;
+      let prismelProjectile = null;
       const seen = new Set();
       await this.formation.playAttackSheet(hero.id, frameIndex => {
         const povFrames = cfg.povFrames || [];
@@ -954,8 +955,13 @@ export default class PartyBattleScene extends Phaser.Scene {
         } else if (isMarkerFrame(frameIndex, 'release') && !seen.has('release')) {
           seen.add('release');
           this.audio.attackRelease(hero.id);
+          if (hero.id === 'prismel' && hitRoll) {
+            prismelProjectile = this.formation.beginPrismelShardProjectile?.({ duration: 310 }) || null;
+          }
         } else if (isMarkerFrame(frameIndex, 'impact') && !seen.has('impact')) {
           seen.add('impact');
+          prismelProjectile?.finish();
+          prismelProjectile = null;
           if (hitRoll) {
             dmg = Phaser.Math.Between(low, high);
             this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
@@ -977,9 +983,10 @@ export default class PartyBattleScene extends Phaser.Scene {
         }
       });
       this._setAttackPov(hero.id, false);
+      prismelProjectile?.cancel();
 
       this._turnLock = false;
-      this._endHeroTurn();
+      this._endHeroTurn(this.enemy.hp <= 0 ? 1100 : 500);
       return;
     }
 
@@ -1019,7 +1026,7 @@ export default class PartyBattleScene extends Phaser.Scene {
         await this._wait(timing.recover);
         this.formation.setActionPose(hero.id, 'idle');
         this._turnLock = false;
-        this._endHeroTurn();
+        this._endHeroTurn(this.enemy.hp <= 0 ? 1100 : 500);
         return;
       }
 
@@ -1048,7 +1055,7 @@ export default class PartyBattleScene extends Phaser.Scene {
       this.formation.setActionPose(hero.id, 'idle');
 
       this._turnLock = false;
-      this._endHeroTurn();
+      this._endHeroTurn(this.enemy.hp <= 0 ? 1100 : 500);
       return;
     }
 
@@ -1080,11 +1087,11 @@ export default class PartyBattleScene extends Phaser.Scene {
     }
 
     this._turnLock = false;
-    this._endHeroTurn();
+    this._endHeroTurn(this.enemy.hp <= 0 ? 1100 : 500);
   }
 
-  _endHeroTurn() {
-    this.time.delayedCall(500, () => this._advanceTurn());
+  _endHeroTurn(delayMs = 500) {
+    this.time.delayedCall(delayMs, () => this._advanceTurn());
   }
 
   _runEnemyTurn() {

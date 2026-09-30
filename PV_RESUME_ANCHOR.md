@@ -421,3 +421,9 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 - Kineza's existing 18-frame Blitzer and its Duo-Hybrid camera/placement tracks now ease between each existing frame for a more fluid read. No generated bridge frames were promoted after PriZim edge/canvas QA rejected the audition candidates.
 - The K-line cache-bust is `DuoHybridSequenceDriver.js?v=duo-9-smooth` through `Live22DuoHybridSequenceDriver.js`.
 - Local latest-main Hybrid/K smoke: Prismel resolved 7 damage; Kineza resolved 12 damage and returned through the normal enemy turn. No new sequence/runtime errors. Portrait-loader warnings remain pre-existing. Normal MAIN iPhone/iPad/Xbox Edge validation remains the final gate.
+
+## LIVE31H Prismel shard impact and Victory settle (2026-09-30)
+
+- Prismel Basic Attack now launches a crisp procedural cyan/gold prismatic shard at the existing release marker and lands it on the Hushling at the existing impact marker. The established attack sheet, marker timing, damage roll, enemy hit reaction, and audio cues remain authoritative.
+- Lethal Basic Attacks hold the resolved battlefield for 1100ms before the normal turn advance so the shard landing, defeat reaction, and Victory banner do not collapse into one unreadable beat. Nonlethal turns retain the existing 500ms advance.
+- Local latest-main Hybrid/K smoke showed the shard in flight and the Hushling at 44/52 after an 8-damage Prismel hit; no new runtime errors were observed. Normal MAIN iPhone/iPad/Xbox Edge remains the final device gate.

@@ -255,6 +255,135 @@ export default class PartyFormationView {
     });
   }
 
+  // Prismel's approved attack sheet carries the character motion, but the
+  // release needs a readable piece of prismatic energy travelling through the
+  // battlefield. Keep the effect procedural so it stays crisp on phones,
+  // tablets, TVs, and controller-driven browsers without replacing the
+  // locked primary art. The battle scene starts this at the release marker
+  // and calls finish() on the existing impact marker, keeping visuals and
+  // damage on the same frame authority.
+  beginPrismelShardProjectile({ duration = 300 } = {}) {
+    const actor = this.actors.get('prismel');
+    const enemyView = this.scene.enemyView;
+    if (!actor || !enemyView?.container) return null;
+
+    const source = actor.attackSprite?.visible ? actor.attackSprite : actor.sprite;
+    const sourceWidth = source.displayWidth || source.width || 120;
+    const sourceHeight = source.displayHeight || source.height || 160;
+    const direction = source.flipX ? -1 : 1;
+    const startX = source.x + direction * sourceWidth * 0.24;
+    const startY = source.y - sourceHeight * 0.56;
+    const targetSprite = enemyView.sprite;
+    const targetHeight = targetSprite?.displayHeight || targetSprite?.height || (this.scene.scale.height * 0.22);
+    const targetX = enemyView.container.x;
+    const targetY = enemyView.container.y - targetHeight * 0.52;
+
+    const shard = this.scene.add.graphics().setDepth(30);
+    shard.fillStyle(0x9b7cff, 0.24);
+    shard.fillCircle(0, 0, 26);
+    shard.fillStyle(0x8feaff, 0.96);
+    shard.beginPath();
+    shard.moveTo(0, -19);
+    shard.lineTo(11, 0);
+    shard.lineTo(0, 24);
+    shard.lineTo(-11, 0);
+    shard.closePath();
+    shard.fillPath();
+    shard.lineStyle(2.2, 0xffe8a0, 0.95);
+    shard.beginPath();
+    shard.moveTo(0, -19);
+    shard.lineTo(11, 0);
+    shard.lineTo(0, 24);
+    shard.lineTo(-11, 0);
+    shard.closePath();
+    shard.strokePath();
+    shard.lineStyle(1.6, 0xffffff, 0.75);
+    shard.beginPath();
+    shard.moveTo(0, -10);
+    shard.lineTo(5, 0);
+    shard.lineTo(0, 11);
+    shard.lineTo(-5, 0);
+    shard.closePath();
+    shard.strokePath();
+    shard.setPosition(startX, startY);
+    this.scene.worldAdd(shard);
+
+    const trail = this.scene.add.graphics().setDepth(29);
+    this.scene.worldAdd(trail);
+    const drawTrail = () => {
+      trail.clear();
+      trail.lineStyle(8, 0x8feaff, 0.14);
+      trail.beginPath();
+      trail.moveTo(startX, startY);
+      trail.lineTo(shard.x, shard.y);
+      trail.strokePath();
+      trail.lineStyle(2.4, 0xffe8a0, 0.62);
+      trail.beginPath();
+      trail.moveTo(startX, startY);
+      trail.lineTo(shard.x, shard.y);
+      trail.strokePath();
+    };
+
+    let finished = false;
+    let tween = null;
+    const impact = () => {
+      if (finished) return;
+      finished = true;
+      if (tween) tween.remove();
+      shard.setPosition(targetX, targetY).setScale(1.12);
+      trail.clear();
+
+      const burst = this.scene.add.graphics().setDepth(31);
+      burst.setPosition(targetX, targetY);
+      burst.lineStyle(3, 0xffe8a0, 0.92);
+      burst.strokeCircle(0, 0, 12);
+      burst.lineStyle(2, 0x8feaff, 0.9);
+      burst.beginPath();
+      burst.moveTo(-25, 0); burst.lineTo(25, 0);
+      burst.moveTo(0, -25); burst.lineTo(0, 25);
+      burst.strokePath();
+      this.scene.worldAdd(burst);
+      this.scene.tweens.add({
+        targets: [shard, burst],
+        scaleX: 1.65,
+        scaleY: 1.65,
+        alpha: 0,
+        duration: 105,
+        ease: 'Quad.easeOut',
+        onComplete: () => {
+          shard.destroy();
+          burst.destroy();
+          trail.destroy();
+        }
+      });
+    };
+
+    tween = this.scene.tweens.add({
+      targets: shard,
+      x: targetX,
+      y: targetY,
+      angle: direction * 540,
+      scaleX: 1.1,
+      scaleY: 1.1,
+      duration,
+      ease: 'Sine.easeIn',
+      onUpdate: drawTrail,
+      onComplete: impact
+    });
+    drawTrail();
+
+    return {
+      finish: impact,
+      cancel: () => {
+        if (finished) return;
+        finished = true;
+        if (tween) tween.remove();
+        shard.destroy();
+        trail.destroy();
+      }
+    };
+  }
+
   hasActionPoses(heroId) {
     const actor = this.actors.get(heroId);
     return !!(actor && actor.poseTex);

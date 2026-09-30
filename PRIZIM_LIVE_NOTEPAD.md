@@ -410,3 +410,10 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Kineza Blitzer keeps its native 18-frame sequence and uses smoothstep interpolation for the existing frame placement, camera, and scale tracks. This adds in-between motion at runtime without changing the frame manifest or timing contract.
 - `Live22DuoHybridSequenceDriver.js` now cache-busts the shared driver as `duo-9-smooth` for the K lineage.
 - Local latest-main Hybrid/K smoke passed for Prismel and Kineza basic attacks. No new sequence/runtime errors were observed; the existing portrait-loader warnings are still present. Device validation remains pending on the normal MAIN route.
+
+## LIVE31H Prismel shard impact and Victory settle (2026-09-30)
+
+- Preserve LIVE31G's approved primary/attack assets and smoothing. Prismel now emits a procedural prismatic shard from the active attack sheet on release; the shard visibly travels to the Hushling and resolves its burst at the existing impact marker.
+- Damage, hit/miss, enemy recoil, defeat audio, and marker timing remain in `PartyBattleScene`; the projectile is presentation-only and is cancelled safely if the attack aborts.
+- Lethal basic actions use a 1100ms post-animation settle before `_advanceTurn()`; nonlethal actions and enemy turns keep their 500ms delay. This makes the Victory result readable without changing reward or progression authority.
+- Local Hybrid/K smoke showed an in-flight shard and 8 damage landing on the Hushling. No new sequence/runtime errors. Pages and normal MAIN device validation remain required.

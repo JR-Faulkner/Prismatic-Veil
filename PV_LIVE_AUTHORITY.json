@@ -114,8 +114,10 @@
     "scope": "Prismel basic Attack and Kineza Blitzer only",
     "asset_policy": "Keep the approved primary PNGs, attack frame manifests, frame counts, marker timing, damage timing, and audio cues unchanged.",
     "runtime_polish": "Prismel uses a short primary-to-attack crossfade; Kineza and the Duo-Hybrid sequence use smooth per-frame placement/camera easing between existing frames.",
+    "prismel_impact_fx": "At the approved release marker, Prismel launches a procedural prismatic shard from the active attack sheet; it lands on the enemy at the existing impact marker and uses a brief cyan/gold burst. Damage and audio remain marker-owned.",
+    "lethal_settle": "A lethal basic attack holds the resolved battlefield for 1100ms before the existing turn advance, giving the projectile landing, enemy defeat reaction, and banner time to read. Nonlethal turns retain the 500ms advance.",
     "cache_bust": "src/prizim/Live22DuoHybridSequenceDriver.js?v=duo-9-smooth",
-    "verification": "Local Hybrid/K route completed Prismel and Kineza basic attacks with damage resolution and no new sequence/runtime errors; portrait-loader warnings remain pre-existing.",
+    "verification": "Local Hybrid/K route showed Prismel's shard in flight and landing with 8 damage resolved on the existing impact marker; Kineza smoothing remained intact. No new sequence/runtime errors; portrait-loader warnings remain pre-existing.",
     "device_gate": "Normal MAIN iPhone/iPad/Xbox Edge validation remains required."
   },
   "hard_gates": {
