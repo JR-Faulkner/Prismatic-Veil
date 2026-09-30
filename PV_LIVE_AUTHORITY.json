@@ -24,7 +24,9 @@
     "schema": 3,
     "storage_key": "pv.progression.v1",
     "level_up_entry": "hybrid-level-up.html",
-    "growth_map_entry": "hybrid-growth.html?view=book",
+    "growth_map_entry": "hybrid-resonance.html?source=party",
+    "base_stats_entry": "hybrid-stats.html?source=party",
+    "grimoire_entry": "prismodial-grimoire.html",
     "spectrum_atlas_entry": "archived reference only; removed from the live player route",
     "approved_visual_assets": [
       "assets/ui/progression/v1/resonance-ascension.png",
@@ -38,16 +40,16 @@
       "natural_growth_decorator": "live31a3",
       "progression_readout": "live31j3"
     },
-    "party_route": "The live Party Growth command opens the Prismodial Grimoire Resonance Path. Victory Continue opens Resonance Ascension before returning to the Overworld.",
+    "party_route": "The live Party command grid is Abilities, Focus / Full Stats, Resonance Tree, and Equipment. Base Stats owns Focus allocation; Resonance Tree owns the shared party path; the Prismodial Grimoire remains a separate lore and puzzle reference. Victory Continue opens Resonance Ascension before returning to the Overworld.",
     "shared_resonance_path": {
-      "entry": "hybrid-growth.html?view=book",
+      "entry": "hybrid-resonance.html?source=party",
       "nodes": [
         "resonance_link: party basic Attack accuracy +2%",
         "shared_lens: party basic Attack accuracy +2% more",
         "resonance_sight: Tower Puzzle 1 reveals shortest ring direction and steps"
       ],
       "currency": "One party-wide Resonance Point per party level; legacy saves infer at most one point per existing party level.",
-      "legacy_policy": "Per-Bearer skill points and unlocked nodes remain in pv.progression.v1 for compatibility but are not shown on the normal player route."
+      "legacy_policy": "Per-Bearer skill points and unlocked nodes remain in pv.progression.v1 for compatibility but are not shown on the normal player route. The old Grimoire growth-map route remains reference-only."
     },
     "polish_runtime": "assets/js/pv-growth-audio.js",
     "sound_policy": "Ascension and growth interactions use existing PV Overworld and Resonance Tower sample recordings through HTML Audio. Do not replace them with oscillator synthesis, generic arcade bloops, or placeholder beeps.",

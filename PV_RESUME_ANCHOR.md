@@ -447,3 +447,12 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 - LIVE30E4 now uses one stable enemy-side anchor instead of separate large/small landscape positions: approximately 0.76w / 0.80h in landscape and 0.78w / 0.78h in portrait. The visible Hushling is ~0.62 of the Wraith reference height, still short and stocky but readable on phone and TV layouts.
 - The live Hybrid/K encounter remains intentionally single-enemy: `PartyBattleScene` owns one `enemy` object and one `enemyView`, and LIVE29G selects one location enemy. The tactical 06A QA route can stage three Hushlings, but it is not the production battle authority. Multi-enemy production work needs a formation/target/turn-order contract before promotion.
 - Device gate remains pending after the layout pass; no multi-enemy behavior is being implied by the single-enemy MAIN route.
+## LIVE31K Party hub cleanup and progression route split (2026-09-30)
+
+- The live Party command grid is now **Abilities**, **Focus / Full Stats**, **Resonance Tree**, and **Equipment**. The legacy Growth and Details commands are removed from the normal player route.
+- `hybrid-stats.html` is the dedicated Base Stats / Focus screen. It reads the canonical progression ledger, shows XP, Level, Focus Points, Resonance Points, and all current core-stat values with current → next previews, and supports touch, keyboard, and gamepad input.
+- `hybrid-resonance.html` is the dedicated party-wide Resonance Tree screen. It owns the three shared nodes and keeps the Prismodial Grimoire out of progression navigation; `hybrid-growth.html` remains a reference/compatibility route.
+- Party selection still owns the selected Bearer and routes that context into both screens. Compact stats remain visible on Party for a quick glance, while allocation and unlock commits happen only in their dedicated views.
+- The generated Party mock is visual reference only; live values remain data-driven from `PVProgression`.
+- The current internal stat authority still contains the legacy **Resilience** slot pending the user’s final decision on whether to remove or rename it.
+- Local preflight, route contract checks, and Pages/device validation remain required before promoting a new witness.

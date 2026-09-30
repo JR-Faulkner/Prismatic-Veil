@@ -437,3 +437,12 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - LIVE30E4 keeps one stable enemy-side anchor across breakpoints: landscape ~0.76w / 0.80h, portrait ~0.78w / 0.78h. Hushling display height is ~0.62 of the Wraith reference, preserving the short stocky lore silhouette while restoring face/armor readability.
 - Do not add a second live enemy by duplicating the view only. The current Hybrid/K contract is one `enemy`, one target card, one target cursor, one enemy turn, and one result path. Tactical 06A's three-Hushling cluster is QA reference only; a production multi-enemy pass must first define formation slots, selection/cursor state, per-enemy HP/recoil/death, turn-order publication, and victory criteria.
 - Pages deployment and real iPhone/iPad/Xbox Edge validation remain the final gates.
+## LIVE31K Party hub cleanup and progression route split (2026-09-30)
+
+- The live Party command grid is now **Abilities**, **Focus / Full Stats**, **Resonance Tree**, and **Equipment**. The legacy Growth and Details commands are removed from the normal player route.
+- `hybrid-stats.html` is the dedicated Base Stats / Focus screen. It reads the canonical progression ledger, shows XP, Level, Focus Points, Resonance Points, and all current core-stat values with current → next previews, and supports touch, keyboard, and gamepad input.
+- `hybrid-resonance.html` is the dedicated party-wide Resonance Tree screen. It owns the three shared nodes and keeps the Prismodial Grimoire out of progression navigation; `hybrid-growth.html` remains a reference/compatibility route.
+- Party selection still owns the selected Bearer and routes that context into both screens. Compact stats remain visible on Party for a quick glance, while allocation and unlock commits happen only in their dedicated views.
+- The generated Party mock is visual reference only; live values remain data-driven from `PVProgression`.
+- The current internal stat authority still contains the legacy **Resilience** slot pending the user’s final decision on whether to remove or rename it.
+- Local preflight, route contract checks, and Pages/device validation remain required before promoting a new witness.

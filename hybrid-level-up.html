@@ -32,7 +32,7 @@ body{display:grid;place-items:center}.stage{position:relative;width:min(100vw,ca
   <section class="statbar" id="statbar"></section>
   <nav class="actions">
     <button id="confirm" class="primary" disabled>CONFIRM +1</button>
-    <a id="growthMap" href="./hybrid-growth.html?view=book&source=levelup&hero=prismel">OPEN RESONANCE PATH</a>
+    <a id="growthMap" href="./hybrid-resonance.html?source=levelup&hero=prismel">OPEN RESONANCE PATH</a>
     <a id="continue" href="./hybrid-overworld.html?pvreturn=whisper&pvresult=victory">CONTINUE</a>
   </nav>
 </main>
@@ -43,7 +43,7 @@ import { STAT_KEYS, allocateFocus, loadProgression, naturalGainsForLevel } from 
 const params=new URLSearchParams(location.search),heroId='prismel',returnLocation=params.get('return')||'whisper';
 const level=document.getElementById('level'),focusPoints=document.getElementById('focusPoints'),pathPoints=document.getElementById('pathPoints'),statbar=document.getElementById('statbar'),message=document.getElementById('message'),confirm=document.getElementById('confirm'),growthMap=document.getElementById('growthMap'),continueLink=document.getElementById('continue');
 let selected=null,state=null;
-growthMap.href=`./hybrid-growth.html?view=book&source=levelup&hero=${heroId}&return=${encodeURIComponent(returnLocation)}`;
+growthMap.href=`./hybrid-resonance.html?source=levelup&hero=${heroId}&return=${encodeURIComponent(returnLocation)}`;
 continueLink.href=`./hybrid-overworld.html?pvreturn=${encodeURIComponent(returnLocation)}&pvresult=victory`;
 function render(){state=loadProgression();const hero=state.heroes[heroId],heroLevel=hero.level||1,gains=naturalGainsForLevel(heroId,heroLevel);level.textContent=`LV ${heroLevel}`;focusPoints.textContent=hero.focusPoints;pathPoints.textContent=state.partyPath?.points||0;statbar.innerHTML=STAT_KEYS.map(stat=>{const natural=gains.filter(x=>x===stat).length;return `<button class="stat${selected===stat?' selected':''}${natural?' natural':''}" data-stat="${stat}"><small>${stat.toUpperCase()}</small><strong>${hero.stats[stat]}${natural?`<em>+${natural}▲</em>`:''}</strong></button>`}).join('');confirm.disabled=!selected||hero.focusPoints<1;message.textContent=hero.focusPoints<1?'All available Focus Points are currently assigned. Open the Resonance Path to review the shared party tree.':selected?`${selected} will increase from ${hero.stats[selected]} to ${hero.stats[selected]+1}. Confirm to spend one Focus Point.`:`Natural growth: ${gains.join(' • ')||'settled'}. Choose a stat to preview your Focus Point.`;bind()}
 function bind(){statbar.querySelectorAll('[data-stat]').forEach(button=>button.onclick=()=>{selected=button.dataset.stat;window.PVGrowthAudio?.preview('identity');render()})}
