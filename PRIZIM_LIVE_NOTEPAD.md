@@ -1,8 +1,8 @@
 # PriZim Live Notepad
 
-## LIVE31K2 approved Party menu visual (2026-09-30)
+## LIVE31K3 approved Party menu visual (2026-09-30)
 
-- The live Party route now applies the approved `Party-mock-side-rail-locked-reserves.png` composition through `assets/js/pv-party-live31f.js?pvasset=live31k2`; this is scoped to the Party screen and does not alter the Overworld map.
+- The live Party route now applies the approved `Party-mock-side-rail-locked-reserves.png` composition through `assets/js/pv-party-live31f.js?pvasset=live31k3`; this is scoped to the Party screen and does not alter the Overworld map. Its scenic stage uses the mock-derived `assets/ui/party/v1/party-stage-approved.png` backdrop.
 - The stage uses the scenic Veil world backdrop, large Auryi/Prismel/Kineza field pieces, a left reserve rail, and a portrait-backed right Bearer Profile with Abilities, Focus / Full Stats, Resonance Tree, and Equipment.
 - Sarallel and Vyan are intentionally visible as selectable `?` reserve tokens until a future story system writes their IDs to `pv.party.unlocks.v1`. No unlock timing is fabricated by this visual pass.
 - Local browser review passed at a 1280×720 landscape viewport with no page scroll; canonical live stats remained readable. Pending gates are the branch guard, Pages deployment, and normal MAIN iPhone/iPad/Xbox validation.
@@ -11,7 +11,7 @@
 
 - The Party progression renderer now observes slot-class changes and storage/click events without observing its own child-list writes. This keeps the route responsive and lets the six live Core Stats replace the initial placeholders reliably.
 - `pv-party-live29e.js` yields to the LIVE31A progression authority after it mounts, preventing the legacy natural-growth decorator from fighting the live Level/HP/RP/stat classes.
-- Cache tags are `live31a3` for the Party decorator and `live31j3` for the progression renderer; the renderer guards its own class writes so its observer cannot self-trigger forever. The approved Resonance Path, growth art, save schema, and battle authority are unchanged.
+- Cache tags are `live31a3` for the Party decorator and `live31j4` for the progression renderer; the renderer guards its own class writes so its observer cannot self-trigger forever. The approved Resonance Path, growth art, save schema, and battle authority are unchanged.
 - The embedded Party view pauses Overworld music while open and uses an explicit close/pagehide stop handshake so audio cannot continue after the view or browser page is gone.
 
 ## LIVE31J compact shared Resonance Path (2026-09-30)

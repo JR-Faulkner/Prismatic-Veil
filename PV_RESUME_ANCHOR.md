@@ -1,15 +1,15 @@
 # The Prismatic Veil — Resume Anchor
 
-## LIVE31K2 approved Party menu visual (2026-09-30)
+## LIVE31K3 approved Party menu visual (2026-09-30)
 
-- `hybrid-party-live.html` now loads `assets/js/pv-party-live31f.js?pvasset=live31k2`, the Party-only visual authority for the approved landscape menu composition: scenic stage, three active Bearers, left reserve rail, right Bearer Profile, and the four approved command buttons.
+- `hybrid-party-live.html` now loads `assets/js/pv-party-live31f.js?pvasset=live31k3`, the Party-only visual authority for the approved landscape menu composition: scenic stage, three active Bearers, left reserve rail, right Bearer Profile, and the four approved command buttons. The approved mock-derived scenic backdrop is `assets/ui/party/v1/party-stage-approved.png`.
 - Sarallel and Vyan render as selectable gold/blue `?` reserve tokens until their IDs are explicitly written to `pv.party.unlocks.v1`. The Party UI does not invent story unlock timing; field formation, live progression values, Focus, Resonance Tree, and Equipment routes remain unchanged.
-- The approved menu image is a visual reference only; the live route uses the existing canonical PNG/JPG assets and progression values underneath the composition. Pages and normal MAIN device validation remain the final user-facing gate.
+- The mock-derived backdrop is presentation-only; the live route uses the existing canonical PNG/JPG Bearer art, progression values, and controls underneath the composition. Pages and normal MAIN device validation remain the final user-facing gate.
 
 ## LIVE31K Party stat readout guard (2026-09-30)
 
 - Party progression rendering no longer observes its own child-list writes, and the legacy decorator yields once LIVE31A mounts. This prevents the live Level/HP/RP/Core Stats readout from entering a render loop.
-- The normal route remains `hybrid-party-live.html` → Growth → `hybrid-growth.html?view=book`; the Party cache tags are `live31a3` / `live31j3`. The progression renderer guards its own class writes so its class observer cannot self-trigger forever.
+- The normal route remains `hybrid-party-live.html` → Growth → `hybrid-growth.html?view=book`; the Party cache tags are `live31a3` / `live31j4`. The progression renderer guards its own class writes so its class observer cannot self-trigger forever.
 - The embedded Party overlay pauses the Overworld music while open and resumes it only after close; direct Party navigation hard-stops audio on pagehide/beforeunload.
 
 ## LIVE31J compact shared Resonance Path (2026-09-30)

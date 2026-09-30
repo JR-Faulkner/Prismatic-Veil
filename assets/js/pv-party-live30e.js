@@ -59,6 +59,9 @@
       if(levelValue)levelValue.textContent=level;
       if(hpValue)hpValue.textContent=hpByHero[id]||100;
       if(resourceValue)resourceValue.textContent='100 RP';
+      const currentXp=Number(hero.xp||0),levelFloor=api.xpForLevel?.(level)||0;
+      const levelFill=Math.max(0,Math.min(100,Math.round(((currentXp-levelFloor)/Math.max(1,Number(nextXp||levelFloor+1)-levelFloor))*100)));
+      miniStats.forEach((node,index)=>{node.style.cssText=`${node.style.cssText||''};--pv-fill:${index===0?levelFill:100}%`});
       const statCells=[...document.querySelectorAll('#coreGrid .core')];
       statCells.forEach((cell,index)=>{const stat=api.STAT_KEYS?.[index],value=cell.querySelector('span');if(!stat||!value)return;const next=String(hero.stats?.[stat]??'—');if(value.textContent!==next)value.textContent=next;if(value.className!=='pv-live-stat')value.className='pv-live-stat'});
       const kicker=document.querySelector('.core-wrap .section-kicker');if(kicker)kicker.innerHTML='<span>Core Stats</span><small style="float:right;color:#7fe8ff;font-size:6px;letter-spacing:.1em">FOCUS '+Number(hero.focusPoints||0)+' · PATH '+Number(state.partyPath?.points||0)+'</small>';

@@ -38,12 +38,15 @@
     "party_readout_policy": "The live Party renderer owns the Level, HP, RP, and all six Core Stats labels and values after its progression module mounts; the legacy natural-growth decorator yields and does not observe child-list writes, and guarded class writes prevent a self-triggered render loop.",
     "party_cache_tags": {
       "natural_growth_decorator": "live31a3",
-      "progression_readout": "live31j3"
+      "progression_readout": "live31j4"
     },
     "party_visual": {
       "reference": "Party-mock-side-rail-locked-reserves.png",
       "runtime": "assets/js/pv-party-live31f.js",
-      "cache_tag": "live31k2",
+      "cache_tag": "live31k3",
+      "backdrop": "assets/ui/party/v1/party-stage-approved.png",
+      "backdrop_sha256": "b011b69fc9f91331cc626e404a84d792ecbb95ecb06de3d40d91b87e85d27df2",
+      "backdrop_dimensions": [1672, 941],
       "composition": "Landscape Bearer Formation Party screen with scenic stage, three active Bearers, left reserve rail, and right Bearer Profile command panel.",
       "reserve_unlock_storage": "pv.party.unlocks.v1",
       "locked_reserve_policy": "Sarallel and Vyan remain selectable question-mark reserve tokens until their IDs are explicitly written to the unlock ledger; no unlock timing is invented by the Party UI."
