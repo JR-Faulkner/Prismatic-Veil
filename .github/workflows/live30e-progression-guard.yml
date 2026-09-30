@@ -7,6 +7,7 @@ on:
       - 'src/prizim/Live29FEncounterBattleScene.js'
       - 'assets/js/pv-overworld-live29f.js'
       - 'assets/js/pv-party-live30e.js'
+      - 'assets/js/pv-party-live31f.js'
       - 'assets/js/pv-party-live29e.js'
       - 'assets/js/pv-growth-audio.js'
       - 'hybrid-party-live.html'
@@ -28,6 +29,7 @@ on:
       - 'src/prizim/Live29FEncounterBattleScene.js'
       - 'assets/js/pv-overworld-live29f.js'
       - 'assets/js/pv-party-live30e.js'
+      - 'assets/js/pv-party-live31f.js'
       - 'assets/js/pv-party-live29e.js'
       - 'assets/js/pv-growth-audio.js'
       - 'hybrid-party-live.html'
@@ -54,6 +56,7 @@ jobs:
           set -euo pipefail
           node --check assets/js/pv-overworld-live29f.js
           node --check assets/js/pv-party-live30e.js
+          node --check assets/js/pv-party-live31f.js
           node --check assets/js/pv-party-live29e.js
           node --check assets/js/pv-growth-audio.js
           node --input-type=module --check < src/progression/PVProgression.js
@@ -163,6 +166,7 @@ jobs:
           stats=read('hybrid-stats.html')
           resonance=read('hybrid-resonance.html')
           party_ui=read('assets/js/pv-party-live30e.js')
+          party_visual=read('assets/js/pv-party-live31f.js')
           battle=read('hybrid-battle-live.html')
           level_up=read('hybrid-level-up.html')
           growth=read('hybrid-growth.html')
@@ -184,6 +188,9 @@ jobs:
           if "pv-party-live30e.js" not in party: errors.append('Party progression UI not loaded')
           if "pv.progression.v1" not in party_ui: errors.append('Party progression refresh key missing')
           if "pv-party-live30e.js?pvasset=live31j3" not in party: errors.append('Party progression cache tag drift')
+          if "pv-party-live31f.js?pvasset=live31k2" not in party: errors.append('Party visual cache tag drift')
+          for token in ['pv.party.unlocks.v1','LOCKED','RESERVE','pv-profile-portrait','map_world_base.jpg']:
+              if token not in party_visual: errors.append(f'Party visual contract missing: {token}')
           for page_name,page,expected_progression_tag in [('Party runtime',party_ui,'live31j3'),('Battle results',battle,'live31j1'),('Ascension',level_up,'live31j1'),('Growth',growth,'live31j1'),('Tower',tower,'live31j1'),('Base Stats',stats,'live31k1'),('Resonance Tree',resonance,'live31k1')]:
               if f'PVProgression.js?v={expected_progression_tag}' not in page: errors.append(f'{page_name} progression cache tag drift')
           for token in ['data-command="Focus / Full Stats"','data-command="Resonance Tree"','data-command="Abilities"','data-command="Equipment"']:
@@ -231,4 +238,3 @@ jobs:
           echo '## LIVE30E Progression Guard ✅' >> "$GITHUB_STEP_SUMMARY"
           echo '' >> "$GITHUB_STEP_SUMMARY"
           echo 'Persistence, one-time first-clear loot, rematch payout, duplicate prevention, Party readout, LIVE29F inheritance, and PriZim K27 authority all passed.' >> "$GITHUB_STEP_SUMMARY"
-

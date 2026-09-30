@@ -40,6 +40,14 @@
       "natural_growth_decorator": "live31a3",
       "progression_readout": "live31j3"
     },
+    "party_visual": {
+      "reference": "Party-mock-side-rail-locked-reserves.png",
+      "runtime": "assets/js/pv-party-live31f.js",
+      "cache_tag": "live31k2",
+      "composition": "Landscape Bearer Formation Party screen with scenic stage, three active Bearers, left reserve rail, and right Bearer Profile command panel.",
+      "reserve_unlock_storage": "pv.party.unlocks.v1",
+      "locked_reserve_policy": "Sarallel and Vyan remain selectable question-mark reserve tokens until their IDs are explicitly written to the unlock ledger; no unlock timing is invented by the Party UI."
+    },
     "party_route": "The live Party command grid is Abilities, Focus / Full Stats, Resonance Tree, and Equipment. Base Stats owns Focus allocation; Resonance Tree owns the shared party path; the Prismodial Grimoire remains a separate lore and puzzle reference. Victory Continue opens Resonance Ascension before returning to the Overworld.",
     "shared_resonance_path": {
       "entry": "hybrid-resonance.html?source=party",

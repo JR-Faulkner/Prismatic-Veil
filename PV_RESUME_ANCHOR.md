@@ -1,5 +1,11 @@
 # The Prismatic Veil — Resume Anchor
 
+## LIVE31K2 approved Party menu visual (2026-09-30)
+
+- `hybrid-party-live.html` now loads `assets/js/pv-party-live31f.js?pvasset=live31k2`, the Party-only visual authority for the approved landscape menu composition: scenic stage, three active Bearers, left reserve rail, right Bearer Profile, and the four approved command buttons.
+- Sarallel and Vyan render as selectable gold/blue `?` reserve tokens until their IDs are explicitly written to `pv.party.unlocks.v1`. The Party UI does not invent story unlock timing; field formation, live progression values, Focus, Resonance Tree, and Equipment routes remain unchanged.
+- The approved menu image is a visual reference only; the live route uses the existing canonical PNG/JPG assets and progression values underneath the composition. Pages and normal MAIN device validation remain the final user-facing gate.
+
 ## LIVE31K Party stat readout guard (2026-09-30)
 
 - Party progression rendering no longer observes its own child-list writes, and the legacy decorator yields once LIVE31A mounts. This prevents the live Level/HP/RP/Core Stats readout from entering a render loop.

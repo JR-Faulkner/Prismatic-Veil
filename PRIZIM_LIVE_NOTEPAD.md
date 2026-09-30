@@ -1,5 +1,12 @@
 # PriZim Live Notepad
 
+## LIVE31K2 approved Party menu visual (2026-09-30)
+
+- The live Party route now applies the approved `Party-mock-side-rail-locked-reserves.png` composition through `assets/js/pv-party-live31f.js?pvasset=live31k2`; this is scoped to the Party screen and does not alter the Overworld map.
+- The stage uses the scenic Veil world backdrop, large Auryi/Prismel/Kineza field pieces, a left reserve rail, and a portrait-backed right Bearer Profile with Abilities, Focus / Full Stats, Resonance Tree, and Equipment.
+- Sarallel and Vyan are intentionally visible as selectable `?` reserve tokens until a future story system writes their IDs to `pv.party.unlocks.v1`. No unlock timing is fabricated by this visual pass.
+- Local browser review passed at a 1280×720 landscape viewport with no page scroll; canonical live stats remained readable. Pending gates are the branch guard, Pages deployment, and normal MAIN iPhone/iPad/Xbox validation.
+
 ## LIVE31K Party stat readout guard (2026-09-30)
 
 - The Party progression renderer now observes slot-class changes and storage/click events without observing its own child-list writes. This keeps the route responsive and lets the six live Core Stats replace the initial placeholders reliably.
