@@ -105,7 +105,10 @@
   }
 
   const observer=new MutationObserver(()=>{syncPartyData();enhanceModal()});
-  observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+  // Slot/modal state is exposed through class changes and click events. The
+  // decorator does not need child-list observation, and watching its own
+  // readout writes can keep a slow browser busy forever.
+  observer.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
   document.addEventListener('click',()=>queueMicrotask(()=>{syncPartyData();enhanceModal()}),true);
   syncPartyData();
 
