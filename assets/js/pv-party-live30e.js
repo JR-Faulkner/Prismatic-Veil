@@ -13,7 +13,8 @@
 
   let progression=null;
   let lastSig='';
-  const moduleUrl=new URL('./src/progression/PVProgression.js?v=live31j2',document.baseURI).href;
+  let renderQueued=false;
+  const moduleUrl=new URL('./src/progression/PVProgression.js?v=live31j3',document.baseURI).href;
   const currentId=()=>document.querySelector('.slot.selected')?.dataset.character||localStorage.getItem('pv.partySelected')||'prismel';
 
   async function authority(){
@@ -53,11 +54,13 @@
       document.documentElement.dataset.pvPartyProgression='LIVE31A';
       const hpByHero={prismel:100,auryi:100,kineza:115,sarallel:100,vyan:100};
       const levelValue=document.getElementById('levelValue'),hpValue=document.getElementById('hpValue'),resourceValue=document.getElementById('resourceValue');
+      const miniStats=[...document.querySelectorAll('.mini-stat')];
+      ['Level','HP','Resource'].forEach((label,index)=>{const node=miniStats[index]?.querySelector('b');if(node&&node.textContent!==label)node.textContent=label});
       if(levelValue)levelValue.textContent=level;
       if(hpValue)hpValue.textContent=hpByHero[id]||100;
       if(resourceValue)resourceValue.textContent='100 RP';
       const statCells=[...document.querySelectorAll('#coreGrid .core')];
-      statCells.forEach((cell,index)=>{const stat=api.STAT_KEYS?.[index],value=cell.querySelector('span');if(!stat||!value)return;value.textContent=hero.stats?.[stat]??'—';value.className='pv-live-stat'});
+      statCells.forEach((cell,index)=>{const stat=api.STAT_KEYS?.[index],value=cell.querySelector('span');if(!stat||!value)return;const next=String(hero.stats?.[stat]??'—');if(value.textContent!==next)value.textContent=next;if(value.className!=='pv-live-stat')value.className='pv-live-stat'});
       const kicker=document.querySelector('.core-wrap .section-kicker');if(kicker)kicker.innerHTML='<span>Core Stats</span><small style="float:right;color:#7fe8ff;font-size:6px;letter-spacing:.1em">FOCUS '+Number(hero.focusPoints||0)+' · PATH '+Number(state.partyPath?.points||0)+'</small>';
       const strip=ensureStrip();
       if(strip&&sig!==lastSig){
@@ -69,14 +72,15 @@
     }catch(err){console.warn('[PV] Party progression readout unavailable',err)}
   }
 
-  // The renderer writes the same panel it reads. Watching childList here
-  // re-triggered render from its own kicker/strip updates and could starve
-  // the Party route before the readable values appeared. Slot selection is a
-  // class change; progression changes arrive through click/storage events.
-  const observer=new MutationObserver(()=>queueMicrotask(render));
-  observer.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
-  document.addEventListener('click',()=>queueMicrotask(render),true);
-  addEventListener('storage',e=>{if(e.key==='pv.progression.v1')render()});
-  render();
+  // The renderer writes the same panel it reads. Observe only the tactical
+  // stage, where slot selection/rebuilds occur, so panel writes cannot
+  // re-trigger the renderer and starve the Party route.
+  const scheduleRender=()=>{if(renderQueued)return;renderQueued=true;queueMicrotask(()=>{renderQueued=false;render()})};
+  const observer=new MutationObserver(scheduleRender);
+  const stageRoot=document.getElementById('partyStage');
+  if(stageRoot)observer.observe(stageRoot,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+  document.addEventListener('click',scheduleRender,true);
+  addEventListener('storage',e=>{if(e.key==='pv.progression.v1')scheduleRender()});
+  scheduleRender();
 })();
 
