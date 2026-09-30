@@ -10,6 +10,9 @@ on:
       - 'assets/js/pv-party-live29e.js'
       - 'assets/js/pv-growth-audio.js'
       - 'hybrid-party-live.html'
+      - 'hybrid-party.html'
+      - 'hybrid-stats.html'
+      - 'hybrid-resonance.html'
       - 'hybrid-battle-live.html'
       - 'hybrid-level-up.html'
       - 'hybrid-growth.html'
@@ -28,6 +31,9 @@ on:
       - 'assets/js/pv-party-live29e.js'
       - 'assets/js/pv-growth-audio.js'
       - 'hybrid-party-live.html'
+      - 'hybrid-party.html'
+      - 'hybrid-stats.html'
+      - 'hybrid-resonance.html'
       - 'hybrid-battle-live.html'
       - 'hybrid-level-up.html'
       - 'hybrid-growth.html'
@@ -153,6 +159,9 @@ jobs:
           bridge=read('src/prizim/Live29FEncounterBattleScene.js')
           progression=read('src/progression/PVProgression.js')
           party=read('hybrid-party-live.html')
+          party_template=read('hybrid-party.html')
+          stats=read('hybrid-stats.html')
+          resonance=read('hybrid-resonance.html')
           party_ui=read('assets/js/pv-party-live30e.js')
           battle=read('hybrid-battle-live.html')
           level_up=read('hybrid-level-up.html')
@@ -174,15 +183,22 @@ jobs:
           if "firstClearClaimed !== true" not in progression: errors.append('one-time first-clear ledger guard missing')
           if "pv-party-live30e.js" not in party: errors.append('Party progression UI not loaded')
           if "pv.progression.v1" not in party_ui: errors.append('Party progression refresh key missing')
-          if "pv-party-live30e.js?pvasset=live31j2" not in party: errors.append('Party progression cache tag drift')
-          for page_name,page in [('Party runtime',party_ui),('Battle results',battle),('Ascension',level_up),('Growth',growth),('Tower',tower)]:
-              expected_progression_tag='live31j2' if page_name=='Party runtime' else 'live31j1'
+          if "pv-party-live30e.js?pvasset=live31j3" not in party: errors.append('Party progression cache tag drift')
+          for page_name,page,expected_progression_tag in [('Party runtime',party_ui,'live31j3'),('Battle results',battle,'live31j1'),('Ascension',level_up,'live31j1'),('Growth',growth,'live31j1'),('Tower',tower,'live31j1'),('Base Stats',stats,'live31k1'),('Resonance Tree',resonance,'live31k1')]:
               if f'PVProgression.js?v={expected_progression_tag}' not in page: errors.append(f'{page_name} progression cache tag drift')
-          if 'hybrid-growth.html?view=book' not in party: errors.append('Party Resonance Path route missing')
+          for token in ['data-command="Focus / Full Stats"','data-command="Resonance Tree"','data-command="Abilities"','data-command="Equipment"']:
+              if token not in party_template: errors.append(f'Party command missing: {token}')
+          for token in ['data-command="Growth"','data-command="Details"']:
+              if token in party_template: errors.append(f'Legacy Party command remains: {token}')
+          if './hybrid-stats.html' not in party or './hybrid-resonance.html' not in party: errors.append('Party progression routes missing')
           if 'hybrid-level-up.html?source=victory' not in battle: errors.append('Victory level-up handoff missing')
           if 'resonance-ascension.png' not in level_up: errors.append('approved Ascension art not live')
           for token in ['prismodial-growth-map.png','PARTY_RESONANCE_NODES','unlockPartyResonanceNode','allocateFocus','partyPath']:
               if token not in growth: errors.append(f'Growth screen contract missing: {token}')
+          for token in ['STAT_KEYS','allocateFocus','Focus Point','CORE STATS']:
+              if token not in stats: errors.append(f'Base Stats screen contract missing: {token}')
+          for token in ['PARTY_RESONANCE_NODES','unlockPartyResonanceNode','RESONANCE TREE','partyPath']:
+              if token not in resonance: errors.append(f'Resonance Tree screen contract missing: {token}')
           for page_name,page in [('Ascension',level_up),('Growth',growth)]:
               if 'pv-growth-audio.js' not in page: errors.append(f'{page_name} PV audio controller missing')
           for token in ['ring-turn.wav','memory-link.wav','harmonic-lock.wav','tower-resolve.wav']:
