@@ -133,9 +133,9 @@ jobs:
           mem.set('pv.progression.v1',JSON.stringify({heroes:{prismel:{unlockedNodes:['guiding_light']}}}));
           mem.set('pv.leader','Prismel');
           if(cfg.hitChanceFor('Attack','kineza')!==.98)throw new Error('Guiding Light effect missing');
+          mem.delete('pv.leader');
           mem.set('pv.progression.v1',JSON.stringify({heroes:{prismel:{unlockedNodes:['guiding_light']}},partyPath:{unlockedNodes:['resonance_link']}}));
           if(cfg.hitChanceFor('Attack','kineza')!==.98)throw new Error('Resonance Link effect missing');
-          mem.delete('pv.leader');
           mem.set('pv.progression.v1',JSON.stringify({heroes:{prismel:{unlockedNodes:['guiding_light']}}}));
           mem.set('pv.frontHero','prismel');
           if(cfg.hitChanceFor('Attack','auryi')!==.98)throw new Error('Guiding Light overworld leader compatibility missing');
