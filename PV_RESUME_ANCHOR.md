@@ -1,8 +1,14 @@
 # The Prismatic Veil — Resume Anchor
 
+## LIVE31K4 landscape viewport guard (2026-09-30)
+
+- The Party route now loads `assets/js/pv-party-live31f.js?pvasset=live31k4` with an explicit landscape contract: the approved menu fills the landscape viewport, clamps every panel to the viewport width, and prevents horizontal overflow.
+- Portrait devices show a deliberate `ROTATE TO LANDSCAPE` gate rather than exposing the clipped desktop composition. The Resonance Tree keeps the same gate and now fills ultrawide landscape phone viewports instead of letterboxing the fixed 16:9 stage.
+- The approved stage art, live progression readout, locked reserve tokens, command routes, and Xbox/iPhone landscape interaction remain unchanged.
+
 ## LIVE31K3 approved Party menu visual (2026-09-30)
 
-- `hybrid-party-live.html` now loads `assets/js/pv-party-live31f.js?pvasset=live31k3`, the Party-only visual authority for the approved landscape menu composition: scenic stage, three active Bearers, left reserve rail, right Bearer Profile, and the four approved command buttons. The approved mock-derived scenic backdrop is `assets/ui/party/v1/party-stage-approved.png`.
+- `hybrid-party-live.html` now loads `assets/js/pv-party-live31f.js?pvasset=live31k4`, the Party-only visual authority for the approved landscape menu composition: scenic stage, three active Bearers, left reserve rail, right Bearer Profile, and the four approved command buttons. The approved mock-derived scenic backdrop is `assets/ui/party/v1/party-stage-approved.png`.
 - Sarallel and Vyan render as selectable gold/blue `?` reserve tokens until their IDs are explicitly written to `pv.party.unlocks.v1`. The Party UI does not invent story unlock timing; field formation, live progression values, Focus, Resonance Tree, and Equipment routes remain unchanged.
 - The mock-derived backdrop is presentation-only; the live route uses the existing canonical PNG/JPG Bearer art, progression values, and controls underneath the composition. Pages and normal MAIN device validation remain the final user-facing gate.
 

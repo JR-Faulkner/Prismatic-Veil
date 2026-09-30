@@ -188,7 +188,7 @@ jobs:
           if "pv-party-live30e.js" not in party: errors.append('Party progression UI not loaded')
           if "pv.progression.v1" not in party_ui: errors.append('Party progression refresh key missing')
           if "pv-party-live30e.js?pvasset=live31j4" not in party: errors.append('Party progression cache tag drift')
-          if "pv-party-live31f.js?pvasset=live31k3" not in party: errors.append('Party visual cache tag drift')
+          if "pv-party-live31f.js?pvasset=live31k4" not in party: errors.append('Party visual cache tag drift')
           for token in ['pv.party.unlocks.v1','LOCKED','RESERVE','pv-profile-portrait','party-stage-approved.png']:
               if token not in party_visual: errors.append(f'Party visual contract missing: {token}')
           for page_name,page,expected_progression_tag in [('Party runtime',party_ui,'live31j3'),('Battle results',battle,'live31j1'),('Ascension',level_up,'live31j1'),('Growth',growth,'live31j1'),('Tower',tower,'live31j1'),('Base Stats',stats,'live31k1'),('Resonance Tree',resonance,'live31k1')]:

@@ -1,8 +1,14 @@
 # PriZim Live Notepad
 
+## LIVE31K4 landscape viewport guard (2026-09-30)
+
+- The Party visual runtime is now `assets/js/pv-party-live31f.js?pvasset=live31k4`. It clamps the live menu to the landscape viewport, removes width overflow, and shows `ROTATE TO LANDSCAPE` in portrait so a phone never renders a cropped desktop canvas.
+- The Resonance Tree keeps its existing portrait gate and expands its approved composition to the full landscape viewport, removing the narrow centered 16:9 letterbox seen on ultrawide phone landscape screens.
+- Local QA at the normal 1280×720 landscape viewport remained scroll-free and kept the approved party stage, live stats, reserve locks, and progression routes intact. Pages and normal MAIN iPhone/iPad/Xbox landscape validation remain the final user-facing gate.
+
 ## LIVE31K3 approved Party menu visual (2026-09-30)
 
-- The live Party route now applies the approved `Party-mock-side-rail-locked-reserves.png` composition through `assets/js/pv-party-live31f.js?pvasset=live31k3`; this is scoped to the Party screen and does not alter the Overworld map. Its scenic stage uses the mock-derived `assets/ui/party/v1/party-stage-approved.png` backdrop.
+- The live Party route now applies the approved `Party-mock-side-rail-locked-reserves.png` composition through `assets/js/pv-party-live31f.js?pvasset=live31k4`; this is scoped to the Party screen and does not alter the Overworld map. Its scenic stage uses the mock-derived `assets/ui/party/v1/party-stage-approved.png` backdrop.
 - The stage uses the scenic Veil world backdrop, large Auryi/Prismel/Kineza field pieces, a left reserve rail, and a portrait-backed right Bearer Profile with Abilities, Focus / Full Stats, Resonance Tree, and Equipment.
 - Sarallel and Vyan are intentionally visible as selectable `?` reserve tokens until a future story system writes their IDs to `pv.party.unlocks.v1`. No unlock timing is fabricated by this visual pass.
 - Local browser review passed at a 1280×720 landscape viewport with no page scroll; canonical live stats remained readable. Pending gates are the branch guard, Pages deployment, and normal MAIN iPhone/iPad/Xbox validation.
