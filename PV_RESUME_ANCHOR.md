@@ -427,3 +427,9 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 - Prismel Basic Attack now launches a crisp procedural cyan/gold prismatic shard at the existing release marker and lands it on the Hushling at the existing impact marker. The established attack sheet, marker timing, damage roll, enemy hit reaction, and audio cues remain authoritative.
 - Lethal Basic Attacks hold the resolved battlefield for 1100ms before the normal turn advance so the shard landing, defeat reaction, and Victory banner do not collapse into one unreadable beat. Nonlethal turns retain the existing 500ms advance.
 - Local latest-main Hybrid/K smoke showed the shard in flight and the Hushling at 44/52 after an 8-damage Prismel hit; no new runtime errors were observed. Normal MAIN iPhone/iPad/Xbox Edge remains the final device gate.
+
+## LIVE31I Hushling lane and multi-enemy boundary check (2026-09-30)
+
+- LIVE30E4 now uses one stable enemy-side anchor instead of separate large/small landscape positions: approximately 0.76w / 0.80h in landscape and 0.78w / 0.78h in portrait. The visible Hushling is ~0.62 of the Wraith reference height, still short and stocky but readable on phone and TV layouts.
+- The live Hybrid/K encounter remains intentionally single-enemy: `PartyBattleScene` owns one `enemy` object and one `enemyView`, and LIVE29G selects one location enemy. The tactical 06A QA route can stage three Hushlings, but it is not the production battle authority. Multi-enemy production work needs a formation/target/turn-order contract before promotion.
+- Device gate remains pending after the layout pass; no multi-enemy behavior is being implied by the single-enemy MAIN route.

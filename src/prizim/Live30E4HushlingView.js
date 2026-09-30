@@ -1,7 +1,7 @@
-// LIVE30E4 — the first encounter has one Hushling, so it owns center stage.
+// LIVE30E4 — the first encounter has one Hushling, so it owns the enemy lane.
 // Multi-enemy spacing belongs to a future formation controller, not this
 // single-enemy visual adapter.
-import EnemyHushlingView from '../EnemyHushlingView.js?v=live30e4-base';
+import EnemyHushlingView from '../EnemyHushlingView.js?v=live31i-base';
 
 export default class Live30E4HushlingView extends EnemyHushlingView {
   layout() {
@@ -10,15 +10,18 @@ export default class Live30E4HushlingView extends EnemyHushlingView {
     const height = this.scene.scale.height;
     const landscape = width > height;
 
-    // One Hushling still owns a single enemy lane, but "center screen" is not
-    // the same thing as "enemy space": Kineza's live formation sits near 0.54w,
-    // so a 0.50w Hushling overlaps the party on TVs and wide browsers.
-    // Keep the smaller enemy clearly across the field and slightly raised so
-    // its full silhouette reads above the fixed party/status strip.
+    // One Hushling owns one stable enemy lane. Keep its anchor independent of
+    // the old large/small-landscape split so the silhouette does not jump
+    // between two nearby positions when the browser or TV crosses a breakpoint.
     if (landscape) {
-      const largeLandscape = width >= 1100 && height >= 600;
-      this.baseX = Math.round(width * (largeLandscape ? 0.72 : 0.70));
-      this.baseY = Math.round(height * (largeLandscape ? 0.71 : 0.73));
+      this.baseX = Math.round(width * 0.76);
+      this.baseY = Math.round(height * 0.80);
+    } else {
+      // Portrait keeps the same enemy-side reading and grounds the feet near
+      // the party baseline instead of inheriting the old height-minus-264px
+      // anchor, which floated the Hushling on tall phones.
+      this.baseX = Math.round(width * 0.78);
+      this.baseY = Math.round(height * 0.78);
     }
     this.container.setPosition(this.baseX, this.baseY);
   }

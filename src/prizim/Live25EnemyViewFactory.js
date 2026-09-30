@@ -1,5 +1,5 @@
 import Live25EnemyWraithView from './Live25EnemyWraithView.js?v=live25';
-import Live30E4HushlingView from './Live30E4HushlingView.js?v=live30k8-hushling';
+import Live30E4HushlingView from './Live30E4HushlingView.js?v=live31i-hushling';
 
 export function createEnemyView(scene, enemy) {
   switch (enemy && enemy.viewId) {

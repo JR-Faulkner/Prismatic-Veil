@@ -417,3 +417,9 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - Damage, hit/miss, enemy recoil, defeat audio, and marker timing remain in `PartyBattleScene`; the projectile is presentation-only and is cancelled safely if the attack aborts.
 - Lethal basic actions use a 1100ms post-animation settle before `_advanceTurn()`; nonlethal actions and enemy turns keep their 500ms delay. This makes the Victory result readable without changing reward or progression authority.
 - Local Hybrid/K smoke showed an in-flight shard and 8 damage landing on the Hushling. No new sequence/runtime errors. Pages and normal MAIN device validation remain required.
+
+## LIVE31I Hushling lane and multi-enemy boundary check (2026-09-30)
+
+- LIVE30E4 keeps one stable enemy-side anchor across breakpoints: landscape ~0.76w / 0.80h, portrait ~0.78w / 0.78h. Hushling display height is ~0.62 of the Wraith reference, preserving the short stocky lore silhouette while restoring face/armor readability.
+- Do not add a second live enemy by duplicating the view only. The current Hybrid/K contract is one `enemy`, one target card, one target cursor, one enemy turn, and one result path. Tactical 06A's three-Hushling cluster is QA reference only; a production multi-enemy pass must first define formation slots, selection/cursor state, per-enemy HP/recoil/death, turn-order publication, and victory criteria.
+- Pages deployment and real iPhone/iPad/Xbox Edge validation remain the final gates.

@@ -107,8 +107,8 @@
     "single_enemy_layout": "enemy-side lane on landscape; never geometric-center overlap with the front bearer",
     "multi_enemy_layout": "Reserved for a future formation controller; no stagger is applied to one enemy.",
     "single_enemy_party_lane": "Preserve the locked K27 party formation. The single Hushling must remain visibly separated to the enemy side rather than sharing Kineza's foreground lane.",
-    "single_enemy_runtime": "src/prizim/Live30E4HushlingView.js",
-    "single_enemy_view_policy": "The single Hushling uses a responsive enemy-side x anchor and raised landscape baseline so its full silhouette stays clear of Kineza and the fixed party status strip. Large landscape/TV target is ~0.72w,0.71h; smaller landscape target is ~0.70w,0.73h. Portrait behavior remains inherited."
+    "single_enemy_runtime": "src/prizim/Live30E4HushlingView.js?v=live31i-hushling",
+    "single_enemy_view_policy": "The single Hushling uses one stable enemy-side anchor instead of breakpoint-specific positions: landscape target is ~0.76w,0.80h and portrait target is ~0.78w,0.78h. Its visible height is ~0.62 of the Wraith reference, preserving the short, stocky silhouette while keeping face, armor, and hit reaction readable. Multi-enemy spacing remains reserved for a formation controller."
   },
   "basic_attack_presentation": {
     "scope": "Prismel basic Attack and Kineza Blitzer only",

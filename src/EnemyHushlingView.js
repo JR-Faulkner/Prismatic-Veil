@@ -69,7 +69,10 @@ export default class EnemyHushlingView {
         ? Math.min(285, height * 0.66)
         : Math.min(250, height * 0.62))
       : Math.min(compact ? 250 : 310, height * (compact ? 0.31 : 0.39));
-    const targetHeight = Math.max(96, Math.round(wraithReferenceHeight * 0.5));
+    // Still clearly shorter and stockier than a Wraith, but large enough for
+    // its face, armor, and hit reaction to read on an iPhone or TV. The old
+    // 0.50 factor made the enemy look like a token beside the party.
+    const targetHeight = Math.max(112, Math.round(wraithReferenceHeight * 0.62));
 
     // The v34 art is tall and narrow, not square like the old locked
     // sprites — forcing a square display box would squash it. Derive
