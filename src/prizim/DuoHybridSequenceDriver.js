@@ -239,6 +239,54 @@ export default class DuoHybridSequenceDriver {
     }
   }
 
+  async animateSequenceFrame(layer, sourceFrame, fromPlacement, toPlacement, fromPose, toPose, duration) {
+    const durationMs = Math.max(0, Number(duration) || 0);
+    const startPlacement = fromPlacement || toPlacement;
+    const startPose = fromPose || toPose;
+    const raf = typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
+      ? callback => window.requestAnimationFrame(callback)
+      : callback => setTimeout(() => callback(Date.now()), 16);
+    const ease = value => value * value * (3 - (2 * value));
+    const render = progress => {
+      const t = ease(clamp01(progress));
+      const pose = {
+        zoom: lerp(startPose.zoom, toPose.zoom, t),
+        scrollX: lerp(startPose.scrollX, toPose.scrollX, t),
+        scrollY: lerp(startPose.scrollY, toPose.scrollY, t)
+      };
+      this.applyCameraPose(pose);
+      const worldX = lerp(startPlacement.worldX, toPlacement.worldX, t);
+      const worldY = lerp(startPlacement.worldY, toPlacement.worldY, t);
+      const worldScale = lerp(startPlacement.worldScale, toPlacement.worldScale, t);
+      this.drawSequenceFrame(layer, sourceFrame, {
+        x: (worldX - pose.scrollX) * pose.zoom,
+        y: (worldY - pose.scrollY) * pose.zoom,
+        scale: worldScale * pose.zoom,
+        originX: toPlacement.originX,
+        originY: toPlacement.originY,
+        flipX: toPlacement.flipX,
+        flashAlpha: toPlacement.flashAlpha
+      });
+    };
+
+    if (durationMs <= 16 || !fromPlacement) {
+      render(1);
+      if (durationMs > 0) await wait(this.scene, durationMs);
+      return;
+    }
+
+    await new Promise(resolve => {
+      const start = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      const tick = now => {
+        const elapsed = Math.max(0, now - start);
+        render(Math.min(1, elapsed / durationMs));
+        if (elapsed >= durationMs) resolve();
+        else raf(tick);
+      };
+      raf(tick);
+    });
+  }
+
   sequenceUiState() {
     const scene = this.scene;
     // uiLayer is the single UI authority in PartyBattleScene, so fading it
@@ -521,6 +569,8 @@ export default class DuoHybridSequenceDriver {
     const camera = scene.cameras.main;
     const cameraState = { zoom: camera.zoom, scrollX: camera.scrollX, scrollY: camera.scrollY };
     let uiRestored = false;
+    let previousPose = { ...cameraState };
+    let previousPlacement = null;
 
     scene.audio?.beginCinematicAttack?.();
     sprite.setVisible(false);
@@ -553,28 +603,33 @@ export default class DuoHybridSequenceDriver {
           : (Number.isFinite(frame.anchor_y) ? Number(frame.anchor_y) / Math.max(1, sourceFrame.sh) : fallbackOriginY);
         const pose = this.cameraPose(presentation, i, worldX, worldY, targetX, targetY);
         const actorBoost = Math.max(0.1, trackValue(presentation.actorScaleTrack || [], i, 'scale', 1));
-        this.applyCameraPose(pose);
-
-        const screenX = (worldX - pose.scrollX) * pose.zoom;
-        const screenY = (worldY - pose.scrollY) * pose.zoom;
         const isImpact = i === Number(impactCfg.frame ?? -1);
-
-        this.drawSequenceFrame(layer, sourceFrame, {
-          x: screenX,
-          y: screenY,
-          scale: baseScale * scaleMul * actorBoost * pose.zoom,
+        const placement = {
+          worldX,
+          worldY,
+          worldScale: baseScale * scaleMul * actorBoost,
           originX,
           originY,
           flipX: !!sprite.flipX,
           flashAlpha: isImpact ? Number(impactCfg.flashAlpha || 0) : 0
-        });
+        };
 
         if (isImpact) this.impactKick(layer, impactCfg);
         if (onFrame) onFrame(i, this.markersFor(manifest, i), manifest);
         if (isImpact && Number(impactCfg.hitStopMs || 0) > 0) {
           await wait(scene, Number(impactCfg.hitStopMs));
         }
-        await wait(scene, Number(frame.duration || 100));
+        await this.animateSequenceFrame(
+          layer,
+          sourceFrame,
+          previousPlacement,
+          placement,
+          previousPose,
+          pose,
+          Number(frame.duration || 100)
+        );
+        previousPlacement = placement;
+        previousPose = pose;
       }
     } finally {
       this.restoreUi(uiState, 0);

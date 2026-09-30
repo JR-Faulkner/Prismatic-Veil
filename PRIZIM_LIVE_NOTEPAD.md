@@ -402,3 +402,11 @@ The real iPhone witness from `main-20260905-live28k5` showed the core battle sta
 - `Prism of Elders` is the arrival bed, `veil_clockwork_drift` is the interior loop, and the existing Tower cue family is mapped to ring movement/alignment, harmonic search/lock, route links/errors, and Relay resolution. Puzzle 2 and Puzzle 3 accept gamepad input as well as touch/keyboard.
 - `hybrid-battle-live.html` now defaults missing battle return state to `whisper` and its static Continue link also points to Whispering Grove. This closes the Echo Castle post-fight trap while preserving explicit `pvreturn` values for other encounters.
 - Local Tower desktop and 844x390 landscape journeys passed with all three locks, reward toasts, music transitions, and no console errors. Pages deployment and user-device audition remain required.
+
+## LIVE31G Basic Attack motion polish (2026-09-30)
+
+- Preserve the approved primary PNGs and the canonical Prismel/Kineza attack frame authorities. No generated bridge frames were promoted after PriZim edge/canvas QA rejected the auditions.
+- Prismel basic Attack uses a 90ms primary-to-attack crossfade and a 120ms attack-to-idle crossfade; the attack sheet, marker timing, damage timing, and sound cues remain unchanged.
+- Kineza Blitzer keeps its native 18-frame sequence and uses smoothstep interpolation for the existing frame placement, camera, and scale tracks. This adds in-between motion at runtime without changing the frame manifest or timing contract.
+- `Live22DuoHybridSequenceDriver.js` now cache-busts the shared driver as `duo-9-smooth` for the K lineage.
+- Local latest-main Hybrid/K smoke passed for Prismel and Kineza basic attacks. No new sequence/runtime errors were observed; the existing portrait-loader warnings are still present. Device validation remains pending on the normal MAIN route.

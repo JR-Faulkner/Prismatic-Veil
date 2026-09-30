@@ -194,9 +194,20 @@ export default class PartyFormationView {
     const contactX = enemyX - (this.scene.scale.width * (cfg.travel?.contactXOffsetFrac ?? 0.10));
 
     this.scene.tweens.killTweensOf(attackSprite);
+    this.scene.tweens.killTweensOf(sprite);
+    const isPrismel = heroId === 'prismel';
+    const handoffInMs = isPrismel ? 90 : 0;
+    const handoffOutMs = isPrismel ? 120 : 0;
+    const baseAlpha = Number.isFinite(sprite.alpha) ? sprite.alpha : 1;
     attackSprite.setOrigin(0.5, originY).setScale(baseScale).setPosition(homeX, homeY)
-      .setFlipX(sprite.flipX).setAlpha(1).setVisible(true);
-    sprite.setVisible(false);
+      .setFlipX(sprite.flipX).setAlpha(isPrismel ? 0 : 1).setVisible(true);
+    if (isPrismel) {
+      sprite.setAlpha(baseAlpha);
+      this.scene.tweens.add({ targets: sprite, alpha: 0, duration: handoffInMs, ease: 'Sine.easeInOut' });
+      this.scene.tweens.add({ targets: attackSprite, alpha: 1, duration: handoffInMs, ease: 'Sine.easeInOut' });
+    } else {
+      sprite.setVisible(false);
+    }
 
     return new Promise(resolve => {
       const animKey = `${cfg.key}_play`;
@@ -220,9 +231,25 @@ export default class PartyFormationView {
       attackSprite.on('animationupdate', onUpdate);
       attackSprite.once('animationcomplete', () => {
         attackSprite.off('animationupdate', onUpdate);
-        attackSprite.setPosition(homeX, homeY).setScale(baseScale).setVisible(false);
-        sprite.setVisible(true);
-        resolve();
+        attackSprite.setPosition(homeX, homeY).setScale(baseScale);
+        if (isPrismel) {
+          this.scene.tweens.add({
+            targets: attackSprite,
+            alpha: 0,
+            duration: handoffOutMs,
+            ease: 'Sine.easeInOut',
+            onComplete: () => {
+              attackSprite.setVisible(false).setAlpha(0);
+              sprite.setVisible(true).setAlpha(baseAlpha);
+              resolve();
+            }
+          });
+          this.scene.tweens.add({ targets: sprite, alpha: baseAlpha, duration: handoffOutMs, ease: 'Sine.easeInOut' });
+        } else {
+          attackSprite.setVisible(false).setAlpha(1);
+          sprite.setVisible(true).setAlpha(baseAlpha);
+          resolve();
+        }
       });
       attackSprite.play(animKey);
     });

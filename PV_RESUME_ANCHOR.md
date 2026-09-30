@@ -413,3 +413,11 @@ Resume from the live Hybrid/K battle route. Prismel owns the third cinematic Res
 - Tower arrival uses `Prism of Elders`; the interior uses `veil_clockwork_drift`; existing Tower cues cover ring turns/alignment, harmonic search/lock, route links/errors, and final Relay resolution. Puzzle 2 and Puzzle 3 also expose direct gamepad paths.
 - Fixed the battle wrapper fallback that could strand a Whispering Grove clear on Echo Castle. Missing `pvreturn` now defaults to `whisper`, and the static result link uses the same return location.
 - Local full three-lock Tower flow passed at desktop and 844x390 landscape with no console errors; remote Pages and real-device audio remain the final gates.
+
+## LIVE31G Basic Attack motion polish (2026-09-30)
+
+- Kept the approved Prismel and Kineza primary/attack assets, frame counts, marker timing, damage timing, and audio cues unchanged.
+- Prismel now hands off between the primary and basic-attack sheet with a short crossfade so the sprite does not pop between layers.
+- Kineza's existing 18-frame Blitzer and its Duo-Hybrid camera/placement tracks now ease between each existing frame for a more fluid read. No generated bridge frames were promoted after PriZim edge/canvas QA rejected the audition candidates.
+- The K-line cache-bust is `DuoHybridSequenceDriver.js?v=duo-9-smooth` through `Live22DuoHybridSequenceDriver.js`.
+- Local latest-main Hybrid/K smoke: Prismel resolved 7 damage; Kineza resolved 12 damage and returned through the normal enemy turn. No new sequence/runtime errors. Portrait-loader warnings remain pre-existing. Normal MAIN iPhone/iPad/Xbox Edge validation remains the final gate.

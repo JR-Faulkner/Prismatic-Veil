@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated": "2026-09-28",
+  "updated": "2026-09-30",
   "witness": "main-20260909-live28k27",
   "production_route": [
     "index.html",
@@ -109,6 +109,14 @@
     "single_enemy_party_lane": "Preserve the locked K27 party formation. The single Hushling must remain visibly separated to the enemy side rather than sharing Kineza's foreground lane.",
     "single_enemy_runtime": "src/prizim/Live30E4HushlingView.js",
     "single_enemy_view_policy": "The single Hushling uses a responsive enemy-side x anchor and raised landscape baseline so its full silhouette stays clear of Kineza and the fixed party status strip. Large landscape/TV target is ~0.72w,0.71h; smaller landscape target is ~0.70w,0.73h. Portrait behavior remains inherited."
+  },
+  "basic_attack_presentation": {
+    "scope": "Prismel basic Attack and Kineza Blitzer only",
+    "asset_policy": "Keep the approved primary PNGs, attack frame manifests, frame counts, marker timing, damage timing, and audio cues unchanged.",
+    "runtime_polish": "Prismel uses a short primary-to-attack crossfade; Kineza and the Duo-Hybrid sequence use smooth per-frame placement/camera easing between existing frames.",
+    "cache_bust": "src/prizim/Live22DuoHybridSequenceDriver.js?v=duo-9-smooth",
+    "verification": "Local Hybrid/K route completed Prismel and Kineza basic attacks with damage resolution and no new sequence/runtime errors; portrait-loader warnings remain pre-existing.",
+    "device_gate": "Normal MAIN iPhone/iPad/Xbox Edge validation remains required."
   },
   "hard_gates": {
     "production_battle_must_use_hybrid_stack": true,

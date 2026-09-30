@@ -1,6 +1,6 @@
 // LIVE22 Auryi renderer adapter.
 // Extends the proven Duo-Hybrid driver without rewriting live21 internals.
-import DuoHybridSequenceDriver from './DuoHybridSequenceDriver.js?v=duo-8';
+import DuoHybridSequenceDriver from './DuoHybridSequenceDriver.js?v=duo-9-smooth';
 
 const clamp01 = value => Math.max(0, Math.min(1, Number(value) || 0));
 const lerp = (a, b, t) => a + (b - a) * t;
